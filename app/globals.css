@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-brand-cream text-brand-navy font-sans;
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at top right, #23364d 0%, #0d1b2a 55%, #08111b 100%);
+}
