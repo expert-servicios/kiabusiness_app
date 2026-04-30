@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="320" viewBox="0 0 920 320" role="img" aria-labelledby="title desc">
+  <title id="title">EXPERT logo</title>
+  <desc id="desc">Premium EXPERT brand logo in navy and gold.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#F2C14E"/>
+      <stop offset="1" stop-color="#D4A017"/>
+    </linearGradient>
+  </defs>
+  <rect width="920" height="320" fill="none"/>
+  <g transform="translate(52 40)">
+    <path d="M116 8C62 8 18 52 18 106s44 98 98 98c31 0 59-14 77-37" fill="none" stroke="#D4A017" stroke-width="14" stroke-linecap="round"/>
+    <path d="M78 44h78v28h-47v21h41v27h-41v25h50v29H78z" fill="#0D1B2A"/>
+    <path d="M178 44l37 61 38-61h38l-55 82 57 85h-40l-39-63-40 63h-38l58-86-55-81z" fill="url(#gold)"/>
+    <path d="M216 55v132" stroke="#F8F6F1" stroke-width="10" stroke-linecap="round" opacity=".72"/>
+    <path d="M197 51h38M197 190h38" stroke="#F8F6F1" stroke-width="8" stroke-linecap="round" opacity=".72"/>
+  </g>
+  <g transform="translate(365 92)">
+    <text x="0" y="82" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" letter-spacing="8" fill="#0D1B2A">EXPERT</text>
+    <rect x="4" y="112" width="380" height="6" rx="3" fill="url(#gold)"/>
+    <text x="4" y="156" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="5" fill="#23364D">FISCAL · LEGAL · ADMINISTRATIVO</text>
+  </g>
+</svg>
