@@ -49,7 +49,7 @@ export function HeroSection() {
             <div className="relative rounded-[28px] border border-brand-cream/10 bg-brand-navy p-4">
               <div className="overflow-hidden rounded-full border border-brand-gold/20 bg-brand-slate p-1">
                 <Image
-                  src="/ksenia-avatar.png"
+                  src="/avatars/ksenia-avatar.png"
                   alt="Avatar de Ksenia"
                   width={420}
                   height={420}
