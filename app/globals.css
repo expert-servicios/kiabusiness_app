@@ -1,9 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 body {
-  @apply bg-brand-cream text-brand-navy font-sans;
+  background-color: #F8F6F1;
+  color: #0D1B2A;
+  font-family: Inter, sans-serif;
 }
 
 .hero-gradient {
