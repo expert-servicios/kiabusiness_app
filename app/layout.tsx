@@ -1,15 +1,15 @@
 import './globals.css';
 import { ReactNode } from 'react';
-import { MainHeader } from '@/components/layout/main-header';
-import { MainFooter } from '@/components/layout/main-footer';
+import { Header } from '@/components/site/header';
+import { Footer } from '@/components/site/footer';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <body>
-        <MainHeader />
+        <Header />
         {children}
-        <MainFooter />
+        <Footer />
       </body>
     </html>
   );
