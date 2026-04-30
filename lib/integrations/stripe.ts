@@ -7,6 +7,6 @@ export function getStripeClient() {
   }
 
   return new Stripe(secretKey, {
-    apiVersion: '2025-02-24.acacia'
+    apiVersion: '2026-04-22.dahlia'
   });
 }

@@ -10,7 +10,7 @@ export const leadSchema = z.object({
   country: z.string().min(2),
   urgency: z.enum(['baja', 'media', 'alta', 'urgente']),
   message: z.string().min(10),
-  state: z.enum(['new', 'contacted', 'quoted', 'converted']).default('new')
+  state: z.enum(['new', 'contacted', 'quoted', 'converted']).optional()
 });
 
 export type LeadInput = z.infer<typeof leadSchema>;
