@@ -1,21 +1,34 @@
-import { workSteps } from '@/config/brand';
+const howItWorks = [
+  {
+    title: 'Nos envías tu documentación',
+    text: 'Por WhatsApp, email o plataforma segura. Nos adaptamos a ti.'
+  },
+  {
+    title: 'Revisamos tu caso',
+    text: 'Analizamos tu situación y te proponemos la mejor opción.'
+  },
+  {
+    title: 'Gestionamos el trámite',
+    text: 'Nos encargamos del proceso para que no tengas que preocuparte.'
+  }
+];
 
 export function HowItWorks() {
   return (
-    <section className="bg-brand-navy py-16 text-brand-cream">
-      <div className="mx-auto max-w-[1200px] px-6">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.35em] text-brand-lightGold/90">Así de fácil</p>
-          <h2 className="mt-4 font-serif text-4xl tracking-[-0.04em] text-white">Así de fácil</h2>
-        </div>
+    <section className="bg-[#F8F6F1] py-16 text-[#0D1B2A]">
+      <div className="mx-auto max-w-6xl px-6 text-center">
+        <h2 className="font-serif text-3xl font-bold uppercase tracking-wide">Así de fácil</h2>
+        <div className="mx-auto mt-4 h-[2px] w-20 bg-[#D4A017]" />
 
-        <div className="mt-10 grid gap-6 md:grid-cols-4">
-          {workSteps.map((step, index) => (
-            <div key={step} className="rounded-[28px] border border-white/10 bg-white/5 p-8">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold text-brand-gold">
-                <span className="font-serif text-xl">{index + 1}</span>
+        <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3">
+          {howItWorks.map((step, index) => (
+            <div key={step.title} className="relative rounded-3xl bg-white p-8 shadow-[0_18px_45px_rgba(13,27,42,0.08)]">
+              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#D4A017]/25 bg-[#F8F6F1] text-3xl font-bold text-[#D4A017] shadow-sm">
+                {index + 1}
               </div>
-              <p className="mt-6 text-base leading-7 text-brand-cream/90">{step}</p>
+
+              <h3 className="mt-5 font-serif text-lg font-bold uppercase">{step.title}</h3>
+              <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-[#23364D]">{step.text}</p>
             </div>
           ))}
         </div>

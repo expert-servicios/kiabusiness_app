@@ -1,71 +1,63 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { footerCopy, footerLinks, siteName } from '@/config/brand';
 
 export function Footer() {
   return (
-    <footer className="bg-brand-navy text-brand-cream">
-      <div className="mx-auto max-w-[1200px] px-6 py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] lg:items-start">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Image src="/logos/expert-logo.png" alt="EXPERT" width={140} height={40} className="h-auto w-auto" />
-            </div>
-            <p className="max-w-sm text-sm leading-7 text-brand-cream/80">{footerCopy}</p>
-            <p className="text-sm font-semibold text-brand-lightGold">Holded Solution Partner</p>
-          </div>
+    <footer className="bg-[#06111f] py-12 text-white">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
+        <div>
+          <Image
+            src="/branding/logos/expert-logo-dark.svg"
+            alt="EXPERT"
+            width={210}
+            height={80}
+            className="h-auto w-[210px]"
+          />
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-cream/70">Servicios</h3>
-            <ul className="mt-6 space-y-3 text-sm text-brand-cream/80">
-              {footerLinks.services.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="transition hover:text-brand-gold">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="mt-5 max-w-sm text-sm leading-6 text-white/70">
+            Asesoría fiscal, legal y administrativa en España para empresas, autónomos y personas físicas.
+          </p>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-cream/70">Empresa</h3>
-            <ul className="mt-6 space-y-3 text-sm text-brand-cream/80">
-              {footerLinks.company.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="transition hover:text-brand-gold">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="mt-3 font-semibold text-[#D4A017]">Holded Solution Partner</p>
+        </div>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-cream/70">Legal</h3>
-            <ul className="mt-6 space-y-3 text-sm text-brand-cream/80">
-              {footerLinks.legal.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="transition hover:text-brand-gold">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Enlaces rápidos</h3>
+          <ul className="space-y-2 text-sm text-white/65">
+            <li><Link href="/">Inicio</Link></li>
+            <li><Link href="/servicios">Servicios</Link></li>
+            <li><Link href="/sobre-mi">Sobre mí</Link></li>
+            <li><Link href="/blog">Blog</Link></li>
+            <li><Link href="/contacto">Contacto</Link></li>
+          </ul>
+        </div>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-cream/70">Contacto</h3>
-            <ul className="mt-6 space-y-3 text-sm text-brand-cream/80">
-              {footerLinks.contact.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="transition hover:text-brand-gold">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Servicios</h3>
+          <ul className="space-y-2 text-sm text-white/65">
+            <li><Link href="/servicios/declaraciones-impuestos">Declaraciones e Impuestos</Link></li>
+            <li><Link href="/servicios/extranjeria-nacionalidad">Extranjería y Nacionalidad</Link></li>
+            <li><Link href="/servicios/empresas-autonomos">Empresas y Autónomos</Link></li>
+            <li><Link href="/servicios/gestiones-especializadas">Gestiones Especializadas</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Contacto</h3>
+          <ul className="space-y-3 text-sm text-white/70">
+            <li>WhatsApp: +34 669 04 55 28</li>
+            <li>Email: soy@kseniailicheva.com</li>
+            <li>España</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-10 flex max-w-7xl flex-col justify-between gap-4 border-t border-white/10 px-6 pt-6 text-xs text-white/45 md:flex-row">
+        <p>© 2024 EXPERT. Todos los derechos reservados.</p>
+        <div className="flex gap-4">
+          <Link href="/legal/aviso-legal">Aviso legal</Link>
+          <Link href="/legal/privacidad">Política de privacidad</Link>
+          <Link href="/legal/cookies">Cookies</Link>
         </div>
       </div>
     </footer>
