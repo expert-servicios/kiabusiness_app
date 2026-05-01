@@ -7,7 +7,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
         <div>
           <Image
-            src="/branding/logos/expert-logo-dark.png"
+            src="/logos/expert-logo-dark.png"
             alt="EXPERT"
             width={210}
             height={80}
