@@ -168,7 +168,7 @@ function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-[#061321] text-white">
       <Image
-        src="/expert-app.png"
+        src="/expert-banner.png"
         alt="Fondo de marca EXPERT"
         fill
         priority
