@@ -6,7 +6,7 @@ import { Footer } from '@/components/site/footer';
 
 export const metadata: Metadata = {
   icons: {
-    icon: [{ url: '/expert-favicon.png', type: 'image/png' }],
+    icon: [{ url: '/logos/expert-favicon.png', type: 'image/png' }],
   },
 };
 

@@ -215,7 +215,7 @@ function Header() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/expert-logo-dark.png"
+            src="/logos/expert-logo-dark.png"
             alt="EXPERT"
             width={190}
             height={64}
@@ -258,7 +258,16 @@ function Header() {
 function Hero() {
   return (
     <section className="relative min-h-[720px] overflow-hidden bg-[#06111f] pt-24">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(212,160,23,0.18),transparent_32%),linear-gradient(90deg,#06111f_0%,#0D1B2A_42%,#10233a_100%)]" />
+      <div className="absolute inset-0 opacity-70">
+        <Image
+          src="/expert-mood.png"
+          alt="Mood banner EXPERT"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-[#06111f]/85 mix-blend-multiply" />
+      </div>
 
       <div className="absolute inset-0 opacity-20">
         <div className="absolute left-[42%] top-24 h-[520px] w-[1px] bg-white/20" />
@@ -266,7 +275,7 @@ function Hero() {
       </div>
 
       <Image
-        src="/expert-isotipo.png"
+        src="/logos/expert-isotipo.png"
         alt=""
         width={520}
         height={520}
@@ -570,7 +579,7 @@ function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
         <div>
           <Image
-            src="/expert-logo-dark.png"
+            src="/logos/expert-logo-dark.png"
             alt="EXPERT"
             width={210}
             height={80}
