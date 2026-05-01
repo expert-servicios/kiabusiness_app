@@ -210,12 +210,19 @@ export default function Home() {
 function Hero() {
   return (
     <section className="relative min-h-[720px] overflow-hidden bg-[#06111f] pt-24">
-      {/* TODO: Replace with /branding/backgrounds/hero-bg.png when available */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#06111f] via-[#0D1B2A] to-[#10233a]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#06111f]/90 via-transparent to-transparent" />
+      <div className="absolute inset-0">
+        <Image
+          src="/branding/backgrounds/hero-bg.png"
+          alt="Hero background"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-[#06111f]/40 mix-blend-multiply" />
+      </div>
 
       <Image
-        src="/branding/logos/expert-isotipo.svg"
+        src="/branding/logos/expert-isotipo.png"
         alt=""
         width={520}
         height={520}
