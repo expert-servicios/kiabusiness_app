@@ -195,7 +195,6 @@ function Icon({
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#0D1B2A] text-white">
-      <Header />
       <Hero />
       <ServiceCategories />
       <FeaturedServices />
@@ -204,78 +203,19 @@ export default function Home() {
       <ReviewsPreview />
       <FinalCta />
       <Accreditations />
-      <Footer />
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="absolute left-0 right-0 top-0 z-50 border-b border-white/5 bg-[#06111f]/35 backdrop-blur-sm">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/logos/expert-logo-dark.png"
-            alt="EXPERT"
-            width={190}
-            height={64}
-            priority
-            className="h-auto w-[170px] md:w-[190px]"
-          />
-        </Link>
-
-        <nav className="hidden items-center gap-9 text-sm font-semibold uppercase tracking-wide text-white/85 lg:flex">
-          <Link href="/" className="relative text-[#F2C14E]">
-            Inicio
-            <span className="absolute -bottom-3 left-0 h-[2px] w-full bg-[#D4A017]" />
-          </Link>
-          <Link href="/servicios" className="hover:text-[#F2C14E]">Servicios</Link>
-          <Link href="/sobre-mi" className="hover:text-[#F2C14E]">Sobre mí</Link>
-          <Link href="/blog" className="hover:text-[#F2C14E]">Blog</Link>
-          <Link href="/contacto" className="hover:text-[#F2C14E]">Contacto</Link>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden rounded-xl border border-[#D4A017]/60 px-4 py-2 text-sm font-semibold text-[#F2C14E] transition hover:bg-[#D4A017] hover:text-[#0D1B2A] md:inline-flex"
-          >
-            Acceder / Registrarse
-          </Link>
-
-          <Link
-            href="https://wa.me/34669045528"
-            className="rounded-xl bg-[#D4A017] px-4 py-2 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-black/20 transition hover:bg-[#F2C14E]"
-          >
-            WhatsApp
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
 
 function Hero() {
   return (
     <section className="relative min-h-[720px] overflow-hidden bg-[#06111f] pt-24">
-      <div className="absolute inset-0 opacity-70">
-        <Image
-          src="/expert-mood.png"
-          alt="Mood banner EXPERT"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-        <div className="absolute inset-0 bg-[#06111f]/85 mix-blend-multiply" />
-      </div>
-
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute left-[42%] top-24 h-[520px] w-[1px] bg-white/20" />
-        <div className="absolute left-[52%] top-24 h-[520px] w-[1px] bg-white/10" />
-      </div>
+      {/* TODO: Replace with /branding/backgrounds/hero-bg.png when available */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#06111f] via-[#0D1B2A] to-[#10233a]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#06111f]/90 via-transparent to-transparent" />
 
       <Image
-        src="/logos/expert-isotipo.png"
+        src="/branding/logos/expert-isotipo.svg"
         alt=""
         width={520}
         height={520}
@@ -341,7 +281,7 @@ function Hero() {
           <div className="absolute bottom-0 right-2 h-[420px] w-[420px] rounded-full bg-[#D4A017]/10 blur-3xl" />
 
           <Image
-            src="/avatars/ksenia-avatar.png"
+            src="/branding/avatars/ksenia-avatar.png"
             alt="Ksenia Ilicheva"
             width={560}
             height={640}
@@ -457,9 +397,7 @@ function PartnerStrip() {
     <section className="bg-[#06111f] py-7 text-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-6 md:grid-cols-4">
         <div className="rounded-2xl bg-white p-4 text-[#0D1B2A]">
-          <p className="text-xs text-[#23364D]">Nivel Starter</p>
-          <p className="font-bold">Solution Partner</p>
-          <p className="text-sm font-bold">Holded</p>
+          <p className="font-bold">Holded Solution Partner</p>
         </div>
 
         <div className="border-l border-[#D4A017]/35 pl-6">
@@ -570,69 +508,5 @@ function Accreditations() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="bg-[#06111f] py-12 text-white">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
-        <div>
-          <Image
-            src="/logos/expert-logo-dark.png"
-            alt="EXPERT"
-            width={210}
-            height={80}
-            className="h-auto w-[210px]"
-          />
-
-          <p className="mt-5 max-w-sm text-sm leading-6 text-white/70">
-            Asesoría fiscal, legal y administrativa en España para empresas,
-            autónomos y personas físicas.
-          </p>
-
-          <p className="mt-3 font-semibold text-[#D4A017]">Holded Solution Partner</p>
-        </div>
-
-        <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Enlaces rápidos</h3>
-          <ul className="space-y-2 text-sm text-white/65">
-            <li><Link href="/">Inicio</Link></li>
-            <li><Link href="/servicios">Servicios</Link></li>
-            <li><Link href="/sobre-mi">Sobre mí</Link></li>
-            <li><Link href="/blog">Blog</Link></li>
-            <li><Link href="/contacto">Contacto</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Servicios</h3>
-          <ul className="space-y-2 text-sm text-white/65">
-            <li><Link href="/servicios/declaraciones-impuestos">Declaraciones e Impuestos</Link></li>
-            <li><Link href="/servicios/extranjeria-nacionalidad">Extranjería y Nacionalidad</Link></li>
-            <li><Link href="/servicios/empresas-autonomos">Empresas y Autónomos</Link></li>
-            <li><Link href="/servicios/gestiones-especializadas">Gestiones Especializadas</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Contacto</h3>
-          <ul className="space-y-3 text-sm text-white/70">
-            <li>WhatsApp: +34 669 04 55 28</li>
-            <li>Email: soy@kseniailicheva.com</li>
-            <li>España</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="mx-auto mt-10 flex max-w-7xl flex-col justify-between gap-4 border-t border-white/10 px-6 pt-6 text-xs text-white/45 md:flex-row">
-        <p>© 2024 EXPERT. Todos los derechos reservados.</p>
-        <div className="flex gap-4">
-          <Link href="/legal/aviso-legal">Aviso legal</Link>
-          <Link href="/legal/privacidad">Política de privacidad</Link>
-          <Link href="/legal/cookies">Cookies</Link>
-        </div>
-      </div>
-    </footer>
   );
 }
