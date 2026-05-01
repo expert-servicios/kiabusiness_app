@@ -215,7 +215,7 @@ function Header() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logos/expert-logo-dark.svg"
+            src="/expert-logo-dark.png"
             alt="EXPERT"
             width={190}
             height={64}
@@ -266,7 +266,7 @@ function Hero() {
       </div>
 
       <Image
-        src="/logos/expert-isotipo.svg"
+        src="/expert-isotipo.png"
         alt=""
         width={520}
         height={520}
@@ -570,7 +570,7 @@ function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
         <div>
           <Image
-            src="/logos/expert-logo-dark.svg"
+            src="/expert-logo-dark.png"
             alt="EXPERT"
             width={210}
             height={80}

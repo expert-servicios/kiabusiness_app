@@ -7,7 +7,7 @@ export function Header() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logos/expert-logo-dark.svg"
+            src="/expert-logo-dark.png"
             alt="EXPERT"
             width={190}
             height={64}
