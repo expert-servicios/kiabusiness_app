@@ -204,11 +204,11 @@ function Hero() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="https://wa.me/34669045528"
+                href="/solicitar-presupuesto"
                 className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#1fae4b] px-6 py-3 text-base font-bold text-white shadow-xl shadow-black/25 transition hover:bg-[#178d3f]"
               >
-                <MessageCircle className="h-5 w-5" />
-                Hablar por WhatsApp
+                <Calculator className="h-5 w-5" />
+                Solicitar presupuesto
               </Link>
               <Link
                 href="/servicios"
@@ -432,17 +432,17 @@ function FinalCta() {
             Nos ocupamos de todo.
             <span className="block text-[#d7a33a]">Tú solo envías los datos.</span>
           </h2>
-          <p className="mt-3 text-base text-white/76">Confía en una profesional y olvídate de preocupaciones.</p>
+          <p className="mt-3 text-base text-white/76">Solicita tu presupuesto hoy y recibe una propuesta personalizada en 24 horas.</p>
         </div>
         <div className="text-center">
           <Link
-            href="https://wa.me/34669045528"
+            href="/solicitar-presupuesto"
             className="inline-flex min-h-14 min-w-[310px] items-center justify-center gap-3 rounded-md bg-[#1fae4b] px-8 py-4 text-xl font-bold text-white shadow-xl shadow-black/25 transition hover:bg-[#178d3f]"
           >
-            <MessageCircle className="h-7 w-7" />
-            Hablar por WhatsApp
+            <Calculator className="h-7 w-7" />
+            Solicitar presupuesto
           </Link>
-          <p className="mt-2 text-sm text-white/70">Respuesta rápida y personalizada</p>
+          <p className="mt-2 text-sm text-white/70">Sin compromiso. Presupuesto personalizado.</p>
         </div>
       </div>
     </section>

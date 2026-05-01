@@ -51,11 +51,10 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="https://wa.me/34669045528"
+            href="/auth/login"
             className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#d7a33a] px-5 text-sm font-bold text-[#061321] shadow-lg shadow-black/20 transition hover:bg-[#f0bf54]"
           >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
+            Acceder
           </Link>
 
           <details className="group relative lg:hidden">
