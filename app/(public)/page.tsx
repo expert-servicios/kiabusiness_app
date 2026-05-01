@@ -215,7 +215,7 @@ function Header() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/branding/logos/expert-logo-dark.svg"
+            src="/logos/expert-logo-dark.svg"
             alt="EXPERT"
             width={190}
             height={64}
@@ -266,7 +266,7 @@ function Hero() {
       </div>
 
       <Image
-        src="/branding/logos/expert-isotipo.svg"
+        src="/logos/expert-isotipo.svg"
         alt=""
         width={520}
         height={520}
@@ -332,7 +332,7 @@ function Hero() {
           <div className="absolute bottom-0 right-2 h-[420px] w-[420px] rounded-full bg-[#D4A017]/10 blur-3xl" />
 
           <Image
-            src="/branding/avatars/ksenia-avatar.png"
+            src="/avatars/ksenia-avatar.png"
             alt="Ksenia Ilicheva"
             width={560}
             height={640}
@@ -570,7 +570,7 @@ function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
         <div>
           <Image
-            src="/branding/logos/expert-logo-dark.svg"
+            src="/logos/expert-logo-dark.svg"
             alt="EXPERT"
             width={210}
             height={80}

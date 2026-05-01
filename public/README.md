@@ -4,15 +4,15 @@ Pack mínimo de branding para la web EXPERT.
 
 ## Logos
 
-- /branding/logos/expert-logo.png
-- /branding/logos/expert-logo-dark.png
-- /branding/logos/expert-isotipo.png
-- /branding/logos/expert-favicon.png
-- /branding/logos/expert-isotipo.svg
+- /logos/expert-logo.png
+- /logos/expert-logo-dark.png
+- /logos/expert-isotipo.png
+- /logos/expert-favicon.png
+- /logos/expert-isotipo.svg
 
 ## Avatar
 
-- /branding/avatars/ksenia-avatar.png
+- /avatars/ksenia-avatar.png
 
 ## Favicon
 
