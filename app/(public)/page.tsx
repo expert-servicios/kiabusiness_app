@@ -150,8 +150,9 @@ export default function HomePage() {
   return (
     <main className="bg-[#f8f4eb] text-[#07111d]">
       <Hero />
-      <Services />
+      <HeroBenefits />
       <Certifications />
+      <Services />
       <HowItWorks />
       <ClientPortal />
       <SubscriptionPlans />
@@ -237,6 +238,38 @@ function Services() {
               );
             })}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroBenefits() {
+  const benefits = [
+    {
+      title: 'Gestión 100% online',
+      text: 'Contrata, sube documentos y recibe actualización del caso sin desplazarte.'
+    },
+    {
+      title: 'Soporte oficial',
+      text: 'Somos colaboradora social de la AEAT y partner certificado de Holded.'
+    },
+    {
+      title: 'Trámites rápidos',
+      text: 'Agilizamos tus gestiones fiscales, legales y administrativas con eficacia.'
+    }
+  ];
+
+  return (
+    <section className="bg-[#061321] px-6 py-12 text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-4 lg:grid-cols-3">
+          {benefits.map((benefit) => (
+            <div key={benefit.title} className="rounded-[1.75rem] border border-white/10 bg-white/5 p-7 shadow-[0_18px_45px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+              <h3 className="font-serif text-xl font-bold text-white">{benefit.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-[#d2dae0]">{benefit.text}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
