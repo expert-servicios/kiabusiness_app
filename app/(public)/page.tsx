@@ -103,19 +103,24 @@ const featuredServices: Array<IconItem & { title: string; text: string; href: st
 
 const processSteps: Array<IconItem & { title: string; text: string }> = [
   {
-    title: 'Nos envías tu documentación',
-    text: 'Por email o plataforma segura. Nos adaptamos a ti.',
+    title: 'Contratas el servicio online',
+    text: 'Elige tu servicio y contrátalo completamente por internet.',
+    Icon: Settings
+  },
+  {
+    title: 'Subes la documentación requerida',
+    text: 'Envía tus archivos desde la plataforma o por email de forma segura.',
     Icon: Upload
   },
   {
-    title: 'Revisamos tu caso',
-    text: 'Analizamos tu situación y te proponemos la mejor opción.',
+    title: 'Gestionamos el trámite',
+    text: 'Nos encargamos de todo el proceso con seguimiento y control continuo.',
     Icon: Search
   },
   {
-    title: 'Presentamos o gestionamos el trámite',
-    text: 'Nos encargamos de todo el proceso para que no te preocupes de nada.',
-    Icon: Send
+    title: 'Recibes el resultado y justificantes',
+    text: 'Te entregamos la documentación final y los justificantes listos para usar.',
+    Icon: Check
   }
 ];
 
@@ -140,41 +145,19 @@ const reviews = [
   }
 ];
 
-const accreditations: Array<
-  | { type: 'text'; label: string }
-  | { type: 'image'; label: string; src: string; width: number; height: number; className?: string }
-> = [
-  { type: 'text', label: 'Agencia Tributaria' },
-  {
-    type: 'image',
-    label: 'Red PAE',
-    src: '/logo-RedPAE/Logo_RedPAE_Logotipo_Color.png',
-    width: 220,
-    height: 72,
-    className: 'max-h-12'
-  },
-  { type: 'text', label: 'Generalitat Valenciana' },
-  { type: 'text', label: 'holded' },
-  {
-    type: 'image',
-    label: 'Camerfirma',
-    src: '/LogoCamerfirmaSimple.webp',
-    width: 220,
-    height: 72,
-    className: 'max-h-10'
-  }
-];
 
 export default function HomePage() {
   return (
     <main className="bg-[#f8f4eb] text-[#07111d]">
       <Hero />
       <Services />
-      <PartnerStrip />
+      <Certifications />
       <HowItWorks />
+      <ClientPortal />
+      <SubscriptionPlans />
+      <TrainingMentoring />
       <Reviews />
       <FinalCta />
-      <Accreditations />
     </main>
   );
 }
@@ -260,55 +243,184 @@ function Services() {
   );
 }
 
-function PartnerStrip() {
+function Certifications() {
+  const certifications = [
+    {
+      label: 'Holded Solution Partner',
+      src: '/Holded-Logotype-Red_Light.svg',
+      width: 220,
+      height: 64
+    },
+    {
+      label: 'Agencia Tributaria',
+      src: '/Agencia_Tributaria.svg.png',
+      width: 180,
+      height: 64
+    },
+    {
+      label: 'Red PAE',
+      src: '/logo-RedPAE/Logo_RedPAE_Logotipo_Color.png',
+      width: 220,
+      height: 64
+    },
+    {
+      label: 'Camerfirma',
+      src: '/LogoCamerfirmaSimple.webp',
+      width: 200,
+      height: 64
+    }
+  ];
+
   return (
-    <section className="bg-[#061321] px-6 py-8 text-white">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:items-center">
-        <div className="rounded-[1.75rem] border border-[#d7a33a]/20 bg-white/5 p-6 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
-          <p className="text-xs uppercase tracking-[0.22em] text-[#f7e6bc]">Tecnología certificada</p>
-          <p className="mt-3 text-xl font-bold">Holded Solution Partner</p>
-          <p className="mt-2 text-sm leading-6 text-white/70">Contabilidad y fiscalidad con soporte digital seguro.</p>
+    <section className="bg-[#f8f4eb] px-6 py-14 text-[#07111d]">
+      <div className="mx-auto max-w-6xl text-center">
+        <h2 className="font-serif text-2xl font-bold uppercase tracking-wide">Certificado por</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#29384a]">
+          Trabajamos con entidades oficiales y socios tecnológicos para garantizar un servicio seguro y fiable.
+        </p>
+        <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
+          {certifications.map((item) => (
+            <div key={item.label} className="flex items-center justify-center rounded-3xl border border-[#d8cbb5] bg-white p-6 shadow-[0_12px_30px_rgba(7,17,29,0.08)]">
+              <Image src={item.src} alt={item.label} width={item.width} height={item.height} className="max-h-16 object-contain" />
+            </div>
+          ))}
         </div>
-        <PartnerItem title="Partner certificado" text="Holded para gestión contable y fiscal." />
-        <PartnerItem title="Colaboradora social de la AEAT" text="N.º 00000" />
-        <PartnerItem title="Entidad colaboradora" text="Camerfirma para trámites digitales." />
       </div>
     </section>
-  );
-}
-
-function PartnerItem({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="border-l border-[#d7a33a]/45 pl-5">
-      <p className="font-semibold text-white">{title}</p>
-      <p className="mt-1 text-sm leading-6 text-white/72">{text}</p>
-    </div>
   );
 }
 
 function HowItWorks() {
   return (
-    <section className="bg-[#fbf8f0] px-6 py-9 text-[#07111d]">
+    <section className="bg-[#fbf8f0] px-6 py-12 text-[#07111d]">
       <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Así de fácil" compact />
-        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-12">
+        <SectionTitle title="Cómo funciona" compact />
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-10">
           {processSteps.map(({ Icon, title, text }, index) => (
-            <article key={title} className="relative text-center">
-              {index < processSteps.length - 1 && (
-                <ChevronRight className="absolute right-[-34px] top-12 hidden h-7 w-7 text-[#c88b25] md:block" />
-              )}
-              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#d8cbb5] bg-white text-[#061321] shadow-sm">
+            <article key={title} className="relative rounded-[2rem] border border-[#d8cbb5] bg-white p-8 text-center shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#c88b25]/40 bg-[#fdf6eb] text-[#c88b25] shadow-sm">
                 <Icon className="h-10 w-10" />
               </div>
-              <h3 className="mt-5 font-serif text-lg font-bold">
-                {index + 1}. {title}
-              </h3>
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#29384a]">{text}</p>
+              <h3 className="mt-5 font-serif text-lg font-bold">{title}</h3>
+              <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-[#29384a]">{text}</p>
+              {index < processSteps.length - 1 && (
+                <span className="absolute right-4 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-[#c88b25] text-white md:flex items-center justify-center">→</span>
+              )}
             </article>
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function ClientPortal() {
+  return (
+    <section className="bg-white px-6 py-12 text-[#07111d]">
+      <div className="mx-auto max-w-6xl">
+        <SectionTitle title="Portal de clientes" compact />
+        <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:items-center">
+          <div>
+            <p className="max-w-xl text-sm leading-7 text-[#29384a]">
+              Accede a tu área privada para subir documentos, consultar el estado de tu caso, descargar los documentos finales y gestionar tus facturas desde un solo lugar.
+            </p>
+            <ul className="mt-8 space-y-4 text-sm text-[#07111d]">
+              <li className="flex gap-3">
+                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
+                Subida segura de documentación y archivos.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
+                Seguimiento del estado del expediente en tiempo real.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
+                Descarga de justificantes y documentación final.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
+                Gestión de facturas y comunicaciones con tu asesor.
+              </li>
+            </ul>
+          </div>
+          <div className="rounded-[2rem] border border-[#d8cbb5] bg-[#f8f4eb] p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
+            <h3 className="font-serif text-xl font-bold">Tus gestiones digitales</h3>
+            <p className="mt-4 text-sm leading-7 text-[#29384a]">
+              Un espacio diseñado para que puedas colaborar con EXPERT de forma ordenada y segura, desde cualquier dispositivo.
+            </p>
+            <div className="mt-6 grid gap-4">
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold">Documentos</p>
+                <p className="mt-2 text-sm text-[#4c5b6d]">Carga tus archivos y comparte enlaces seguros.</p>
+              </div>
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold">Estado del caso</p>
+                <p className="mt-2 text-sm text-[#4c5b6d]">Consulta pasos completados y próximos plazos.</p>
+              </div>
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold">Descargas</p>
+                <p className="mt-2 text-sm text-[#4c5b6d]">Descarga tu documentación final y justificantes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SubscriptionPlans() {
+  return (
+    <section className="bg-[#f8f4eb] px-6 py-12 text-[#07111d]">
+      <div className="mx-auto max-w-6xl">
+        <SectionTitle title="Planes de gestión mensual" compact />
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384a]">
+          Suscripción mensual para autónomos, pymes y empresas que necesitan mantenimiento fiscal continuo y atención personalizada.
+        </p>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <PlanCard title="Autónomos" description="Gestión fiscal mensual, declaraciones y soporte prioritario." />
+          <PlanCard title="Pymes" description="Contabilidad, impuestos y seguimiento administrativo continuo." />
+          <PlanCard title="Empresas" description="Asesoría legal y fiscal completa con reportes periódicos." />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PlanCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-[2rem] border border-[#d8cbb5] bg-white p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
+      <h3 className="font-serif text-xl font-bold">{title}</h3>
+      <p className="mt-4 text-sm leading-7 text-[#29384a]">{description}</p>
+      <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-[#c88b25]">Gestión continua</p>
+    </div>
+  );
+}
+
+function TrainingMentoring() {
+  return (
+    <section className="bg-white px-6 py-12 text-[#07111d]">
+      <div className="mx-auto max-w-6xl">
+        <SectionTitle title="Formación y mentoring" compact />
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384a]">
+          Apoyo experto en migración a Holded, formación para tu equipo y mentoring continuo para tu negocio.
+        </p>
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          <Card title="Migración a Holded" text="Te acompañamos en la migración de datos y configuración de tu cuenta Holded." />
+          <Card title="Formación Holded" text="Capacitación práctica para que uses Holded con confianza y velocidad." />
+          <Card title="Mentoring" text="Sesiones periódicas para mejorar procesos y optimizar tu gestión empresarial." />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Card({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-[2rem] border border-[#d8cbb5] bg-[#f8f4eb] p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
+      <h3 className="font-serif text-xl font-bold">{title}</h3>
+      <p className="mt-4 text-sm leading-7 text-[#29384a]">{text}</p>
+    </div>
   );
 }
 
@@ -346,58 +458,27 @@ function Reviews() {
 
 function FinalCta() {
   return (
-    <section className="relative overflow-hidden bg-[#061321] px-6 py-8 text-white">
+    <section className="relative overflow-hidden bg-[#061321] px-6 py-12 text-white">
       <div className="pointer-events-none absolute -left-24 bottom-0 h-32 w-80 rounded-tr-full border-t-[13px] border-[#d7a33a]/80" />
       <div className="pointer-events-none absolute -right-24 top-0 h-32 w-80 rounded-bl-full border-b-[13px] border-[#d7a33a]/80" />
-      <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-[1fr_auto] md:items-center">
-        <div>
-          <h2 className="font-serif text-3xl font-bold uppercase leading-tight md:text-4xl">
-            Nos ocupamos de todo.
-            <span className="block text-[#d7a33a]">Tú solo envías los datos.</span>
-          </h2>
-          <p className="mt-3 text-base text-white/76">Solicita tu presupuesto hoy y recibe una propuesta personalizada en 24 horas.</p>
-        </div>
-        <div className="text-center">
-          <Link
-            href="/solicitar-presupuesto"
-            className="inline-flex min-h-14 min-w-[310px] items-center justify-center gap-3 rounded-md bg-[#c88b25] px-8 py-4 text-xl font-bold text-[#061321] shadow-xl shadow-[#0D1B2A]/25 transition hover:bg-[#b57a1e]"
-          >
-            <Calculator className="h-7 w-7" />
-            Solicitar presupuesto
-          </Link>
-          <p className="mt-2 text-sm text-white/70">Sin compromiso. Presupuesto personalizado.</p>
-        </div>
+      <div className="relative mx-auto max-w-6xl text-center">
+        <h2 className="font-serif text-3xl font-bold uppercase leading-tight md:text-4xl">
+          ¿No tienes claro qué servicio necesitas?
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-base text-white/75">
+          Te ayudamos a escoger la solución fiscal o legal que mejor encaja con tu situación.
+        </p>
+        <Link
+          href="/solicitar-presupuesto"
+          className="mt-8 inline-flex min-h-14 items-center justify-center rounded-full bg-[#c88b25] px-8 py-4 text-lg font-bold uppercase tracking-[0.16em] text-[#061321] shadow-[0_18px_45px_rgba(13,27,42,0.28)] transition hover:bg-[#b57a1e]"
+        >
+          Solicitar presupuesto
+        </Link>
       </div>
     </section>
   );
 }
 
-function Accreditations() {
-  return (
-    <section className="bg-[#fbf8f0] px-6 py-8 text-[#07111d]">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Colaboraciones y acreditaciones oficiales" compact />
-        <div className="mt-7 grid grid-cols-2 items-center gap-6 border-t border-[#d8cbb5] pt-6 text-center text-lg font-semibold text-[#07111d]/46 md:grid-cols-5">
-          {accreditations.map((item) => (
-            <div key={item.label} className="flex min-h-14 items-center justify-center">
-              {item.type === 'image' ? (
-                <Image
-                  src={item.src}
-                  alt={item.label}
-                  width={item.width}
-                  height={item.height}
-                  className={`h-auto w-auto object-contain grayscale opacity-70 transition hover:grayscale-0 hover:opacity-100 ${item.className ?? ''}`}
-                />
-              ) : (
-                <span>{item.label}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function SectionTitle({
   title,

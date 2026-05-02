@@ -13,16 +13,14 @@ export const navLinks = [
 
 export const heroCopy = {
   eyebrow: 'EXPERT · Asesoría fiscal, legal y administrativa',
-  title: 'Asesoría fiscal en España',
-  subtitle: 'Para empresas y personas físicas',
-  description: 'Presentamos tus impuestos, optimizamos tu fiscalidad y evitamos errores con Hacienda.',
-  primaryAction: { label: 'Hablar por WhatsApp', href: '/contacto' },
-  secondaryAction: { label: 'Ver servicios', href: '/servicios' },
-  highlights: [
-    '+20 años de experiencia',
-    'Colaboradora social AEAT',
-    'Holded Solution Partner'
-  ]
+  title: 'Asesoría fiscal y legal en España, sin complicaciones',
+  subtitle:
+    'Contrata online, sube tu documentación y recibe tu trámite resuelto. Para particulares, autónomos y empresas.',
+  description:
+    'Trámites fiscales, legales y administrativos con gestión integral, atención cercana y entrega rápida de resultado.',
+  primaryAction: { label: 'Soy empresa', href: '/servicios/empresas-autonomos' },
+  secondaryAction: { label: 'Soy particular', href: '/servicios/declaraciones-impuestos' },
+  highlights: ['+20 años de experiencia', 'Colaboradora social AEAT', 'Holded Solution Partner']
 } as const;
 
 export const trustItems: Array<{ label: string; Icon: LucideIcon }> = [

@@ -24,7 +24,7 @@ export function Footer() {
         <div>
           <Link href="/" className="flex items-center gap-3">
             <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden">
-              <Image src="/logos/expert-mark-light-clean.png" alt="" fill sizes="56px" className="object-contain" />
+              <Image src="/logos/expert-logo-light-clean.png" alt="Logo EXPERT" fill sizes="56px" className="object-contain" />
             </span>
             <span>
               <span className="block font-serif text-3xl font-bold leading-none tracking-[0.18em]">EXPERT</span>
@@ -70,7 +70,7 @@ export function Footer() {
           <ul className="space-y-3 text-sm text-white/70">
             <li className="flex gap-3">
               <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#d7a33a]" />
-              <span>+34 669 04 55 28</span>
+              <span>+34 696 55 04 80</span>
             </li>
             <li className="flex gap-3">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#d7a33a]" />
