@@ -4,7 +4,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
   ArrowRight,
-  Award,
   Briefcase,
   Calculator,
   Check,
@@ -13,7 +12,6 @@ import {
   FileText,
   Globe2,
   Home,
-  MessageCircle,
   Search,
   Send,
   Settings,
@@ -21,17 +19,11 @@ import {
   Star,
   Upload
 } from 'lucide-react';
+import { Hero } from '@/components/site/Hero';
 
 type IconItem = {
   Icon: LucideIcon;
 };
-
-const trustItems: Array<IconItem & { title: string; subtitle: string }> = [
-  { title: '+20 años', subtitle: 'de experiencia', Icon: Award },
-  { title: 'Colaboradora', subtitle: 'social de la AEAT', Icon: ShieldCheck },
-  { title: 'Especialistas', subtitle: 'expatriados', Icon: Globe2 },
-  { title: 'Atención', subtitle: 'profesional y cercana', Icon: Check }
-];
 
 const serviceCategories: Array<
   IconItem & {
@@ -112,7 +104,7 @@ const featuredServices: Array<IconItem & { title: string; text: string; href: st
 const processSteps: Array<IconItem & { title: string; text: string }> = [
   {
     title: 'Nos envías tu documentación',
-    text: 'Por WhatsApp, email o plataforma segura. Nos adaptamos a ti.',
+    text: 'Por email o plataforma segura. Nos adaptamos a ti.',
     Icon: Upload
   },
   {
@@ -148,7 +140,30 @@ const reviews = [
   }
 ];
 
-const accreditations = ['Agencia Tributaria', 'Punto PAE', 'Generalitat Valenciana', 'holded', 'Camerfirma'];
+const accreditations: Array<
+  | { type: 'text'; label: string }
+  | { type: 'image'; label: string; src: string; width: number; height: number; className?: string }
+> = [
+  { type: 'text', label: 'Agencia Tributaria' },
+  {
+    type: 'image',
+    label: 'Red PAE',
+    src: '/logo-RedPAE/Logo_RedPAE_Logotipo_Color.png',
+    width: 220,
+    height: 72,
+    className: 'max-h-12'
+  },
+  { type: 'text', label: 'Generalitat Valenciana' },
+  { type: 'text', label: 'holded' },
+  {
+    type: 'image',
+    label: 'Camerfirma',
+    src: '/LogoCamerfirmaSimple.webp',
+    width: 220,
+    height: 72,
+    className: 'max-h-10'
+  }
+];
 
 export default function HomePage() {
   return (
@@ -161,98 +176,6 @@ export default function HomePage() {
       <FinalCta />
       <Accreditations />
     </main>
-  );
-}
-
-function Hero() {
-  return (
-    <section className="relative isolate overflow-hidden bg-[#061321] text-white">
-      <Image
-        src="/expert-banner.png"
-        alt="Fondo de marca EXPERT"
-        fill
-        priority
-        sizes="100vw"
-        className="absolute inset-0 -z-30 object-cover opacity-30"
-      />
-      <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_top_left,rgba(215,163,58,0.18),transparent_18%),linear-gradient(180deg,rgba(6,19,33,0.96),rgba(6,19,33,0.98))]" />
-      <div className="pointer-events-none absolute -right-24 top-24 hidden h-72 w-72 rounded-full bg-[#d7a33a]/10 blur-3xl lg:block" />
-      <div className="pointer-events-none absolute -left-24 bottom-0 hidden h-72 w-72 rounded-full bg-[#d7a33a]/10 blur-3xl lg:block" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-28 bg-gradient-to-t from-[#061321] to-transparent" />
-      <Image
-        src="/logos/expert-mark-light-clean.png"
-        alt="Marca EXPERT"
-        width={640}
-        height={460}
-        priority
-        className="pointer-events-none absolute right-[4%] top-16 z-0 hidden w-[38rem] max-w-[48vw] opacity-20 lg:block"
-      />
-
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-          <div className="max-w-2xl">
-            <span className="inline-flex rounded-full border border-[#d7a33a]/40 bg-[#d7a33a]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-[#f7e6bc]">
-              Asesoría premium
-            </span>
-            <h1 className="mt-6 font-serif text-5xl font-bold uppercase leading-[0.92] tracking-[0.12em] text-white sm:text-6xl lg:text-[5.25rem]">
-              <span className="block">Asesoría fiscal</span>
-              <span className="block text-[#d7a33a]">y legal en España</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-white/80 sm:text-xl">
-              Profesionalismo, confidencialidad y soluciones reales para residentes, expatriados, autónomos y empresas.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/solicitar-presupuesto"
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#1fae4b] px-6 py-3 text-base font-bold text-white shadow-xl shadow-black/25 transition hover:bg-[#178d3f]"
-              >
-                <Calculator className="h-5 w-5" />
-                Solicitar presupuesto
-              </Link>
-              <Link
-                href="/servicios"
-                className="inline-flex min-h-12 items-center justify-center gap-4 rounded-md border border-[#d7a33a] px-7 py-3 text-base font-bold text-[#d7a33a] transition hover:bg-[#d7a33a] hover:text-[#061321]"
-              >
-                Ver servicios
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-3 sm:grid-cols-2 md:max-w-2xl">
-              {trustItems.map(({ Icon, title, subtitle }) => (
-                <div key={title} className="flex items-start gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/15 text-[#d7a33a]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="mt-1 text-xs text-white/70">{subtitle}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-[0_40px_90px_rgba(0,0,0,0.35)] lg:block">
-            <div className="mb-6 flex items-center justify-between rounded-3xl bg-[#0b2238]/90 p-5">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-[#f7e6bc]">Confianza certificada</p>
-                <p className="mt-2 text-lg font-semibold text-white">Partner Holded y AEAT</p>
-              </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#d7a33a]/15 text-[#d7a33a]">
-                <Star className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="space-y-4 text-sm leading-6 text-white/75">
-              <p>Tramitación fiscal y administrativa con tecnología segura y soporte digital.</p>
-              <p>Gestión integral de impuestos, extranjería y constitución de empresas.</p>
-              <p>Atención rápida, personalizada y orientada a resultados.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -437,7 +360,7 @@ function FinalCta() {
         <div className="text-center">
           <Link
             href="/solicitar-presupuesto"
-            className="inline-flex min-h-14 min-w-[310px] items-center justify-center gap-3 rounded-md bg-[#1fae4b] px-8 py-4 text-xl font-bold text-white shadow-xl shadow-black/25 transition hover:bg-[#178d3f]"
+            className="inline-flex min-h-14 min-w-[310px] items-center justify-center gap-3 rounded-md bg-[#c88b25] px-8 py-4 text-xl font-bold text-[#061321] shadow-xl shadow-[#0D1B2A]/25 transition hover:bg-[#b57a1e]"
           >
             <Calculator className="h-7 w-7" />
             Solicitar presupuesto
@@ -454,9 +377,21 @@ function Accreditations() {
     <section className="bg-[#fbf8f0] px-6 py-8 text-[#07111d]">
       <div className="mx-auto max-w-6xl">
         <SectionTitle title="Colaboraciones y acreditaciones oficiales" compact />
-        <div className="mt-7 grid grid-cols-2 items-center gap-6 border-t border-[#d8cbb5] pt-6 text-center text-xl font-semibold text-[#07111d]/38 md:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 items-center gap-6 border-t border-[#d8cbb5] pt-6 text-center text-lg font-semibold text-[#07111d]/46 md:grid-cols-5">
           {accreditations.map((item) => (
-            <div key={item}>{item}</div>
+            <div key={item.label} className="flex min-h-14 items-center justify-center">
+              {item.type === 'image' ? (
+                <Image
+                  src={item.src}
+                  alt={item.label}
+                  width={item.width}
+                  height={item.height}
+                  className={`h-auto w-auto object-contain grayscale opacity-70 transition hover:grayscale-0 hover:opacity-100 ${item.className ?? ''}`}
+                />
+              ) : (
+                <span>{item.label}</span>
+              )}
+            </div>
           ))}
         </div>
       </div>

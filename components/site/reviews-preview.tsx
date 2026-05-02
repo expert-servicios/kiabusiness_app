@@ -29,9 +29,9 @@ export function ReviewsPreview() {
           {reviewCards.map((card) => (
             <div
               key={card.title}
-              className="rounded-2xl border border-[#D4A017]/35 bg-[#0D1B2A] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
+              className="rounded-2xl border border-[#c88b25]/35 bg-[#0D1B2A] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
             >
-              <div className="text-[#F2C14E]">★★★★★</div>
+              <div className="text-[#d7a33a]">★★★★★</div>
               <p className="mt-5 text-sm leading-6 text-white/80">Reseña verificada tras servicio finalizado.</p>
               <div className="mt-5 border-t border-white/10 pt-4 text-sm text-white/55">Opinión pendiente de publicación</div>
             </div>

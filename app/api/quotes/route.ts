@@ -1,33 +1,112 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createServerSupabaseClient, getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getResendClient } from '@/lib/integrations/resend';
 
-interface QuoteRequest {
-  email: string;
-  name: string;
-  services: string[];
-  description?: string;
-}
+const quoteRequestSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2),
+  services: z.array(z.string().min(1)).min(1),
+  description: z.string().max(1000).optional()
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body: QuoteRequest = await request.json();
+    const requestBody = await request.json();
+    const validated = quoteRequestSchema.parse(requestBody);
 
-    // Validaciones
-    if (!body.email || !body.name || !body.services || body.services.length === 0) {
-      return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
+    const adminId = await getFirstAdminProfileId();
+    if (!adminId) {
+      return NextResponse.json(
+        { error: 'No se encontró un perfil de administrador para asignar la solicitud' },
+        { status: 500 }
+      );
     }
 
-    // TODO: Implementar
-    // 1. Crear presupuesto en Supabase
-    // 2. Guardar servicios seleccionados en quote_items
-    // 3. Enviar email de confirmación con Resend
-    // 4. Crear tarea para admin
+    const serviceList = validated.services.join(', ');
+    const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
+    const supabaseAdmin = getSupabaseAdmin();
 
-    // Respuesta temporal
+    const { data: lead, error: leadError } = await supabaseAdmin
+      .from('leads')
+      .insert({
+        name: validated.name,
+        email: validated.email,
+        phone: null,
+        client_type: 'persona_fisica',
+        category: 'Presupuesto',
+        service: serviceList,
+        country: 'ES',
+        urgency: 'media',
+        message: descriptionText,
+        state: 'new'
+      })
+      .select('id')
+      .single();
+
+    if (leadError || !lead?.id) {
+      console.error('Error creating lead:', leadError);
+      return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
+    }
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const quoteTitle = `Solicitud de presupuesto de ${validated.name}`;
+    const quoteDescription = `Servicios:
+${serviceList}
+
+Detalles:
+${descriptionText}`;
+
+    const { data: quote, error: quoteError } = await supabaseAdmin
+      .from('quotes')
+      .insert({
+        lead_id: lead.id,
+        client_id: null,
+        title: quoteTitle,
+        description: quoteDescription,
+        amount_eur: 0.0,
+        status: 'sent',
+        stripe_checkout_id: null,
+        expires_at: expiresAt,
+        created_by: adminId
+      })
+      .select('id')
+      .single();
+
+    if (quoteError || !quote?.id) {
+      console.error('Error creating quote:', quoteError);
+      return NextResponse.json({ error: 'Error al guardar el presupuesto' }, { status: 500 });
+    }
+
+    try {
+      const resend = getResendClient();
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'EXPERT <notificaciones@expert.es>';
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()).filter(Boolean);
+
+      await resend.emails.send({
+        from: fromEmail,
+        to: [validated.email],
+        subject: 'Hemos recibido tu solicitud de presupuesto',
+        html: `<p>Hola ${validated.name},</p><p>Gracias por solicitar un presupuesto. Nuestro equipo revisará tu solicitud y te contactará en breve.</p>`
+      });
+
+      if (adminEmails?.length) {
+        await resend.emails.send({
+          from: fromEmail,
+          to: adminEmails,
+          subject: 'Nueva solicitud de presupuesto recibida',
+          html: `<p>Se ha recibido una nueva solicitud de presupuesto de ${validated.name} (${validated.email}).</p><p>Servicios: ${serviceList}</p>`
+        });
+      }
+    } catch (sendError) {
+      console.warn('No se pudo enviar el correo de confirmación:', sendError);
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: 'Presupuesto creado correctamente',
-        quoteId: 'quote_' + Date.now()
+        quoteId: quote.id
       },
       { status: 201 }
     );
@@ -38,6 +117,27 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  // TODO: Obtener presupuestos del usuario autenticado
-  return NextResponse.json({ quotes: [] });
+  try {
+    const supabase = createServerSupabaseClient(request);
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session?.user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    const { data: quotes, error: fetchError } = await supabase
+      .from('quotes')
+      .select('id,title,description,amount_eur,status,created_at,expires_at')
+      .order('created_at', { ascending: false });
+
+    if (fetchError) {
+      console.error('Error fetching quotes:', fetchError);
+      return NextResponse.json({ error: 'Error al obtener presupuestos' }, { status: 500 });
+    }
+
+    return NextResponse.json({ quotes: quotes ?? [] });
+  } catch (error) {
+    console.error('Error fetching quotes:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
 }

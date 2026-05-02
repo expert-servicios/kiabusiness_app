@@ -7,7 +7,7 @@ export function AccreditationsStrip() {
         <h2 className="text-center font-serif text-xl font-bold uppercase tracking-wide">
           Colaboraciones y acreditaciones oficiales
         </h2>
-        <div className="mx-auto mt-3 h-[2px] w-20 bg-[#D4A017]" />
+        <div className="mx-auto mt-3 h-[2px] w-20 bg-[#c88b25]" />
 
         <div className="mt-8 grid grid-cols-2 items-center gap-5 text-center text-lg font-semibold text-[#23364D]/45 md:grid-cols-5">
           {accreditationItems.map((item) => (

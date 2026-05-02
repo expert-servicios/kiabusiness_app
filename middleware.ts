@@ -1,31 +1,10 @@
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { serialize } from 'cookie';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from './lib/integrations/supabase';
+import { getSupabaseAdmin, createServerSupabaseClient } from './lib/integrations/supabase';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () =>
-          request.cookies.getAll().map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-          })),
-        setAll: (cookies) => {
-          cookies.forEach((cookie) => {
-            response.headers.append(
-              'set-cookie',
-              serialize(cookie.name, cookie.value, cookie.options || {})
-            );
-          });
-        },
-      },
-    }
-  );
+  const supabase = createServerSupabaseClient(request);
   const { data } = await supabase.auth.getSession();
   const session = data.session;
   const { pathname } = request.nextUrl;
@@ -38,6 +17,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (pathname.startsWith('/admin')) {
+      const supabaseAdmin = getSupabaseAdmin();
       const { data: profile, error } = await supabaseAdmin
         .from('profiles')
         .select('role')

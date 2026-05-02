@@ -9,7 +9,7 @@ export function HeroSection() {
             Presentamos tus impuestos, optimizamos tu fiscalidad y evitamos errores con Hacienda.
           </p>
           <div className="mt-8 flex gap-4">
-            <button className="rounded-full bg-brand-gold px-6 py-3 font-semibold text-brand-navy">Hablar por WhatsApp</button>
+            <button className="rounded-full bg-brand-gold px-6 py-3 font-semibold text-brand-navy">Acceder al panel</button>
             <button className="rounded-full border border-brand-lightGold px-6 py-3">Ver servicios</button>
           </div>
         </div>

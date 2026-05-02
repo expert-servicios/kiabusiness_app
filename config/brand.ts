@@ -142,7 +142,7 @@ export const footerLinks = {
   ],
   contact: [
     { label: 'WhatsApp', href: '/contacto' },
-    { label: 'Email', href: 'mailto:contacto@expert.example' }
+    { label: 'Email', href: 'mailto:soy@kseniailicheva.com' }
   ]
 } as const;
 

@@ -73,14 +73,14 @@ export function FeaturedServices() {
               service.tone === 'red'
                 ? 'bg-[#9d1f2f] text-white'
                 : service.tone === 'gold'
-                ? 'bg-[#D4A017] text-white'
-                : 'bg-[#0D1B2A] text-[#F2C14E]';
+                ? 'bg-[#c88b25] text-white'
+                : 'bg-[#0D1B2A] text-[#d7a33a]';
 
             return (
               <Link
                 href={service.href}
                 key={service.title}
-                className="rounded-2xl border border-[#D4A017]/20 bg-white p-6 shadow-[0_18px_45px_rgba(13,27,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(13,27,42,0.14)]"
+                className="rounded-2xl border border-[#c88b25]/20 bg-white p-6 shadow-[0_18px_45px_rgba(13,27,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(13,27,42,0.14)]"
               >
                 <div className="flex items-start gap-5">
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${color}`}>
@@ -90,7 +90,7 @@ export function FeaturedServices() {
                   <div>
                     <h3 className="font-serif text-xl font-bold">{service.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-[#23364D]">{service.text}</p>
-                    <p className="mt-4 text-sm font-semibold text-[#D4A017]">Más información →</p>
+                    <p className="mt-4 text-sm font-semibold text-[#c88b25]">Más información →</p>
                   </div>
                 </div>
               </Link>

@@ -13,8 +13,7 @@ export function MainHeader() {
           ))}
         </nav>
         <div className="flex gap-3">
-          <button className="rounded-full border border-brand-lightGold px-4 py-2 text-sm">Acceder / Registrarse</button>
-          <button className="rounded-full bg-brand-gold px-4 py-2 text-sm text-brand-navy">WhatsApp</button>
+          <button className="rounded-full bg-brand-gold px-4 py-2 text-sm text-brand-navy">Acceder</button>
         </div>
       </div>
     </header>

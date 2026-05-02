@@ -5,10 +5,21 @@ import Link from 'next/link';
 import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { Mail } from 'lucide-react';
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabaseClient() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    console.error('Supabase environment variables are missing in the browser.');
+    return null;
+  }
+
+  return createBrowserClient(url, key);
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +31,14 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage('');
     setLoading(true);
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setErrorMessage('No se pudo inicializar la conexión a Supabase. Intenta nuevamente más tarde.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -44,6 +63,14 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setErrorMessage('');
     setLoading(true);
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setErrorMessage('No se pudo inicializar la conexión a Supabase. Intenta nuevamente más tarde.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

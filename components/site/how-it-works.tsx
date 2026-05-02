@@ -1,7 +1,7 @@
 const howItWorks = [
   {
     title: 'Nos envías tu documentación',
-    text: 'Por WhatsApp, email o plataforma segura. Nos adaptamos a ti.'
+    text: 'Por email o plataforma segura. Nos adaptamos a ti.'
   },
   {
     title: 'Revisamos tu caso',
@@ -18,12 +18,12 @@ export function HowItWorks() {
     <section className="bg-[#F8F6F1] py-16 text-[#0D1B2A]">
       <div className="mx-auto max-w-6xl px-6 text-center">
         <h2 className="font-serif text-3xl font-bold uppercase tracking-wide">Así de fácil</h2>
-        <div className="mx-auto mt-4 h-[2px] w-20 bg-[#D4A017]" />
+        <div className="mx-auto mt-4 h-[2px] w-20 bg-[#c88b25]" />
 
         <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3">
           {howItWorks.map((step, index) => (
             <div key={step.title} className="relative rounded-3xl bg-white p-8 shadow-[0_18px_45px_rgba(13,27,42,0.08)]">
-              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#D4A017]/25 bg-[#F8F6F1] text-3xl font-bold text-[#D4A017] shadow-sm">
+              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#c88b25]/25 bg-[#F8F6F1] text-3xl font-bold text-[#c88b25] shadow-sm">
                 {index + 1}
               </div>
 

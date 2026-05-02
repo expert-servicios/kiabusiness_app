@@ -72,8 +72,8 @@ export default function SolicitarPresupuestoPage() {
       <main className="min-h-screen bg-[#f8f4eb]">
         <div className="mx-auto max-w-2xl px-6 py-16">
           <div className="rounded-2xl border border-[#d8cbb5] bg-white p-8 shadow-lg sm:p-12">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#1fae4b]/20">
-              <Check className="h-8 w-8 text-[#1fae4b]" />
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#c88b25]/20">
+              <Check className="h-8 w-8 text-[#c88b25]" />
             </div>
             <h1 className="text-center font-serif text-2xl font-bold text-[#07111d]">¡Presupuesto solicitado!</h1>
             <p className="mt-4 text-center text-[#29384a]">
@@ -95,7 +95,7 @@ export default function SolicitarPresupuestoPage() {
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
       <div className="mx-auto max-w-3xl px-6">
-        <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#061321] hover:text-[#d7a33a]">
+        <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#061321] hover:text-[#c88b25]">
           <ArrowLeft className="h-4 w-4" />
           Volver
         </Link>
@@ -113,7 +113,7 @@ export default function SolicitarPresupuestoPage() {
                 placeholder="Nombre completo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#d7a33a] focus:outline-none"
+                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#c88b25] focus:outline-none"
                 required
               />
               <input
@@ -121,7 +121,7 @@ export default function SolicitarPresupuestoPage() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#d7a33a] focus:outline-none"
+                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#c88b25] focus:outline-none"
                 required
               />
             </div>
@@ -137,13 +137,13 @@ export default function SolicitarPresupuestoPage() {
                       {category.services.map((service) => (
                         <label
                           key={service.id}
-                          className="flex items-start gap-3 rounded-lg border border-[#d8cbb5] p-3 hover:border-[#d7a33a] hover:bg-white/50"
+                          className="flex items-start gap-3 rounded-lg border border-[#d8cbb5] p-3 hover:border-[#c88b25] hover:bg-white/50"
                         >
                           <input
                             type="checkbox"
                             checked={selectedServices.includes(service.id)}
                             onChange={() => handleServiceToggle(service.id)}
-                            className="mt-1 h-5 w-5 accent-[#d7a33a]"
+                            className="mt-1 h-5 w-5 accent-[#c88b25]"
                           />
                           <div>
                             <p className="font-medium text-[#07111d]">{service.name}</p>
@@ -165,7 +165,7 @@ export default function SolicitarPresupuestoPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#d7a33a] focus:outline-none"
+                className="w-full rounded-lg border border-[#d8cbb5] px-4 py-3 focus:border-[#c88b25] focus:outline-none"
               />
             </div>
 
@@ -174,16 +174,12 @@ export default function SolicitarPresupuestoPage() {
               <button
                 type="submit"
                 disabled={loading || !email || !name || selectedServices.length === 0}
-                className="w-full rounded-lg bg-[#1fae4b] px-6 py-3 font-semibold text-white transition hover:bg-[#178d3f] disabled:opacity-50"
+                className="w-full rounded-lg bg-[#c88b25] px-6 py-3 font-semibold text-[#0D1B2A] transition hover:bg-[#b57a1e] disabled:opacity-50"
               >
                 {loading ? 'Enviando...' : 'Solicitar presupuesto'}
               </button>
               <p className="text-center text-xs text-[#29384a]">
-                Te contactaremos en breve. También puedes{' '}
-                <a href="https://wa.me/34669045528" className="font-semibold text-[#d7a33a] hover:text-[#c88b25]">
-                  escribir por WhatsApp
-                </a>
-                .
+                Te contactaremos en breve. Para una consulta rápida, usa el botón flotante de WhatsApp.
               </p>
             </div>
           </form>

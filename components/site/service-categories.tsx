@@ -110,7 +110,7 @@ export function ServiceCategories() {
           <p className="mt-3 text-sm font-semibold uppercase tracking-[0.25em] text-[#23364D]/70">
             Áreas de especialización
           </p>
-          <div className="mx-auto mt-4 h-[2px] w-24 bg-[#D4A017]" />
+          <div className="mx-auto mt-4 h-[2px] w-24 bg-[#c88b25]" />
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -121,12 +121,12 @@ export function ServiceCategories() {
               <Link
                 href={category.href}
                 key={category.title}
-                className="group relative overflow-hidden rounded-2xl border border-[#D4A017]/18 bg-white p-6 shadow-[0_18px_45px_rgba(13,27,42,0.08)] transition hover:-translate-y-1 hover:border-[#D4A017]/45 hover:shadow-[0_24px_60px_rgba(13,27,42,0.14)]"
+                className="group relative overflow-hidden rounded-2xl border border-[#c88b25]/18 bg-white p-6 shadow-[0_18px_45px_rgba(13,27,42,0.08)] transition hover:-translate-y-1 hover:border-[#c88b25]/45 hover:shadow-[0_24px_60px_rgba(13,27,42,0.14)]"
               >
                 <div className="flex items-start gap-5">
                   <div
                     className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${
-                      isGold ? 'bg-[#D4A017] text-white' : 'bg-[#0D1B2A] text-[#F2C14E]'
+                      isGold ? 'bg-[#c88b25] text-white' : 'bg-[#0D1B2A] text-[#d7a33a]'
                     } shadow-lg`}
                   >
                     <Icon name={category.icon} />
@@ -140,13 +140,13 @@ export function ServiceCategories() {
                     <ul className="mt-3 space-y-1.5 text-sm text-[#23364D]">
                       {category.items.map((item) => (
                         <li key={item} className="flex gap-2">
-                          <span className="text-[#D4A017]">✓</span>
+                          <span className="text-[#c88b25]">✓</span>
                           <span>{item}</span>
                         </li>
                       ))}
                     </ul>
 
-                    <p className="mt-5 text-sm font-semibold text-[#D4A017]">
+                    <p className="mt-5 text-sm font-semibold text-[#c88b25]">
                       Ver servicios →
                     </p>
                   </div>
