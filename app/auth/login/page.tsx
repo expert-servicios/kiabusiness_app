@@ -2,21 +2,61 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, ArrowRight } from 'lucide-react';
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+import { Mail } from 'lucide-react';
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setLoading(true);
     try {
-      // TODO: Implementar con Supabase Auth
-      // const { error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
       setSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
+      setErrorMessage(error.message ?? 'Error al enviar el enlace.');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage('');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message ?? 'Error al iniciar sesión con Google.');
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -38,7 +78,11 @@ export default function LoginPage() {
 
           {!submitted ? (
             <form onSubmit={handleMagicLink} className="space-y-5">
-              {/* Magic Link */}
+              {errorMessage ? (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {errorMessage}
+                </div>
+              ) : null}
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-white/88">
                   Email
@@ -72,6 +116,7 @@ export default function LoginPage() {
               {/* OAuth Google */}
               <button
                 type="button"
+                onClick={handleGoogleSignIn}
                 className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-semibold text-white transition hover:border-[#d7a33a] hover:bg-white/10"
               >
                 <span className="flex items-center justify-center gap-2">
