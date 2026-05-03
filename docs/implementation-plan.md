@@ -203,7 +203,20 @@ Estas páginas se generan con la información legal de la empresa y estarán pub
   - Middleware protege `/dashboard` y `/admin`.
   - Página de registro `/auth/signup` creada.
 
-- **Siguiente fase**: API core y flujo comercial.
+- **Fase 2: API core y flujo comercial** — COMPLETADA
+  - `POST /api/quotes`: recepción de solicitudes de presupuesto con email automático.
+  - `GET /api/quotes`: lista de presupuestos por rol (RLS).
+  - `PATCH /api/quotes/[id]`: admin actualiza importe, estado y caducidad.
+  - `POST /api/quotes/[id]/checkout`: genera sesión de Stripe Checkout.
+  - `POST /api/stripe/webhook`: verifica firma, crea `order` y `case` tras pago.
+  - `GET /api/cases`: lista expedientes por rol (RLS).
+  - `PATCH /api/cases/[id]`: admin cambia estado del expediente con audit log.
+  - `GET /api/admin/stats`: métricas reales para el panel admin.
+  - Dashboard cliente con datos reales (presupuestos, expedientes, pagos).
+  - Panel admin con datos reales y acceso a expedientes.
+  - Página `admin/expedientes` con cambio de estado en tiempo real.
+
+- **Siguiente fase**: Stripe subscripciones y portal de cliente (Fase 3).
 
 ## Limpieza previa a la implementación
 
