@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendEmail } from '@/lib/email/send';
+import { paymentConfirmed, subscriptionCreated, subscriptionPaymentFailed } from '@/lib/email/templates';
 
 function getPlanName(priceId: string): string {
   const map: Record<string, string> = {
@@ -10,6 +12,16 @@ function getPlanName(priceId: string): string {
     [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Premium'
   };
   return map[priceId] ?? 'Suscripción';
+}
+
+async function getClientEmail(userId: string): Promise<{ email: string; name: string } | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+  const email = authUser?.user?.email;
+  if (!email) return null;
+
+  const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', userId).single();
+  return { email, name: profile?.full_name ?? email.split('@')[0] };
 }
 
 export async function POST(req: NextRequest) {
@@ -38,7 +50,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id')
+          .select('client_id,lead_id,title')
           .eq('id', quoteId)
           .single();
 
@@ -75,15 +87,32 @@ export async function POST(req: NextRequest) {
               quote_id: quoteId,
               client_id: quote.client_id,
               category: 'presupuesto',
-              service: 'servicio',
+              service: quote.title ?? 'servicio',
               state: 'pendiente_documentacion'
+            });
+          }
+
+          // Email: payment confirmed
+          const clientEmail = session.customer_email;
+          if (clientEmail) {
+            let clientName = clientEmail.split('@')[0];
+            if (quote.client_id) {
+              const info = await getClientEmail(quote.client_id);
+              if (info) clientName = info.name;
+            }
+            const tpl = paymentConfirmed(clientName, amountEur, quote.title ?? 'Servicio contratado');
+            await sendEmail({
+              to: clientEmail,
+              eventType: 'payment.confirmed',
+              ...tpl,
+              metadata: { quote_id: quoteId, session_id: session.id }
             });
           }
         }
       }
     }
 
-    // Subscription checkout completed: save stripe_customer_id on profile
+    // Subscription checkout: save stripe_customer_id
     if (session.mode === 'subscription') {
       const userId = session.client_reference_id ?? session.metadata?.user_id;
       const customerId = session.customer as string;
@@ -101,6 +130,7 @@ export async function POST(req: NextRequest) {
     const sub = event.data.object as Stripe.Subscription;
     const customerId = sub.customer as string;
     const priceId = sub.items.data[0]?.price.id ?? '';
+    const planName = getPlanName(priceId);
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
@@ -110,9 +140,6 @@ export async function POST(req: NextRequest) {
 
     if (profile?.id) {
       const firstItem = sub.items.data[0];
-      const periodStart = firstItem?.current_period_start
-        ? new Date(firstItem.current_period_start * 1000).toISOString()
-        : null;
       const periodEnd = firstItem?.current_period_end
         ? new Date(firstItem.current_period_end * 1000).toISOString()
         : null;
@@ -123,37 +150,73 @@ export async function POST(req: NextRequest) {
           stripe_subscription_id: sub.id,
           stripe_customer_id: customerId,
           stripe_price_id: priceId,
-          plan_name: getPlanName(priceId),
+          plan_name: planName,
           status: sub.status,
-          current_period_start: periodStart,
+          current_period_start: firstItem?.current_period_start
+            ? new Date(firstItem.current_period_start * 1000).toISOString()
+            : null,
           current_period_end: periodEnd,
           updated_at: new Date().toISOString()
         },
         { onConflict: 'stripe_subscription_id' }
       );
+
+      // Email: subscription created
+      const clientInfo = await getClientEmail(profile.id);
+      if (clientInfo) {
+        const tpl = subscriptionCreated(clientInfo.name, planName, periodEnd);
+        await sendEmail({
+          to: clientInfo.email,
+          eventType: 'subscription.created',
+          ...tpl,
+          metadata: { subscription_id: sub.id, plan: planName }
+        });
+      }
     }
   }
 
-  // ── Subscription updated (also handles past_due from failed payments) ─────
+  // ── Subscription updated ──────────────────────────────────────────────────
   if (event.type === 'customer.subscription.updated') {
     const sub = event.data.object as Stripe.Subscription;
     const firstItem = sub.items.data[0];
-    const periodStart = firstItem?.current_period_start
-      ? new Date(firstItem.current_period_start * 1000).toISOString()
-      : null;
-    const periodEnd = firstItem?.current_period_end
-      ? new Date(firstItem.current_period_end * 1000).toISOString()
-      : null;
+    const prevAttributes = event.data.previous_attributes as Record<string, unknown> | undefined;
+    const prevStatus = prevAttributes?.status as string | undefined;
 
     await supabaseAdmin
       .from('subscriptions')
       .update({
         status: sub.status,
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
+        current_period_start: firstItem?.current_period_start
+          ? new Date(firstItem.current_period_start * 1000).toISOString()
+          : null,
+        current_period_end: firstItem?.current_period_end
+          ? new Date(firstItem.current_period_end * 1000).toISOString()
+          : null,
         updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', sub.id);
+
+    // Email: payment failed (status transitions to past_due)
+    if (sub.status === 'past_due' && prevStatus !== 'past_due') {
+      const { data: dbSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('client_id,plan_name')
+        .eq('stripe_subscription_id', sub.id)
+        .single();
+
+      if (dbSub?.client_id) {
+        const clientInfo = await getClientEmail(dbSub.client_id);
+        if (clientInfo) {
+          const tpl = subscriptionPaymentFailed(clientInfo.name, dbSub.plan_name);
+          await sendEmail({
+            to: clientInfo.email,
+            eventType: 'subscription.payment_failed',
+            ...tpl,
+            metadata: { subscription_id: sub.id }
+          });
+        }
+      }
+    }
   }
 
   // ── Subscription deleted / canceled ───────────────────────────────────────

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-05-03 (sesión 4 — Fase 4)
+
+- Añadida migración `supabase/migrations/20260503150000_add_email_events_table.sql`: tabla `email_events` con RLS (admin puede ver todos los registros).
+- Creado `lib/email/templates.ts`: 11 plantillas HTML con identidad visual EXPERT (base responsive, fondo cream, cabecera navy, botones gold). Plantillas: `quoteReceivedClient`, `quoteReceivedAdmin`, `quoteResponded`, `quoteAcceptedAdmin`, `paymentConfirmed`, `caseStatusUpdated`, `serviceCompleted`, `reviewRequest`, `subscriptionCreated`, `subscriptionPaymentFailed`, `documentRequired`.
+- Creado `lib/email/send.ts`: helper `sendEmail()` que envía vía Resend y registra en `email_events` (resend_id, status, metadata).
+- Actualizado `POST /api/quotes`: usa `sendEmail` con `quoteReceivedClient` + `quoteReceivedAdmin`. Eliminado bloque raw de Resend.
+- Actualizado `PATCH /api/quotes/[id]`: envía `quoteResponded` cuando admin fija importe; envía `quoteAcceptedAdmin` cuando status → `accepted`.
+- Actualizado `app/api/stripe/webhook/route.ts`: envía `paymentConfirmed` en `checkout.session.completed` (pago único); envía `subscriptionCreated` en `customer.subscription.created`; envía `subscriptionPaymentFailed` cuando estado → `past_due`.
+- Actualizado `PATCH /api/cases/[id]`: envía `caseStatusUpdated` en cambios de estado; envía `serviceCompleted` + `reviewRequest` al pasar a `finalizado`.
+- Creado `POST /api/resend/webhook`: verifica firma con `standardwebhooks`, actualiza `email_events.status` a `delivered`, `bounced` o `failed`.
+- Build verificado — sin errores.
+
 ## 2026-05-03 (sesión 3 — Fase 3)
 
 - Añadida migración `supabase/migrations/20260503140000_add_subscriptions_table.sql`:

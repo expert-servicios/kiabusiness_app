@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getResendClient } from '@/lib/integrations/resend';
+import { sendEmail } from '@/lib/email/send';
+import { quoteReceivedClient, quoteReceivedAdmin } from '@/lib/email/templates';
 
 const quoteRequestSchema = z.object({
   email: z.string().email(),
@@ -51,11 +52,7 @@ export async function POST(request: NextRequest) {
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const quoteTitle = `Solicitud de presupuesto de ${validated.name}`;
-    const quoteDescription = `Servicios:
-${serviceList}
-
-Detalles:
-${descriptionText}`;
+    const quoteDescription = `Servicios:\n${serviceList}\n\nDetalles:\n${descriptionText}`;
 
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
@@ -78,36 +75,29 @@ ${descriptionText}`;
       return NextResponse.json({ error: 'Error al guardar el presupuesto' }, { status: 500 });
     }
 
-    try {
-      const resend = getResendClient();
-      const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'EXPERT <notificaciones@expert.es>';
-      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()).filter(Boolean);
+    // Emails: client confirmation + admin notification
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()).filter(Boolean) ?? [];
 
-      await resend.emails.send({
-        from: fromEmail,
-        to: [validated.email],
-        subject: 'Hemos recibido tu solicitud de presupuesto',
-        html: `<p>Hola ${validated.name},</p><p>Gracias por solicitar un presupuesto. Nuestro equipo revisará tu solicitud y te contactará en breve.</p>`
+    const clientTpl = quoteReceivedClient(validated.name, serviceList);
+    await sendEmail({
+      to: validated.email,
+      eventType: 'quote.received',
+      ...clientTpl,
+      metadata: { quote_id: quote.id, lead_id: lead.id }
+    });
+
+    if (adminEmails.length) {
+      const adminTpl = quoteReceivedAdmin(validated.name, validated.email, serviceList, descriptionText);
+      await sendEmail({
+        to: adminEmails,
+        eventType: 'quote.received.admin',
+        ...adminTpl,
+        metadata: { quote_id: quote.id, lead_id: lead.id }
       });
-
-      if (adminEmails?.length) {
-        await resend.emails.send({
-          from: fromEmail,
-          to: adminEmails,
-          subject: 'Nueva solicitud de presupuesto recibida',
-          html: `<p>Se ha recibido una nueva solicitud de presupuesto de ${validated.name} (${validated.email}).</p><p>Servicios: ${serviceList}</p>`
-        });
-      }
-    } catch (sendError) {
-      console.warn('No se pudo enviar el correo de confirmación:', sendError);
     }
 
     return NextResponse.json(
-      {
-        success: true,
-        message: 'Presupuesto creado correctamente',
-        quoteId: quote.id
-      },
+      { success: true, message: 'Presupuesto creado correctamente', quoteId: quote.id },
       { status: 201 }
     );
   } catch (error) {

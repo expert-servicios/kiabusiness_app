@@ -224,7 +224,14 @@ Estas páginas se generan con la información legal de la empresa y estarán pub
   - Webhook actualizado: maneja `subscription.created/updated/deleted`.
   - Dashboard cliente: página `/dashboard/suscripciones` con estado, planes y portal.
 
-- **Siguiente fase**: Emails transaccionales completos (Fase 4).
+- **Fase 4: Emails transaccionales** — COMPLETADA (2026-05-03)
+  - Tabla `email_events` (log de todos los envíos con resend_id y status).
+  - 11 plantillas HTML en `lib/email/templates.ts` con identidad visual EXPERT.
+  - Helper `sendEmail()` en `lib/email/send.ts` (envío + log automático).
+  - Disparadores activos: quote.received, quote.responded, quote.accepted, payment.confirmed, case.status.updated, service.completed, review.request, subscription.created, subscription.payment_failed.
+  - Webhook Resend (`/api/resend/webhook`): actualiza estado de entrega/rebote en `email_events`.
+
+- **Siguiente fase**: Completar dashboards (perfil editable, documentos, mensajes) — Fase 5.
 
 ## Limpieza previa a la implementación
 
