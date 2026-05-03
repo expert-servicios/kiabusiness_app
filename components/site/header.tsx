@@ -12,7 +12,7 @@ const navLinks = [
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#061321]/96 text-white shadow-lg shadow-black/10 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[#F8F6F1]/10 bg-[#0D1B2A]/96 text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20 backdrop-blur">
       <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
@@ -26,25 +26,25 @@ export function Header() {
             />
           </span>
           <span className="min-w-0">
-            <span className="block font-serif text-2xl font-bold leading-none tracking-[0.18em] text-white">EXPERT</span>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-white/56 sm:block">
-              Experiencia · Compañía · Soluciones
+            <span className="block font-serif text-2xl font-bold leading-none tracking-[0.18em] text-[#F8F6F1]">EXPERT</span>
+            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9CA3AF] sm:block">
+              HOLDED SOLUTION PARTNER
             </span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-white/88 lg:flex">
+        <nav className="hidden items-center gap-8 text-sm font-semibold text-[#F8F6F1]/88 lg:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`relative inline-flex items-center gap-1 transition hover:text-[#c88b25] ${
-                link.href === '/' ? 'text-[#c88b25]' : ''
+              className={`relative inline-flex items-center gap-1 transition hover:text-[#D4A017] ${
+                link.href === '/' ? 'text-[#D4A017]' : ''
               }`}
             >
               {link.label}
               {link.href === '/servicios' && <ChevronDown className="h-3.5 w-3.5" />}
-              {link.href === '/' && <span className="absolute -bottom-4 left-0 h-[2px] w-full bg-[#c88b25]" />}
+              {link.href === '/' && <span className="absolute -bottom-4 left-0 h-[2px] w-full bg-[#D4A017]" />}
             </Link>
           ))}
         </nav>
@@ -52,23 +52,23 @@ export function Header() {
         <div className="flex items-center gap-3">
           <Link
             href="/auth/login"
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#c88b25] px-5 text-sm font-bold text-[#061321] shadow-lg shadow-black/20 transition hover:bg-[#b57a1e]"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#D4A017] px-5 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E]"
           >
             <LockKeyhole className="h-4 w-4" />
             Acceder
           </Link>
 
           <details className="group relative lg:hidden">
-            <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-md border border-white/20 text-white/80 transition hover:border-[#c88b25] hover:text-[#c88b25] [&::-webkit-details-marker]:hidden">
+            <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-md border border-[#F8F6F1]/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] [&::-webkit-details-marker]:hidden">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Abrir menú</span>
             </summary>
-            <div className="absolute right-0 top-14 w-64 border border-white/10 bg-[#061321] p-3 shadow-2xl shadow-black/30">
+            <div className="absolute right-0 top-14 w-64 border border-[#F8F6F1]/10 bg-[#0D1B2A] p-3 shadow-2xl shadow-[#0D1B2A]/40">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="block rounded-md px-3 py-3 text-sm font-semibold text-white/76 transition hover:bg-white/10 hover:text-[#c88b25]"
+                  className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/76 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 >
                   {link.label}
                 </Link>

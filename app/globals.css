@@ -6,9 +6,10 @@ html {
 
 body {
   margin: 0;
-  background-color: #FBFAF6;
-  color: #0B1320;
+  background-color: #F8F6F1;
+  color: #0D1B2A;
   font-family:
+    var(--font-inter),
     Inter,
     ui-sans-serif,
     system-ui,
@@ -20,6 +21,6 @@ body {
 }
 
 ::selection {
-  background: #c88b25;
-  color: #07111D;
+  background: #D4A017;
+  color: #0D1B2A;
 }
