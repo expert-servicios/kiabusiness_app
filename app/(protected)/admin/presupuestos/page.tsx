@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { FileText, Users, CircleDot } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { AdminQuoteCard } from '@/components/quotes/AdminQuoteCard';
 
 interface Quote {
   id: string;
@@ -55,40 +56,7 @@ export default async function AdminQuotesPage() {
           ) : (
             <div className="space-y-6">
               {quotes.map((quote) => (
-                <div key={quote.id} className="rounded-3xl border border-[#d8cbb5] bg-[#f8f4eb] p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#07111d]">{quote.title}</p>
-                      <p className="mt-2 text-sm text-[#29384a]">Creado el {new Date(quote.created_at).toLocaleDateString('es-ES')}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-[#061321] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#F8F6F1]">
-                        <CircleDot className="h-4 w-4" />
-                        {quote.status}
-                      </span>
-                      <span className="inline-flex items-center gap-2 rounded-full bg-[#d7a33a]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#061321]">
-                        <Users className="h-4 w-4" />
-                        {quote.client_id ? 'Cliente registrado' : 'Lead anónimo'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2 text-sm text-[#29384a]">
-                      <p>
-                        <span className="font-semibold">Importe:</span> €{quote.amount_eur.toFixed(2)}
-                      </p>
-                      <p>
-                        <span className="font-semibold">Vence:</span>{' '}
-                        {quote.expires_at ? new Date(quote.expires_at).toLocaleDateString('es-ES') : 'Sin fecha'}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-[#d8cbb5] bg-white p-4 text-sm text-[#29384a]">
-                      <p className="font-semibold text-[#07111d]">ID del presupuesto</p>
-                      <p className="mt-2 break-all text-xs leading-5">{quote.id}</p>
-                    </div>
-                  </div>
-                </div>
+                <AdminQuoteCard key={quote.id} quote={quote} />
               ))}
             </div>
           )}
