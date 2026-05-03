@@ -1,13 +1,10 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ArrowRight, FileText, DollarSign, Clock } from 'lucide-react';
+import { ArrowRight, FileText, DollarSign, Clock, Zap } from 'lucide-react';
 
 async function fetchWithCookies(path: string) {
   const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
@@ -17,17 +14,49 @@ async function fetchWithCookies(path: string) {
 }
 
 export default async function DashboardPage() {
-  const [quotesData, casesData] = await Promise.all([
+  const [quotesData, casesData, subsData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
-    fetchWithCookies('/api/cases')
+    fetchWithCookies('/api/cases'),
+    fetchWithCookies('/api/subscriptions')
   ]);
 
   const quotes: { status: string; amount_eur: number }[] = quotesData?.quotes ?? [];
   const cases: { state: string }[] = casesData?.cases ?? [];
+  const subscriptions: { status: string }[] = subsData?.subscriptions ?? [];
 
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0).length;
   const activeCases = cases.filter((c) => c.state !== 'finalizado').length;
-  const pendingPayments = quotes.filter((q) => q.status === 'accepted').length;
+  const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing').length;
+
+  const cards = [
+    {
+      href: '/dashboard/presupuestos',
+      label: 'Presupuestos pendientes',
+      count: pendingQuotes,
+      cta: 'Ver presupuestos →',
+      icon: <DollarSign className="h-6 w-6" />,
+      bg: 'bg-[#d7a33a]/10',
+      color: 'text-[#d7a33a]'
+    },
+    {
+      href: '/dashboard/expedientes',
+      label: 'Expedientes activos',
+      count: activeCases,
+      cta: 'Ver expedientes →',
+      icon: <FileText className="h-6 w-6" />,
+      bg: 'bg-[#1fae4b]/10',
+      color: 'text-[#1fae4b]'
+    },
+    {
+      href: '/dashboard/suscripciones',
+      label: 'Suscripciones activas',
+      count: activeSubscriptions,
+      cta: 'Ver suscripciones →',
+      icon: <Zap className="h-6 w-6" />,
+      bg: 'bg-[#c88b25]/10',
+      color: 'text-[#c88b25]'
+    }
+  ];
 
   return (
     <main className="min-h-screen bg-[#f8f4eb]">
@@ -51,59 +80,24 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-6 md:grid-cols-3">
-          <Link
-            href="/dashboard/presupuestos"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[#29384a]">Presupuestos pendientes</p>
-                <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{pendingQuotes}</p>
+          {cards.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="group rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#29384a]">{card.label}</p>
+                  <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{card.count}</p>
+                </div>
+                <div className={`rounded-lg p-3 ${card.bg} ${card.color}`}>{card.icon}</div>
               </div>
-              <div className="rounded-lg bg-[#d7a33a]/10 p-3 text-[#d7a33a]">
-                <DollarSign className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="mt-4 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-1">
-              Ver presupuestos →
-            </p>
-          </Link>
-
-          <Link
-            href="/dashboard/expedientes"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[#29384a]">Expedientes activos</p>
-                <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{activeCases}</p>
-              </div>
-              <div className="rounded-lg bg-[#1fae4b]/10 p-3 text-[#1fae4b]">
-                <FileText className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="mt-4 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-1">
-              Ver expedientes →
-            </p>
-          </Link>
-
-          <Link
-            href="/dashboard/presupuestos"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[#29384a]">Pagos pendientes</p>
-                <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{pendingPayments}</p>
-              </div>
-              <div className="rounded-lg bg-[#c88b25]/10 p-3 text-[#c88b25]">
-                <Clock className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="mt-4 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-1">
-              Ver pagos →
-            </p>
-          </Link>
+              <p className="mt-4 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-1">
+                {card.cta}
+              </p>
+            </Link>
+          ))}
         </div>
 
         <div className="mt-12 rounded-2xl border border-[#d8cbb5] bg-white p-8">
@@ -126,6 +120,18 @@ export default async function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {activeSubscriptions === 0 ? (
+          <div className="mt-6 rounded-2xl border border-[#d7a33a]/30 bg-[#d7a33a]/5 p-6">
+            <p className="font-semibold text-[#07111d]">¿Quieres gestión mensual?</p>
+            <p className="mt-1 text-sm text-[#29384a]">
+              Con nuestros planes de suscripción nos ocupamos de todos tus trámites fiscales y administrativos.{' '}
+              <Link href="/dashboard/suscripciones" className="font-semibold text-[#c88b25] underline underline-offset-4">
+                Ver planes →
+              </Link>
+            </p>
+          </div>
+        ) : null}
       </div>
     </main>
   );

@@ -216,7 +216,15 @@ Estas páginas se generan con la información legal de la empresa y estarán pub
   - Panel admin con datos reales y acceso a expedientes.
   - Página `admin/expedientes` con cambio de estado en tiempo real.
 
-- **Siguiente fase**: Stripe subscripciones y portal de cliente (Fase 3).
+- **Fase 3: Integración de pagos y suscripciones** — COMPLETADA (2026-05-03)
+  - Tabla `subscriptions` con RLS; `stripe_customer_id` en `profiles`.
+  - `POST /api/subscriptions/checkout`: checkout en modo `subscription`.
+  - `GET /api/subscriptions`: lista suscripciones por rol.
+  - `POST /api/customer-portal`: acceso al portal Stripe de facturación.
+  - Webhook actualizado: maneja `subscription.created/updated/deleted`.
+  - Dashboard cliente: página `/dashboard/suscripciones` con estado, planes y portal.
+
+- **Siguiente fase**: Emails transaccionales completos (Fase 4).
 
 ## Limpieza previa a la implementación
 
