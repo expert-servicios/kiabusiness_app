@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -7,13 +6,12 @@ import {
   Briefcase,
   Calculator,
   Check,
-  ChevronRight,
   FileCheck,
   FileText,
   Globe2,
   Home,
+  LockKeyhole,
   Search,
-  Send,
   Settings,
   ShieldCheck,
   Star,
@@ -25,102 +23,117 @@ type IconItem = {
   Icon: LucideIcon;
 };
 
-const serviceCategories: Array<
+const serviceAreas: Array<
   IconItem & {
     title: string;
+    text: string;
     href: string;
     items: string[];
-    tone: 'navy' | 'gold';
   }
 > = [
   {
-    title: 'Declaraciones e Impuestos',
+    title: 'Fiscalidad e impuestos',
+    text: 'Declaraciones, regularizaciones, tributación de residentes y no residentes.',
     href: '/servicios/declaraciones-impuestos',
     items: ['IRPF', 'Modelo 151', 'No residentes'],
-    tone: 'navy',
     Icon: FileText
   },
   {
-    title: 'Extranjería y Nacionalidad',
+    title: 'Extranjería y nacionalidad',
+    text: 'Acompañamiento documental y fiscal para residir o establecerse en España.',
     href: '/servicios/extranjeria-nacionalidad',
     items: ['Nacionalidad', 'Residencias', 'Renovaciones'],
-    tone: 'gold',
     Icon: Globe2
   },
   {
-    title: 'Empresas y Autónomos',
+    title: 'Empresas y autónomos',
+    text: 'Altas, constitución, contabilidad, impuestos y gestión recurrente.',
     href: '/servicios/empresas-autonomos',
-    items: ['Alta de autónomos', 'Constitución de empresas', 'Contabilidad e impuestos'],
-    tone: 'navy',
+    items: ['Alta autónomos', 'Sociedades', 'Contabilidad'],
     Icon: Briefcase
   },
   {
-    title: 'Tráfico y Capitanía Marítima',
+    title: 'Tráfico y marítima',
+    text: 'Gestiones administrativas de vehículos, embarcaciones y documentación.',
     href: '/servicios/trafico-capitania-maritima',
-    items: ['Transferencias', 'Matriculaciones', 'Gestiones náuticas'],
-    tone: 'gold',
+    items: ['Transferencias', 'Matriculaciones', 'Náutica'],
     Icon: Anchor
   },
   {
-    title: 'Notaría y Propiedades',
+    title: 'Notaría y propiedades',
+    text: 'Soporte documental en compraventas, escrituras y operaciones patrimoniales.',
     href: '/servicios/notaria-propiedades',
-    items: ['Compraventas', 'Escrituras', 'Gestión documental'],
-    tone: 'navy',
+    items: ['Compraventas', 'Escrituras', 'Propiedades'],
     Icon: Home
   },
   {
-    title: 'Gestiones Especializadas',
+    title: 'Gestiones especializadas',
+    text: 'Certificados digitales, migraciones a Holded y trámites de mayor complejidad.',
     href: '/servicios/gestiones-especializadas',
-    items: ['Camerfirma', 'Migraciones a Holded', 'Automatizaciones'],
-    tone: 'gold',
+    items: ['Camerfirma', 'Holded', 'Automatización'],
     Icon: Settings
   }
 ];
 
-const featuredServices: Array<IconItem & { title: string; text: string; href: string; tone: 'navy' | 'gold' | 'red' }> = [
+const featuredServices: Array<IconItem & { title: string; text: string; href: string }> = [
   {
     title: 'Declaración de la Renta',
-    text: 'Preparamos y presentamos tu IRPF de forma rápida y segura.',
+    text: 'Revisión fiscal, preparación documental y presentación del IRPF con criterio profesional.',
     href: '/servicios/declaraciones-impuestos',
-    tone: 'navy',
     Icon: Calculator
   },
   {
     title: 'Modelo 151',
-    text: 'Para trabajadores, profesionales e inversores desplazados.',
+    text: 'Tributación para profesionales, trabajadores e inversores desplazados a España.',
     href: '/servicios/declaraciones-impuestos',
-    tone: 'gold',
     Icon: FileCheck
   },
   {
     title: 'Nacionalidad española',
-    text: 'Te acompañamos en todo el proceso hasta conseguir tu nacionalidad.',
+    text: 'Preparación y seguimiento del expediente con control de requisitos y documentación.',
     href: '/servicios/extranjeria-nacionalidad',
-    tone: 'red',
     Icon: ShieldCheck
   }
 ];
 
 const processSteps: Array<IconItem & { title: string; text: string }> = [
   {
-    title: 'Contratas el servicio online',
-    text: 'Elige tu servicio y contrátalo completamente por internet.',
-    Icon: Settings
+    title: 'Contratas online',
+    text: 'Elige el servicio o solicita presupuesto según tu caso.',
+    Icon: Check
   },
   {
-    title: 'Subes la documentación requerida',
-    text: 'Envía tus archivos desde la plataforma o por email de forma segura.',
+    title: 'Subes documentos',
+    text: 'Envías la documentación necesaria desde un canal seguro.',
     Icon: Upload
   },
   {
-    title: 'Gestionamos el trámite',
-    text: 'Nos encargamos de todo el proceso con seguimiento y control continuo.',
+    title: 'Revisamos tu caso',
+    text: 'Analizamos la información y gestionamos el trámite completo.',
     Icon: Search
   },
   {
-    title: 'Recibes el resultado y justificantes',
-    text: 'Te entregamos la documentación final y los justificantes listos para usar.',
-    Icon: Check
+    title: 'Recibes resultado',
+    text: 'Te entregamos justificantes, resolución o documentación final.',
+    Icon: FileCheck
+  }
+];
+
+const operations: Array<IconItem & { title: string; text: string }> = [
+  {
+    title: 'Gestión mensual',
+    text: 'Planes recurrentes para autónomos, pymes y empresas que necesitan continuidad fiscal.',
+    Icon: Briefcase
+  },
+  {
+    title: 'Migración a Holded',
+    text: 'Configuración, migración y formación para trabajar con procesos contables más ordenados.',
+    Icon: Settings
+  },
+  {
+    title: 'Mentoring operativo',
+    text: 'Sesiones para tomar mejores decisiones fiscales, administrativas y de gestión interna.',
+    Icon: Star
   }
 ];
 
@@ -138,25 +151,22 @@ const reviews = [
     badge: 'FR'
   },
   {
-    text: 'Muy atenta y resolutiva. Me ayudó con la nacionalidad española y todo fue más fácil de lo que esperaba.',
+    text: 'Muy atenta y resolutiva. Me ayudó con la nacionalidad española y todo fue más fácil de lo esperado.',
     name: 'Markus B.',
     country: 'Alemania',
     badge: 'DE'
   }
 ];
 
-
 export default function HomePage() {
   return (
     <main className="bg-[#f8f4eb] text-[#07111d]">
       <Hero />
-      <HeroBenefits />
-      <Certifications />
       <Services />
+      <FeaturedServices />
       <HowItWorks />
       <ClientPortal />
-      <SubscriptionPlans />
-      <TrainingMentoring />
+      <Operations />
       <Reviews />
       <FinalCta />
     </main>
@@ -165,157 +175,84 @@ export default function HomePage() {
 
 function Services() {
   return (
-    <section className="bg-[#f8f4eb] px-6 py-8 text-[#07111d] md:py-10">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Soluciones legales, fiscales y administrativas" eyebrow="Áreas de especialización" />
+    <section className="px-6 py-16 md:py-20">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+        <div>
+          <SectionTitle
+            eyebrow="Servicios"
+            title="Una asesoría para resolver, no para complicar."
+            text="Fiscalidad, legal, extranjería y gestión administrativa en una experiencia digital, ordenada y cercana."
+          />
+          <Link
+            href="/servicios"
+            className="mt-7 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#c88b25] transition hover:text-[#b57a1e]"
+          >
+            Ver todos los servicios
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {serviceCategories.map(({ Icon, title, href, items, tone }) => (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {serviceAreas.map(({ Icon, title, text, href, items }) => (
             <Link
               href={href}
               key={title}
-              className="group rounded-lg border border-[#d8cbb5] bg-white/88 p-5 shadow-[0_8px_22px_rgba(7,17,29,0.08)] transition hover:-translate-y-0.5 hover:border-[#d7a33a] hover:shadow-[0_14px_30px_rgba(7,17,29,0.12)]"
+              className="group border border-[#d8cbb5] bg-white p-6 shadow-[0_10px_28px_rgba(7,17,29,0.07)] transition hover:-translate-y-0.5 hover:border-[#c88b25] hover:shadow-[0_18px_40px_rgba(7,17,29,0.11)]"
             >
               <div className="flex items-start gap-4">
-                <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
-                    tone === 'gold' ? 'bg-[#c88b25] text-white' : 'bg-[#061321] text-white'
-                  }`}
-                >
-                  <Icon className="h-7 w-7" />
-                </div>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-[#c88b25]/25 bg-[#061321] text-[#c88b25]">
+                  <Icon className="h-6 w-6" />
+                </span>
                 <div>
-                  <h3 className="font-serif text-xl font-bold leading-tight">{title}</h3>
-                  <ul className="mt-2 space-y-1 text-sm text-[#29384a]">
-                    {items.map((item) => (
-                      <li key={item} className="flex gap-2">
-                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c88b25]" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#b57a1e]">
-                    Ver servicios
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </p>
+                  <h3 className="font-serif text-xl font-bold leading-tight text-[#07111d]">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#29384a]">{text}</p>
                 </div>
               </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {items.map((item) => (
+                  <span key={item} className="border border-[#d8cbb5] px-2.5 py-1 text-xs font-semibold text-[#29384a]">
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#c88b25]">
+                Consultar área
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </p>
             </Link>
           ))}
         </div>
-
-        <div className="mt-7">
-          <SectionTitle title="Servicios destacados" compact />
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {featuredServices.map(({ Icon, title, text, href, tone }) => {
-              const iconClass =
-                tone === 'red'
-                  ? 'bg-[#9d1f2f] text-white'
-                  : tone === 'gold'
-                    ? 'bg-[#c88b25] text-white'
-                    : 'bg-[#061321] text-white';
-
-              return (
-                <Link
-                  href={href}
-                  key={title}
-                  className="group rounded-lg border border-[#d8cbb5] bg-white/88 p-5 shadow-[0_8px_22px_rgba(7,17,29,0.08)] transition hover:border-[#d7a33a]"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${iconClass}`}>
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <div>
-                      <h3 className="font-serif text-xl font-bold leading-tight">{title}</h3>
-                      <p className="mt-2 text-sm leading-5 text-[#29384a]">{text}</p>
-                      <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#b57a1e]">
-                        Más información
-                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </section>
   );
 }
 
-function HeroBenefits() {
-  const benefits = [
-    {
-      title: 'Gestión 100% online',
-      text: 'Contrata, sube documentos y recibe actualización del caso sin desplazarte.'
-    },
-    {
-      title: 'Soporte oficial',
-      text: 'Somos colaboradora social de la AEAT y partner certificado de Holded.'
-    },
-    {
-      title: 'Trámites rápidos',
-      text: 'Agilizamos tus gestiones fiscales, legales y administrativas con eficacia.'
-    }
-  ];
-
+function FeaturedServices() {
   return (
-    <section className="bg-[#061321] px-6 py-12 text-white">
-      <div className="mx-auto max-w-6xl">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {benefits.map((benefit) => (
-            <div key={benefit.title} className="rounded-[1.75rem] border border-white/10 bg-white/5 p-7 shadow-[0_18px_45px_rgba(0,0,0,0.12)] backdrop-blur-sm">
-              <h3 className="font-serif text-xl font-bold text-white">{benefit.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#d2dae0]">{benefit.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+    <section className="bg-[#061321] px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          dark
+          eyebrow="Servicios destacados"
+          title="Los trámites más solicitados, listos para empezar online."
+          text="Cada servicio se orienta a un resultado concreto: documentación revisada, trámite presentado y seguimiento claro."
+        />
 
-function Certifications() {
-  const certifications = [
-    {
-      label: 'Holded Solution Partner',
-      src: '/Holded-Logotype-Red_Light.svg',
-      width: 220,
-      height: 64
-    },
-    {
-      label: 'Agencia Tributaria',
-      src: '/Agencia_Tributaria.svg.png',
-      width: 180,
-      height: 64
-    },
-    {
-      label: 'Red PAE',
-      src: '/logo-RedPAE/Logo_RedPAE_Logotipo_Color.png',
-      width: 220,
-      height: 64
-    },
-    {
-      label: 'Camerfirma',
-      src: '/LogoCamerfirmaSimple.webp',
-      width: 200,
-      height: 64
-    }
-  ];
-
-  return (
-    <section className="bg-[#f8f4eb] px-6 py-14 text-[#07111d]">
-      <div className="mx-auto max-w-6xl text-center">
-        <h2 className="font-serif text-2xl font-bold uppercase tracking-wide">Certificado por</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#29384a]">
-          Trabajamos con entidades oficiales y socios tecnológicos para garantizar un servicio seguro y fiable.
-        </p>
-        <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
-          {certifications.map((item) => (
-            <div key={item.label} className="flex items-center justify-center rounded-3xl border border-[#d8cbb5] bg-white p-6 shadow-[0_12px_30px_rgba(7,17,29,0.08)]">
-              <Image src={item.src} alt={item.label} width={item.width} height={item.height} className="max-h-16 object-contain" />
-            </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {featuredServices.map(({ Icon, title, text, href }) => (
+            <Link
+              href={href}
+              key={title}
+              className="group border border-[#c88b25]/25 bg-[#0D1B2A] p-7 shadow-[0_20px_45px_rgba(0,0,0,0.22)] transition hover:-translate-y-0.5 hover:border-[#c88b25]"
+            >
+              <Icon className="h-9 w-9 stroke-[#c88b25]" strokeWidth={1.7} />
+              <h3 className="mt-6 font-serif text-2xl font-bold text-[#F8F6F1]">{title}</h3>
+              <p className="mt-4 min-h-24 text-sm leading-7 text-[#9CA3AF]">{text}</p>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-[#c88b25]">
+                Empezar
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </p>
+            </Link>
           ))}
         </div>
       </div>
@@ -325,20 +262,24 @@ function Certifications() {
 
 function HowItWorks() {
   return (
-    <section className="bg-[#fbf8f0] px-6 py-12 text-[#07111d]">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Cómo funciona" compact />
-        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-10">
+    <section className="px-6 py-16 md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          eyebrow="Proceso"
+          title="Un flujo pensado para clientes que no quieren perder tiempo."
+          text="La parte compleja ocurre detrás: tú ves el estado, entregas documentos y recibes el resultado."
+          centered
+        />
+
+        <div className="mt-11 grid gap-4 md:grid-cols-4">
           {processSteps.map(({ Icon, title, text }, index) => (
-            <article key={title} className="relative rounded-[2rem] border border-[#d8cbb5] bg-white p-8 text-center shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#c88b25]/40 bg-[#fdf6eb] text-[#c88b25] shadow-sm">
-                <Icon className="h-10 w-10" />
+            <article key={title} className="border border-[#d8cbb5] bg-white p-6 shadow-[0_10px_28px_rgba(7,17,29,0.07)]">
+              <div className="flex items-center justify-between">
+                <span className="font-serif text-4xl font-bold text-[#c88b25]">{String(index + 1).padStart(2, '0')}</span>
+                <Icon className="h-8 w-8 stroke-[#061321]" strokeWidth={1.7} />
               </div>
-              <h3 className="mt-5 font-serif text-lg font-bold">{title}</h3>
-              <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-[#29384a]">{text}</p>
-              {index < processSteps.length - 1 && (
-                <span className="absolute right-4 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-[#c88b25] text-white md:flex items-center justify-center">→</span>
-              )}
+              <h3 className="mt-7 font-serif text-xl font-bold">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[#29384a]">{text}</p>
             </article>
           ))}
         </div>
@@ -348,53 +289,55 @@ function HowItWorks() {
 }
 
 function ClientPortal() {
+  const rows = [
+    ['Documentación', 'Subida segura y control de pendientes'],
+    ['Expedientes', 'Estado claro de cada trámite'],
+    ['Pagos', 'Stripe, facturas y suscripciones'],
+    ['Acceso', 'Google OAuth y enlace mágico']
+  ];
+
   return (
-    <section className="bg-white px-6 py-12 text-[#07111d]">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Portal de clientes" compact />
-        <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:items-center">
-          <div>
-            <p className="max-w-xl text-sm leading-7 text-[#29384a]">
-              Accede a tu área privada para subir documentos, consultar el estado de tu caso, descargar los documentos finales y gestionar tus facturas desde un solo lugar.
-            </p>
-            <ul className="mt-8 space-y-4 text-sm text-[#07111d]">
-              <li className="flex gap-3">
-                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
-                Subida segura de documentación y archivos.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
-                Seguimiento del estado del expediente en tiempo real.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
-                Descarga de justificantes y documentación final.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#c88b25]" />
-                Gestión de facturas y comunicaciones con tu asesor.
-              </li>
-            </ul>
+    <section className="bg-white px-6 py-16 md:py-20">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div>
+          <SectionTitle
+            eyebrow="Panel de cliente"
+            title="Tu documentación y tus trámites en un solo sitio."
+            text="El portal privado está preparado para centralizar documentos, pagos, estados y comunicaciones sin depender de hilos de email dispersos."
+          />
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/auth/login"
+              className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#061321] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#0D1B2A]"
+            >
+              <LockKeyhole className="h-4 w-4" />
+              Acceder al panel
+            </Link>
+            <Link
+              href="/solicitar-presupuesto"
+              className="inline-flex min-h-12 items-center justify-center border border-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#c88b25] transition hover:bg-[#c88b25] hover:text-[#061321]"
+            >
+              Solicitar presupuesto
+            </Link>
           </div>
-          <div className="rounded-[2rem] border border-[#d8cbb5] bg-[#f8f4eb] p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
-            <h3 className="font-serif text-xl font-bold">Tus gestiones digitales</h3>
-            <p className="mt-4 text-sm leading-7 text-[#29384a]">
-              Un espacio diseñado para que puedas colaborar con EXPERT de forma ordenada y segura, desde cualquier dispositivo.
-            </p>
-            <div className="mt-6 grid gap-4">
-              <div className="rounded-3xl bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold">Documentos</p>
-                <p className="mt-2 text-sm text-[#4c5b6d]">Carga tus archivos y comparte enlaces seguros.</p>
-              </div>
-              <div className="rounded-3xl bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold">Estado del caso</p>
-                <p className="mt-2 text-sm text-[#4c5b6d]">Consulta pasos completados y próximos plazos.</p>
-              </div>
-              <div className="rounded-3xl bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold">Descargas</p>
-                <p className="mt-2 text-sm text-[#4c5b6d]">Descarga tu documentación final y justificantes.</p>
-              </div>
+        </div>
+
+        <div className="border border-[#c88b25]/25 bg-[#061321] p-6 text-[#F8F6F1] shadow-[0_22px_60px_rgba(7,17,29,0.22)]">
+          <div className="flex items-center justify-between border-b border-[#c88b25]/20 pb-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#c88b25]">EXPERT Portal</p>
+              <h3 className="mt-2 font-serif text-2xl font-bold">Vista de cliente</h3>
             </div>
+            <span className="border border-[#c88b25]/35 px-3 py-1 text-xs font-bold text-[#c88b25]">Seguro</span>
+          </div>
+
+          <div className="mt-6 divide-y divide-white/10">
+            {rows.map(([label, text]) => (
+              <div key={label} className="grid gap-2 py-4 sm:grid-cols-[150px_1fr]">
+                <p className="text-sm font-bold text-[#F8F6F1]">{label}</p>
+                <p className="text-sm leading-6 text-[#9CA3AF]">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -402,83 +345,59 @@ function ClientPortal() {
   );
 }
 
-function SubscriptionPlans() {
+function Operations() {
   return (
-    <section className="bg-[#f8f4eb] px-6 py-12 text-[#07111d]">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Planes de gestión mensual" compact />
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384a]">
-          Suscripción mensual para autónomos, pymes y empresas que necesitan mantenimiento fiscal continuo y atención personalizada.
-        </p>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          <PlanCard title="Autónomos" description="Gestión fiscal mensual, declaraciones y soporte prioritario." />
-          <PlanCard title="Pymes" description="Contabilidad, impuestos y seguimiento administrativo continuo." />
-          <PlanCard title="Empresas" description="Asesoría legal y fiscal completa con reportes periódicos." />
+    <section className="px-6 py-16 md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          eyebrow="Continuidad"
+          title="Para quien necesita algo más que un trámite puntual."
+          text="EXPERT también cubre la gestión recurrente, la digitalización contable y el acompañamiento operativo."
+          centered
+        />
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {operations.map(({ Icon, title, text }) => (
+            <article key={title} className="border border-[#d8cbb5] bg-white p-7 shadow-[0_10px_28px_rgba(7,17,29,0.07)]">
+              <Icon className="h-8 w-8 stroke-[#c88b25]" strokeWidth={1.7} />
+              <h3 className="mt-6 font-serif text-xl font-bold">{title}</h3>
+              <p className="mt-3 text-sm leading-7 text-[#29384a]">{text}</p>
+            </article>
+          ))}
         </div>
       </div>
     </section>
-  );
-}
-
-function PlanCard({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-[2rem] border border-[#d8cbb5] bg-white p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
-      <h3 className="font-serif text-xl font-bold">{title}</h3>
-      <p className="mt-4 text-sm leading-7 text-[#29384a]">{description}</p>
-      <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-[#c88b25]">Gestión continua</p>
-    </div>
-  );
-}
-
-function TrainingMentoring() {
-  return (
-    <section className="bg-white px-6 py-12 text-[#07111d]">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Formación y mentoring" compact />
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384a]">
-          Apoyo experto en migración a Holded, formación para tu equipo y mentoring continuo para tu negocio.
-        </p>
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          <Card title="Migración a Holded" text="Te acompañamos en la migración de datos y configuración de tu cuenta Holded." />
-          <Card title="Formación Holded" text="Capacitación práctica para que uses Holded con confianza y velocidad." />
-          <Card title="Mentoring" text="Sesiones periódicas para mejorar procesos y optimizar tu gestión empresarial." />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Card({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-[2rem] border border-[#d8cbb5] bg-[#f8f4eb] p-8 shadow-[0_18px_45px_rgba(7,17,29,0.08)]">
-      <h3 className="font-serif text-xl font-bold">{title}</h3>
-      <p className="mt-4 text-sm leading-7 text-[#29384a]">{text}</p>
-    </div>
   );
 }
 
 function Reviews() {
   return (
-    <section className="bg-[#061321] px-6 py-9 text-white">
-      <div className="mx-auto max-w-6xl">
-        <SectionTitle title="Lo que dicen nuestros clientes" dark compact />
-        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+    <section className="bg-[#061321] px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          dark
+          centered
+          eyebrow="Clientes"
+          title="Atención cercana con exigencia profesional."
+          text="La confianza se gana resolviendo, comunicando claro y cuidando cada expediente."
+        />
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
           {reviews.map((review) => (
-            <article key={review.name} className="rounded-lg border border-[#c88b25]/70 bg-[#0a1b2d] p-5 shadow-xl shadow-black/15">
-              <p className="font-serif text-5xl leading-none text-[#d7a33a]">“</p>
-              <p className="-mt-4 text-sm leading-6 text-white/82">{review.text}</p>
-              <div className="mt-3 flex gap-1 text-[#d7a33a]">
+            <article key={review.name} className="border border-[#c88b25]/25 bg-[#0D1B2A] p-6">
+              <div className="flex gap-1 text-[#c88b25]">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star key={star} className="h-4 w-4 fill-current" />
                 ))}
               </div>
-              <div className="mt-4 flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-xs font-bold text-[#061321]">
+              <p className="mt-5 text-sm leading-7 text-[#F8F6F1]/82">{review.text}</p>
+              <div className="mt-6 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center bg-[#F8F6F1] text-xs font-bold text-[#061321]">
                   {review.badge}
                 </span>
                 <div>
-                  <p className="font-bold text-white">{review.name}</p>
-                  <p className="text-sm text-white/65">{review.country}</p>
+                  <p className="font-bold">{review.name}</p>
+                  <p className="text-sm text-[#9CA3AF]">{review.country}</p>
                 </div>
               </div>
             </article>
@@ -491,19 +410,17 @@ function Reviews() {
 
 function FinalCta() {
   return (
-    <section className="relative overflow-hidden bg-[#061321] px-6 py-12 text-white">
-      <div className="pointer-events-none absolute -left-24 bottom-0 h-32 w-80 rounded-tr-full border-t-[13px] border-[#d7a33a]/80" />
-      <div className="pointer-events-none absolute -right-24 top-0 h-32 w-80 rounded-bl-full border-b-[13px] border-[#d7a33a]/80" />
-      <div className="relative mx-auto max-w-6xl text-center">
-        <h2 className="font-serif text-3xl font-bold uppercase leading-tight md:text-4xl">
-          ¿No tienes claro qué servicio necesitas?
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-base text-white/75">
-          Te ayudamos a escoger la solución fiscal o legal que mejor encaja con tu situación.
+    <section className="relative overflow-hidden bg-[#0D1B2A] px-6 py-16 text-center text-[#F8F6F1] md:py-20">
+      <div className="absolute inset-x-0 top-0 h-px bg-[#c88b25]/40" />
+      <div className="mx-auto max-w-3xl">
+        <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#c88b25]">Siguiente paso</p>
+        <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">Cuéntanos tu caso y te orientamos.</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#9CA3AF]">
+          Si no sabes qué servicio necesitas, empezamos por revisar tu situación y preparar una propuesta clara.
         </p>
         <Link
           href="/solicitar-presupuesto"
-          className="mt-8 inline-flex min-h-14 items-center justify-center rounded-full bg-[#c88b25] px-8 py-4 text-lg font-bold uppercase tracking-[0.16em] text-[#061321] shadow-[0_18px_45px_rgba(13,27,42,0.28)] transition hover:bg-[#b57a1e]"
+          className="mt-8 inline-flex min-h-12 items-center justify-center bg-[#c88b25] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#061321] transition hover:bg-[#b57a1e]"
         >
           Solicitar presupuesto
         </Link>
@@ -512,33 +429,26 @@ function FinalCta() {
   );
 }
 
-
 function SectionTitle({
-  title,
   eyebrow,
-  compact = false,
-  dark = false
+  title,
+  text,
+  dark = false,
+  centered = false
 }: {
+  eyebrow: string;
   title: string;
-  eyebrow?: string;
-  compact?: boolean;
+  text: string;
   dark?: boolean;
+  centered?: boolean;
 }) {
   return (
-    <div className={`text-center ${compact ? '' : 'mb-1'}`}>
-      <h2
-        className={`font-serif font-bold uppercase tracking-wide ${
-          compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'
-        } ${dark ? 'text-white' : 'text-[#07111d]'}`}
-      >
+    <div className={centered ? 'mx-auto max-w-3xl text-center' : 'max-w-2xl'}>
+      <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#c88b25]">{eyebrow}</p>
+      <h2 className={`mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl ${dark ? 'text-[#F8F6F1]' : 'text-[#07111d]'}`}>
         {title}
       </h2>
-      {eyebrow && (
-        <p className={`mt-2 text-xs font-bold uppercase tracking-[0.22em] ${dark ? 'text-white/64' : 'text-[#29384a]/74'}`}>
-          {eyebrow}
-        </p>
-      )}
-      <div className="mx-auto mt-3 h-px w-20 bg-[#d7a33a]" />
+      <p className={`mt-4 text-sm leading-7 md:text-base ${dark ? 'text-[#9CA3AF]' : 'text-[#29384a]'}`}>{text}</p>
     </div>
   );
 }

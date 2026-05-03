@@ -1,61 +1,76 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { heroCopy } from '@/config/brand';
+import type { LucideIcon } from 'lucide-react';
+import { Briefcase, FileCheck, Globe2, ShieldCheck, Star } from 'lucide-react';
 
 const heroBackgroundImage = '/hero/home-hero-background.png';
 
+const trustItems: Array<{ title: string; text: string; Icon: LucideIcon }> = [
+  { title: '+20 años', text: 'experiencia fiscal y legal', Icon: Star },
+  { title: 'AEAT', text: 'colaboradora social', Icon: ShieldCheck },
+  { title: 'Red PAE', text: 'apoyo a empresas', Icon: Briefcase },
+  { title: 'Camerfirma', text: 'certificados digitales', Icon: FileCheck },
+  { title: 'Expatriados', text: 'residencia y fiscalidad', Icon: Globe2 }
+];
+
 export function Hero() {
   return (
-    <section className="relative isolate overflow-hidden bg-[#07111d] text-white">
+    <section className="relative isolate overflow-hidden bg-[#0D1B2A] text-[#F8F6F1] lg:min-h-[760px]">
       <Image
         src={heroBackgroundImage}
-        alt="Fondo de asesoría fiscal y legal"
+        alt="Asesoría fiscal y legal"
         fill
         priority
         sizes="100vw"
-        className="absolute inset-0 -z-50 object-cover object-[55%_center]"
+        className="absolute inset-0 -z-30 object-cover object-[64%_center] lg:object-[58%_center]"
       />
-      <div className="absolute inset-0 -z-40 bg-gradient-to-br from-[#07111d]/96 via-[#07111d]/80 to-[#0d1b2a]/80" />
-      <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_top_right,rgba(200,139,37,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.06),transparent_28%)]" />
+      <div className="absolute inset-0 -z-20 bg-gradient-to-r from-[#050a14]/94 via-[#050a14]/62 to-[#050a14]/8" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#050a14]/75 via-transparent to-[#050a14]/18" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-20 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#d7a33a]/90">{heroCopy.eyebrow}</p>
+      <div className="mx-auto flex min-h-[650px] w-full max-w-7xl items-center px-6 py-20 lg:min-h-[650px] lg:px-20 lg:pb-32">
+        <div className="max-w-xl">
+          <p className="mb-5 text-xs font-bold uppercase tracking-[0.32em] text-[#c88b25]">Asesoría premium en España</p>
 
-          <h1 className="mt-6 text-5xl font-serif font-bold uppercase tracking-[-0.03em] text-white sm:text-6xl lg:text-7xl">
-            {heroCopy.title}
+          <h1 className="font-serif text-[2.35rem] font-semibold leading-[1.05] text-[#F8F6F1] md:text-5xl xl:text-[3.65rem]">
+            <span className="block">Asesoría fiscal</span>
+            <span className="block">y legal</span>
+            <span className="block text-[#c88b25]">sin complicaciones</span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-base leading-8 text-[#d2dae0] sm:text-lg">
-            {heroCopy.subtitle}
+          <p className="mt-6 max-w-lg text-lg leading-8 text-[#F8F6F1]/88 md:text-xl">
+            Contrata online, sube tu documentación y recibe tu trámite resuelto con seguimiento profesional.
           </p>
 
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
             <Link
-              href={heroCopy.primaryAction.href}
-              className="inline-flex min-h-[56px] items-center justify-center rounded-full bg-[#c88b25] px-8 py-4 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] shadow-[0_20px_55px_rgba(200,139,37,0.3)] transition hover:bg-[#b57a1e]"
+              href="/servicios/empresas-autonomos"
+              className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#c88b25] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#050a14] transition hover:bg-[#b57a1e]"
             >
-              {heroCopy.primaryAction.label}
+              Soy empresa
             </Link>
             <Link
-              href={heroCopy.secondaryAction.href}
-              className="inline-flex min-h-[56px] items-center justify-center rounded-full border border-white/20 bg-white/10 px-8 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:border-[#c88b25] hover:bg-white/20"
+              href="/servicios/declaraciones-impuestos"
+              className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#c88b25] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#c88b25] transition hover:bg-[#c88b25] hover:text-[#050a14]"
             >
-              {heroCopy.secondaryAction.label}
+              Soy particular
             </Link>
           </div>
 
-          <p className="mt-8 max-w-2xl text-sm leading-7 text-[#cfd8e1]">
-            {heroCopy.description}
-          </p>
+          <p className="mt-6 text-sm text-[#F8F6F1]/70">Sin desplazamientos · Gestión completa · Resultados claros</p>
+        </div>
+      </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {heroCopy.highlights.map((highlight) => (
-              <div key={highlight} className="rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-4 text-sm text-[#e3e8ef] shadow-[0_18px_35px_rgba(0,0,0,0.12)]">
-                <span className="block font-semibold text-white">{highlight}</span>
+      <div className="relative z-10 border-y border-[#c88b25]/25 bg-[#061321]/90 backdrop-blur-md lg:absolute lg:inset-x-0 lg:bottom-0">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-[#c88b25]/18 px-6 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-5 lg:px-20">
+          {trustItems.map(({ Icon, title, text }) => (
+            <div key={title} className="flex min-h-24 items-center gap-4 py-4 sm:px-5">
+              <Icon className="h-9 w-9 shrink-0 stroke-[#c88b25]" strokeWidth={1.6} />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#F8F6F1]">{title}</p>
+                <p className="mt-1 text-xs leading-5 text-[#9CA3AF]">{text}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

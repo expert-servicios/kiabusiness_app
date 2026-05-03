@@ -1,8 +1,7 @@
-import { serialize } from 'cookie';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, createServerSupabaseClient } from './lib/integrations/supabase';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const supabase = createServerSupabaseClient(request);
   const { data } = await supabase.auth.getSession();
