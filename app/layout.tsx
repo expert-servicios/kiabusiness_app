@@ -23,11 +23,16 @@ export const metadata: Metadata = {
     'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
   icons: {
     icon: [
-      { url: '/logos/expert-isotipo.png', type: 'image/png', sizes: '512x512' },
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '32x32' }
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '192x192' },
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
     ],
-    shortcut: ['/logos/expert-isotipo.png'],
-    apple: [{ url: '/logos/expert-isotipo.png', type: 'image/png', sizes: '512x512' }],
+    shortcut: [{ url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }],
+    apple: [
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '180x180' },
+      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
+    ],
   },
 };
 

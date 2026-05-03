@@ -3,19 +3,23 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
   ArrowRight,
+  BookOpen,
   Briefcase,
   Calculator,
   Check,
+  Clock3,
   FileCheck,
   FileText,
   Globe2,
   Home,
   LockKeyhole,
+  MonitorCheck,
   Search,
   Settings,
   ShieldCheck,
   Star,
-  Upload
+  Upload,
+  Users
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
 
@@ -126,35 +130,39 @@ const operations: Array<IconItem & { title: string; text: string }> = [
     Icon: Briefcase
   },
   {
-    title: 'Migración a Holded',
-    text: 'Configuración, migración y formación para trabajar con procesos contables más ordenados.',
-    Icon: Settings
+    title: 'Control documental',
+    text: 'Organización de expedientes, plazos y documentos para trabajar con menos fricción operativa.',
+    Icon: FileCheck
   },
   {
-    title: 'Mentoring operativo',
-    text: 'Sesiones para tomar mejores decisiones fiscales, administrativas y de gestión interna.',
+    title: 'Dirección profesional',
+    text: 'Criterio fiscal, administrativo y legal para tomar decisiones con una visión más completa.',
     Icon: Star
   }
 ];
 
-const reviews = [
+const holdedBenefits = [
+  'Revisión de tu contabilidad actual',
+  'Plan de migración a Holded por fases',
+  'Configuración de facturación, bancos y reporting',
+  'Acompañamiento inicial para tu equipo'
+] as const;
+
+const trainingTopics: Array<IconItem & { title: string; text: string }> = [
   {
-    text: 'Ksenia hizo que todo el proceso fuera muy sencillo. Profesional, rápida y siempre dispuesta a ayudar.',
-    name: 'James L.',
-    country: 'Reino Unido',
-    badge: 'UK'
+    title: 'Fiscal, contable y mercantil',
+    text: 'Sesiones prácticas para entender obligaciones, modelos, cierres y documentación societaria.',
+    Icon: Calculator
   },
   {
-    text: 'Excelente servicio para la gestión de mi Modelo 151 y la apertura de mi empresa. 100% recomendable.',
-    name: 'Sophie M.',
-    country: 'Francia',
-    badge: 'FR'
+    title: 'Legal, laboral y RRHH',
+    text: 'Formación operativa para procesos internos, contratación, documentación y buenas prácticas.',
+    Icon: Users
   },
   {
-    text: 'Muy atenta y resolutiva. Me ayudó con la nacionalidad española y todo fue más fácil de lo esperado.',
-    name: 'Markus B.',
-    country: 'Alemania',
-    badge: 'DE'
+    title: 'Formación en Holded',
+    text: 'Bloques de 2 horas para aprender a trabajar con Holded de forma ordenada. Precio: 180 € por bloque.',
+    Icon: MonitorCheck
   }
 ];
 
@@ -166,8 +174,9 @@ export default function HomePage() {
       <FeaturedServices />
       <HowItWorks />
       <ClientPortal />
+      <HoldedMigration />
+      <TrainingPrograms />
       <Operations />
-      <Reviews />
       <FinalCta />
     </main>
   );
@@ -229,7 +238,7 @@ function Services() {
 
 function FeaturedServices() {
   return (
-    <section className="bg-[#0D1B2A] px-6 py-16 text-[#F8F6F1] md:py-20">
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
       <div className="mx-auto max-w-7xl">
         <SectionTitle
           dark
@@ -322,7 +331,7 @@ function ClientPortal() {
           </div>
         </div>
 
-        <div className="border border-[#D4A017]/25 bg-[#0D1B2A] p-6 text-[#F8F6F1] shadow-[0_22px_60px_rgba(13,27,42,0.22)]">
+        <div className="brand-blue-bg border border-[#D4A017]/25 p-6 text-[#F8F6F1] shadow-[0_22px_60px_rgba(13,27,42,0.22)]">
           <div className="flex items-center justify-between border-b border-[#D4A017]/20 pb-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">EXPERT Portal</p>
@@ -339,6 +348,122 @@ function ClientPortal() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HoldedMigration() {
+  return (
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div>
+          <SectionTitle
+            dark
+            eyebrow="Holded Solution Partner"
+            title="Migración de contabilidad a Holded con criterio profesional."
+            text="Preparamos el paso desde hojas de cálculo, programas antiguos o procesos dispersos hacia un entorno contable más claro, conectado y mantenible."
+          />
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {holdedBenefits.map((benefit) => (
+              <div key={benefit} className="flex items-start gap-3 border border-[#D4A017]/25 bg-[#23364D]/35 p-4">
+                <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" />
+                <p className="text-sm leading-6 text-[#F8F6F1]/86">{benefit}</p>
+              </div>
+            ))}
+          </div>
+
+          <Link
+            href="/holded"
+            className="mt-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
+          >
+            Ver página Holded
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <form
+          action="/solicitar-presupuesto"
+          method="get"
+          className="border border-[#D4A017]/25 bg-[#F8F6F1] p-6 text-[#0D1B2A] shadow-[0_22px_60px_rgba(13,27,42,0.32)]"
+        >
+          <input type="hidden" name="servicio" value="demo-holded" />
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Solicitud de demostración</p>
+          <h3 className="mt-3 font-serif text-3xl font-bold">Agenda una revisión inicial</h3>
+          <p className="mt-3 text-sm leading-6 text-[#23364D]">
+            Cuéntanos el punto de partida y prepararemos una propuesta de migración o formación en Holded.
+          </p>
+
+          <div className="mt-6 grid gap-3">
+            <input
+              name="nombre"
+              required
+              placeholder="Nombre"
+              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
+            />
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="Email"
+              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
+            />
+            <input
+              name="empresa"
+              placeholder="Empresa o actividad"
+              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
+            />
+            <textarea
+              name="mensaje"
+              rows={4}
+              placeholder="Qué sistema utilizas ahora y qué necesitas migrar"
+              className="border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-sm outline-none transition focus:border-[#D4A017]"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="mt-5 inline-flex min-h-12 w-full items-center justify-center bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Solicitar demostración
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+function TrainingPrograms() {
+  return (
+    <section className="px-6 py-16 md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          centered
+          eyebrow="Formación"
+          title="Formación práctica para equipos, autónomos y empresas."
+          text="Sesiones enfocadas a aplicar bien los procesos fiscales, contables, legales, mercantiles, laborales, de RRHH y el uso diario de Holded."
+        />
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {trainingTopics.map(({ Icon, title, text }) => (
+            <article key={title} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)]">
+              <Icon className="h-8 w-8 stroke-[#D4A017]" strokeWidth={1.7} />
+              <h3 className="mt-6 font-serif text-xl font-bold">{title}</h3>
+              <p className="mt-3 text-sm leading-7 text-[#23364D]">{text}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/servicios/formacion"
+            className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+          >
+            Ver formación
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
@@ -370,47 +495,9 @@ function Operations() {
   );
 }
 
-function Reviews() {
-  return (
-    <section className="bg-[#0D1B2A] px-6 py-16 text-[#F8F6F1] md:py-20">
-      <div className="mx-auto max-w-7xl">
-        <SectionTitle
-          dark
-          centered
-          eyebrow="Clientes"
-          title="Atención cercana con exigencia profesional."
-          text="La confianza se gana resolviendo, comunicando claro y cuidando cada expediente."
-        />
-
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {reviews.map((review) => (
-            <article key={review.name} className="border border-[#D4A017]/25 bg-[#23364D]/35 p-6">
-              <div className="flex gap-1 text-[#D4A017]">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="h-4 w-4 fill-current" />
-                ))}
-              </div>
-              <p className="mt-5 text-sm leading-7 text-[#F8F6F1]/82">{review.text}</p>
-              <div className="mt-6 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center bg-[#F8F6F1] text-xs font-bold text-[#0D1B2A]">
-                  {review.badge}
-                </span>
-                <div>
-                  <p className="font-bold">{review.name}</p>
-                  <p className="text-sm text-[#9CA3AF]">{review.country}</p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function FinalCta() {
   return (
-    <section className="relative overflow-hidden bg-[#0D1B2A] px-6 py-16 text-center text-[#F8F6F1] md:py-20">
+    <section className="brand-blue-bg px-6 py-16 text-center text-[#F8F6F1] md:py-20">
       <div className="absolute inset-x-0 top-0 h-px bg-[#D4A017]/40" />
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Siguiente paso</p>

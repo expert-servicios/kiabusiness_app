@@ -1,10 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Link2, Mail, MapPin, MessageCircle } from 'lucide-react';
 
 const quickLinks = [
   { label: 'Inicio', href: '/' },
   { label: 'Servicios', href: '/servicios' },
+  { label: 'Holded', href: '/holded' },
+  { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' }
@@ -14,12 +16,20 @@ const serviceLinks = [
   { label: 'Declaraciones e Impuestos', href: '/servicios/declaraciones-impuestos' },
   { label: 'Extranjería y Nacionalidad', href: '/servicios/extranjeria-nacionalidad' },
   { label: 'Empresas y Autónomos', href: '/servicios/empresas-autonomos' },
-  { label: 'Gestiones Especializadas', href: '/servicios/gestiones-especializadas' }
+  { label: 'Gestiones Especializadas', href: '/servicios/gestiones-especializadas' },
+  { label: 'Formación', href: '/servicios/formacion' }
+] as const;
+
+const socialLinks = [
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/ksenia-ilicheva/', Icon: Link2 },
+  { label: 'Instagram', href: 'https://www.instagram.com/expert_servicios/', Icon: Link2 },
+  { label: 'Facebook', href: 'https://www.facebook.com/expertapp', Icon: Link2 },
+  { label: 'YouTube', href: 'https://www.youtube.com/channel/UCua-wKjSBBVOuIXI-wWzpJg', Icon: Link2 }
 ] as const;
 
 export function Footer() {
   return (
-    <footer className="bg-[#0D1B2A] py-10 text-[#F8F6F1]">
+    <footer className="brand-blue-bg py-10 text-[#F8F6F1]">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-[1.25fr_0.75fr_0.9fr_1fr]">
         <div>
           <Link href="/" className="inline-flex items-center">
@@ -82,8 +92,18 @@ export function Footer() {
             </li>
           </ul>
           <div className="mt-4 flex gap-3 text-sm font-bold text-[#9CA3AF]">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[#F8F6F1]/20">IG</span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[#F8F6F1]/20">in</span>
+            {socialLinks.map(({ label, href, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-[#F8F6F1]/20 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                <Icon className="h-4 w-4" />
+              </a>
+            ))}
           </div>
         </div>
       </div>

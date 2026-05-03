@@ -5,6 +5,8 @@ import { ChevronDown, LockKeyhole, Menu } from 'lucide-react';
 const navLinks = [
   { label: 'Inicio', href: '/' },
   { label: 'Servicios', href: '/servicios' },
+  { label: 'Holded', href: '/holded' },
+  { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' }
@@ -33,7 +35,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-[#F8F6F1]/88 lg:flex">
+        <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 xl:gap-8 lg:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}

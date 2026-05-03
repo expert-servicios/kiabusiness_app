@@ -33,6 +33,10 @@ export async function POST(req: NextRequest) {
       if (!quote || quoteFetchError) {
         console.error('Quote not found for webhook:', quoteFetchError);
       } else {
+        const amountEur = Number(session.amount_total ?? 0) / 100;
+        const paymentId = (session.payment_intent as string) ?? session.id;
+        const currency = session.currency?.toUpperCase() ?? 'EUR';
+
         const { error: quoteUpdateError } = await supabaseAdmin
           .from('quotes')
           .update({ status: 'paid', stripe_checkout_id: session.id })
@@ -40,6 +44,26 @@ export async function POST(req: NextRequest) {
 
         if (quoteUpdateError) {
           console.error('Failed to update quote status:', quoteUpdateError);
+        }
+
+        const { error: orderError } = await supabaseAdmin.from('orders').insert({
+          quote_id: quoteId,
+          client_id: quote.client_id,
+          stripe_payment_id: paymentId,
+          amount_eur: amountEur,
+          currency,
+          status: 'paid',
+          metadata: {
+            checkout_session: {
+              id: session.id,
+              payment_intent: session.payment_intent,
+              customer_email: session.customer_email
+            }
+          }
+        });
+
+        if (orderError) {
+          console.error('Failed to create order after payment:', orderError);
         }
 
         if (quote.client_id) {

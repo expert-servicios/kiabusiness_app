@@ -28,5 +28,11 @@ export const categories = [
     slug: 'gestiones-especializadas',
     name: 'Gestiones Especializadas',
     description: 'Trámites estratégicos con enfoque legal-administrativo de alta complejidad.'
+  },
+  {
+    slug: 'formacion',
+    name: 'Formación',
+    description:
+      'Formación fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.'
   }
 ] as const;
