@@ -7,6 +7,8 @@ interface Profile {
   id: string;
   full_name: string | null;
   phone: string | null;
+  whatsapp_number: string | null;
+  whatsapp_consent: boolean;
   email: string;
 }
 
@@ -48,6 +50,8 @@ export default async function ProfilePage() {
             <ProfileForm
               initialFullName={profile.full_name ?? ''}
               initialPhone={profile.phone ?? ''}
+              initialWhatsappNumber={profile.whatsapp_number ?? ''}
+              initialWhatsappConsent={profile.whatsapp_consent}
               email={profile.email}
             />
           ) : (

@@ -4,7 +4,9 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 
 const profileUpdateSchema = z.object({
   full_name: z.string().min(2).max(100).optional(),
-  phone: z.string().max(20).optional()
+  phone: z.string().max(20).optional(),
+  whatsapp_number: z.string().max(20).optional(),
+  whatsapp_consent: z.boolean().optional()
 }).refine((d) => Object.keys(d).length > 0, { message: 'Envía al menos un campo' });
 
 export async function GET(request: NextRequest) {
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile, error: fetchError } = await getSupabaseAdmin()
       .from('profiles')
-      .select('id,role,full_name,phone,country,created_at')
+      .select('id,role,full_name,phone,whatsapp_number,whatsapp_consent,country,created_at')
       .eq('id', sessionData.session.user.id)
       .single();
 
@@ -49,12 +51,14 @@ export async function PATCH(request: NextRequest) {
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (parseResult.data.full_name !== undefined) updates.full_name = parseResult.data.full_name;
     if (parseResult.data.phone !== undefined) updates.phone = parseResult.data.phone;
+    if (parseResult.data.whatsapp_number !== undefined) updates.whatsapp_number = parseResult.data.whatsapp_number;
+    if (parseResult.data.whatsapp_consent !== undefined) updates.whatsapp_consent = parseResult.data.whatsapp_consent;
 
     const { data: profile, error: updateError } = await getSupabaseAdmin()
       .from('profiles')
       .update(updates)
       .eq('id', sessionData.session.user.id)
-      .select('id,full_name,phone')
+      .select('id,full_name,phone,whatsapp_number,whatsapp_consent')
       .single();
 
     if (updateError) {

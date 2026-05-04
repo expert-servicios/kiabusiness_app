@@ -238,7 +238,15 @@ Estas páginas se generan con la información legal de la empresa y estarán pub
   - Páginas admin: `/admin/emails`, `/admin/suscripciones`.
   - Navegación actualizada: admin panel incluye cards de Emails y Suscripciones; dashboard cliente incluye acceso directo a perfil y pasos clicables.
 
-- **Siguiente fase**: Fase 6 — Preparación para WhatsApp y AI.
+- **Fase 6: Preparación para WhatsApp y AI** — COMPLETADA (2026-05-04)
+  - Migración: `whatsapp_number` + `whatsapp_consent` en profiles; tablas `ai_logs` y `whatsapp_conversations`.
+  - Adaptador WhatsApp (`lib/integrations/whatsapp.ts`): 4 funciones stub documentadas para Meta Cloud API.
+  - Adaptador AI (`lib/integrations/ai.ts`): 5 funciones stub + `logAiEvent` documentadas para Claude API.
+  - Webhook Meta: `GET /api/whatsapp/webhook` (challenge) + `POST` (inbound con resolución de cliente).
+  - Perfil cliente: campo WhatsApp + checkbox de consentimiento GDPR; API actualizada.
+  - `.env.example`: `ANTHROPIC_API_KEY`, `AI_PROVIDER=anthropic`, vars WhatsApp alineadas.
+
+- **Todas las fases completadas.** La plataforma está lista para producción y para conectar Meta Cloud y Claude API.
 
 ## Limpieza previa a la implementación
 

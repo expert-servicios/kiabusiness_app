@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-04 (sesión 6 — Fase 6)
+
+- Añadida migración `supabase/migrations/20260504120000_add_whatsapp_ai.sql`:
+  - Columnas `whatsapp_number` y `whatsapp_consent` en `profiles`.
+  - Tabla `ai_logs` (event_type, client_id, input, output, model, latency_ms, error) con RLS solo-admin.
+  - Tabla `whatsapp_conversations` (direction, phone_number, body, message_id) con RLS admin + cliente propietario.
+- Creado `lib/integrations/whatsapp.ts`: adaptador con stubs `sendWhatsAppMessage`, `handleWhatsAppWebhook`, `mapWhatsAppMessageToClient`, `logWhatsAppConversation`. Cada función documenta el TODO de integración real con Meta Cloud API.
+- Creado `lib/integrations/ai.ts`: adaptador con stubs `classifyQuote`, `suggestServiceCategory`, `draftAdminReply`, `summarizeCaseHistory`, `detectMissingDocuments`, `logAiEvent`. Cada función documenta el TODO de integración con Claude API.
+- Creado `GET /api/whatsapp/webhook`: verificación del challenge de Meta (hub.verify_token → META_WHATSAPP_WEBHOOK_VERIFY_TOKEN).
+- Creado `POST /api/whatsapp/webhook`: recepción de mensajes entrantes; llama `handleWhatsAppWebhook`, resuelve cliente por número y llama `logWhatsAppConversation`.
+- Actualizado `GET + PATCH /api/profile`: incluye `whatsapp_number` y `whatsapp_consent` en select y update.
+- Actualizado `components/profile/ProfileForm.tsx`: añade sección WhatsApp con campo de número y checkbox de consentimiento GDPR-friendly.
+- Actualizada `app/(protected)/dashboard/perfil/page.tsx`: pasa los nuevos props al formulario.
+- Actualizado `.env.example`: añadido `ANTHROPIC_API_KEY`, `AI_PROVIDER=anthropic`; alineadas las vars de WhatsApp.
+- Build verificado — sin errores.
+
 ## 2026-05-04 (sesión 5 — Fase 5)
 
 - Añadida migración `supabase/migrations/20260503160000_add_messages_table.sql`: tabla `messages` con RLS (acceso por case_id para admin y clientes propietarios).
