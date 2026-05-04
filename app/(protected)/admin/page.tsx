@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { Users, FileText, DollarSign, BarChart3, FolderOpen } from 'lucide-react';
+import { Users, FileText, DollarSign, BarChart3, FolderOpen, Mail, CreditCard } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
@@ -143,6 +143,34 @@ export default async function AdminPage() {
               <BarChart3 className="h-8 w-8 text-[#d7a33a]" />
             </div>
             <p className="mt-6 font-semibold text-[#d7a33a] transition group-hover:translate-x-1">Ir a reportes →</p>
+          </Link>
+
+          <Link
+            href="/admin/emails"
+            className="group rounded-2xl border border-[#d8cbb5] bg-white p-8 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-bold text-[#07111d]">Registro de emails</h3>
+                <p className="mt-2 text-[#29384a]">Historial de comunicaciones enviadas</p>
+              </div>
+              <Mail className="h-8 w-8 text-[#d7a33a]" />
+            </div>
+            <p className="mt-6 font-semibold text-[#d7a33a] transition group-hover:translate-x-1">Ver emails →</p>
+          </Link>
+
+          <Link
+            href="/admin/suscripciones"
+            className="group rounded-2xl border border-[#d8cbb5] bg-white p-8 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-bold text-[#07111d]">Suscripciones</h3>
+                <p className="mt-2 text-[#29384a]">Facturación recurrente y planes activos</p>
+              </div>
+              <CreditCard className="h-8 w-8 text-[#d7a33a]" />
+            </div>
+            <p className="mt-6 font-semibold text-[#d7a33a] transition group-hover:translate-x-1">Ver suscripciones →</p>
           </Link>
         </div>
       </div>

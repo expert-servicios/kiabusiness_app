@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-05-04 (sesión 5 — Fase 5)
+
+- Añadida migración `supabase/migrations/20260503160000_add_messages_table.sql`: tabla `messages` con RLS (acceso por case_id para admin y clientes propietarios).
+- Actualizado `next.config.ts`: `bodySizeLimit: '10mb'` en `serverActions` para subida de archivos.
+- Creado `GET /api/profile` + `PATCH /api/profile`: lectura y edición de `full_name` y `phone` del usuario autenticado.
+- Creado `GET /api/cases/[id]/documents` + `POST /api/cases/[id]/documents`: listado y subida de archivos a Supabase Storage (`client-documents`), con registro en tabla `documents`.
+- Creado `GET /api/cases/[id]/messages` + `POST /api/cases/[id]/messages`: hilo de mensajes de caso con join de perfil; rol verificado dinámicamente.
+- Creado `PATCH /api/documents/[id]`: admin aprueba o rechaza documentos (estado: pendiente/revisado/rechazado).
+- Creados `GET /api/admin/emails` y `GET /api/admin/subscriptions`: endpoints de solo lectura para vistas administrativas.
+- Creadas páginas cliente:
+  - `/dashboard/expedientes`: lista de casos activos y finalizados con estado visual.
+  - `/dashboard/expedientes/[id]`: detalle de caso con `DocumentUpload` y `CaseMessageThread` en grid 2 columnas.
+  - `/dashboard/perfil`: formulario editable de nombre y teléfono con `ProfileForm`.
+- Creados componentes:
+  - `DocumentUpload`: carga de archivos con estado visual de documentos.
+  - `CaseMessageThread`: hilo de mensajes alineados por rol; Ctrl+Enter para enviar.
+  - `ProfileForm`: PATCH a `/api/profile` con feedback inline.
+- Creadas páginas admin:
+  - `/admin/emails`: tabla con los últimos 200 registros de `email_events` con estado y tipo de evento.
+  - `/admin/suscripciones`: lista de suscripciones con plan, estado y fechas de renovación/cancelación.
+- Actualizados `admin/page.tsx` (añadidos cards Emails y Suscripciones) y `dashboard/page.tsx` (botón Mi perfil y pasos como enlaces clicables).
+- Build verificado — sin errores.
+
 ## 2026-05-03 (sesión 4 — Fase 4)
 
 - Añadida migración `supabase/migrations/20260503150000_add_email_events_table.sql`: tabla `email_events` con RLS (admin puede ver todos los registros).

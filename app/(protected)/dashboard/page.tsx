@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ArrowRight, FileText, DollarSign, Clock, Zap } from 'lucide-react';
+import { ArrowRight, FileText, DollarSign, User, Zap } from 'lucide-react';
 
 async function fetchWithCookies(path: string) {
   const cookieStore = await cookies();
@@ -101,14 +101,23 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-12 rounded-2xl border border-[#d8cbb5] bg-white p-8">
-          <h2 className="font-serif text-xl font-bold text-[#07111d]">Próximos pasos</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-[#07111d]">Próximos pasos</h2>
+            <Link
+              href="/dashboard/perfil"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-4 py-2 text-xs font-semibold text-[#29384a] hover:border-[#d7a33a] hover:text-[#07111d]"
+            >
+              <User className="h-3.5 w-3.5" />
+              Mi perfil
+            </Link>
+          </div>
           <div className="mt-6 space-y-4">
             {[
-              { n: 1, title: 'Completa tu perfil', desc: 'Añade más información para presupuestos más precisos' },
-              { n: 2, title: 'Solicita presupuesto', desc: 'Recibirás propuestas personalizadas en 24 horas' },
-              { n: 3, title: 'Revisa y aprueba', desc: 'Acepta el presupuesto y comenzamos el trámite' }
-            ].map(({ n, title, desc }) => (
-              <div key={n} className="flex gap-4">
+              { n: 1, title: 'Completa tu perfil', desc: 'Añade tu nombre y teléfono para presupuestos más precisos', href: '/dashboard/perfil' },
+              { n: 2, title: 'Solicita presupuesto', desc: 'Recibirás propuestas personalizadas en 24 horas', href: '/solicitar-presupuesto' },
+              { n: 3, title: 'Revisa y aprueba', desc: 'Acepta el presupuesto y comenzamos el trámite', href: '/dashboard/presupuestos' }
+            ].map(({ n, title, desc, href }) => (
+              <Link key={n} href={href} className="flex gap-4 rounded-xl p-2 transition hover:bg-[#f8f4eb]">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/10 text-[#d7a33a]">
                   {n}
                 </div>
@@ -116,7 +125,7 @@ export default async function DashboardPage() {
                   <p className="font-semibold text-[#07111d]">{title}</p>
                   <p className="mt-1 text-sm text-[#29384a]">{desc}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

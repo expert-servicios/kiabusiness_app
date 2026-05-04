@@ -231,7 +231,14 @@ Estas páginas se generan con la información legal de la empresa y estarán pub
   - Disparadores activos: quote.received, quote.responded, quote.accepted, payment.confirmed, case.status.updated, service.completed, review.request, subscription.created, subscription.payment_failed.
   - Webhook Resend (`/api/resend/webhook`): actualiza estado de entrega/rebote en `email_events`.
 
-- **Siguiente fase**: Completar dashboards (perfil editable, documentos, mensajes) — Fase 5.
+- **Fase 5: Dashboards cliente y admin** — COMPLETADA (2026-05-04)
+  - API: profile (GET + PATCH), documents por caso (GET + POST), messages por caso (GET + POST), documents admin (PATCH), admin/emails (GET), admin/subscriptions (GET).
+  - Componentes: `DocumentUpload`, `CaseMessageThread`, `ProfileForm`.
+  - Páginas cliente: `/dashboard/expedientes`, `/dashboard/expedientes/[id]`, `/dashboard/perfil`.
+  - Páginas admin: `/admin/emails`, `/admin/suscripciones`.
+  - Navegación actualizada: admin panel incluye cards de Emails y Suscripciones; dashboard cliente incluye acceso directo a perfil y pasos clicables.
+
+- **Siguiente fase**: Fase 6 — Preparación para WhatsApp y AI.
 
 ## Limpieza previa a la implementación
 
