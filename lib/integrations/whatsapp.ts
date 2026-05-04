@@ -53,9 +53,19 @@ export function mapWhatsAppMessageToClient(
 }
 
 /**
- * Persist a WhatsApp conversation record.
- * TODO: replace stub with real insert into whatsapp_conversations via getSupabaseAdmin().
+ * Persist a WhatsApp conversation record in whatsapp_conversations.
  */
 export async function logWhatsAppConversation(params: LogConversationParams): Promise<void> {
-  console.log('[WhatsApp stub] logWhatsAppConversation', params);
+  try {
+    const { getSupabaseAdmin } = await import('./supabase');
+    await getSupabaseAdmin().from('whatsapp_conversations').insert({
+      client_id: params.clientId ?? null,
+      phone_number: params.phoneNumber,
+      direction: params.direction,
+      body: params.body,
+      whatsapp_message_id: params.whatsappMessageId ?? null
+    });
+  } catch (err) {
+    console.error('[WhatsApp] logWhatsAppConversation error:', err);
+  }
 }

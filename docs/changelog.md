@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-04 (sesión 7 — Admin completo + AI real)
+
+- Creado `GET /api/admin/users`: lista usuarios con email (auth), rol, teléfono, WhatsApp consent, conteos de presupuestos y expedientes activos/totales.
+- Creado `PATCH /api/admin/users`: cambia el rol de un usuario (`client` ↔ `admin`).
+- Creada `app/(protected)/admin/usuarios/page.tsx`: tabla de usuarios con columnas email, contacto, presupuestos, expedientes, WhatsApp y rol editable en tiempo real.
+- Creado `components/admin/UserRoleSelect.tsx`: selector de rol inline con PATCH optimista.
+- Creado `GET /api/admin/reports`: agrega datos de órdenes, casos, presupuestos, emails y suscripciones.
+- Creada `app/(protected)/admin/reportes/page.tsx`: dashboard con KPIs (ingresos totales, suscripciones activas, tasa de entrega), gráficas de barras de ingresos por mes, expedientes por estado, embudo de presupuestos y estadísticas de email.
+- Instalado `@anthropic-ai/sdk`. Conectadas `classifyQuote`, `suggestServiceCategory` y `draftAdminReply` a Claude Haiku (claude-haiku-4-5-20251001). Cada función registra en `ai_logs` con latencia.
+- Conectado `logWhatsAppConversation` a Supabase real (tabla `whatsapp_conversations`).
+- `logAiEvent` conectado a Supabase real (tabla `ai_logs`).
+- Build verificado — 47 páginas estáticas, sin errores.
+
 ## 2026-05-04 (sesión 6 — Fase 6)
 
 - Añadida migración `supabase/migrations/20260504120000_add_whatsapp_ai.sql`:
