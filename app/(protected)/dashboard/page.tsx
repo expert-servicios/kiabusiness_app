@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ArrowRight, FileText, DollarSign, User, Zap } from 'lucide-react';
+import { ArrowRight, FileText, DollarSign, User, Zap, Building2, Plus } from 'lucide-react';
 
 async function fetchWithCookies(path: string) {
   const cookieStore = await cookies();
@@ -14,11 +14,14 @@ async function fetchWithCookies(path: string) {
 }
 
 export default async function DashboardPage() {
-  const [quotesData, casesData, subsData] = await Promise.all([
+  const [quotesData, casesData, subsData, companiesData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
     fetchWithCookies('/api/cases'),
-    fetchWithCookies('/api/subscriptions')
+    fetchWithCookies('/api/subscriptions'),
+    fetchWithCookies('/api/companies')
   ]);
+
+  const hasCompany = (companiesData?.companies?.length ?? 0) > 0;
 
   const quotes: { status: string; amount_eur: number }[] = quotesData?.quotes ?? [];
   const cases: { state: string }[] = casesData?.cases ?? [];
@@ -79,6 +82,30 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 py-12">
+        {/* Company setup banner */}
+        {!hasCompany && (
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-[#d7a33a]/40 bg-[#d7a33a]/6 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="rounded-xl bg-[#d7a33a]/15 p-3 text-[#d7a33a]">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-[#07111d]">Configura tu empresa</p>
+                <p className="mt-1 text-sm text-[#29384a]">
+                  Añade los datos fiscales de tu empresa para gestionar expedientes, suscripciones y facturación.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/empresa/nueva"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#d7a33a] px-5 py-2.5 text-sm font-semibold text-[#061321] transition hover:bg-[#f0bf54]"
+            >
+              <Plus className="h-4 w-4" />
+              Añadir empresa
+            </Link>
+          </div>
+        )}
+
         <div className="grid gap-6 md:grid-cols-3">
           {cards.map((card) => (
             <Link
@@ -114,8 +141,9 @@ export default async function DashboardPage() {
           <div className="mt-6 space-y-4">
             {[
               { n: 1, title: 'Completa tu perfil', desc: 'Añade tu nombre y teléfono para presupuestos más precisos', href: '/dashboard/perfil' },
-              { n: 2, title: 'Solicita presupuesto', desc: 'Recibirás propuestas personalizadas en 24 horas', href: '/solicitar-presupuesto' },
-              { n: 3, title: 'Revisa y aprueba', desc: 'Acepta el presupuesto y comenzamos el trámite', href: '/dashboard/presupuestos' }
+              ...(!hasCompany ? [{ n: 2, title: 'Configura tu empresa', desc: 'Datos fiscales necesarios para expedientes y suscripciones', href: '/dashboard/empresa/nueva' }] : []),
+              { n: hasCompany ? 2 : 3, title: 'Solicita presupuesto', desc: 'Recibirás propuestas personalizadas en 24 horas', href: '/solicitar-presupuesto' },
+              { n: hasCompany ? 3 : 4, title: 'Revisa y aprueba', desc: 'Acepta el presupuesto y comenzamos el trámite', href: '/dashboard/presupuestos' }
             ].map(({ n, title, desc, href }) => (
               <Link key={n} href={href} className="flex gap-4 rounded-xl p-2 transition hover:bg-[#f8f4eb]">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/10 text-[#d7a33a]">
