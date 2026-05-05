@@ -23,15 +23,15 @@ export const metadata: Metadata = {
     'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
   icons: {
     icon: [
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '192x192' },
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '512x512' },
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '192x192' },
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
     ],
-    shortcut: [{ url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }],
+    shortcut: [{ url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }],
     apple: [
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '180x180' },
-      { url: '/logos/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '180x180' },
+      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
     ],
   },
 };
@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <Header />
         {children}
+        <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
         <Footer />
         <a
           href="https://wa.me/34696550480"

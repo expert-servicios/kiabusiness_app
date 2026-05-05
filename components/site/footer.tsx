@@ -35,7 +35,7 @@ export function Footer() {
           <Link href="/" className="inline-flex items-center">
             <span className="relative flex h-20 w-56 shrink-0 items-center justify-start overflow-hidden sm:h-24 sm:w-72">
               <Image
-                src="/logos/expert-logo-light-clean.png"
+                src="/logos/EXPERT_logo/expert-logo-light-clean.png"
                 alt="Logo EXPERT"
                 fill
                 sizes="(min-width: 640px) 288px, 224px"
@@ -113,6 +113,7 @@ export function Footer() {
         <div className="flex gap-4">
           <Link href="/aviso-legal" className="transition hover:text-[#D4A017]">Aviso legal</Link>
           <Link href="/privacidad" className="transition hover:text-[#D4A017]">Política de privacidad</Link>
+          <Link href="/terminos" className="transition hover:text-[#D4A017]">Términos</Link>
           <Link href="/cookies" className="transition hover:text-[#D4A017]">Cookies</Link>
         </div>
       </div>

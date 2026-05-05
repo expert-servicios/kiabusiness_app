@@ -31,7 +31,7 @@ body {
   background-color: #0D1B2A;
   background-image:
     linear-gradient(90deg, rgba(13, 27, 42, 0.96), rgba(13, 27, 42, 0.88), rgba(35, 54, 77, 0.84)),
-    url('/expert-banner.png');
+    url('/hero/Banner EXPERT horizontal (7).png');
   background-position: center;
   background-size: cover;
 }

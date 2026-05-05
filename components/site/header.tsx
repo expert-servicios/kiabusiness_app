@@ -19,7 +19,7 @@ export function Header() {
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
             <Image
-              src="/logos/expert-mark-light-clean.png"
+              src="/logos/EXPERT_logo/expert-mark-light-clean.png"
               alt=""
               fill
               sizes="48px"

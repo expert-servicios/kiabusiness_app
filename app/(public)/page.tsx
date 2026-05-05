@@ -170,6 +170,7 @@ export default function HomePage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <Hero />
+      <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <Services />
       <FeaturedServices />
       <HowItWorks />
