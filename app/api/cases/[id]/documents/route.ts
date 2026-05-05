@@ -76,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const buffer = Buffer.from(arrayBuffer);
 
     const { data: uploadData, error: uploadError } = await adminSupabase.storage
-      .from('client-documents')
+      .from('user-files')
       .upload(storagePath, buffer, { contentType: file.type || `application/${ext}`, upsert: false });
 
     if (uploadError) {
