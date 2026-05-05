@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       emailsResult,
       subsResult
     ] = await Promise.all([
-      adminSupabase.from('orders').select('amount_eur,created_at').eq('status', 'paid').order('created_at'),
+      adminSupabase.from('expert_orders').select('amount_eur,created_at').eq('status', 'paid').order('created_at'),
       adminSupabase.from('cases').select('state,created_at'),
       adminSupabase.from('quotes').select('status,created_at'),
       adminSupabase.from('email_events').select('status,event_type,created_at').order('created_at', { ascending: false }).limit(500),

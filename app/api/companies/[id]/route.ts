@@ -40,7 +40,7 @@ export async function PATCH(
 
     // Verify ownership
     const { data: membership } = await admin
-      .from('profile_companies')
+      .from('expert_profile_companies')
       .select('role')
       .eq('company_id', id)
       .eq('profile_id', session.user.id)
@@ -57,7 +57,7 @@ export async function PATCH(
     }
 
     const { data: company, error } = await admin
-      .from('companies')
+      .from('expert_companies')
       .update({ ...parse.data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select('*')

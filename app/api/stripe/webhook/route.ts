@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
             .update({ status: 'paid', stripe_checkout_id: session.id })
             .eq('id', quoteId);
 
-          await supabaseAdmin.from('orders').insert({
+          await supabaseAdmin.from('expert_orders').insert({
             quote_id: quoteId,
             client_id: quote.client_id,
             stripe_payment_id: paymentId,

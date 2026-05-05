@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
-      .from('profile_companies')
+      .from('expert_profile_companies')
       .select('role, company:companies(*)')
       .eq('profile_id', user.id)
       .order('created_at', { referencedTable: 'companies', ascending: true });
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Create company
     const { data: company, error: createError } = await admin
-      .from('companies')
+      .from('expert_companies')
       .insert({ ...parse.data, created_by: user.id })
       .select('*')
       .single();
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Link profile as owner
-    await admin.from('profile_companies').insert({
+    await admin.from('expert_profile_companies').insert({
       profile_id: user.id,
       company_id: company.id,
       role: 'owner'

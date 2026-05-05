@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         .from('quotes')
         .select('id', { count: 'exact', head: true })
         .in('status', ['draft', 'sent', 'accepted']),
-      adminSupabase.from('orders').select('amount_eur').eq('status', 'paid'),
+      adminSupabase.from('expert_orders').select('amount_eur').eq('status', 'paid'),
       adminSupabase
         .from('cases')
         .select('id', { count: 'exact', head: true })

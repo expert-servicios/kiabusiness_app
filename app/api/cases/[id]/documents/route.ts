@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { data: documents, error } = await supabase
-      .from('documents')
+      .from('case_documents')
       .select('id,original_name,state,created_at,file_path')
       .eq('case_id', id)
       .order('created_at', { ascending: false });
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const clientId = isAdmin ? caseData.client_id : userId;
     const { data: doc, error: docError } = await adminSupabase
-      .from('documents')
+      .from('case_documents')
       .insert({
         case_id: caseId,
         client_id: clientId,

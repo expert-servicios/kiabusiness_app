@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { data: doc, error: updateError } = await adminSupabase
-      .from('documents')
+      .from('case_documents')
       .update({ state: parseResult.data.state })
       .eq('id', id)
       .select('id,original_name,state,case_id,client_id')
