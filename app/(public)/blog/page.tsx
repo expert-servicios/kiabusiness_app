@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 import { articles } from '@/lib/utils/blog';
+import { NewsletterForm } from '@/components/site/NewsletterForm';
 
 export const metadata: Metadata = {
   title: 'Blog | EXPERT — Fiscalidad, Extranjería y Gestión Administrativa',
@@ -67,7 +68,25 @@ export default function BlogPage() {
           })}
         </div>
 
-        <div className="mt-12 border border-[#D4A017]/25 bg-white p-8 text-center">
+        {/* Newsletter */}
+        <div className="mt-12 bg-[#0D1B2A] p-8">
+          <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Alertas fiscales</p>
+              <h2 className="mt-2 font-serif text-xl font-bold text-[#F8F6F1] md:text-2xl">
+                Recibe los próximos artículos en tu email
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[#9CA3AF]">
+                Novedades fiscales, cambios en extranjería y guías prácticas. Sin spam. Cancela cuando quieras.
+              </p>
+            </div>
+            <div className="md:min-w-[360px]">
+              <NewsletterForm source="blog" variant="dark" layout="horizontal" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 border border-[#D4A017]/25 bg-white p-8 text-center">
           <p className="text-sm font-semibold text-[#0D1B2A]">Próximamente más artículos</p>
           <p className="mt-2 text-sm text-[#23364D]">
             Publicamos nuevas guías cada semana. Síguenos en{' '}

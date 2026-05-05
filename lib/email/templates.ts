@@ -55,6 +55,26 @@ function table(...rows: string[]): string {
   </table>`;
 }
 
+// ── 0. Welcome — new user first login ─────────────────────────────────────
+export function welcomeEmail(name: string) {
+  return {
+    subject: 'Bienvenido/a a EXPERT — tu área privada está lista',
+    html: base('Bienvenido a EXPERT', `
+      ${heading('¡Bienvenido/a a EXPERT!')}
+      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para('Tu cuenta está activa. Desde tu área privada puedes consultar el estado de tus expedientes, subir documentación, revisar presupuestos y gestionar tus suscripciones, todo en un solo lugar.')}
+      ${table(
+        detail('Expedientes', 'Estado en tiempo real de cada trámite'),
+        detail('Documentación', 'Subida segura y control de pendientes'),
+        detail('Presupuestos', 'Revisión y pago online'),
+        detail('Suscripciones', 'Gestión de planes mensuales')
+      )}
+      ${para('Si tienes cualquier duda o necesitas orientación antes de empezar, escríbenos directamente. Es gratis orientarte.')}
+      ${btn('Acceder a mi área privada', `${BRAND.appUrl}/dashboard`)}
+    `)
+  };
+}
+
 // ── 1. Quote received (client) ─────────────────────────────────────────────
 export function quoteReceivedClient(name: string, services: string) {
   return {

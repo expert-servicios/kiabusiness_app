@@ -22,6 +22,8 @@ import {
   Users
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
+import { NewsletterForm } from '@/components/site/NewsletterForm';
+import { articles } from '@/lib/utils/blog';
 
 type IconItem = {
   Icon: LucideIcon;
@@ -178,6 +180,7 @@ export default function HomePage() {
       <HoldedMigration />
       <TrainingPrograms />
       <Operations />
+      <BlogPreview />
       <FinalCta />
     </main>
   );
@@ -490,6 +493,91 @@ function Operations() {
               <p className="mt-3 text-sm leading-7 text-[#23364D]">{text}</p>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const categoryColors: Record<string, string> = {
+  Fiscalidad: 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10',
+  Extranjería: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
+  Empresas: 'text-emerald-400 border-emerald-400/40 bg-emerald-400/10',
+  Holded: 'text-rose-400 border-rose-400/40 bg-rose-400/10',
+  Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
+};
+
+function BlogPreview() {
+  const preview = articles.slice(0, 3);
+
+  return (
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <SectionTitle
+            dark
+            eyebrow="Blog"
+            title="Guías y artículos fiscales"
+            text="Contenido práctico sobre impuestos, extranjería y gestión de empresas. Sin jerga."
+          />
+          <Link
+            href="/blog"
+            className="inline-flex shrink-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
+          >
+            Ver todos los artículos
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {preview.map((article) => {
+            const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
+            return (
+              <article
+                key={article.slug}
+                className="flex flex-col border border-[#D4A017]/20 bg-[#23364D]/35 p-6 transition hover:-translate-y-0.5 hover:border-[#D4A017]/60"
+              >
+                <span className={`inline-block self-start border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
+                  {article.category}
+                </span>
+                <h3 className="mt-3 font-serif text-lg font-bold leading-snug text-[#F8F6F1]">
+                  {article.title}
+                </h3>
+                <p className="mt-2 flex-1 text-sm leading-6 text-[#9CA3AF]">{article.excerpt}</p>
+                <div className="mt-4 flex items-center justify-between text-xs text-[#9CA3AF]">
+                  <span>{article.date}</span>
+                  <span>{article.readTime}</span>
+                </div>
+                <Link
+                  href={`/blog/${article.slug}`}
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
+                >
+                  Leer artículo
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* Newsletter strip */}
+        <div className="mt-12 border border-[#D4A017]/25 bg-[#23364D]/35 p-6 md:p-8">
+          <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">
+                Alertas fiscales
+              </p>
+              <h3 className="mt-2 font-serif text-xl font-bold text-[#F8F6F1] md:text-2xl">
+                Recibe los próximos artículos en tu email
+              </h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[#9CA3AF]">
+                Novedades fiscales, cambios en extranjería y guías prácticas. Sin spam. Cancela cuando quieras.
+              </p>
+            </div>
+            <div className="md:min-w-[400px]">
+              <NewsletterForm source="home" variant="dark" layout="horizontal" />
+            </div>
+          </div>
         </div>
       </div>
     </section>
