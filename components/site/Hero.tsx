@@ -24,7 +24,10 @@ export function Hero() {
         sizes="100vw"
         className="absolute inset-0 -z-30 object-cover object-[64%_center] lg:object-[58%_center]"
       />
-      <div className="absolute inset-0 -z-20 bg-gradient-to-r from-[#0D1B2A]/94 via-[#0D1B2A]/62 to-[#0D1B2A]/8" />
+      {/* Mobile: strong uniform overlay so text is always readable */}
+      <div className="absolute inset-0 -z-20 bg-[#0D1B2A]/88 lg:hidden" />
+      {/* Desktop: directional gradient revealing the image on the right */}
+      <div className="absolute inset-0 -z-20 hidden bg-gradient-to-r from-[#0D1B2A]/94 via-[#0D1B2A]/62 to-[#0D1B2A]/8 lg:block" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0D1B2A]/75 via-transparent to-[#0D1B2A]/18" />
 
       <div className="mx-auto flex min-h-[650px] w-full max-w-7xl items-center px-6 py-20 lg:min-h-[650px] lg:px-20 lg:pb-32">

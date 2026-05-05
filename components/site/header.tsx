@@ -1,10 +1,13 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronDown, LockKeyhole, Menu } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
+import { categories } from '@/lib/utils/catalog';
 
 const navLinks = [
   { label: 'Inicio', href: '/' },
-  { label: 'Servicios', href: '/servicios' },
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
@@ -13,10 +16,32 @@ const navLinks = [
 ] as const;
 
 export function Header() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setServicesOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change (basic: close on any link click)
+  function closeMobile() {
+    setMobileOpen(false);
+    setServicesOpen(false);
+  }
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[#F8F6F1]/10 bg-[#0D1B2A]/96 text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20">
       <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-3">
+        {/* Logo */}
+        <Link href="/" onClick={closeMobile} className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
             <Image
               src="/logos/EXPERT_logo/expert-mark-light-clean.png"
@@ -35,50 +60,151 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 xl:gap-8 lg:flex">
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 lg:flex xl:gap-7">
+          <Link href="/" className="relative transition hover:text-[#D4A017]">
+            Inicio
+          </Link>
+
+          {/* Services dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setServicesOpen((v) => !v)}
+              className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
+              aria-expanded={servicesOpen ? 'true' : 'false'}
+            >
+              Servicios
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {servicesOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
+                <Link
+                  href="/servicios"
+                  onClick={() => setServicesOpen(false)}
+                  className="block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]"
+                >
+                  Ver todos los servicios →
+                </Link>
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    href={`/servicios/${cat.slug}`}
+                    onClick={() => setServicesOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`relative inline-flex items-center gap-1 transition hover:text-[#D4A017] ${
-                link.href === '/' ? 'text-[#D4A017]' : ''
-              }`}
+              className="transition hover:text-[#D4A017]"
             >
               {link.label}
-              {link.href === '/servicios' && <ChevronDown className="h-3.5 w-3.5" />}
-              {link.href === '/' && <span className="absolute -bottom-4 left-0 h-[2px] w-full bg-[#D4A017]" />}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        {/* Right actions */}
+        <div className="flex items-center gap-2">
           <Link
             href="/auth/login"
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#D4A017] px-5 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E]"
+            className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E] sm:px-5"
           >
             <LockKeyhole className="h-4 w-4" />
-            Acceder
+            <span className="hidden sm:inline">Acceder</span>
           </Link>
 
-          <details className="group relative lg:hidden">
-            <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-md border border-[#F8F6F1]/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] [&::-webkit-details-marker]:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Abrir menú</span>
-            </summary>
-            <div className="absolute right-0 top-14 w-64 border border-[#F8F6F1]/10 bg-[#0D1B2A] p-3 shadow-2xl shadow-[#0D1B2A]/40">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/76 transition hover:bg-[#23364D] hover:text-[#D4A017]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </details>
+          {/* Hamburger */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-md border border-white/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] lg:hidden"
+            aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={mobileOpen ? 'true' : 'false'}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="border-t border-white/10 bg-[#0D1B2A] lg:hidden">
+          <div className="mx-auto max-w-7xl px-4 py-3">
+            <Link
+              href="/"
+              onClick={closeMobile}
+              className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+            >
+              Inicio
+            </Link>
+
+            {/* Mobile Services accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setServicesOpen((v) => !v)}
+                className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+              >
+                Servicios
+                <ChevronDown className={`h-4 w-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {servicesOpen && (
+                <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
+                  <Link
+                    href="/servicios"
+                    onClick={closeMobile}
+                    className="block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]"
+                  >
+                    Ver todos →
+                  </Link>
+                  {categories.map((cat) => (
+                    <Link
+                      key={cat.slug}
+                      href={`/servicios/${cat.slug}`}
+                      onClick={closeMobile}
+                      className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={closeMobile}
+                className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Acceder button in mobile menu */}
+            <div className="mt-3 border-t border-white/10 pt-3">
+              <Link
+                href="/auth/login"
+                onClick={closeMobile}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+              >
+                <LockKeyhole className="h-4 w-4" />
+                Acceder a mi panel
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
