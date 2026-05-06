@@ -6,7 +6,7 @@ import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { articles } from '@/lib/utils/blog';
 
 // Update this URL once you create the Calendly event
-const CALENDLY_DEMO_URL = 'https://calendly.com/kseniailicheva/demo-holded-30min';
+const CALENDLY_DEMO_URL = 'https://calendly.com/soy-kseniailicheva/30min';
 
 export const metadata: Metadata = {
   title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
@@ -65,15 +65,16 @@ const PACKAGE_META = [
   }
 ];
 
+const FORMACION_PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
+
 async function getPrices() {
   try {
     const stripe = getStripeClient();
-    const results = await Promise.all(
-      PACKAGE_META.map((p) => stripe.prices.retrieve(p.priceId))
-    );
+    const allIds = [...PACKAGE_META.map((p) => p.priceId), FORMACION_PRICE_ID];
+    const results = await Promise.all(allIds.map((id) => stripe.prices.retrieve(id)));
     return results.map((p) => p.unit_amount ?? null);
   } catch {
-    return [null, null, null];
+    return [null, null, null, null];
   }
 }
 
@@ -86,6 +87,7 @@ const holdedArticles = articles.filter((a) => a.category === 'Holded');
 
 export default async function HoldedPage() {
   const prices = await getPrices();
+  const formacionPrice = prices[3];
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
@@ -189,7 +191,12 @@ export default async function HoldedPage() {
                     ))}
                   </ul>
 
-                  <div className="mt-7 space-y-2">
+                  <div className="mt-4 flex items-center gap-2 border border-[#D4A017]/40 bg-[#D4A017]/8 px-3 py-2">
+                    <Gift className="h-4 w-4 shrink-0 text-[#D4A017]" />
+                    <p className="text-xs font-bold text-[#0D1B2A]">2 horas de formación onboarding GRATIS</p>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
                     <HoldedBuyButton priceId={pkg.priceId} packageName={`${pkg.name} ${pkg.subtitle}`} />
                     <Link
                       href={`/solicitar-presupuesto?servicio=holded-${pkg.name.toLowerCase().replace(/\s+/g, '-')}`}
@@ -290,6 +297,52 @@ export default async function HoldedPage() {
               >
                 Reservar demo <ArrowRight className="h-4 w-4" />
               </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Formación por horas ───────────────────────────────────────────── */}
+      <section className="bg-white px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Formación</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
+              Formación en Holded por horas.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-[#23364D]">
+              ¿Ya tienes Holded pero necesitas mejorar el uso que le das? Sesiones de 2 horas adaptadas a tu nivel y flujo de trabajo concreto.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-md">
+            <div className="flex flex-col border border-[#D4A017] bg-[#F8F6F1] p-8 shadow-[0_8px_32px_rgba(212,160,23,0.14)]">
+              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10 text-[#D4A017]">
+                <MonitorCheck className="h-6 w-6" />
+              </div>
+              <h3 className="mt-5 font-serif text-2xl font-bold text-[#0D1B2A]">Sesión de formación</h3>
+              <p className="mt-1 text-sm text-[#9CA3AF]">Sesión individual · 2 horas · Videollamada</p>
+              <p className="mt-5 font-serif text-4xl font-bold text-[#0D1B2A]">{formatPrice(formacionPrice)}</p>
+              <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
+
+              <ul className="mt-6 space-y-3">
+                {[
+                  'Sesión de 2 horas por videollamada',
+                  'Contenido adaptado a tu nivel y sector',
+                  'Resolución de dudas en tiempo real',
+                  'Grabación de la sesión incluida',
+                  'Tras el pago recibirás el enlace para reservar tu horario'
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-[#23364D]">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-7">
+                <HoldedBuyButton priceId={FORMACION_PRICE_ID} packageName="Formación Holded por horas" />
+              </div>
             </div>
           </div>
         </div>

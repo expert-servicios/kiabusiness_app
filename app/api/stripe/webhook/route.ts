@@ -3,7 +3,13 @@ import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
-import { paymentConfirmed, subscriptionCreated, subscriptionPaymentFailed } from '@/lib/email/templates';
+import {
+  paymentConfirmed,
+  subscriptionCreated,
+  subscriptionPaymentFailed,
+  holdedMigrationConfirmed,
+  holdedFormacionConfirmed
+} from '@/lib/email/templates';
 
 function getPlanName(priceId: string): string {
   const map: Record<string, string> = {
@@ -108,6 +114,38 @@ export async function POST(req: NextRequest) {
               metadata: { quote_id: quoteId, session_id: session.id }
             });
           }
+        }
+      }
+    }
+
+    // Holded one-time purchases (migration + formación)
+    const productType = session.metadata?.product_type;
+    if (productType === 'holded' || productType === 'holded_formacion') {
+      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+      const customerName =
+        (session.customer_details as { name?: string } | null)?.name ??
+        customerEmail?.split('@')[0] ??
+        'Cliente';
+
+      if (customerEmail) {
+        const CALENDLY_FORMACION = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+        if (productType === 'holded') {
+          const packageName = session.metadata?.package_name ?? 'Paquete Holded';
+          const tpl = holdedMigrationConfirmed(customerName, packageName, CALENDLY_FORMACION);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'holded.migration.confirmed',
+            ...tpl,
+            metadata: { session_id: session.id, package_name: packageName }
+          });
+        } else {
+          const tpl = holdedFormacionConfirmed(customerName, CALENDLY_FORMACION);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'holded.formacion.confirmed',
+            ...tpl,
+            metadata: { session_id: session.id }
+          });
         }
       }
     }
