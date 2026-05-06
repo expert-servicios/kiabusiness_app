@@ -330,6 +330,96 @@ Los certificados Camerfirma tienen una validez de **2 o 3 años** según el tipo
 
 Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
     `
+  },
+  {
+    slug: 'migracion-holded-guia-practica',
+    category: 'Holded',
+    title: 'Migración a Holded: qué datos se trasladan y cómo prepararte',
+    excerpt:
+      'Guía práctica para entender qué información puede migrarse a Holded, qué requiere limpieza previa y cómo evitar errores que retrasen la puesta en marcha.',
+    date: '2 may 2025',
+    readTime: '6 min',
+    body: `
+## ¿Qué se puede migrar a Holded?
+
+Una migración a Holded no es solo "mover datos" — es una oportunidad para ordenar tu operativa. Esto es lo que habitualmente se puede trasladar:
+
+- **Contactos:** Clientes y proveedores con sus datos fiscales, condiciones de pago y categorías.
+- **Catálogo de productos y servicios:** Referencias, precios, impuestos aplicables y, si corresponde, stock inicial.
+- **Facturas emitidas y recibidas:** Desde el inicio del ejercicio actual (y en algunos casos del anterior).
+- **Saldos contables:** Balances de apertura y extractos bancarios para cuadrar cuentas desde el primer día.
+- **Proyectos activos:** Si usas el módulo de proyectos, se pueden trasladar los activos con su estado y facturación asociada.
+
+## Qué requiere limpieza previa
+
+La calidad de la migración depende directamente de la calidad de los datos de origen. Los problemas más frecuentes:
+
+- **Contactos duplicados o incompletos:** Sin NIF o con direcciones desactualizadas. Holded valida los datos fiscales, por lo que errores aquí bloquean documentos.
+- **Facturas sin referencia:** En programas más antiguos es habitual encontrar facturas sin numeración clara o con series mezcladas.
+- **Productos sin código:** El catálogo necesita referencias únicas para gestionar stock y estadísticas correctamente.
+- **Cuentas bancarias sin conciliar:** Si migras saldos contables, los extractos deben estar al día.
+
+## Pasos del proceso de migración con EXPERT
+
+1. **Auditoría inicial:** Revisamos el sistema de origen, el volumen de datos y el estado de la información.
+2. **Limpieza de datos:** Depuramos duplicados, completamos campos obligatorios y ordenamos referencias.
+3. **Importación estructurada:** Usamos las herramientas de importación de Holded (CSV/Excel) con las plantillas correctas.
+4. **Verificación:** Comparamos totales, facturas y saldos entre el sistema origen y Holded.
+5. **Formación:** Enseñamos al equipo a trabajar con la nueva plataforma antes del corte definitivo.
+
+## ¿Cuánto tiempo lleva?
+
+Depende del volumen de datos y el estado de partida. Un onboarding básico puede estar listo en **1-2 semanas**. Una migración completa con historial de facturas y conciliación bancaria puede llevar **3-6 semanas**.
+
+Lo más importante es no precipitarse: una migración bien hecha te ahorra meses de correcciones posteriores.
+    `
+  },
+  {
+    slug: 'holded-autonomos-vale-la-pena',
+    category: 'Holded',
+    title: 'Holded para autónomos: ¿vale la pena el coste frente a otras opciones?',
+    excerpt:
+      'Comparamos Holded con las alternativas más habituales para autónomos (Excel, Quipu, Contasimple) y analizamos cuándo el salto tiene sentido económico.',
+    date: '20 abr 2025',
+    readTime: '5 min',
+    body: `
+## El dilema del autónomo: ¿herramienta profesional o solución básica?
+
+Para muchos autónomos, la gestión contable se reduce a llevar un Excel de facturas y confiar en que la asesoría lo cuadra todo a fin de trimestre. Funciona, pero tiene un coste oculto: tiempo, errores y falta de visibilidad sobre la tesorería real.
+
+Holded ofrece una alternativa más completa, pero ¿tiene sentido económico para un autónomo?
+
+## Comparativa rápida
+
+| Herramienta | Precio aprox./mes | Ideal para |
+|---|---|---|
+| Excel manual | 0 € | Autónomos con muy pocos movimientos |
+| Quipu / Contasimple | 15-25 € | Autónomos con facturación simple |
+| **Holded** | **desde 49 €** | Autónomos con volumen, proyectos o equipo |
+| Sage / A3 | 80-120 € | Empresas medianas, uso contable avanzado |
+
+## Cuándo Holded SÍ tiene sentido para un autónomo
+
+- Emites más de **20-30 facturas al mes** y el control manual empieza a fallar.
+- Gestionas **proyectos** y necesitas ver rentabilidad por cliente o trabajo.
+- Tienes **empleados** y quieres integrar nóminas y retenciones.
+- Tu asesoría trabaja con Holded y quieres acceso compartido en tiempo real.
+- Estás creciendo y quieres una plataforma que escale contigo sin cambiar de herramienta.
+
+## Cuándo NO merece la pena (todavía)
+
+- Facturas menos de 10-15 documentos al mes.
+- No tienes inventario ni proyectos complejos.
+- Tu asesoría gestiona todo y no necesitas visibilidad propia.
+
+En esos casos, una herramienta más sencilla y económica es perfectamente válida.
+
+## El coste real de no tener visibilidad
+
+Más allá del precio de la suscripción, hay que valorar el tiempo dedicado a cuadrar manualmente, los errores que generan correcciones, y la falta de datos para tomar decisiones. Para un autónomo con ingresos superiores a 3.000-4.000 €/mes, la inversión en una herramienta como Holded suele amortizarse rápidamente.
+
+Si tienes dudas, podemos hacer una valoración gratuita de tu situación y recomendarte la herramienta más adecuada.
+    `
   }
 ];
 
