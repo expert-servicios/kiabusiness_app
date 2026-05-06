@@ -4,6 +4,7 @@ import { ArrowRight, Check, FileText, MonitorCheck, Settings, Upload, Clock, Cal
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { articles } from '@/lib/utils/blog';
+import { FaqSection } from '@/components/site/FaqSection';
 
 // Update this URL once you create the Calendly event
 const CALENDLY_DEMO_URL = 'https://calendly.com/soy-kseniailicheva/30min';
@@ -84,6 +85,33 @@ function formatPrice(cents: number | null) {
 }
 
 const holdedArticles = articles.filter((a) => a.category === 'Holded');
+
+const holdedFaq = [
+  {
+    q: '¿Qué es Holded y para qué sirve?',
+    a: 'Holded es un software de gestión empresarial en la nube que integra contabilidad, facturación, inventario, proyectos y CRM en un solo lugar. Permite tener visibilidad total del negocio en tiempo real desde cualquier dispositivo.'
+  },
+  {
+    q: '¿Cuánto tiempo tarda la migración a Holded?',
+    a: 'Depende del volumen de datos y la complejidad de tu situación actual. Un Pack Starter puede estar listo en 1-2 semanas. Una migración completa con historial contable e inventario suele tardar entre 3 y 6 semanas.'
+  },
+  {
+    q: '¿Qué datos se pueden migrar a Holded?',
+    a: 'Migramos clientes, proveedores, facturas emitidas y recibidas, saldos contables, productos y referencias de inventario, contactos y configuración bancaria. Previamente hacemos un diagnóstico para definir qué se migra y qué se depura.'
+  },
+  {
+    q: '¿La formación está incluida en el precio de migración?',
+    a: 'Sí. Todos los paquetes de migración incluyen 2 horas de formación onboarding gratuita para que arranques con seguridad. También ofrecemos sesiones adicionales de formación por horas si necesitas profundizar en algún módulo.'
+  },
+  {
+    q: '¿Puedo probar Holded antes de contratar la migración?',
+    a: 'Sí. Como Holded Solution Partner podemos facilitarte una prueba gratuita de 14 días sin tarjeta de crédito. También ofrecemos una demo en vivo de 30 minutos adaptada a tu sector.'
+  },
+  {
+    q: '¿Qué pasa si ya tengo Holded pero mal configurado?',
+    a: 'Podemos hacer una auditoría de tu cuenta actual, reorganizar la estructura contable, limpiar datos y configurar correctamente todos los módulos. Contacta con nosotros para valorar tu caso.'
+  }
+];
 
 export default async function HoldedPage() {
   const prices = await getPrices();
@@ -347,6 +375,9 @@ export default async function HoldedPage() {
           </div>
         </div>
       </section>
+
+      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+      <FaqSection items={holdedFaq} title="Preguntas frecuentes sobre Holded" />
 
       {/* ── Holded blog articles ───────────────────────────────────────────── */}
       {holdedArticles.length > 0 && (

@@ -4,6 +4,7 @@ import { Mail, MapPin, MessageCircle } from 'lucide-react';
 
 const quickLinks = [
   { label: 'Inicio', href: '/' },
+  { label: 'Planes', href: '/planes' },
   { label: 'Servicios', href: '/servicios' },
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
@@ -65,12 +66,12 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-[1.25fr_0.75fr_0.9fr_1fr]">
         <div>
           <Link href="/" className="inline-flex items-center">
-            <span className="relative flex h-20 w-56 shrink-0 items-center justify-start overflow-hidden sm:h-24 sm:w-72">
+            <span className="relative flex h-36 w-full shrink-0 items-center justify-start overflow-hidden sm:h-44">
               <Image
                 src="/logos/EXPERT_logo/expert-logo-light-clean.png"
                 alt="Logo EXPERT"
                 fill
-                sizes="(min-width: 640px) 288px, 224px"
+                sizes="(min-width: 640px) 320px, 256px"
                 className="object-contain object-left"
               />
             </span>

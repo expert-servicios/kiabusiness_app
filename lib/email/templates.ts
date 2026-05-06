@@ -285,7 +285,41 @@ export function contactAutoReply(nombre: string, asunto: string) {
   };
 }
 
-// ── 13. Document required (stub — se activa cuando existan endpoints) ─────
+// ── 13. Holded — migration package confirmed ───────────────────────────────
+export function holdedMigrationConfirmed(name: string, packageName: string, calendlyUrl: string) {
+  return {
+    subject: '¡Tu migración a Holded ha comenzado! Reserva tu sesión de formación',
+    html: base('Migración a Holded confirmada', `
+      ${heading('¡Tu compra está confirmada!')}
+      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hemos recibido tu pago para el <strong>${packageName}</strong>. En las próximas 24 horas hábiles nos pondremos en contacto para coordinar el inicio de la migración.`)}
+      ${para('Mientras tanto, reserva ya tu sesión de formación incluida (2 horas de onboarding) en el horario que mejor te venga:')}
+      ${btn('Reservar sesión de formación', calendlyUrl)}
+      ${para('<small style="color:#8899aa;">Si tienes alguna pregunta antes de la primera sesión, responde a este correo y te atendemos.</small>')}
+    `)
+  };
+}
+
+// ── 14. Holded — formación session confirmed ───────────────────────────────
+export function holdedFormacionConfirmed(name: string, calendlyUrl: string) {
+  return {
+    subject: '¡Sesión de formación Holded confirmada! Reserva tu horario',
+    html: base('Formación Holded confirmada', `
+      ${heading('¡Tu sesión de formación está lista!')}
+      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para('Hemos recibido tu pago para la sesión de formación en Holded (2 horas). Ahora solo tienes que elegir el día y hora que mejor te conviene:')}
+      ${btn('Reservar mi sesión de formación', calendlyUrl)}
+      ${table(
+        detail('Duración', '2 horas'),
+        detail('Formato', 'Videollamada (Google Meet / Zoom)'),
+        detail('Contenido', 'Adaptado a tu nivel y necesidades')
+      )}
+      ${para('Si tienes alguna duda antes de la sesión o quieres indicarnos áreas concretas a cubrir, responde a este correo.')}
+    `)
+  };
+}
+
+// ── 15. Document required (stub — se activa cuando existan endpoints) ─────
 export function documentRequired(name: string, service: string, docs: string[]) {
   const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${d}</li>`).join('');
   return {

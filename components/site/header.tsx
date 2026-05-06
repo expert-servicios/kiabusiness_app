@@ -3,11 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
 import { categories } from '@/lib/utils/catalog';
 
 const navLinks = [
-  { label: 'Inicio', href: '/' },
+  { label: 'Planes', href: '/planes' },
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
@@ -19,6 +20,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -31,7 +33,12 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change (basic: close on any link click)
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+    setServicesOpen(false);
+  }, [pathname]);
+
   function closeMobile() {
     setMobileOpen(false);
     setServicesOpen(false);
