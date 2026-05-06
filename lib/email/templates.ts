@@ -250,7 +250,42 @@ export function subscriptionPaymentFailed(name: string, planName: string) {
   };
 }
 
-// ── 11. Document required (stub — se activa cuando existan endpoints) ─────
+// ── 11. Contact form — admin notification ─────────────────────────────────
+export function contactMessage(nombre: string, email: string, asunto: string, mensaje: string, telefono?: string) {
+  return {
+    subject: `Nuevo mensaje de contacto: ${nombre}`,
+    html: base('Nuevo contacto', `
+      ${heading('Nuevo mensaje de contacto')}
+      ${para('Has recibido un mensaje desde el formulario de contacto del sitio web.')}
+      ${table(
+        detail('Nombre', nombre),
+        detail('Email', `<a href="mailto:${email}" style="color:#c88b25;">${email}</a>`),
+        ...(telefono ? [detail('Teléfono', telefono)] : []),
+        ...(asunto ? [detail('Área', asunto)] : []),
+        detail('Mensaje', `<span style="white-space:pre-wrap;">${mensaje}</span>`)
+      )}
+      ${btn('Responder por email', `mailto:${email}`)}
+    `)
+  };
+}
+
+// ── 12. Contact form — auto-reply to sender ────────────────────────────────
+export function contactAutoReply(nombre: string, asunto: string) {
+  return {
+    subject: 'Hemos recibido tu mensaje — EXPERT',
+    html: base('Mensaje recibido', `
+      ${heading('¡Mensaje recibido!')}
+      ${para(`Hola <strong>${nombre}</strong>,`)}
+      ${para('Gracias por ponerte en contacto con nosotros. Hemos recibido tu consulta y te responderemos en menos de <strong>24 horas hábiles</strong>.')}
+      ${asunto ? table(detail('Área consultada', asunto)) : ''}
+      ${para('Si tu consulta es urgente, puedes escribirnos directamente por WhatsApp:')}
+      ${btn('Escribir por WhatsApp', 'https://wa.me/34696550480')}
+      ${para('<small style="color:#8899aa;">Si no enviaste este mensaje, ignora este correo.</small>')}
+    `)
+  };
+}
+
+// ── 13. Document required (stub — se activa cuando existan endpoints) ─────
 export function documentRequired(name: string, service: string, docs: string[]) {
   const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${d}</li>`).join('');
   return {

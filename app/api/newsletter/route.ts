@@ -9,6 +9,10 @@ export async function POST(request: NextRequest) {
     const email = String(body.email ?? '').toLowerCase().trim();
     const name = String(body.name ?? '').trim() || null;
     const source = String(body.source ?? 'website').trim();
+    const hp = String(body.hp_url ?? '');
+
+    // Honeypot: bots fill this, humans don't
+    if (hp) return NextResponse.json({ ok: true });
 
     if (!email || !EMAIL_RE.test(email)) {
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });

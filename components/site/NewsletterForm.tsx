@@ -11,6 +11,7 @@ interface Props {
 
 export function NewsletterForm({ source = 'website', variant = 'dark', layout = 'horizontal' }: Props) {
   const [email, setEmail] = useState('');
+  const [hp, setHp] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -26,7 +27,7 @@ export function NewsletterForm({ source = 'website', variant = 'dark', layout = 
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source })
+        body: JSON.stringify({ email, source, hp_url: hp })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -63,6 +64,18 @@ export function NewsletterForm({ source = 'website', variant = 'dark', layout = 
       onSubmit={handleSubmit}
       className={isHorizontal ? 'flex flex-col gap-3 sm:flex-row sm:items-end' : 'flex flex-col gap-3'}
     >
+      {/* Honeypot — oculto para usuarios, visible para bots */}
+      <input
+        type="text"
+        name="hp_url"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={hp}
+        onChange={(e) => setHp(e.target.value)}
+        className="absolute -left-[9999px] h-px w-px overflow-hidden"
+      />
+
       <div className={isHorizontal ? 'flex-1' : ''}>
         <label className={`mb-1.5 block text-xs font-bold uppercase tracking-widest ${isDark ? 'text-[#9CA3AF]' : 'text-[#23364D]'}`}>
           Email

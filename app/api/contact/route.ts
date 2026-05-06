@@ -1,54 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getResendClient } from '@/lib/integrations/resend';
+import { sendEmail } from '@/lib/email/send';
+import { contactMessage, contactAutoReply } from '@/lib/email/templates';
+
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true; // skip if not configured
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret, response: token })
+    });
+    const data = await res.json();
+    return data.success === true;
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+
+    // Honeypot: bots fill this, humans don't
+    if (formData.get('hp_url')) {
+      return NextResponse.redirect(new URL('/gracias/contacto', request.url));
+    }
 
     const nombre = String(formData.get('nombre') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
     const telefono = String(formData.get('telefono') ?? '').trim();
     const asunto = String(formData.get('asunto') ?? '').trim();
     const mensaje = String(formData.get('mensaje') ?? '').trim();
+    const turnstileToken = String(formData.get('cf-turnstile-response') ?? '');
 
     if (!nombre || !email || !mensaje) {
       return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
     }
 
-    const resend = getResendClient();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email)) {
+      return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
+    }
+
+    // Cloudflare Turnstile verification (only when site key is configured)
+    if (process.env.TURNSTILE_SECRET_KEY && turnstileToken) {
+      const valid = await verifyTurnstile(turnstileToken);
+      if (!valid) {
+        return NextResponse.json({ error: 'Verificación anti-spam fallida. Recarga la página.' }, { status: 400 });
+      }
+    }
+
     const adminEmail = process.env.ADMIN_EMAILS ?? 'soy@kseniailicheva.com';
 
-    // Notify admin
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? 'noreply@kseniailicheva.com',
-      to: adminEmail,
-      subject: `Nuevo contacto: ${nombre} — ${asunto || 'Sin área especificada'}`,
-      html: `
-        <h2>Nuevo mensaje de contacto</h2>
-        <table style="border-collapse:collapse;width:100%">
-          <tr><td style="padding:8px;font-weight:bold;width:120px">Nombre</td><td style="padding:8px">${nombre}</td></tr>
-          <tr><td style="padding:8px;font-weight:bold">Email</td><td style="padding:8px"><a href="mailto:${email}">${email}</a></td></tr>
-          ${telefono ? `<tr><td style="padding:8px;font-weight:bold">Teléfono</td><td style="padding:8px">${telefono}</td></tr>` : ''}
-          ${asunto ? `<tr><td style="padding:8px;font-weight:bold">Área</td><td style="padding:8px">${asunto}</td></tr>` : ''}
-          <tr><td style="padding:8px;font-weight:bold;vertical-align:top">Mensaje</td><td style="padding:8px;white-space:pre-wrap">${mensaje}</td></tr>
-        </table>
-      `
-    });
-
-    // Auto-reply to sender
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? 'noreply@kseniailicheva.com',
-      to: email,
-      subject: 'Hemos recibido tu mensaje — EXPERT',
-      html: `
-        <p>Hola ${nombre},</p>
-        <p>Gracias por escribirnos. Hemos recibido tu mensaje y te responderemos en menos de 24 horas hábiles.</p>
-        ${asunto ? `<p><strong>Área consultada:</strong> ${asunto}</p>` : ''}
-        <p>Si tu consulta es urgente, puedes escribirnos directamente por WhatsApp: <a href="https://wa.me/34696550480">+34 696 55 04 80</a></p>
-        <br>
-        <p>Un saludo,<br><strong>Ksenia Ilicheva — EXPERT</strong><br>soy@kseniailicheva.com</p>
-      `
-    });
+    await Promise.all([
+      sendEmail({
+        to: adminEmail,
+        eventType: 'contact.received',
+        ...contactMessage(nombre, email, asunto, mensaje, telefono || undefined)
+      }),
+      sendEmail({
+        to: email,
+        eventType: 'contact.autoreply',
+        ...contactAutoReply(nombre, asunto)
+      })
+    ]);
 
     return NextResponse.redirect(new URL('/gracias/contacto', request.url));
   } catch (error) {
