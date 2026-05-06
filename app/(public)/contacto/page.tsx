@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
+import { ContactForm } from './ContactForm';
 
 export const metadata: Metadata = {
   title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
@@ -41,13 +42,17 @@ const contactItems = [
 ];
 
 export default function ContactoPage() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-      {turnstileSiteKey && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+      {siteKey && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="afterInteractive"
+        />
       )}
+
       {/* Hero */}
       <div className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-5xl">
@@ -69,106 +74,7 @@ export default function ContactoPage() {
             <p className="mt-2 text-sm text-[#23364D]">
               Rellena el formulario y te respondemos en menos de 24 horas hábiles.
             </p>
-
-            <form
-              action="/api/contact"
-              method="POST"
-              className="mt-6 space-y-4"
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="nombre" className="block text-sm font-semibold text-[#0D1B2A]">Nombre *</label>
-                  <input
-                    id="nombre"
-                    name="nombre"
-                    type="text"
-                    required
-                    placeholder="Tu nombre"
-                    className="mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-[#0D1B2A]">Email *</label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="tu@email.com"
-                    className="mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="telefono" className="block text-sm font-semibold text-[#0D1B2A]">Teléfono / WhatsApp</label>
-                <input
-                  id="telefono"
-                  name="telefono"
-                  type="tel"
-                  placeholder="+34 600 000 000"
-                  className="mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="asunto" className="block text-sm font-semibold text-[#0D1B2A]">¿Sobre qué necesitas ayuda?</label>
-                <select
-                  id="asunto"
-                  name="asunto"
-                  className="mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10"
-                >
-                  <option value="">— Selecciona un área —</option>
-                  <option>Declaraciones e impuestos (IRPF, IVA, IS...)</option>
-                  <option>Extranjería y nacionalidad</option>
-                  <option>Empresas y autónomos</option>
-                  <option>Tráfico y capitanía marítima</option>
-                  <option>Notaría y propiedades</option>
-                  <option>Gestiones especializadas</option>
-                  <option>Formación</option>
-                  <option>Planes de suscripción</option>
-                  <option>Otro</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="mensaje" className="block text-sm font-semibold text-[#0D1B2A]">Mensaje *</label>
-                <textarea
-                  id="mensaje"
-                  name="mensaje"
-                  rows={5}
-                  required
-                  placeholder="Cuéntanos brevemente tu situación o consulta..."
-                  className="mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10"
-                />
-              </div>
-
-              {/* Honeypot — hidden from users, traps bots */}
-              <input
-                name="hp_url"
-                type="text"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                className="absolute -left-[9999px] h-px w-px overflow-hidden"
-              />
-
-              {turnstileSiteKey && (
-                <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" />
-              )}
-
-              <p className="text-xs text-[#9CA3AF]">
-                Al enviar este formulario aceptas nuestra{' '}
-                <Link href="/privacidad" className="text-[#D4A017] hover:text-[#F2C14E]">Política de privacidad</Link>.
-              </p>
-
-              <button
-                type="submit"
-                className="inline-flex min-h-12 w-full items-center justify-center bg-[#0D1B2A] px-6 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#23364D] sm:w-auto sm:px-10"
-              >
-                Enviar mensaje
-              </button>
-            </form>
+            <ContactForm siteKey={siteKey} />
           </div>
 
           {/* Contact info sidebar */}
