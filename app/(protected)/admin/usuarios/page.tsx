@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { Users, FileText, FolderOpen, MessageCircle } from 'lucide-react';
+import { Users, FileText, FolderOpen, MessageCircle, Building2 } from 'lucide-react';
 import { UserRoleSelect } from '@/components/admin/UserRoleSelect';
 
 interface AdminUser {
@@ -15,6 +15,7 @@ interface AdminUser {
   totalQuotes: number;
   totalCases: number;
   activeCases: number;
+  companies: Array<{ id: string; razon_social: string; cif_nif: string | null; role: string }>;
 }
 
 async function getUsers(): Promise<AdminUser[]> {
@@ -64,7 +65,7 @@ export default async function AdminUsersPage() {
                 <thead>
                   <tr className="border-b border-[#d8cbb5] text-left text-xs font-semibold uppercase tracking-[0.15em] text-[#29384a]">
                     <th className="pb-3 pr-4">Usuario</th>
-                    <th className="pb-3 pr-4">Contacto</th>
+                    <th className="pb-3 pr-4">Empresa</th>
                     <th className="pb-3 pr-4 text-center">Presupuestos</th>
                     <th className="pb-3 pr-4 text-center">Expedientes</th>
                     <th className="pb-3 pr-4">WhatsApp</th>
@@ -81,8 +82,25 @@ export default async function AdminUsersPage() {
                         </p>
                         <p className="text-xs text-[#29384a]">{user.email}</p>
                       </td>
-                      <td className="py-3 pr-4 text-xs text-[#29384a]">
-                        {user.phone ?? '—'}
+                      <td className="py-3 pr-4">
+                        {user.companies.length === 0 ? (
+                          <span className="text-xs text-[#9ca3af] italic">Sin empresa</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="h-3 w-3 shrink-0 text-[#d7a33a]" />
+                            <div>
+                              <p className="text-xs font-semibold text-[#07111d] leading-tight">
+                                {user.companies[0].razon_social}
+                              </p>
+                              {user.companies[0].cif_nif && (
+                                <p className="text-[10px] text-[#29384a]">{user.companies[0].cif_nif}</p>
+                              )}
+                              {user.companies.length > 1 && (
+                                <p className="text-[10px] text-[#c88b25]">+{user.companies.length - 1} más</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 pr-4 text-center">
                         <span className="inline-flex items-center gap-1 text-xs text-[#07111d]">

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FolderOpen } from 'lucide-react';
+import Link from 'next/link';
+import { FolderOpen, ExternalLink } from 'lucide-react';
 
 interface Case {
   id: string;
@@ -104,6 +105,14 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
         </button>
 
         {message ? <p className="text-sm text-[#29384a]">{message}</p> : null}
+
+        <Link
+          href={`/admin/expedientes/${caseItem.id}`}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#d8cbb5] px-4 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#07111d]"
+        >
+          <ExternalLink className="h-3 w-3" />
+          Ver documentos
+        </Link>
       </div>
     </div>
   );

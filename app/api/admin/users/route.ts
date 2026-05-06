@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
     }
 
-    // Enrich with auth email + quote/case counts in parallel
-    const [authUsers, quotesResult, casesResult] = await Promise.all([
+    // Enrich with auth email + quote/case counts + companies in parallel
+    const [authUsers, quotesResult, casesResult, membershipsResult] = await Promise.all([
       adminSupabase.auth.admin.listUsers({ perPage: 1000 }),
       adminSupabase.from('quotes').select('client_id'),
-      adminSupabase.from('cases').select('client_id,state')
+      adminSupabase.from('cases').select('client_id,state'),
+      adminSupabase.from('expert_profile_companies').select('profile_id,role,company:expert_companies(id,razon_social,cif_nif)')
     ]);
 
     const emailMap = new Map(
@@ -47,13 +48,22 @@ export async function GET(request: NextRequest) {
         activeCaseCounts.set(c.client_id, (activeCaseCounts.get(c.client_id) ?? 0) + 1);
       }
     }
+    const companiesMap = new Map<string, Array<{ id: string; razon_social: string; cif_nif: string | null; role: string }>>();
+    for (const m of membershipsResult.data ?? []) {
+      const co = (m.company as unknown) as { id: string; razon_social: string; cif_nif: string | null } | null;
+      if (!co) continue;
+      const list = companiesMap.get(m.profile_id) ?? [];
+      list.push({ id: co.id, razon_social: co.razon_social, cif_nif: co.cif_nif, role: m.role });
+      companiesMap.set(m.profile_id, list);
+    }
 
     const users = (profiles ?? []).map((p) => ({
       ...p,
       email: emailMap.get(p.id) ?? '',
       totalQuotes: quoteCounts.get(p.id) ?? 0,
       totalCases: caseCounts.get(p.id) ?? 0,
-      activeCases: activeCaseCounts.get(p.id) ?? 0
+      activeCases: activeCaseCounts.get(p.id) ?? 0,
+      companies: companiesMap.get(p.id) ?? []
     }));
 
     return NextResponse.json({ users });
