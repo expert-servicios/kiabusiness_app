@@ -18,6 +18,8 @@ const serviceLinks = [
   { label: 'Declaraciones e Impuestos', href: '/servicios/declaraciones-impuestos' },
   { label: 'Extranjería y Nacionalidad', href: '/servicios/extranjeria-nacionalidad' },
   { label: 'Empresas y Autónomos', href: '/servicios/empresas-autonomos' },
+  { label: 'Tráfico y Capitanía', href: '/servicios/trafico-capitania-maritima' },
+  { label: 'Notaría y Propiedades', href: '/servicios/notaria-propiedades' },
   { label: 'Gestiones Especializadas', href: '/servicios/gestiones-especializadas' },
   { label: 'Formación', href: '/servicios/formacion' }
 ] as const;

@@ -10,8 +10,7 @@ const navLinks = [
   { label: 'Planes', href: '/planes' },
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
-  { label: 'Sobre mí', href: '/sobre-mi' },
-  { label: 'Blog', href: '/blog' },
+  { label: 'Recursos', href: '/blog' },
   { label: 'Contacto', href: '/contacto' }
 ] as const;
 
@@ -61,10 +60,6 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 lg:flex xl:gap-7">
-          <Link href="/" className="relative transition hover:text-[#D4A017]">
-            Inicio
-          </Link>
-
           {/* Services dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -138,14 +133,6 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-white/10 bg-[#0D1B2A] lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3">
-            <Link
-              href="/"
-              onClick={closeMobile}
-              className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
-            >
-              Inicio
-            </Link>
-
             {/* Mobile Services accordion */}
             <div>
               <button
