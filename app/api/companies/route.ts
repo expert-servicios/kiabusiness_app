@@ -19,6 +19,11 @@ const companySchema = z.object({
   web:              z.string().max(200).optional().nullable()
 });
 
+type CompanyMembershipRow = {
+  role: string;
+  company: Record<string, unknown> | Record<string, unknown>[] | null;
+};
+
 async function getUser(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -34,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
-      .from('expert_profile_companies')
+      .from('profile_companies')
       .select('role, company:companies(*)')
       .eq('profile_id', user.id)
       .order('created_at', { referencedTable: 'companies', ascending: true });
@@ -44,10 +49,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Error al obtener empresas' }, { status: 500 });
     }
 
-    const companies = (data ?? []).map((row: any) => ({
-      ...row.company,
-      role: row.role
-    }));
+    const companies = ((data ?? []) as unknown as CompanyMembershipRow[])
+      .map((row) => {
+        const company = Array.isArray(row.company) ? row.company[0] : row.company;
+        return company ? { ...company, role: row.role } : null;
+      })
+      .filter((company): company is Record<string, unknown> & { role: string } => company !== null);
 
     return NextResponse.json({ companies });
   } catch (err) {
@@ -72,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     // Create company
     const { data: company, error: createError } = await admin
-      .from('expert_companies')
+      .from('companies')
       .insert({ ...parse.data, created_by: user.id })
       .select('*')
       .single();
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Link profile as owner
-    await admin.from('expert_profile_companies').insert({
+    await admin.from('profile_companies').insert({
       profile_id: user.id,
       company_id: company.id,
       role: 'owner'

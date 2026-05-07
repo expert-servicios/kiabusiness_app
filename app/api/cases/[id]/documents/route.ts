@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { data: documents, error } = await supabase
-      .from('case_documents')
+      .from('documents')
       .select('id,original_name,state,created_at,file_path')
       .eq('case_id', id)
       .order('created_at', { ascending: false });
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const buffer = Buffer.from(arrayBuffer);
 
     const { data: uploadData, error: uploadError } = await adminSupabase.storage
-      .from('user-files')
+      .from('client-documents')
       .upload(storagePath, buffer, { contentType: file.type || `application/${ext}`, upsert: false });
 
     if (uploadError) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const clientId = isAdmin ? caseData.client_id : userId;
     const { data: doc, error: docError } = await adminSupabase
-      .from('case_documents')
+      .from('documents')
       .insert({
         case_id: caseId,
         client_id: clientId,

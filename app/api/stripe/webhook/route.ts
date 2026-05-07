@@ -4,11 +4,11 @@ import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import {
+  holdedFormacionConfirmed,
+  holdedMigrationConfirmed,
   paymentConfirmed,
   subscriptionCreated,
-  subscriptionPaymentFailed,
-  holdedMigrationConfirmed,
-  holdedFormacionConfirmed
+  subscriptionPaymentFailed
 } from '@/lib/email/templates';
 
 function getPlanName(priceId: string): string {
@@ -35,7 +35,9 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
-  if (!signature) return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+  if (!signature) {
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+  }
 
   let event: Stripe.Event;
   try {
@@ -47,7 +49,6 @@ export async function POST(req: NextRequest) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  // ── One-time payment ──────────────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
 
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
             .update({ status: 'paid', stripe_checkout_id: session.id })
             .eq('id', quoteId);
 
-          await supabaseAdmin.from('expert_orders').insert({
+          await supabaseAdmin.from('orders').insert({
             quote_id: quoteId,
             client_id: quote.client_id,
             stripe_payment_id: paymentId,
@@ -98,8 +99,8 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // Email: payment confirmed
-          const clientEmail = session.customer_email;
+          const clientEmail =
+            session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
           if (clientEmail) {
             let clientName = clientEmail.split('@')[0];
             if (quote.client_id) {
@@ -118,7 +119,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Holded one-time purchases (migration + formación)
     const productType = session.metadata?.product_type;
     if (productType === 'holded' || productType === 'holded_formacion') {
       const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
@@ -128,10 +128,10 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const CALENDLY_FORMACION = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+        const calendlyFormacion = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
-          const tpl = holdedMigrationConfirmed(customerName, packageName, CALENDLY_FORMACION);
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
             metadata: { session_id: session.id, package_name: packageName }
           });
         } else {
-          const tpl = holdedFormacionConfirmed(customerName, CALENDLY_FORMACION);
+          const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.formacion.confirmed',
@@ -150,7 +150,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Subscription checkout: save stripe_customer_id
     if (session.mode === 'subscription') {
       const userId = session.client_reference_id ?? session.metadata?.user_id;
       const customerId = session.customer as string;
@@ -163,7 +162,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Subscription created ──────────────────────────────────────────────────
   if (event.type === 'customer.subscription.created') {
     const sub = event.data.object as Stripe.Subscription;
     const customerId = sub.customer as string;
@@ -178,6 +176,9 @@ export async function POST(req: NextRequest) {
 
     if (profile?.id) {
       const firstItem = sub.items.data[0];
+      const periodStart = firstItem?.current_period_start
+        ? new Date(firstItem.current_period_start * 1000).toISOString()
+        : null;
       const periodEnd = firstItem?.current_period_end
         ? new Date(firstItem.current_period_end * 1000).toISOString()
         : null;
@@ -190,16 +191,13 @@ export async function POST(req: NextRequest) {
           stripe_price_id: priceId,
           plan_name: planName,
           status: sub.status,
-          current_period_start: firstItem?.current_period_start
-            ? new Date(firstItem.current_period_start * 1000).toISOString()
-            : null,
+          current_period_start: periodStart,
           current_period_end: periodEnd,
           updated_at: new Date().toISOString()
         },
         { onConflict: 'stripe_subscription_id' }
       );
 
-      // Email: subscription created
       const clientInfo = await getClientEmail(profile.id);
       if (clientInfo) {
         const tpl = subscriptionCreated(clientInfo.name, planName, periodEnd);
@@ -213,7 +211,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Subscription updated ──────────────────────────────────────────────────
   if (event.type === 'customer.subscription.updated') {
     const sub = event.data.object as Stripe.Subscription;
     const firstItem = sub.items.data[0];
@@ -234,7 +231,6 @@ export async function POST(req: NextRequest) {
       })
       .eq('stripe_subscription_id', sub.id);
 
-    // Email: payment failed (status transitions to past_due)
     if (sub.status === 'past_due' && prevStatus !== 'past_due') {
       const { data: dbSub } = await supabaseAdmin
         .from('subscriptions')
@@ -257,7 +253,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Subscription deleted / canceled ───────────────────────────────────────
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription;
     await supabaseAdmin

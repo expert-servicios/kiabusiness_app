@@ -7,7 +7,15 @@ import { ContactForm } from './ContactForm';
 export const metadata: Metadata = {
   title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
   description:
-    'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles. Email, WhatsApp y formulario de contacto.'
+    'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles. Email, WhatsApp y formulario de contacto.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/contacto',
+    title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
+    description: 'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 const contactItems = [

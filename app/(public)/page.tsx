@@ -1,13 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
   ArrowRight,
-  BookOpen,
   Briefcase,
   Calculator,
   Check,
-  Clock3,
   FileCheck,
   FileText,
   Globe2,
@@ -23,7 +22,23 @@ import {
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
+import { HoldedDemoForm } from '@/components/site/HoldedDemoForm';
 import { articles } from '@/lib/utils/blog';
+
+export const metadata: Metadata = {
+  title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
+  description:
+    'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com',
+    title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
+    description:
+      'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
+};
 
 type IconItem = {
   Icon: LucideIcon;
@@ -181,6 +196,7 @@ export default function HomePage() {
       <TrainingPrograms />
       <Operations />
       <BlogPreview />
+      <AdvisorSaasTeaser />
       <FinalCta />
     </main>
   );
@@ -388,52 +404,7 @@ function HoldedMigration() {
           </Link>
         </div>
 
-        <form
-          action="/solicitar-presupuesto"
-          method="get"
-          className="border border-[#D4A017]/25 bg-[#F8F6F1] p-6 text-[#0D1B2A] shadow-[0_22px_60px_rgba(13,27,42,0.32)]"
-        >
-          <input type="hidden" name="servicio" value="demo-holded" />
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Solicitud de demostración</p>
-          <h3 className="mt-3 font-serif text-3xl font-bold">Agenda una revisión inicial</h3>
-          <p className="mt-3 text-sm leading-6 text-[#23364D]">
-            Cuéntanos el punto de partida y prepararemos una propuesta de migración o formación en Holded.
-          </p>
-
-          <div className="mt-6 grid gap-3">
-            <input
-              name="nombre"
-              required
-              placeholder="Nombre"
-              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
-            />
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="Email"
-              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
-            />
-            <input
-              name="empresa"
-              placeholder="Empresa o actividad"
-              className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
-            />
-            <textarea
-              name="mensaje"
-              rows={4}
-              placeholder="Qué sistema utilizas ahora y qué necesitas migrar"
-              className="border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-sm outline-none transition focus:border-[#D4A017]"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="mt-5 inline-flex min-h-12 w-full items-center justify-center bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-          >
-            Solicitar demostración
-          </button>
-        </form>
+        <HoldedDemoForm />
       </div>
     </section>
   );
@@ -579,6 +550,31 @@ function BlogPreview() {
             </div>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function AdvisorSaasTeaser() {
+  return (
+    <section className="border-t border-[#D8CBB5] bg-[#F8F6F1] px-6 py-12">
+      <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Para asesorias</p>
+          <h2 className="mt-3 font-serif text-2xl font-bold leading-tight text-[#0D1B2A] md:text-3xl">
+            Estamos validando una version SaaS de la operativa EXPERT.
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-[#23364D]">
+            Un sistema digital para asesorias, gestorias y despachos que quieren centralizar clientes, expedientes, documentos, pagos y comunicaciones.
+          </p>
+        </div>
+        <Link
+          href="/para-asesorias"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
+        >
+          Conocer vision B2B
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Award, Briefcase, CheckCircle2, ShieldCheck, Sparkles, Star, Users } from 'lucide-react';
+import { Award, Briefcase, CheckCircle2, ShieldCheck, Sparkles, Users } from 'lucide-react';
 
 export const siteName = 'EXPERT';
 

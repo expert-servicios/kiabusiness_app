@@ -2,52 +2,58 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const stripe = getStripeClient();
-  const { id } = await params;
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const stripe = getStripeClient();
+    const { id } = await params;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: quote, error: quoteError } = await supabaseAdmin
-    .from('quotes')
-    .select('amount_eur,title,description,status')
-    .eq('id', id)
-    .single();
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: quote, error: quoteError } = await supabaseAdmin
+      .from('quotes')
+      .select('amount_eur,title,description,status')
+      .eq('id', id)
+      .single();
 
-  if (quoteError || !quote) {
-    console.error('Quote lookup failed:', quoteError);
-    return NextResponse.json({ error: 'Presupuesto no encontrado' }, { status: 404 });
-  }
+    if (quoteError || !quote) {
+      console.error('Quote lookup failed:', quoteError);
+      return NextResponse.json({ error: 'Presupuesto no encontrado' }, { status: 404 });
+    }
 
-  const amountEur = Number(quote.amount_eur);
-  if (!amountEur || amountEur <= 0) {
-    return NextResponse.json(
-      { error: 'El presupuesto no tiene un importe válido para pago' },
-      { status: 400 }
-    );
-  }
+    const amountEur = Number(quote.amount_eur);
+    if (!amountEur || amountEur <= 0) {
+      return NextResponse.json(
+        { error: 'El presupuesto no tiene un importe válido para pago' },
+        { status: 400 }
+      );
+    }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    client_reference_id: id,
-    metadata: { quote_id: id },
-    line_items: [
-      {
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: quote.title,
-            description: quote.description
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      client_reference_id: id,
+      metadata: { quote_id: id },
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: quote.title,
+              description: quote.description
+            },
+            unit_amount: Math.round(amountEur * 100)
           },
-          unit_amount: Math.round(amountEur * 100)
-        },
-        quantity: 1
-      }
-    ],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/gracias/pago`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/presupuestos`
-  });
+          quantity: 1
+        }
+      ],
+      success_url: `${appUrl}/gracias/pago`,
+      cancel_url: `${appUrl}/dashboard/presupuestos`
+    });
 
-  await supabaseAdmin.from('quotes').update({ stripe_checkout_id: session.id }).eq('id', id);
+    await supabaseAdmin.from('quotes').update({ stripe_checkout_id: session.id }).eq('id', id);
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error('Quote checkout error:', error);
+    return NextResponse.json({ error: 'Error al crear la sesión de pago' }, { status: 500 });
+  }
 }

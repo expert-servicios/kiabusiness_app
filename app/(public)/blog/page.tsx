@@ -7,7 +7,16 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 export const metadata: Metadata = {
   title: 'Blog | EXPERT — Fiscalidad, Extranjería y Gestión Administrativa',
   description:
-    'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos para residentes, expatriados y empresas.'
+    'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos para residentes, expatriados y empresas.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/blog',
+    title: 'Blog | EXPERT — Fiscalidad, Extranjería y Gestión Administrativa',
+    description:
+      'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 const categoryColors: Record<string, string> = {

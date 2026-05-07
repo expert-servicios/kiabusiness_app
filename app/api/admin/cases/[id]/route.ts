@@ -22,7 +22,7 @@ export async function GET(
 
     const [caseResult, docsResult] = await Promise.all([
       admin.from('cases').select('id,category,service,state,opened_at,closed_at,client_id').eq('id', id).single(),
-      admin.from('case_documents').select('id,original_name,state,created_at,file_path').eq('case_id', id).order('created_at', { ascending: false })
+      admin.from('documents').select('id,original_name,state,created_at,file_path').eq('case_id', id).order('created_at', { ascending: false })
     ]);
 
     if (caseResult.error || !caseResult.data) {
@@ -41,7 +41,7 @@ export async function GET(
     const docs = await Promise.all(
       (docsResult.data ?? []).map(async (doc) => {
         const { data: urlData } = await admin.storage
-          .from('user-files')
+          .from('client-documents')
           .createSignedUrl(doc.file_path, 3600);
         return { ...doc, downloadUrl: urlData?.signedUrl ?? null };
       })

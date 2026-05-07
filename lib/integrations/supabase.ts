@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 
 function getSupabaseUrl() {
@@ -37,7 +37,7 @@ export function createBrowserSupabaseClient() {
 export function createServerSupabaseClient(request: NextRequest) {
   return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
-      getAll: async () =>
+      getAll: () =>
         request.cookies.getAll().map((cookie) => ({
           name: cookie.name,
           value: cookie.value

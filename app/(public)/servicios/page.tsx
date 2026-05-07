@@ -7,7 +7,16 @@ import { categories } from '@/lib/utils/catalog';
 export const metadata: Metadata = {
   title: 'Servicios | EXPERT — Asesoría Fiscal, Legal y Administrativa',
   description:
-    'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.'
+    'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/servicios',
+    title: 'Servicios | EXPERT — Asesoría Fiscal, Legal y Administrativa',
+    description:
+      'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 const categoryIcons: Record<string, LucideIcon> = {

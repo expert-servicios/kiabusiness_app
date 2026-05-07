@@ -1,7 +1,8 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
-import { ReactNode } from 'react';
+import { MessageCircle } from 'lucide-react';
+import { type ReactNode } from 'react';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
 
@@ -18,9 +19,24 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://kseniailicheva.com'),
   title: 'EXPERT | Asesoría fiscal, legal y administrativa',
   description:
     'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
+  openGraph: {
+    type: 'website',
+    locale: 'es_ES',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    title: 'EXPERT | Asesoría fiscal, legal y administrativa',
+    description:
+      'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
+    url: 'https://kseniailicheva.com'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'EXPERT | Asesoría fiscal, legal y administrativa',
+    description: 'Asesoría fiscal en España para empresas, autónomos y personas físicas.'
+  },
   icons: {
     icon: [
       { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '32x32' },
@@ -32,8 +48,8 @@ export const metadata: Metadata = {
     apple: [
       { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '180x180' },
       { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
-    ],
-  },
+    ]
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -49,9 +65,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           aria-label="Abrir WhatsApp"
           className="fixed bottom-5 right-5 z-[70] flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_16px_35px_rgba(0,0,0,0.25)] transition hover:scale-105 hover:bg-[#1ebe5d] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30"
         >
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden="true">
-            <path d="M12 2.04C6.48 2.04 2 6.52 2 12.04c0 1.99.53 3.84 1.45 5.45L2 22l4.65-1.42A9.95 9.95 0 0012 22.04c5.52 0 10-4.48 10-10 0-5.52-4.48-10-10-10zm5.41 14.16c-.23.65-1.35 1.24-1.85 1.31-.49.08-1.02.11-1.58-.02a7.87 7.87 0 01-2.58-1.04 6.59 6.59 0 01-1.97-2.55 2.68 2.68 0 01-.23-1.2c.03-.4.24-.75.52-1.03.26-.27.59-.42.96-.43.18-.01.35.02.51.08.26.08.48.22.68.38.22.17.42.36.6.58.16.2.3.42.43.64.06.1.13.18.21.26.44.42.91.81 1.39 1.19.31.23.63.45.96.67.12.08.23.16.35.24.25.16.54.17.8.02.36-.21.7-.46 1.01-.75.2-.19.38-.41.52-.64.12-.17.24-.34.32-.52.09-.2.14-.41.16-.63.03-.3.02-.6-.05-.89-.12-.54-.45-1.03-.86-1.45a5.1 5.1 0 00-1.43-1.06c-.29-.15-.58-.28-.89-.38-.2-.06-.41-.09-.62-.1-.55-.02-1.08.05-1.58.21-.37.12-.7.3-1 .56-.25.22-.46.48-.61.77-.17.34-.27.71-.31 1.09-.04.43.01.86.15 1.26.08.23.2.44.36.63.17.21.37.4.58.57.29.23.6.44.92.64.24.15.48.31.71.47.09.06.19.11.29.17.24.13.52.15.79.05.46-.2.9-.44 1.32-.72.12-.08.24-.16.35-.25.44-.34.85-.7 1.23-1.09.3-.3.56-.63.78-.99.12-.21.2-.43.24-.66.05-.32.03-.65-.05-.97-.08-.35-.24-.68-.45-.98-.26-.38-.6-.71-.98-.96-.35-.23-.73-.37-1.14-.43-.37-.06-.75-.06-1.12-.02-.05.01-.11.02-.16.03-.43.07-.84.21-1.22.42-.22.12-.43.26-.62.42-.29.24-.55.52-.77.83-.15.2-.28.41-.38.64-.1.22-.17.45-.2.69-.03.2-.03.39.01.59.04.27.12.53.25.78.13.28.31.53.53.76.24.24.5.45.78.65.28.21.58.39.89.55.06.03.11.05.17.08.2.1.39.2.59.28.43.17.88.29 1.34.35.15.02.29.03.44.03.28 0 .56-.03.83-.09.45-.09.88-.27 1.27-.53.26-.18.49-.4.69-.66.22-.28.4-.59.53-.93.09-.24.14-.49.16-.74.01-.24 0-.48-.03-.71-.05-.38-.16-.74-.33-1.08-.08-.16-.18-.31-.3-.45-.16-.2-.35-.37-.57-.51-.17-.11-.35-.19-.54-.24-.13-.03-.26-.05-.39-.05-.44 0-.86.13-1.24.36-.19.11-.36.25-.51.42-.08.08-.15.16-.22.25-.11.15-.19.31-.24.47-.04.09-.06.19-.07.29-.01.17 0 .35.04.52.04.1.09.19.15.29.08.15.18.29.3.42.18.2.38.37.61.49.25.13.52.2.79.22.14.01.27.01.41 0 .18 0 .36-.02.53-.05.1-.01.2-.03.29-.06.09-.03.18-.07.26-.12.1-.05.19-.11.27-.18.09-.08.16-.16.22-.25.08-.11.14-.22.18-.34.03-.07.05-.15.05-.23 0-.11-.03-.21-.08-.31-.02-.05-.05-.1-.08-.14-.03-.04-.07-.08-.1-.12-.07-.07-.14-.13-.22-.19-.06-.04-.13-.08-.19-.11-.12-.05-.24-.08-.36-.1-.04 0-.08-.01-.12-.01-.11 0-.22.01-.33.02-.07.01-.14.03-.21.05-.15.04-.29.11-.43.2-.13.08-.24.19-.34.31-.08.1-.15.22-.2.34-.03.09-.05.18-.05.27 0 .12.03.24.08.35.02.05.05.1.08.15.04.06.08.11.14.16.07.06.14.1.22.14.12.08.24.13.36.18.09.04.18.06.28.08.11.02.22.03.33.03.17 0 .35-.02.52-.06.09-.02.18-.05.26-.09.12-.07.21-.16.29-.27.05-.07.09-.14.11-.22.01-.06.02-.12.02-.18 0-.06-.01-.12-.03-.17-.01-.05-.04-.1-.07-.15-.03-.05-.07-.1-.12-.14z" />
-          </svg>
+          <MessageCircle className="h-7 w-7" aria-hidden="true" />
         </a>
       </body>
     </html>

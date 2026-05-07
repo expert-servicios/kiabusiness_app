@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       adminSupabase.auth.admin.listUsers({ perPage: 1000 }),
       adminSupabase.from('quotes').select('client_id'),
       adminSupabase.from('cases').select('client_id,state'),
-      adminSupabase.from('expert_profile_companies').select('profile_id,role,company:expert_companies(id,razon_social,cif_nif)')
+      adminSupabase.from('profile_companies').select('profile_id,role,company:companies(id,razon_social,cif_nif)')
     ]);
 
     const emailMap = new Map(

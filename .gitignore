@@ -1,8 +1,10 @@
 node_modules
 .next
+.next-dev-logs
 tsconfig.tsbuildinfo
 .env*
 !.env.example
 .DS_Store
 .claude/settings.local.json
 .vercel
+supabase/.temp

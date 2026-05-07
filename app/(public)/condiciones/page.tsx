@@ -2,7 +2,15 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Condiciones de Contratación | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Condiciones generales de contratación de servicios en EXPERT ESTUDIOS PROFESIONALES, SLU.'
+  description: 'Condiciones generales de contratación de servicios en EXPERT ESTUDIOS PROFESIONALES, SLU.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/condiciones',
+    title: 'Condiciones de Contratación | EXPERT',
+    description: 'Condiciones generales de contratación de servicios en EXPERT ESTUDIOS PROFESIONALES, SLU.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 export default function CondicionesPage() {

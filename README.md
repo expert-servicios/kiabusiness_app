@@ -1,89 +1,75 @@
 # EXPERT Platform
 
-Plataforma SaaS para EXPERT ESTUDIOS PROFESIONALES, SLU, especializada en asesoría fiscal, legal y administrativa en España.
+EXPERT es una plataforma operativa digital construida primero para la asesoria propia de Ksenia Ilicheva y EXPERT ESTUDIOS PROFESIONALES, SLU, con vision de evolucion hacia un SaaS vertical para asesorias, gestorias y despachos profesionales.
 
-- Dominio público: `kseniailicheva.com`
-- Correo principal: `soy@kseniailicheva.com`
+## Datos base
+
+- Dominio publico: `kseniailicheva.com`
+- Email principal: `soy@kseniailicheva.com`
 - WhatsApp Business: `+34 696 55 04 80`
 - Empresa: `EXPERT ESTUDIOS PROFESIONALES, SLU`
 - CIF: `B44991776`
-- Dirección: `C/ Pintor Agrassot, 19 - 03110 Mutxamel (Alicante)`
+- Direccion: `C/ Pintor Agrassot, 19 - 03110 Mutxamel (Alicante)`
 
-## Objetivo del proyecto
-
-Crear una plataforma escalable y segura que permita a una sola persona gestionar servicios, clientes, pagos, expedientes, documentos y comunicaciones con el mínimo esfuerzo manual.
-
-## Stack principal
+## Stack
 
 - Next.js App Router + TypeScript
 - Tailwind CSS
-- Supabase (Postgres, Auth, Storage, RLS)
-- Stripe Checkout + Billing + Webhooks
-- Resend para emails transaccionales
-- Preparación para WhatsApp Business y AI asistido
+- Supabase: Postgres, Auth, Storage y RLS
+- Stripe: Checkout, pagos puntuales, suscripciones y webhooks
+- Resend: emails transaccionales
+- Preparacion para Holded, WhatsApp Business e IA supervisada
 
-## Estructura clave
+## Estructura
 
-- `app/(public)`: sitio público y páginas legales.
-- `app/(protected)`: área cliente y admin.
-- `lib/schemas`: validación de datos con Zod.
-- `lib/integrations`: clientes y adaptadores (Supabase, Stripe, Resend, WhatsApp, AI).
-- `supabase/migrations`: esquema SQL con tablas y políticas RLS.
-- `docs/architecture.md`: arquitectura general.
-- `docs/implementation-plan.md`: plan de implementación por fases.
-- `.env.example`: plantilla de variables de entorno.
+- `app/(public)`: web publica, servicios, planes, blog y paginas legales.
+- `app/(protected)`: portal cliente y panel admin.
+- `app/api`: endpoints de negocio, webhooks e integraciones.
+- `lib/integrations`: adaptadores de Supabase, Stripe, Resend, WhatsApp e IA.
+- `lib/schemas`: validaciones Zod.
+- `supabase/migrations`: schema SQL, RLS y buckets.
+- `docs/roadmap.md`: roadmap maestro.
+- `docs/master-checklist.md`: checklist de cumplimiento.
+- `docs/architecture.md`: arquitectura operativa.
 
-## Documentación disponible
+## Flujo operativo core
 
-- `docs/architecture.md`
-- `docs/implementation-plan.md`
-- `.env.example`
+1. Cliente solicita presupuesto o compra online.
+2. Stripe confirma pago.
+3. Supabase crea `order` y expediente.
+4. Holded debe crear cliente/factura cuando se integre el conector.
+5. Resend o WhatsApp notifican.
+6. Cliente gestiona documentos desde el panel seguro.
+7. Admin revisa, comunica estado y entrega resultados.
 
-## Páginas legales preparadas
-
-- `/aviso-legal`
-- `/privacidad`
-- `/cookies`
-- `/condiciones`
-
-## Variables de entorno
+## Comandos
 
 ```bash
-# Supabase
+npm install
+npm run typecheck
+npm run build
+npm run dev
+```
+
+## Variables principales
+
+```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Stripe
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_PLAN_MONTHLY_99=
-STRIPE_PLAN_MONTHLY_199=
-STRIPE_PLAN_MONTHLY_349=
 
-# Resend
 RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
 RESEND_FROM_EMAIL=soy@kseniailicheva.com
 
-# WhatsApp / Meta Cloud (futuro)
-META_WHATSAPP_ACCESS_TOKEN=
-META_WHATSAPP_PHONE_NUMBER_ID=
-META_WHATSAPP_WEBHOOK_VERIFY_TOKEN=
-
-# AI (futuro)
-AI_PROVIDER_API_KEY=
-AI_PROVIDER=
-
-# General
 NEXT_PUBLIC_APP_URL=https://kseniailicheva.com
 ADMIN_EMAILS=soy@kseniailicheva.com
 ```
 
-## Próximos pasos
+## Estado actual
 
-1. Revisar `docs/implementation-plan.md` para el plan por fases.
-2. Crear el documento `.env.example` con los valores a completar.
-3. Mantener el diseño público actual asociado a `kseniailicheva.com`.
-4. Iniciar implementación de funcionalidades en el orden propuesto.
+Fase 0 completada: el proyecto compila, el build pasa y las rutas duplicadas principales fueron retiradas. La siguiente prioridad es crear `/para-asesorias`, consolidar navegacion publica y preparar Holded.

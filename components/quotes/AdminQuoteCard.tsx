@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Pencil, Save } from 'lucide-react';
+import { CheckCircle2, Pencil } from 'lucide-react';
 
 interface Quote {
   id: string;

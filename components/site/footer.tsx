@@ -10,7 +10,8 @@ const quickLinks = [
   { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
-  { label: 'Contacto', href: '/contacto' }
+  { label: 'Contacto', href: '/contacto' },
+  { label: 'Para asesorias', href: '/para-asesorias' }
 ] as const;
 
 const serviceLinks = [

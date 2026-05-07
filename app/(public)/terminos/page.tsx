@@ -3,7 +3,16 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones | EXPERT',
-  description: 'Términos y condiciones de uso de los servicios de EXPERT — asesoría fiscal, legal y administrativa en España.'
+  description:
+    'Términos y condiciones de uso de los servicios de EXPERT — asesoría fiscal, legal y administrativa en España.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/terminos',
+    title: 'Términos y Condiciones | EXPERT',
+    description: 'Términos y condiciones de uso de los servicios de EXPERT.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 export default function TerminosPage() {
@@ -37,7 +46,7 @@ export default function TerminosPage() {
           <Section title="2. Objeto y aceptación">
             <p>
               Las presentes condiciones regulan el acceso y uso del sitio web <strong>kseniailicheva.com</strong> (en adelante,
-              "el Sitio") y la contratación de los servicios ofrecidos a través del mismo, incluyendo la plataforma de cliente
+              &quot;el Sitio&quot;) y la contratación de los servicios ofrecidos a través del mismo, incluyendo la plataforma de cliente
               EXPERT.
             </p>
             <p>

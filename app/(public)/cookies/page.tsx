@@ -2,7 +2,15 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Política de Cookies | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Política de cookies para el sitio de EXPERT ESTUDIOS PROFESIONALES, SLU.'
+  description: 'Política de cookies para el sitio de EXPERT ESTUDIOS PROFESIONALES, SLU.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/cookies',
+    title: 'Política de Cookies | EXPERT',
+    description: 'Política de cookies para el sitio de EXPERT ESTUDIOS PROFESIONALES, SLU.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 export default function CookiesPage() {

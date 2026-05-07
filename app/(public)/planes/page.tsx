@@ -10,7 +10,16 @@ import { RelatedArticles } from '@/components/site/RelatedArticles';
 export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded | EXPERT',
   description:
-    'Gestión contable integral en España con Holded. Elige el nivel de implicación: Avanzado, Colaborativo o Delegado. Desde 99 €/mes. Sin permanencia.'
+    'Gestión contable integral en España con Holded. Elige el nivel de implicación: Avanzado, Colaborativo o Delegado. Desde 99 €/mes. Sin permanencia.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/planes',
+    title: 'Planes de gestión contable con Holded | EXPERT',
+    description:
+      'Gestión contable integral en España con Holded. Desde 99 €/mes. Sin permanencia.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 const CALENDLY_DEMO = 'https://calendly.com/soy-kseniailicheva/30min';

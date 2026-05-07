@@ -2,7 +2,15 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Aviso Legal | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Información legal y datos de la empresa EXPERT ESTUDIOS PROFESIONALES, SLU.'
+  description: 'Información legal y datos de la empresa EXPERT ESTUDIOS PROFESIONALES, SLU.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/aviso-legal',
+    title: 'Aviso Legal | EXPERT ESTUDIOS PROFESIONALES',
+    description: 'Información legal y datos de la empresa EXPERT ESTUDIOS PROFESIONALES, SLU.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 export default function AvisoLegalPage() {

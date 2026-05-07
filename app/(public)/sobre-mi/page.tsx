@@ -6,7 +6,16 @@ import { ArrowRight, Award, Briefcase, CheckCircle, GraduationCap, Shield } from
 export const metadata: Metadata = {
   title: 'Sobre mí — Ksenia Ilicheva | EXPERT',
   description:
-    'Ksenia Ilicheva, asesora fiscal, legal y administrativa en España. Más de 20 años de experiencia, colaboradora social de la AEAT, Red PAE y Holded Solution Partner.'
+    'Ksenia Ilicheva, asesora fiscal, legal y administrativa en España. Más de 20 años de experiencia, colaboradora social de la AEAT, Red PAE y Holded Solution Partner.',
+  openGraph: {
+    type: 'profile',
+    url: 'https://kseniailicheva.com/sobre-mi',
+    title: 'Ksenia Ilicheva — Asesora Fiscal y Legal | EXPERT',
+    description:
+      'Más de 20 años de experiencia en asesoría fiscal, legal y administrativa en España. Colaboradora social AEAT, Holded Solution Partner.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 const credentials = [

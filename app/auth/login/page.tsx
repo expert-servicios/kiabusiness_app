@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { Mail } from 'lucide-react';
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 function getSupabaseClient() {
   if (typeof window === 'undefined') {
     return null;
@@ -52,8 +56,8 @@ export default function LoginPage() {
       }
 
       setSubmitted(true);
-    } catch (error: any) {
-      setErrorMessage(error.message ?? 'Error al enviar el enlace.');
+    } catch (error: unknown) {
+      setErrorMessage(getErrorMessage(error, 'Error al enviar el enlace.'));
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -82,8 +86,8 @@ export default function LoginPage() {
       if (error) {
         throw error;
       }
-    } catch (error: any) {
-      setErrorMessage(error.message ?? 'Error al iniciar sesión con Google.');
+    } catch (error: unknown) {
+      setErrorMessage(getErrorMessage(error, 'Error al iniciar sesión con Google.'));
       console.error('Error:', error);
     } finally {
       setLoading(false);

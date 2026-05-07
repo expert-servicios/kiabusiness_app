@@ -2,7 +2,15 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Política de privacidad para la web de EXPERT ESTUDIOS PROFESIONALES, SLU.'
+  description: 'Política de privacidad para la web de EXPERT ESTUDIOS PROFESIONALES, SLU.',
+  openGraph: {
+    type: 'website',
+    url: 'https://kseniailicheva.com/privacidad',
+    title: 'Política de Privacidad | EXPERT',
+    description: 'Política de privacidad para la web de EXPERT ESTUDIOS PROFESIONALES, SLU.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+    locale: 'es_ES'
+  }
 };
 
 export default function PrivacidadPage() {

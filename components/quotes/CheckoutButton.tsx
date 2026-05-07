@@ -30,7 +30,7 @@ export function CheckoutButton({ quoteId }: CheckoutButtonProps) {
       }
 
       window.location.assign(data.url);
-    } catch (err) {
+    } catch {
       setError('Error al conectar con Stripe');
       setLoading(false);
     }

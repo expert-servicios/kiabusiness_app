@@ -1,50 +1,122 @@
-# Arquitectura EXPERT SaaS
+# EXPERT - Arquitectura operativa
 
-## Datos de la empresa
+Ultima actualizacion: 2026-05-07
 
-- Empresa: `EXPERT ESTUDIOS PROFESIONALES, SLU`
-- CIF: `B44991776`
-- Dirección: `C/ Pintor Agrassot, 19 - 03110 Mutxamel (Alicante)`
-- Email principal: `soy@kseniailicheva.com`
-- WhatsApp Business: `+34 696 55 04 80`
-- Dominio público: `kseniailicheva.com`
+## Vision
 
-## Módulos
+EXPERT es una plataforma operativa digital construida primero para la asesoria propia de Ksenia Ilicheva y EXPERT ESTUDIOS PROFESIONALES, SLU.
 
-1. **Marketing web (público)**: SEO, captación, páginas de servicio, formularios de contacto y presupuesto.
-2. **Pipeline comercial**: leads → presupuesto → pago Stripe → orden → expediente.
-3. **Portal cliente**: seguimiento de casos, subida documental, mensajes, pagos, facturas y reseñas.
-4. **Admin backoffice**: operación integral, métricas, gestión de servicios, casos, documentos, presupuestos, suscripciones y reseñas.
-5. **Automatizaciones**: emails Resend, webhooks, notificaciones, solicitud de reseñas y preparación para WhatsApp/AI.
+La arquitectura debe resolver la operativa real de hoy sin cerrar la puerta al SaaS multi-tenant de manana.
 
-## Eventos clave
+## Fases
 
-- `quote.received`: llega una solicitud de presupuesto.
-- `quote.accepted`: cliente acepta presupuesto.
-- `checkout.session.completed`: Stripe confirma pago y crea orden + expediente.
-- `case.status.updated`: el estado del expediente cambia y se notifica.
-- `case.completed`: se genera solicitud de reseña.
-- `review.submitted`: reseña pasa a moderación.
+### Fase actual: asesoria digital propia
+
+Objetivo: vender servicios online, gestionar clientes, automatizar expedientes, centralizar documentos, comunicar estados, gestionar pagos y reducir trabajo manual.
+
+### Fase futura: SaaS vertical para asesorias
+
+Objetivo: ofrecer el mismo sistema operativo digital a asesorias, gestorias, despachos pequenos y profesionales que gestionan tramites, documentos y clientes.
+
+## Modulos actuales
+
+- Web publica: Home, servicios, planes, Holded, blog, contacto y presupuesto.
+- Auth: Google OAuth y magic link.
+- Pipeline comercial: lead -> quote -> Stripe checkout -> order -> case.
+- Portal cliente: expedientes, documentos, presupuestos, suscripciones y perfil.
+- Admin: usuarios, presupuestos, expedientes, documentos, emails, suscripciones y reportes.
+- Storage: bucket privado `client-documents`.
+- Comunicaciones: Resend y base para WhatsApp.
+- Pagos: Stripe one-time payments, suscripciones y customer portal.
+
+## Flujo operativo ideal
+
+Cliente compra en EXPERT -> Stripe cobra -> Supabase crea `order` y `case` -> Holded crea cliente/factura -> Resend o WhatsApp notifican -> panel cliente gestiona documentacion -> IA ayuda a clasificar, resumir y proponer borradores.
+
+## Datos principales
+
+- `profiles`: usuarios y rol base.
+- `leads`: solicitudes entrantes.
+- `quotes`: presupuestos.
+- `orders`: pagos confirmados.
+- `cases`: expedientes operativos.
+- `documents`: documentos asociados a expedientes.
+- `messages`: comunicacion trazable en panel.
+- `subscriptions`: planes mensuales.
+- `email_events`: trazabilidad Resend.
+- `whatsapp_conversations`: base de conversaciones operativas.
+- `ai_logs`: salidas IA auditables.
+- `companies`: empresas o actividades fiscales de clientes.
+- `saas_leads`: interes B2B para pilotos y futura validacion SaaS.
+
+## Preparacion multi-tenant
+
+`companies` no equivale a `tenants`.
+
+- `tenant`: asesoria, gestoria o despacho que usa EXPERT como sistema.
+- `company`: empresa, autonomo o entidad fiscal de un cliente final.
+
+Tablas a preparar:
+
+- `tenants`
+- `tenant_settings`
+- `tenant_branding`
+- `tenant_integrations`
+- `tenant_email_templates`
+- `tenant_whatsapp_templates`
+- `tenant_automation_rules`
+- `tenant_roles`
+- `tenant_services`
+
+Regla de evolucion: cada entidad critica debe poder recibir `tenant_id` sin reescribir el producto completo.
 
 ## Integraciones
 
-- **Supabase Auth**: Magic link + Google OAuth.
-- **Supabase Storage**: documentos privados y entregables.
-- **Stripe**: pagos one-time, suscripciones, checkout, customer portal, webhooks.
-- **Resend**: emails transaccionales y webhook de eventos.
-- **WhatsApp / Meta Cloud**: arquitectura preparada para notificaciones futuras.
-- **AI**: capa de clasificación, respuestas y sugerencias con logged output.
+### Stripe
+
+Stripe es fuente de verdad de cobros, suscripciones y customer portal. Los pagos confirmados crean `orders` y activan automatizaciones.
+
+### Holded
+
+Holded sera fuente de verdad para contactos, clientes, facturas, productos/servicios, contabilidad y reporting financiero.
+
+EXPERT no sustituye Holded. EXPERT es la capa de captacion, workflow, documentacion, comunicacion y automatizacion.
+
+### Resend
+
+Resend gestiona email transaccional. Los eventos quedan en `email_events`.
+
+### WhatsApp Business
+
+WhatsApp debe usarse para avisos, recordatorios, confirmaciones y enlaces al panel seguro. No debe ser repositorio documental ni sustituir el portal cliente.
+
+### IA
+
+La IA es una capa de eficiencia operativa supervisada. Toda salida debe registrarse y clasificarse como:
+
+- automatica permitida,
+- borrador para revision,
+- requiere intervencion humana.
 
 ## Seguridad
 
-- RLS por defecto en tablas relevantes.
-- Roles: `admin`, `client`.
-- Separación clara entre ventas (`orders`) y operación (`cases`).
+- RLS habilitado en tablas sensibles.
+- Service role solo en rutas server-side.
 - Documentos privados por defecto.
-- Webhooks de Stripe y Resend como fuente de la verdad.
+- URLs firmadas para descarga documental.
+- Webhooks Stripe/Resend verificados como fuente de eventos externos.
+- Separacion de rol `admin` y `client`.
 
-## Diseño y experiencia
+## Reglas de producto
 
-- La web pública actual se mantiene en `app/(public)` y se preserva para el dominio `kseniailicheva.com`.
-- El portal cliente y admin se ubican en `app/(protected)` con control de sesión.
-- Las páginas legales se publican en `/aviso-legal`, `/privacidad`, `/cookies` y `/condiciones`.
+No crear pantallas decorativas. Cada nueva funcionalidad debe reducir trabajo manual o tener una justificacion clara.
+
+Categorias obligatorias para nuevas funcionalidades:
+
+- captacion
+- conversion
+- operacion
+- comunicacion
+- automatizacion
+- retencion
+- escalabilidad SaaS

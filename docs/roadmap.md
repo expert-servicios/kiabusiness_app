@@ -1,103 +1,281 @@
-# EXPERT Platform — Roadmap de implementación
+# EXPERT - Roadmap maestro de implementacion
 
-Última actualización: 2026-05-06
+Ultima actualizacion: 2026-05-07
 
----
+## Vision
 
-## Fases completadas ✓
+EXPERT se construye primero como asesoria digital propia para Ksenia Ilicheva y EXPERT ESTUDIOS PROFESIONALES, SLU, pero debe quedar preparada para evolucionar hacia un SaaS vertical para asesorias, gestorias y despachos profesionales.
 
-| Fase | Contenido | Estado |
-|------|-----------|--------|
-| 1 | Auth (magic link + Google OAuth, middleware, roles) | ✓ |
-| 2 | API core: presupuestos, pagos, expedientes, webhook Stripe | ✓ |
-| 3 | Suscripciones Stripe + portal cliente | ✓ |
-| 4 | 11 plantillas email transaccionales (Resend) | ✓ |
-| 5 | Dashboards cliente y admin | ✓ |
-| 6 | Stubs WhatsApp + AI (pendientes de API keys externas) | ✓ |
-| 7a | Multi-empresa: expert_companies, switcher, crear/editar | ✓ |
-| 7b | Storage bucket user-files, correo bienvenida, newsletter | ✓ |
+Regla principal:
 
----
+> Resolver la operativa propia hoy sin cerrar la puerta al multi-tenant manana.
 
-## Phase 7 — Anti-spam y calidad de email (URGENTE)
+## Principios
 
-**Problema**: correos de spam en formulario de contacto y newsletter sin plantilla branded.
+- Priorizar automatizacion y reduccion de trabajo manual.
+- Mantener la web publica enfocada en cliente final hasta que el SaaS este listo para pilotos.
+- Separar `tenants` de `companies`.
+- No hardcodear servicios, estados, plantillas, branding o integraciones si pueden ser configurables.
+- Stripe es fuente de verdad de cobros.
+- Holded sera fuente de verdad de contactos, facturas, contabilidad y reporting financiero.
+- WhatsApp debe llevar al cliente al panel seguro, no sustituirlo.
+- La IA debe ser supervisada, auditable y trazable.
+- Toda funcionalidad nueva debe clasificarse como captacion, conversion, operacion, comunicacion, automatizacion, retencion o escalabilidad SaaS.
 
-### 7.1 Plantillas email en formulario de contacto
-- [ ] Añadir `contactMessage()` y `contactAutoReply()` a `lib/email/templates.ts`
-- [ ] Actualizar `/api/contact/route.ts` para usar `sendEmail()` + plantillas branded
+## Fase 0 - Saneamiento tecnico
 
-### 7.2 Protección anti-spam — Honeypot
-- [ ] Campo honeypot `hp_url` oculto en formulario de contacto
-- [ ] Campo honeypot `hp_url` en `NewsletterForm.tsx`
-- [ ] Validación honeypot en `/api/contact` y `/api/newsletter`
+Estado: completada el 2026-05-07.
 
-### 7.3 Protección anti-spam — Cloudflare Turnstile
-- [ ] Widget Turnstile en formulario de contacto (activado por env var)
-- [ ] Verificación server-side en `/api/contact` (solo si `TURNSTILE_SECRET_KEY` está definida)
-- [ ] Variables a añadir en Vercel: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
+Tipo: operacion, escalabilidad SaaS.
 
----
+Objetivo: recuperar una base estable antes de construir producto nuevo.
 
-## Phase 8 — Panel Admin completo
+Entregado:
 
-### 8.1 Usuarios con empresa asociada
-- [ ] `/admin/usuarios` muestra empresa activa y rol de cada cliente
-- [ ] Filtro por empresa / sin empresa
+- Conflictos de merge eliminados.
+- `package.json` y `package-lock.json` recuperados.
+- `npm install` ejecutado.
+- `npm run lint` migrado a ESLint y verificado.
+- `npm run typecheck` pasa.
+- `npm run build` pasa.
+- Rutas duplicadas `app/(app)` eliminadas.
+- APIs alineadas con schema real:
+  - `orders`
+  - `documents`
+  - `client-documents`
+- `next.config.ts` fija `turbopack.root` para evitar lockfiles externos.
 
-### 8.2 Gestión de documentos (admin)
-- [ ] `/admin/expedientes/[id]` muestra documentos subidos
-- [ ] Aprobar / rechazar documentos con email automático
+Criterios de aceptacion:
 
-### 8.3 Analytics mejorado
-- [ ] Gráfico de ingresos mensuales en `/admin/informes`
-- [ ] Exportar CSV de pedidos
+- [x] `npm run typecheck` pasa.
+- [x] `npm run build` pasa.
+- [x] `npm run lint` pasa.
+- [x] `rg "^(<<<<<<<|=======|>>>>>>>)"` no devuelve resultados.
+- [x] Los flujos de presupuesto, pago, expediente y documento usan tablas existentes.
 
----
+## Fase 1 - Fuente de verdad documental
 
-## Phase 9 — Integraciones externas (cuando estén disponibles las API keys)
+Estado: en curso.
 
-### 9.1 WhatsApp Meta Cloud API
-- [ ] Completar `lib/integrations/whatsapp.ts` (stubs → real API)
-- [ ] Webhook verificado + recepción de mensajes
-- [ ] Envío de notificaciones al cliente por WhatsApp
+Tipo: operacion, escalabilidad SaaS.
 
-### 9.2 Claude API — Clasificación y asistente IA
-- [ ] `classifyQuote()` — categoría de servicio automática
-- [ ] `draftAdminReply()` — borrador de respuesta para admin
-- [ ] `detectMissingDocuments()` — alerta de documentación incompleta
+Objetivo: que el proyecto tenga documentacion clara para ejecutar sin perder el hilo.
 
-### 9.3 Blog CMS
-- [ ] Decisión: MDX local vs. Sanity/Contentful
-- [ ] Artículos reales con metadatos SEO
-- [ ] Sitemap dinámico
+Tareas:
 
----
+- Mantener `docs/roadmap.md` como roadmap principal.
+- Mantener `docs/master-checklist.md` como checklist de cumplimiento.
+- Mantener `docs/architecture.md` como arquitectura operativa.
+- Revisar README y dejarlo alineado con la vision actual.
+- Documentar decisiones arquitectonicas:
+  - tenants separados de companies,
+  - servicios configurables,
+  - estados configurables,
+  - plantillas por tenant,
+  - integraciones por tenant.
 
-## Phase 10 — Producción y monitorización (continuo)
+Criterios de aceptacion:
 
-### 10.1 Variables de entorno Vercel
-- [ ] Auditar `.env.local` vs. variables en Vercel production
-- [ ] `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`
+- [x] Roadmap limpio y actualizado.
+- [x] Checklist maestro limpio y actualizado.
+- [x] Arquitectura limpia y actualizada.
+- [ ] README actualizado.
 
-### 10.2 Error monitoring
-- [ ] Integrar Sentry (Next.js SDK)
-- [ ] Alertas por email en errores críticos
+## Fase 2 - Web publica y validacion B2B discreta
 
-### 10.3 SEO y rendimiento
-- [ ] `next/image` en todas las imágenes
-- [ ] Core Web Vitals audit (Lighthouse)
-- [ ] Sitemap.xml + robots.txt
+Estado: en curso.
 
-### 10.4 GDPR y legal
-- [ ] Banner de cookies con consentimiento real (no solo enlace)
-- [ ] Descarga de datos de usuario (RGPD art. 20)
-- [ ] Gestión de baja de newsletter
+Tipo: captacion, conversion, escalabilidad SaaS.
 
----
+Objetivo: consolidar captacion B2C y abrir validacion SaaS sin confundir al cliente final.
 
-## Orden de ejecución inmediato
+Tareas:
 
-```
-Phase 7 (ahora) → Phase 8 (siguiente sesión) → Phase 9 (cuando haya API keys) → Phase 10 (continuo)
-```
+- Crear `/para-asesorias`.
+- Copy base: "Sistema digital para asesorias que quieren automatizar su operativa".
+- Formulario B2B:
+  - nombre,
+  - email,
+  - empresa o despacho,
+  - numero aproximado de clientes,
+  - herramientas actuales,
+  - principal problema operativo,
+  - interes en piloto,
+  - consentimiento.
+- Enlazar desde footer.
+- Enlazar desde bloque discreto al final de Home.
+- No incluir en el menu principal por ahora.
+- Ajustar menu publico:
+  - Servicios
+  - Planes
+  - Formacion
+  - Recursos
+  - Contacto
+  - Acceso cliente
+
+Criterios de aceptacion:
+
+- [x] `/para-asesorias` existe y no compite con la venta a cliente final.
+- [x] Footer y Home enlazan la pagina B2B de forma secundaria.
+- [x] Formulario B2B guarda leads en `saas_leads`.
+- [x] API publica usa escritura server-side, no insercion anonima directa.
+- La navegacion principal mantiene foco B2C.
+
+Pendiente:
+
+- Ajustar menu publico completo al esquema recomendado.
+- Crear vista admin para revisar leads B2B cuando empiecen a llegar pilotos.
+
+## Fase 3 - Estandarizacion de catalogo
+
+Estado: pendiente.
+
+Tipo: conversion, operacion, escalabilidad SaaS.
+
+Objetivo: que categorias, servicios, planes y formularios sean consistentes y evolucionables.
+
+Tareas:
+
+- Revisar `lib/utils/catalog.ts`.
+- Separar datos configurables de presentacion.
+- Estandarizar paginas de categoria y servicio.
+- Preparar servicios para futura tabla `tenant_services`.
+- Evitar textos y estados rigidos cuando puedan ser plantillas.
+
+Criterios de aceptacion:
+
+- Cada servicio tiene categoria, descripcion, CTA, datos de conversion y camino operativo claro.
+- El catalogo puede migrar a configuracion por tenant sin rehacer la web.
+
+## Fase 4 - Portal cliente por proxima accion
+
+Estado: pendiente.
+
+Tipo: operacion, comunicacion, retencion.
+
+Objetivo: que el cliente siempre entienda que ha contratado, que falta, en que estado esta y cual es el siguiente paso.
+
+Tareas:
+
+- Crear resumen de proxima accion.
+- Mostrar documentos pendientes por checklist.
+- Mostrar estado de expediente y siguiente paso.
+- Mostrar descargas finales.
+- Mostrar pagos, facturas y suscripciones.
+- Preparar resenas por servicio.
+
+Criterios de aceptacion:
+
+- El dashboard cliente prioriza accion y claridad, no decoracion.
+- Cada expediente tiene estado, documentos requeridos y entregables visibles.
+
+## Fase 5 - Admin operativo
+
+Estado: pendiente.
+
+Tipo: operacion, automatizacion.
+
+Objetivo: que el admin vea que requiere accion ahora.
+
+Tareas:
+
+- Bandeja de expedientes bloqueados.
+- Documentos por revisar.
+- Presupuestos sin responder.
+- Pagos fallidos.
+- Mensajes sin responder.
+- Resumen diario operativo.
+
+Criterios de aceptacion:
+
+- El admin puede priorizar trabajo diario desde una sola vista.
+- Los dashboards dejan de ser solo KPIs y pasan a ser bandeja operativa.
+
+## Fase 6 - Holded
+
+Estado: pendiente.
+
+Tipo: operacion, automatizacion, escalabilidad SaaS.
+
+Objetivo: integrar Holded sin sustituirlo.
+
+Tareas:
+
+- Copiar/adaptar el conector existente.
+- Crear `lib/integrations/holded`.
+- Configurar variables `HOLDED_*`.
+- Crear contacto/cliente tras pago o alta.
+- Crear factura desde `orders`.
+- Guardar mapping entre Stripe, Supabase y Holded.
+- Preparar `tenant_integrations` para futuro.
+
+Criterios de aceptacion:
+
+- Pago confirmado en Stripe puede producir factura/contacto en Holded.
+- Los errores de Holded son trazables y no rompen el flujo principal.
+
+## Fase 7 - Emails, WhatsApp y automatizaciones
+
+Estado: pendiente.
+
+Tipo: comunicacion, automatizacion, retencion.
+
+Tareas:
+
+- Refinar emails transaccionales.
+- Emails por cambio de estado.
+- Recordatorios de documentacion pendiente.
+- Seguimiento de presupuestos.
+- Alertas de pago fallido.
+- WhatsApp Business para avisos y enlaces al panel.
+- Crear `automation_rules` y preparar reglas por tenant.
+
+## Fase 8 - IA supervisada
+
+Estado: pendiente.
+
+Tipo: automatizacion, operacion, escalabilidad SaaS.
+
+Tareas:
+
+- Agente de leads.
+- Agente documental.
+- Agente de comunicaciones.
+- Agente de expediente.
+- Agente fiscal/legal supervisado.
+- Agente de contenido.
+- Agente operativo diario.
+- Clasificacion obligatoria de cada salida IA:
+  - automatica permitida,
+  - borrador para revision,
+  - requiere intervencion humana.
+
+## Fase 9 - Multi-tenant minimo
+
+Estado: pendiente.
+
+Tipo: escalabilidad SaaS.
+
+Tareas:
+
+- Crear `tenants`.
+- Crear settings, branding, integraciones, plantillas y roles por tenant.
+- Definir estrategia de `tenant_id` para entidades criticas.
+- Migrar catalogo a configuracion tenant-aware.
+- Mantener tenant EXPERT como tenant inicial.
+
+## Fase 10 - Piloto SaaS
+
+Estado: pendiente.
+
+Tipo: escalabilidad SaaS, captacion, retencion.
+
+Objetivo: validar con 1 a 3 asesorias externas.
+
+Tareas:
+
+- Seleccionar pilotos.
+- Activar branding/configuracion por tenant.
+- Medir uso operativo.
+- Recoger feedback.
+- Priorizar mejoras por reduccion de trabajo manual.
