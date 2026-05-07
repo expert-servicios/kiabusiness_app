@@ -1,10 +1,13 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
+import Script from 'next/script';
 import { MessageCircle } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
+
+const GTM_ID = 'GTM-MKZ522HP';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -55,7 +58,28 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
+      <head>
+        <Script
+          id="gtm-script"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_ID}');`
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            className="gtm-noscript"
+          />
+        </noscript>
         <Header />
         {children}
         <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />

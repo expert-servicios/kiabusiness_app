@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+.gtm-noscript { display: none; visibility: hidden; }
+
 html {
   scroll-behavior: smooth;
 }
