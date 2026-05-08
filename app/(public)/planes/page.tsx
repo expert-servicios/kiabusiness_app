@@ -516,24 +516,86 @@ export default function PlanesPage() {
       {/* Artículos relacionados */}
       <RelatedArticles category="Holded" title="Guías sobre Holded y contabilidad" limit={3} />
 
-      {/* Final CTA */}
-      <section className="px-6 py-16 text-center md:py-20">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Siguiente paso</p>
-          <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">
-            ¿Por dónde empezamos?
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#23364D]">
-            Si aún no tienes Holded, solicita tu prueba gratuita de 14 días — te lo configuramos y formamos.
-            Si ya lo tienes, elige el plan que mejor encaje con tu nivel de implicación.
-          </p>
+      {/* Final CTA — Migración a Holded */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Siguiente paso</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
+              ¿Vienes de otro software? Te migramos a Holded.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#23364D]">
+              Si llevas tu contabilidad en hojas de cálculo o usas otro programa, migramos todos tus datos a Holded con estructura clara antes de empezar cualquier plan.
+              Tres paquetes fijos, precios sin sorpresas.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="border border-[#D4A017]/25 bg-white p-6">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Pack Starter</span>
+              <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">Onboarding a Holded</h3>
+              <ul className="mt-4 space-y-2">
+                {[
+                  'Configuración inicial de empresa',
+                  'Facturación, contactos y bancos',
+                  '2 horas de formación incluidas',
+                  'Soporte prioritario 30 días'
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[#23364D]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="relative border border-[#D4A017] bg-white p-6 shadow-[0_8px_24px_rgba(212,160,23,0.15)]">
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#D4A017] px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#0D1B2A]">
+                Más popular
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Migración completa</span>
+              <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">Sin módulo de inventario</h3>
+              <ul className="mt-4 space-y-2">
+                {[
+                  'Clientes, proveedores y facturas',
+                  'Saldos contables (PGC)',
+                  '2 sesiones de formación de 2 h',
+                  'Soporte prioritario 60 días'
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[#23364D]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border border-[#D4A017]/25 bg-white p-6">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Migración completa</span>
+              <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">+ Módulo de inventario</h3>
+              <ul className="mt-4 space-y-2">
+                {[
+                  'Todo lo de Migración completa',
+                  'Productos, referencias y stock',
+                  '3 sesiones de formación de 2 h',
+                  'Soporte prioritario 90 días'
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[#23364D]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/planes/gratuito"
+              href="/holded#precios"
               className="inline-flex min-h-12 items-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
-              <Gift className="h-4 w-4" />
-              Solicitar demo gratuita de Holded
+              <Database className="h-4 w-4" />
+              Ver paquetes y precios
             </Link>
             <Link
               href="#planes"
