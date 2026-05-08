@@ -27,6 +27,26 @@ const CALENDLY_FORMACION = 'https://calendly.com/soy-kseniailicheva/formacion-ho
 
 const plans = [
   {
+    slug: 'gratuito',
+    name: 'Plan Gratuito',
+    tagline: 'Prueba Holded sin compromiso',
+    badge: 'Sin coste' as string | null,
+    price: 0,
+    persona: 'Para quienes quieren conocer Holded antes de comprometerse. Activamos tu demo, hacemos el onboarding y te formamos.',
+    Icon: Sparkles,
+    involvement: 'Prueba gratuita',
+    features: [
+      'Demo Holded de 14 días',
+      'Onboarding de 1 hora (videollamada)',
+      'Formación práctica de 2 horas',
+      'Configuración inicial incluida',
+      'Sin tarjeta de crédito'
+    ],
+    href: '/planes/gratuito',
+    ctaLabel: 'Solicitar plan gratuito',
+    freeplan: true
+  },
+  {
     slug: 'avanzado',
     name: 'Plan Avanzado',
     tagline: 'Tienes el control, yo superviso',
@@ -45,7 +65,9 @@ const plans = [
       'Soporte por email y WhatsApp — 48 h',
       'Licencia Holded obligatoria (no incluida)'
     ],
-    href: '/planes/basico'
+    href: '/planes/basico',
+    ctaLabel: 'Suscribirme — 99 €/mes',
+    freeplan: false
   },
   {
     slug: 'colaborativo',
@@ -67,7 +89,9 @@ const plans = [
       'Soporte prioritario — respuesta en menos de 24 h',
       'Licencia Holded obligatoria (no incluida)'
     ],
-    href: '/planes/estandar'
+    href: '/planes/estandar',
+    ctaLabel: 'Suscribirme — 199 €/mes',
+    freeplan: false
   }
 ];
 
@@ -197,13 +221,24 @@ export default function PlanesPage() {
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {plans.map((plan) => {
               const highlighted = plan.badge === 'Más popular';
+              const isFree = plan.freeplan;
               return (
                 <div
                   key={plan.slug}
-                  className={`relative flex flex-col border ${highlighted ? 'border-[#D4A017] shadow-[0_8px_32px_rgba(212,160,23,0.18)]' : 'border-[#D4A017]/25'} bg-white p-7`}
+                  className={`relative flex flex-col border p-7 ${
+                    highlighted
+                      ? 'border-[#D4A017] bg-white shadow-[0_8px_32px_rgba(212,160,23,0.18)]'
+                      : isFree
+                      ? 'border-dashed border-[#D4A017]/50 bg-white'
+                      : 'border-[#D4A017]/25 bg-white'
+                  }`}
                 >
                   {plan.badge && (
-                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-0.5 text-[10px] font-bold uppercase tracking-widest ${highlighted ? 'bg-[#D4A017] text-[#0D1B2A]' : 'border border-[#D4A017]/40 bg-[#23364D] text-[#D4A017]'}`}>
+                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                      highlighted
+                        ? 'bg-[#D4A017] text-[#0D1B2A]'
+                        : 'border border-[#D4A017]/40 bg-white text-[#D4A017]'
+                    }`}>
                       {plan.badge}
                     </span>
                   )}
@@ -221,8 +256,17 @@ export default function PlanesPage() {
                   <p className="mt-4 text-sm leading-6 text-[#23364D]">{plan.persona}</p>
 
                   <div className="mt-5">
-                    <span className="font-serif text-4xl font-bold text-[#0D1B2A]">{plan.price}</span>
-                    <span className="ml-1 text-sm text-[#9CA3AF]">€/mes · sin IVA</span>
+                    {isFree ? (
+                      <>
+                        <span className="font-serif text-4xl font-bold text-[#0D1B2A]">0</span>
+                        <span className="ml-1 text-sm text-[#9CA3AF]">€ · sin coste</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-serif text-4xl font-bold text-[#0D1B2A]">{plan.price}</span>
+                        <span className="ml-1 text-sm text-[#9CA3AF]">€/mes · sin IVA</span>
+                      </>
+                    )}
                   </div>
 
                   <ul className="mt-6 flex-1 space-y-2.5">
@@ -236,111 +280,59 @@ export default function PlanesPage() {
 
                   <div className="mt-7 space-y-2">
                     <Link
-                      href="/auth/login"
-                      className="inline-flex w-full items-center justify-center bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                      href={isFree ? '/planes/gratuito' : '/auth/login'}
+                      className="inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
                     >
-                      Suscribirme — {plan.price} €/mes
+                      {isFree && <Gift className="h-4 w-4" />}
+                      {plan.ctaLabel}
                     </Link>
-                    <a
-                      href={CALENDLY_DEMO}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
-                    >
-                      Pedir demo gratuita
-                    </a>
+                    {!isFree && (
+                      <a
+                        href={CALENDLY_DEMO}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                      >
+                        Pedir demo gratuita
+                      </a>
+                    )}
                   </div>
                 </div>
               );
             })}
-
-            {/* Custom quote CTA card */}
-            <div className="relative flex flex-col border-2 border-dashed border-[#D4A017]/60 bg-[#0D1B2A] p-7 text-[#F8F6F1]">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 border border-[#D4A017]/60 bg-[#0D1B2A] px-4 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
-                A medida
-              </span>
-
-              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/15">
-                <ClipboardList className="h-6 w-6 text-[#D4A017]" strokeWidth={1.7} />
-              </div>
-
-              <div className="mt-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Gestión avanzada</span>
-                <h3 className="mt-1 font-serif text-2xl font-bold text-[#F8F6F1]">Plan Personalizado</h3>
-                <p className="mt-0.5 text-sm font-semibold text-[#D4A017]">Diseñado para tus necesidades</p>
-              </div>
-
-              <p className="mt-4 text-sm leading-6 text-[#9CA3AF]">
-                Para empresas que necesitan más: gestión laboral, nóminas, extranjería, asesoramiento estratégico o una cobertura completamente delegada. Cuéntanos qué necesitas y preparamos una propuesta ajustada.
-              </p>
-
-              <ul className="mt-6 flex-1 space-y-2.5">
-                {[
-                  'Contabilidad y fiscalidad completa',
-                  'Gestión laboral y nóminas de empleados',
-                  'Gestión de permisos de extranjería',
-                  'Asesoramiento fiscal estratégico',
-                  'Formación en Holded o gestión',
-                  'Reuniones de seguimiento periódicas',
-                  'Precio ajustado a tu volumen real'
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-[#9CA3AF]">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-7 space-y-2">
-                <Link
-                  href="/planes/presupuesto-personalizado"
-                  className="inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Solicitar presupuesto
-                </Link>
-                <a
-                  href={CALENDLY_DEMO}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center border border-[#D4A017]/40 px-5 py-3 text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
-                >
-                  Pedir demo gratuita
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Plan Gratuito */}
+      {/* Plan Personalizado — CTA bloque ancho */}
       <section className="px-6 pb-4 md:pb-6">
         <div className="mx-auto max-w-7xl">
-          <div className="border border-dashed border-[#D4A017]/50 bg-white p-8 md:p-10">
+          <div className="border-2 border-dashed border-[#D4A017]/60 bg-[#0D1B2A] p-8 md:p-10">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/10">
-                  <Sparkles className="h-7 w-7 text-[#D4A017]" strokeWidth={1.5} />
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/15">
+                  <ClipboardList className="h-7 w-7 text-[#D4A017]" strokeWidth={1.5} />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-serif text-2xl font-bold text-[#0D1B2A]">Plan Gratuito</h3>
-                    <span className="rounded-full border border-[#D4A017]/40 bg-[#D4A017]/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
-                      Sin coste
+                    <h3 className="font-serif text-2xl font-bold text-[#F8F6F1]">Plan Personalizado</h3>
+                    <span className="border border-[#D4A017]/50 bg-[#D4A017]/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
+                      A medida
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-[#23364D]">
-                    ¿Todavía no conoces Holded o quieres probarlo antes de comprometerte? Activa tu demo de <strong>14 días gratuitos</strong>.
-                    Nosotros lo configuramos contigo y te formamos.
+                  <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">
+                    ¿Necesitas gestión laboral, nóminas, extranjería o una cobertura más completa? Cuéntanos tu situación y preparamos una propuesta ajustada a las necesidades reales de tu empresa.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
                     {[
-                      'Demo Holded de 14 días',
-                      'Onboarding de 1 hora (videollamada)',
-                      'Formación de 2 horas gratuita',
-                      'Sin tarjeta de crédito'
+                      'Contabilidad y fiscalidad completa',
+                      'Gestión laboral y nóminas',
+                      'Trámites de extranjería',
+                      'Asesoramiento fiscal estratégico',
+                      'Formación en Holded o gestión',
+                      'Precio ajustado a tu volumen real'
                     ].map((f) => (
-                      <span key={f} className="inline-flex items-center gap-1.5 text-xs text-[#23364D]">
+                      <span key={f} className="inline-flex items-center gap-1.5 text-xs text-[#9CA3AF]">
                         <Check className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
                         {f}
                       </span>
@@ -349,17 +341,25 @@ export default function PlanesPage() {
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-2 md:items-end">
-                <p className="text-right">
-                  <span className="font-serif text-4xl font-bold text-[#0D1B2A]">0</span>
-                  <span className="ml-1 text-sm text-[#9CA3AF]">€</span>
+                <p className="text-right font-serif text-sm font-semibold text-[#9CA3AF]">
+                  Desde<br />
+                  <span className="font-serif text-3xl font-bold text-[#D4A017]">consultar</span>
                 </p>
                 <Link
-                  href="/planes/gratuito"
+                  href="/planes/presupuesto-personalizado"
                   className="inline-flex items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
                 >
-                  <Gift className="h-4 w-4" />
-                  Solicitar plan gratuito
+                  <ClipboardList className="h-4 w-4" />
+                  Solicitar presupuesto
                 </Link>
+                <a
+                  href={CALENDLY_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 border border-[#D4A017]/40 px-6 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017]/10"
+                >
+                  Pedir demo gratuita
+                </a>
               </div>
             </div>
           </div>
