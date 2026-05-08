@@ -41,8 +41,10 @@ interface HoldedContactList {
 
 export async function findContactByEmail(email: string): Promise<HoldedContact | null> {
   try {
-    const data = await holdedFetch<HoldedContactList>('GET', `/contacts?email=${encodeURIComponent(email)}`);
-    return data.contacts?.[0] ?? null;
+    // Holded returns the array directly, not wrapped in { contacts: [] }
+    const data = await holdedFetch<HoldedContact[] | HoldedContactList>('GET', `/contacts?email=${encodeURIComponent(email)}`);
+    if (Array.isArray(data)) return data[0] ?? null;
+    return (data as HoldedContactList).contacts?.[0] ?? null;
   } catch {
     return null;
   }
@@ -113,6 +115,37 @@ export interface HoldedSyncResult {
   contactId: string | null;
   invoiceId: string | null;
   error?: string;
+}
+
+export async function syncSubscriptionToHolded(params: {
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string | null;
+  planName: string;
+  amountEur: number;
+  subscriptionId?: string;
+}): Promise<HoldedSyncResult> {
+  if (!isConfigured()) {
+    return { contactId: null, invoiceId: null, error: 'HOLDED_API_KEY not set' };
+  }
+  try {
+    const contactId = await upsertContact({
+      name: params.clientName,
+      email: params.clientEmail,
+      phone: params.clientPhone
+    });
+    const invoiceId = await createInvoice({
+      contactId,
+      description: `${params.planName} — suscripción mensual`,
+      amountEur: params.amountEur,
+      reference: params.subscriptionId
+    });
+    return { contactId, invoiceId };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[holded] syncSubscriptionToHolded error:', msg);
+    return { contactId: null, invoiceId: null, error: msg };
+  }
 }
 
 export async function syncOrderToHolded(params: {

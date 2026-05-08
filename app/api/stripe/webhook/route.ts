@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
-import { syncOrderToHolded } from '@/lib/integrations/holded';
+import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import {
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
@@ -14,9 +14,9 @@ import {
 
 function getPlanName(priceId: string): string {
   const map: Record<string, string> = {
-    [process.env.STRIPE_PLAN_MONTHLY_99 ?? '']: 'Plan Básico',
-    [process.env.STRIPE_PLAN_MONTHLY_199 ?? '']: 'Plan Estándar',
-    [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Premium'
+    [process.env.STRIPE_PLAN_MONTHLY_99 ?? '']: 'Plan Avanzado',
+    [process.env.STRIPE_PLAN_MONTHLY_199 ?? '']: 'Plan Colaborativo',
+    [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Presupuesto Personalizado'
   };
   return map[priceId] ?? 'Suscripción';
 }
@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
 
       if (customerEmail) {
         const calendlyFormacion = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+        const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
           const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyFormacion);
@@ -161,6 +162,14 @@ export async function POST(req: NextRequest) {
             ...tpl,
             metadata: { session_id: session.id, package_name: packageName }
           });
+          // Holded sync — migración
+          syncOrderToHolded({
+            clientName: customerName,
+            clientEmail: customerEmail,
+            description: packageName,
+            amountEur: holdedAmountEur,
+            orderId: session.id
+          }).catch((err) => console.error('[webhook] holded sync (migration) failed:', err));
         } else {
           const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
           await sendEmail({
@@ -169,6 +178,14 @@ export async function POST(req: NextRequest) {
             ...tpl,
             metadata: { session_id: session.id }
           });
+          // Holded sync — formación
+          syncOrderToHolded({
+            clientName: customerName,
+            clientEmail: customerEmail,
+            description: 'Formación EXPERT — sesión 2 h',
+            amountEur: holdedAmountEur,
+            orderId: session.id
+          }).catch((err) => console.error('[webhook] holded sync (formacion) failed:', err));
         }
       }
     }
@@ -230,6 +247,17 @@ export async function POST(req: NextRequest) {
           ...tpl,
           metadata: { subscription_id: sub.id, plan: planName }
         });
+
+        const monthlyAmount = sub.items.data[0]?.price.unit_amount
+          ? sub.items.data[0].price.unit_amount / 100
+          : 0;
+        syncSubscriptionToHolded({
+          clientName: clientInfo.name,
+          clientEmail: clientInfo.email,
+          planName,
+          amountEur: monthlyAmount,
+          subscriptionId: sub.id
+        }).catch((err) => console.error('[webhook] holded sync (subscription) failed:', err));
       }
     }
   }
