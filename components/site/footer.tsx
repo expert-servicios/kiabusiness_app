@@ -68,21 +68,28 @@ export function Footer() {
     <footer className="bg-[#0D1B2A] py-10 text-[#F8F6F1]">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-[1.25fr_0.75fr_0.9fr_1fr]">
         <div>
-          <Link href="/" className="inline-flex items-center">
-            <span className="relative flex h-36 w-full shrink-0 items-center justify-start overflow-hidden sm:h-44">
-              <Image
-                src="/logos/EXPERT_logo/expert-logo-light-clean.png"
-                alt="Logo EXPERT"
-                fill
-                sizes="(min-width: 640px) 320px, 256px"
-                className="object-contain object-left"
-              />
-            </span>
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logos/EXPERT_logo/expert-logo-light-clean.png"
+              alt="Logo EXPERT"
+              width={220}
+              height={64}
+              className="object-contain"
+            />
           </Link>
 
-          <p className="mt-5 max-w-sm text-sm leading-6 text-[#9CA3AF]">
+          <p className="mt-4 max-w-sm text-sm leading-6 text-[#9CA3AF]">
             Asesoría fiscal, legal y administrativa para residentes, expatriados y empresas en España.
           </p>
+
+          <div className="mt-5 flex items-center gap-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">Solution Partner</span>
+            <img
+              src="/Holded-Logotype-Red_Light.svg"
+              alt="Holded"
+              className="h-[18px] w-auto opacity-85"
+            />
+          </div>
         </div>
 
         <div>

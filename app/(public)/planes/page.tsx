@@ -210,8 +210,8 @@ export default function PlanesPage() {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col items-center justify-between gap-4 border border-[#D4A017]/30 bg-white px-6 py-5 sm:flex-row">
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#D4A017]/10">
-                <Sparkles className="h-5 w-5 text-[#D4A017]" />
+              <div className="flex h-10 w-auto shrink-0 items-center justify-center rounded bg-[#0D1B2A] px-3 py-1.5">
+                <img src="/Holded-Logotype-Red_Light.svg" alt="Holded" className="h-5 w-auto" />
               </div>
               <div>
                 <p className="font-semibold text-[#0D1B2A]">¿Todavía no tienes Holded?</p>
@@ -393,6 +393,13 @@ export default function PlanesPage() {
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 flex justify-center">
+              <img
+                src="/Holded-Logotype-Red_Light.svg"
+                alt="Holded"
+                className="h-9 w-auto opacity-90"
+              />
+            </div>
             <div className="inline-flex items-center gap-2 border border-[#D4A017]/50 bg-[#D4A017]/10 px-4 py-2">
               <AlertCircle className="h-4 w-4 text-[#D4A017]" />
               <span className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Importante</span>
