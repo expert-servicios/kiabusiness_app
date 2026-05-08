@@ -78,16 +78,14 @@ export function Footer() {
             />
           </Link>
 
-          <p className="mt-4 max-w-sm text-sm leading-6 text-[#9CA3AF]">
-            Asesoría fiscal, legal y administrativa para residentes, expatriados y empresas en España.
-          </p>
-
-          <div className="mt-5 flex items-center gap-2.5">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">Solution Partner</span>
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
+              Holded Solution Partner certificado
+            </p>
             <img
               src="/Holded-Logotype-Red_Light.svg"
               alt="Holded"
-              className="h-[18px] w-auto opacity-85"
+              className="h-8 w-auto opacity-90"
             />
           </div>
         </div>

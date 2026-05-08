@@ -133,7 +133,8 @@ export default async function HoldedPage() {
       <section className="brand-blue-bg px-6 py-20 text-[#F8F6F1] md:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Holded Solution Partner</p>
+            <img src="/Holded-Logotype-Red_Light.svg" alt="Holded" className="mb-5 h-9 w-auto" />
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Solution Partner certificado</p>
             <h1 className="mt-5 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">
               Migración contable a Holded con una estructura clara.
             </h1>
@@ -175,6 +176,78 @@ export default async function HoldedPage() {
                   <p className="text-sm leading-6 text-[#F8F6F1]/86">{s}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Licencias Holded ──────────────────────────────────────────────── */}
+      <section className="bg-white px-6 py-12 md:py-14">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Licencias Holded</p>
+            <h2 className="mt-3 font-serif text-2xl font-bold text-[#0D1B2A] md:text-3xl">
+              ¿Aún no tienes Holded? Empieza aquí.
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#23364D]">
+              Como Solution Partner certificados, gestionamos tu acceso con condiciones exclusivas y te acompañamos desde el primer día.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Prueba gratuita */}
+            <div className="flex flex-col items-center border border-[#D4A017] bg-[#D4A017]/5 p-7 text-center">
+              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/15">
+                <Gift className="h-6 w-6 text-[#D4A017]" />
+              </div>
+              <h3 className="mt-4 font-serif text-xl font-bold text-[#0D1B2A]">Prueba gratis 14 días</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">
+                Sin tarjeta de crédito. Lo activamos con nuestra cuenta de partner y hacemos el onboarding contigo.
+              </p>
+              <Link
+                href="/planes/gratuito"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+              >
+                <Gift className="h-4 w-4" />
+                Solicitar prueba gratuita
+              </Link>
+            </div>
+
+            {/* Demo en vivo */}
+            <div className="flex flex-col items-center border border-[#D4A017]/30 bg-white p-7 text-center">
+              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10">
+                <Calendar className="h-6 w-6 text-[#D4A017]" />
+              </div>
+              <h3 className="mt-4 font-serif text-xl font-bold text-[#0D1B2A]">Demo en vivo — 30 min</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">
+                Te mostramos Holded adaptado a tu sector por videollamada. Sin compromiso y sin tarjeta de crédito.
+              </p>
+              <a
+                href={CALENDLY_DEMO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+              >
+                <Calendar className="h-4 w-4" />
+                Reservar demostración
+              </a>
+            </div>
+
+            {/* Licencia con asistencia */}
+            <div className="flex flex-col items-center border border-[#D4A017]/30 bg-white p-7 text-center">
+              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10">
+                <Zap className="h-6 w-6 text-[#D4A017]" />
+              </div>
+              <h3 className="mt-4 font-serif text-xl font-bold text-[#0D1B2A]">Licencia con asistencia</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">
+                Contrata Holded a través de nosotros y recibe configuración inicial, soporte y formación desde el primer día.
+              </p>
+              <Link
+                href="/contacto?asunto=Licencia%20Holded%20con%20asistencia"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+              >
+                Solicitar información <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </div>
@@ -339,45 +412,41 @@ export default async function HoldedPage() {
         </div>
       </section>
 
-      {/* ── Formación por horas ───────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-16 md:py-20">
+      {/* ── Formación por horas — CTA horizontal ─────────────────────────── */}
+      <section className="bg-white px-6 py-10 md:py-12">
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Formación</p>
-            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Formación en Holded por horas.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-[#23364D]">
-              ¿Ya tienes Holded pero necesitas mejorar el uso que le das? Sesiones de 2 horas adaptadas a tu nivel y flujo de trabajo concreto.
-            </p>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-md">
-            <div className="flex flex-col border border-[#D4A017] bg-[#F8F6F1] p-8 shadow-[0_8px_32px_rgba(212,160,23,0.14)]">
-              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10 text-[#D4A017]">
-                <MonitorCheck className="h-6 w-6" />
+          <div className="border border-[#D4A017] bg-[#F8F6F1] p-6 md:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-5">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/10">
+                  <MonitorCheck className="h-7 w-7 text-[#D4A017]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Formación</p>
+                  <h2 className="mt-1 font-serif text-2xl font-bold text-[#0D1B2A]">
+                    Formación en Holded por horas
+                  </h2>
+                  <p className="mt-2 max-w-lg text-sm leading-6 text-[#23364D]">
+                    ¿Ya tienes Holded pero necesitas mejorar el uso que le das? Sesiones de 2 horas por videollamada, adaptadas a tu nivel y flujo de trabajo.
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                    {[
+                      'Sesión de 2 h por videollamada',
+                      'Contenido adaptado a tu sector',
+                      'Grabación de la sesión incluida',
+                      'Reserva tu horario tras el pago'
+                    ].map((f) => (
+                      <li key={f} className="flex items-center gap-1.5 text-xs text-[#23364D]">
+                        <Check className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <h3 className="mt-5 font-serif text-2xl font-bold text-[#0D1B2A]">Sesión de formación</h3>
-              <p className="mt-1 text-sm text-[#9CA3AF]">Sesión individual · 2 horas · Videollamada</p>
-              <p className="mt-5 font-serif text-4xl font-bold text-[#0D1B2A]">{formatPrice(formacionPrice)}</p>
-              <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
-
-              <ul className="mt-6 space-y-3">
-                {[
-                  'Sesión de 2 horas por videollamada',
-                  'Contenido adaptado a tu nivel y sector',
-                  'Resolución de dudas en tiempo real',
-                  'Grabación de la sesión incluida',
-                  'Tras el pago recibirás el enlace para reservar tu horario'
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-[#23364D]">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-7">
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <p className="font-serif text-4xl font-bold text-[#0D1B2A]">{formatPrice(formacionPrice)}</p>
+                <p className="mb-4 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
                 <HoldedBuyButton priceId={FORMACION_PRICE_ID} packageName="Formación Holded por horas" />
               </div>
             </div>
