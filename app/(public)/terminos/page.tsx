@@ -22,7 +22,7 @@ export default function TerminosPage() {
         <div className="mx-auto max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Legal</p>
           <h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">Términos y Condiciones</h1>
-          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: enero 2026</p>
+          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: 8 de mayo de 2026</p>
         </div>
       </div>
 
@@ -35,11 +35,12 @@ export default function TerminosPage() {
               Electrónico (LSSI-CE), se informa de que el titular del sitio web <strong>kseniailicheva.com</strong> es:
             </p>
             <ul>
-              <li><strong>Titular:</strong> Ksenia Ilicheva</li>
-              <li><strong>Actividad:</strong> Asesoría fiscal, legal y administrativa</li>
+              <li><strong>Titular:</strong> EXPERT ESTUDIOS PROFESIONALES, SLU</li>
+              <li><strong>CIF:</strong> B44991776</li>
+              <li><strong>Domicilio:</strong> C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España</li>
               <li><strong>Email de contacto:</strong> soy@kseniailicheva.com</li>
               <li><strong>Teléfono:</strong> +34 696 55 04 80</li>
-              <li><strong>Ámbito:</strong> España</li>
+              <li><strong>Ámbito geográfico:</strong> España</li>
             </ul>
           </Section>
 
