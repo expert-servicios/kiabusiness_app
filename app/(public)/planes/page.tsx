@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowRight, Check, Calendar, Gift,
-  MonitorCheck, BookOpen, Database, Eye, Users, AlertCircle, Sparkles
+  MonitorCheck, BookOpen, Database, Users, AlertCircle, Sparkles, ClipboardList
 } from 'lucide-react';
 import { FaqSection } from '@/components/site/FaqSection';
 import { RelatedArticles } from '@/components/site/RelatedArticles';
@@ -10,7 +10,7 @@ import { RelatedArticles } from '@/components/site/RelatedArticles';
 export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded | EXPERT',
   description:
-    'Gestión contable integral en España con Holded. Elige el nivel de implicación: Avanzado, Colaborativo o Delegado. Desde 99 €/mes. Sin permanencia.',
+    'Gestión contable integral en España con Holded. Plan Avanzado desde 99 €/mes, Plan Colaborativo desde 199 €/mes. También presupuesto personalizado con gestión laboral. Sin permanencia.',
   openGraph: {
     type: 'website',
     url: 'https://kseniailicheva.com/planes',
@@ -68,30 +68,6 @@ const plans = [
       'Licencia Holded obligatoria (no incluida)'
     ],
     href: '/planes/estandar'
-  },
-  {
-    slug: 'delegado',
-    name: 'Plan Delegado',
-    tagline: 'Tú observas, yo lo gestiono todo',
-    badge: 'Cobertura total' as string | null,
-    price: 349,
-    persona: 'Para empresas que quieren delegar toda la contabilidad y solo necesitan acceso de lectura a su información en Holded.',
-    Icon: Eye,
-    involvement: 'Sin implicación contable',
-    features: [
-      'Contabilidad completa a cargo de EXPERT',
-      'Introducción de todas las facturas y gastos',
-      'Impuestos trimestrales y anuales completos',
-      'Declaración de la Renta anual',
-      'Gestión de nóminas hasta 3 empleados',
-      'Una gestión de extranjería por trimestre',
-      'Acceso de lectura a Holded (solo visualización)',
-      'Informe mensual ejecutivo de resultados',
-      'Reunión trimestral de seguimiento',
-      'Soporte prioritario — respuesta en menos de 4 h',
-      'Licencia Holded obligatoria (no incluida)'
-    ],
-    href: '/planes/premium'
   }
 ];
 
@@ -126,7 +102,11 @@ const faqItems = [
   },
   {
     q: '¿Cómo es la comunicación con mi asesora?',
-    a: 'Principalmente por email y WhatsApp. Los tiempos de respuesta varían por plan: hasta 48 h en Plan Avanzado, menos de 24 h en Plan Colaborativo y menos de 4 h en Plan Delegado. El Plan Delegado incluye además reuniones trimestrales de seguimiento.'
+    a: 'Principalmente por email y WhatsApp. Los tiempos de respuesta varían por plan: hasta 48 h en Plan Avanzado y menos de 24 h en Plan Colaborativo. Los planes personalizados incluyen reuniones periódicas de seguimiento según lo acordado.'
+  },
+  {
+    q: '¿Qué incluye el presupuesto personalizado?',
+    a: 'El plan personalizado se diseña a medida según tus necesidades: puede incluir gestión laboral y nóminas, trámites de extranjería, asesoramiento fiscal estratégico, formación en Holded, o cualquier combinación. Rellena el formulario de solicitud y te preparamos una propuesta concreta en 24 horas hábiles.'
   }
 ];
 
@@ -175,21 +155,28 @@ export default function PlanesPage() {
             Tu nivel de implicación
           </p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[
-              { label: 'Alta — tú llevas la contabilidad', plan: 'Plan Avanzado', cls: 'bg-[#D4A017]/10 border-[#D4A017]/30' },
-              { label: 'Media — tú facturas, yo gestiono', plan: 'Plan Colaborativo', cls: 'bg-[#D4A017]/20 border-[#D4A017]/50' },
-              { label: 'Ninguna — lo delego todo', plan: 'Plan Delegado', cls: 'bg-[#D4A017]/30 border-[#D4A017]' }
-            ].map(({ label, plan, cls }) => (
-              <div key={plan} className={`border ${cls} px-5 py-4 text-center`}>
-                <p className="text-xs font-semibold text-[#23364D]">{label}</p>
-                <p className="mt-1 font-serif text-base font-bold text-[#0D1B2A]">{plan}</p>
-              </div>
-            ))}
+            <div className="border border-[#D4A017]/30 bg-[#D4A017]/10 px-5 py-4 text-center">
+              <p className="text-xs font-semibold text-[#23364D]">Alta — tú llevas la contabilidad</p>
+              <p className="mt-1 font-serif text-base font-bold text-[#0D1B2A]">Plan Avanzado</p>
+            </div>
+            <div className="border border-[#D4A017]/50 bg-[#D4A017]/20 px-5 py-4 text-center">
+              <p className="text-xs font-semibold text-[#23364D]">Media — tú facturas, yo gestiono</p>
+              <p className="mt-1 font-serif text-base font-bold text-[#0D1B2A]">Plan Colaborativo</p>
+            </div>
+            <Link
+              href="/planes/presupuesto-personalizado"
+              className="group border border-dashed border-[#D4A017] bg-[#D4A017]/5 px-5 py-4 text-center transition hover:bg-[#D4A017]/10"
+            >
+              <p className="text-xs font-semibold text-[#23364D]">Gestión avanzada o laboral</p>
+              <p className="mt-1 font-serif text-base font-bold text-[#D4A017] group-hover:underline">
+                Presupuesto personalizado →
+              </p>
+            </Link>
           </div>
           <div className="mt-3 h-1 w-full bg-gradient-to-r from-[#D4A017]/20 via-[#D4A017]/50 to-[#D4A017]" />
           <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
-            <span>Más implicación</span>
-            <span>Delegación total</span>
+            <span>Más implicación propia</span>
+            <span>Gestión avanzada y delegada</span>
           </div>
         </div>
       </section>
@@ -266,6 +253,62 @@ export default function PlanesPage() {
                 </div>
               );
             })}
+
+            {/* Custom quote CTA card */}
+            <div className="relative flex flex-col border-2 border-dashed border-[#D4A017]/60 bg-[#0D1B2A] p-7 text-[#F8F6F1]">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 border border-[#D4A017]/60 bg-[#0D1B2A] px-4 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
+                A medida
+              </span>
+
+              <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/15">
+                <ClipboardList className="h-6 w-6 text-[#D4A017]" strokeWidth={1.7} />
+              </div>
+
+              <div className="mt-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Gestión avanzada</span>
+                <h3 className="mt-1 font-serif text-2xl font-bold text-[#F8F6F1]">Plan Personalizado</h3>
+                <p className="mt-0.5 text-sm font-semibold text-[#D4A017]">Diseñado para tus necesidades</p>
+              </div>
+
+              <p className="mt-4 text-sm leading-6 text-[#9CA3AF]">
+                Para empresas que necesitan más: gestión laboral, nóminas, extranjería, asesoramiento estratégico o una cobertura completamente delegada. Cuéntanos qué necesitas y preparamos una propuesta ajustada.
+              </p>
+
+              <ul className="mt-6 flex-1 space-y-2.5">
+                {[
+                  'Contabilidad y fiscalidad completa',
+                  'Gestión laboral y nóminas de empleados',
+                  'Gestión de permisos de extranjería',
+                  'Asesoramiento fiscal estratégico',
+                  'Formación en Holded o gestión',
+                  'Reuniones de seguimiento periódicas',
+                  'Precio ajustado a tu volumen real'
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-[#9CA3AF]">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-7 space-y-2">
+                <Link
+                  href="/planes/presupuesto-personalizado"
+                  className="inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Solicitar presupuesto
+                </Link>
+                <a
+                  href={CALENDLY_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center border border-[#D4A017]/40 px-5 py-3 text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
+                >
+                  Pedir demo gratuita
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>

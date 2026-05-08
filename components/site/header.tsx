@@ -18,7 +18,7 @@ const planesLinks = [
   { label: 'Plan Gratuito — Holded demo', href: '/planes/gratuito' },
   { label: 'Plan Avanzado — 99 €/mes', href: '/planes/basico' },
   { label: 'Plan Colaborativo — 199 €/mes', href: '/planes/estandar' },
-  { label: 'Plan Delegado — 349 €/mes', href: '/planes/premium' }
+  { label: 'Presupuesto personalizado', href: '/planes/presupuesto-personalizado' }
 ];
 
 export function Header() {

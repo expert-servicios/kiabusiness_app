@@ -766,6 +766,67 @@ export const ALL_CASE_STATE_LABELS: Record<string, string> = {
   presentado: 'Presentado',
 };
 
+// ── Presupuesto personalizado ─────────────────────────────────────────────────
+
+export function presupuestoAvanzadoRequested(name: string, companyName: string) {
+  return {
+    subject: 'Hemos recibido tu solicitud de presupuesto personalizado — EXPERT',
+    html: base('Solicitud de presupuesto recibida', `
+      ${heading('¡Solicitud recibida!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Gracias por contactar con EXPERT. Hemos recibido tu solicitud de presupuesto personalizado para <strong>${escapeHtml(companyName)}</strong>.`)}
+      ${para('Analizaremos tus necesidades y te enviaremos una propuesta detallada y ajustada a tu situación real en <strong>24 horas hábiles</strong>.')}
+      ${stepsBlock([
+        'Revisamos tu solicitud y los servicios que necesitas.',
+        'Preparamos una propuesta personalizada con el coste mensual estimado.',
+        'Te la enviamos por email — sin compromiso, sin letra pequeña.',
+        'Si tienes dudas urgentes, escríbenos a soy@kseniailicheva.com'
+      ])}
+      ${para('<small style="color:#8899aa;">Si no recibes respuesta en 24 horas hábiles, revisa la carpeta de spam o escríbenos directamente a <a href="mailto:soy@kseniailicheva.com" style="color:#c88b25;">soy@kseniailicheva.com</a></small>')}
+      ${btn('Ver todos los planes', `${BRAND.appUrl}/planes`)}
+    `)
+  };
+}
+
+export function presupuestoAvanzadoAdmin(data: {
+  name: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  companyType?: string;
+  taxId?: string;
+  employees?: string;
+  annualBilling?: string;
+  currentSoftware?: string;
+  urgency?: string;
+  services: string[];
+  message?: string;
+}) {
+  const servicesList = data.services.join(', ');
+  return {
+    subject: `Nueva solicitud de presupuesto personalizado — ${data.companyName}`,
+    html: base('Nueva solicitud presupuesto avanzado', `
+      ${heading('Nueva solicitud de presupuesto')}
+      ${para('Se ha recibido una nueva solicitud de presupuesto personalizado:')}
+      ${table(
+        detail('Nombre', escapeHtml(data.name)),
+        detail('Email', data.email),
+        detail('Teléfono', data.phone),
+        detail('Empresa', escapeHtml(data.companyName)),
+        ...(data.companyType ? [detail('Tipo de empresa', data.companyType)] : []),
+        ...(data.taxId ? [detail('CIF / NIF', data.taxId)] : []),
+        ...(data.employees ? [detail('Empleados', data.employees)] : []),
+        ...(data.annualBilling ? [detail('Facturación anual', data.annualBilling)] : []),
+        ...(data.currentSoftware ? [detail('Software actual', data.currentSoftware)] : []),
+        ...(data.urgency ? [detail('Urgencia', data.urgency)] : []),
+        detail('Servicios solicitados', escapeHtml(servicesList))
+      )}
+      ${data.message ? noteBlock(data.message) : ''}
+      ${btn('Gestionar solicitud', `${BRAND.appUrl}/admin`)}
+    `)
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',
