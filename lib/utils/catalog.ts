@@ -1,39 +1,39 @@
-﻿export const categories = [
+export const categories = [
   {
     slug: 'declaraciones-impuestos',
     name: 'Declaraciones e Impuestos',
-    description: 'Renta, IVA, Sociedades y planificaciÃ³n fiscal anual para personas fÃ­sicas y empresas.'
+    description: 'Renta, IVA, Sociedades y planificación fiscal anual para personas físicas y empresas.'
   },
   {
     slug: 'extranjeria-nacionalidad',
-    name: 'ExtranjerÃ­a y Nacionalidad',
-    description: 'Arraigo, permisos, renovaciones y expedientes de nacionalidad espaÃ±ola.'
+    name: 'Extranjería y Nacionalidad',
+    description: 'Arraigo, permisos, renovaciones y expedientes de nacionalidad española.'
   },
   {
     slug: 'empresas-autonomos',
-    name: 'Empresas y AutÃ³nomos',
-    description: 'Alta de actividad, asesorÃ­a contable y obligaciones recurrentes de negocio.'
+    name: 'Empresas y Autónomos',
+    description: 'Alta de actividad, asesoría contable y obligaciones recurrentes de negocio.'
   },
   {
     slug: 'trafico-capitania-maritima',
-    name: 'TrÃ¡fico y CapitanÃ­a MarÃ­tima',
-    description: 'Gestiones de trÃ¡fico, matriculaciones y trÃ¡mites de embarcaciones.'
+    name: 'Tráfico y Capitanía Marítima',
+    description: 'Gestiones de tráfico, matriculaciones y trámites de embarcaciones.'
   },
   {
     slug: 'notaria-propiedades',
-    name: 'NotarÃ­a y Propiedades',
+    name: 'Notaría y Propiedades',
     description: 'Compraventas, escrituras, herencias y fiscalidad inmobiliaria.'
   },
   {
     slug: 'gestiones-especializadas',
     name: 'Gestiones Especializadas',
-    description: 'TrÃ¡mites estratÃ©gicos con enfoque legal-administrativo de alta complejidad.'
+    description: 'Trámites estratégicos con enfoque legal-administrativo de alta complejidad.'
   },
   {
     slug: 'formacion',
-    name: 'FormaciÃ³n',
+    name: 'Formación',
     description:
-      'FormaciÃ³n fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.'
+      'Formación fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.'
   }
 ] as const;
 
@@ -52,662 +52,662 @@ export type Service = {
 };
 
 export const services: Service[] = [
-  // â”€â”€ Declaraciones e Impuestos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Declaraciones e Impuestos ─────────────────────────────────────────────
   {
     slug: 'irpf',
     categoria: 'declaraciones-impuestos',
-    name: 'DeclaraciÃ³n de la Renta (IRPF)',
-    shortDescription: 'PreparaciÃ³n y presentaciÃ³n del IRPF con revisiÃ³n fiscal completa.',
+    name: 'Declaración de la Renta (IRPF)',
+    shortDescription: 'Preparación y presentación del IRPF con revisión fiscal completa.',
     description:
-      'Gestionamos tu declaraciÃ³n de la renta de principio a fin: revisamos tu situaciÃ³n fiscal, identificamos deducciones aplicables, preparamos el borrador, lo validamos contigo y lo presentamos ante la AEAT. Servicio para residentes, trabajadores por cuenta ajena, autÃ³nomos y propietarios de inmuebles.',
-    price: 'Desde 90 â‚¬',
-    duration: '3â€“5 dÃ­as hÃ¡biles',
+      'Gestionamos tu declaración de la renta de principio a fin: revisamos tu situación fiscal, identificamos deducciones aplicables, preparamos el borrador, lo validamos contigo y lo presentamos ante la AEAT. Servicio para residentes, trabajadores por cuenta ajena, autónomos y propietarios de inmuebles.',
+    price: 'Desde 90 €',
+    duration: '3–5 días hábiles',
     includes: [
-      'RevisiÃ³n completa de datos fiscales',
-      'IdentificaciÃ³n de deducciones y bonificaciones',
-      'PreparaciÃ³n y validaciÃ³n del borrador',
-      'PresentaciÃ³n telemÃ¡tica ante la AEAT',
-      'Justificante de presentaciÃ³n'
+      'Revisión completa de datos fiscales',
+      'Identificación de deducciones y bonificaciones',
+      'Preparación y validación del borrador',
+      'Presentación telemática ante la AEAT',
+      'Justificante de presentación'
     ],
     faqs: [
-      { q: 'Â¿Necesito ir a ningÃºn sitio?', a: 'No. Todo el proceso se realiza de forma online. TÃº envÃ­as la documentaciÃ³n y nosotros gestionamos la presentaciÃ³n.' },
-      { q: 'Â¿QuÃ© documentos necesito aportar?', a: 'DNI/NIE, nÃºmero de referencia AEAT o Cl@ve, certificados de retenciones, datos de inmuebles, prÃ©stamos e inversiones si los hay.' },
-      { q: 'Â¿CuÃ¡ndo empieza la campaÃ±a de renta?', a: 'La campaÃ±a de IRPF arranca en abril y cierra a finales de junio. Te recomendamos no esperar al Ãºltimo momento para evitar saturaciÃ³n.' }
+      { q: '¿Necesito ir a ningún sitio?', a: 'No. Todo el proceso se realiza de forma online. Tú envías la documentación y nosotros gestionamos la presentación.' },
+      { q: '¿Qué documentos necesito aportar?', a: 'DNI/NIE, número de referencia AEAT o Cl@ve, certificados de retenciones, datos de inmuebles, préstamos e inversiones si los hay.' },
+      { q: '¿Cuándo empieza la campaña de renta?', a: 'La campaña de IRPF arranca en abril y cierra a finales de junio. Te recomendamos no esperar al último momento para evitar saturación.' }
     ]
   },
   {
     slug: 'modelo-151',
     categoria: 'declaraciones-impuestos',
-    name: 'Modelo 151 â€” RÃ©gimen Beckham',
-    shortDescription: 'TributaciÃ³n especial para expatriados desplazados a EspaÃ±a.',
+    name: 'Modelo 151 — Régimen Beckham',
+    shortDescription: 'Tributación especial para expatriados desplazados a España.',
     description:
-      'El rÃ©gimen especial de impatriados (popularmente conocido como Ley Beckham) permite tributar al tipo fijo del 24% sobre rentas obtenidas en EspaÃ±a durante los primeros aÃ±os de residencia. Gestionamos la solicitud de activaciÃ³n del rÃ©gimen y la declaraciÃ³n anual del Modelo 151.',
+      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite tributar al tipo fijo del 24% sobre rentas obtenidas en España durante los primeros años de residencia. Gestionamos la solicitud de activación del régimen y la declaración anual del Modelo 151.',
     price: 'Consultar',
-    duration: '5â€“10 dÃ­as hÃ¡biles',
+    duration: '5–10 días hábiles',
     includes: [
-      'EvaluaciÃ³n de elegibilidad y requisitos',
-      'TramitaciÃ³n del Modelo 149 (opciÃ³n al rÃ©gimen)',
-      'DeclaraciÃ³n anual Modelo 151',
+      'Evaluación de elegibilidad y requisitos',
+      'Tramitación del Modelo 149 (opción al régimen)',
+      'Declaración anual Modelo 151',
       'Asesoramiento fiscal internacional',
-      'PresentaciÃ³n telemÃ¡tica y justificante'
+      'Presentación telemática y justificante'
     ],
     faqs: [
-      { q: 'Â¿QuiÃ©n puede acogerse al rÃ©gimen Beckham?', a: 'Trabajadores y directivos desplazados a EspaÃ±a que no hayan sido residentes los 5 aÃ±os anteriores, bajo determinadas condiciones.' },
-      { q: 'Â¿CuÃ¡nto tiempo dura el rÃ©gimen?', a: 'Hasta 5 aÃ±os desde la activaciÃ³n, renovable en algunas circunstancias.' },
-      { q: 'Â¿Cubre tambiÃ©n a mi familia?', a: 'El rÃ©gimen es individual, aunque el cÃ³nyuge e hijos pueden acogerse bajo ciertos requisitos.' }
+      { q: '¿Quién puede acogerse al régimen Beckham?', a: 'Trabajadores y directivos desplazados a España que no hayan sido residentes los 5 años anteriores, bajo determinadas condiciones.' },
+      { q: '¿Cuánto tiempo dura el régimen?', a: 'Hasta 5 años desde la activación, renovable en algunas circunstancias.' },
+      { q: '¿Cubre también a mi familia?', a: 'El régimen es individual, aunque el cónyuge e hijos pueden acogerse bajo ciertos requisitos.' }
     ]
   },
   {
     slug: 'no-residentes',
     categoria: 'declaraciones-impuestos',
-    name: 'IRNR â€” No Residentes',
-    shortDescription: 'Declaraciones fiscales para personas no residentes con bienes o rentas en EspaÃ±a.',
+    name: 'IRNR — No Residentes',
+    shortDescription: 'Declaraciones fiscales para personas no residentes con bienes o rentas en España.',
     description:
-      'Si tienes inmuebles, inversiones o percibes rentas de fuente espaÃ±ola sin ser residente fiscal, debes presentar el Impuesto sobre la Renta de No Residentes (IRNR). Gestionamos los modelos 210, 211 y 213 adaptados a tu situaciÃ³n.',
-    price: 'Desde 80 â‚¬ / modelo',
-    duration: '3â€“5 dÃ­as hÃ¡biles',
+      'Si tienes inmuebles, inversiones o percibes rentas de fuente española sin ser residente fiscal, debes presentar el Impuesto sobre la Renta de No Residentes (IRNR). Gestionamos los modelos 210, 211 y 213 adaptados a tu situación.',
+    price: 'Desde 80 € / modelo',
+    duration: '3–5 días hábiles',
     includes: [
-      'AnÃ¡lisis de tu situaciÃ³n como no residente',
-      'PreparaciÃ³n del Modelo 210 / 211 / 213',
-      'CÃ¡lculo de cuota y retenciones',
-      'PresentaciÃ³n telemÃ¡tica',
-      'Asesoramiento sobre convenios de doble imposiciÃ³n'
+      'Análisis de tu situación como no residente',
+      'Preparación del Modelo 210 / 211 / 213',
+      'Cálculo de cuota y retenciones',
+      'Presentación telemática',
+      'Asesoramiento sobre convenios de doble imposición'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo debo presentar el Modelo 210?', a: 'Depende del tipo de renta. Para imputaciones de inmuebles, en enero del aÃ±o siguiente. Para alquileres, trimestralmente.' },
-      { q: 'Â¿Necesito representante fiscal?', a: 'SÃ­, si eres no residente en la UE con propiedades en EspaÃ±a, es obligatorio tener un representante fiscal en EspaÃ±a.' }
+      { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta. Para imputaciones de inmuebles, en enero del año siguiente. Para alquileres, trimestralmente.' },
+      { q: '¿Necesito representante fiscal?', a: 'Sí, si eres no residente en la UE con propiedades en España, es obligatorio tener un representante fiscal en España.' }
     ]
   },
   {
     slug: 'iva-trimestral',
     categoria: 'declaraciones-impuestos',
     name: 'IVA Trimestral',
-    shortDescription: 'PresentaciÃ³n del Modelo 303 y liquidaciÃ³n trimestral del IVA.',
+    shortDescription: 'Presentación del Modelo 303 y liquidación trimestral del IVA.',
     description:
-      'Preparamos y presentamos tu declaraciÃ³n trimestral de IVA (Modelo 303), el resumen anual (Modelo 390) y cualquier otro modelo relacionado. Incluye revisiÃ³n de facturas emitidas y recibidas para garantizar la correcta liquidaciÃ³n.',
-    price: 'Desde 60 â‚¬ / trimestre',
-    duration: '2â€“3 dÃ­as hÃ¡biles',
+      'Preparamos y presentamos tu declaración trimestral de IVA (Modelo 303), el resumen anual (Modelo 390) y cualquier otro modelo relacionado. Incluye revisión de facturas emitidas y recibidas para garantizar la correcta liquidación.',
+    price: 'Desde 60 € / trimestre',
+    duration: '2–3 días hábiles',
     includes: [
-      'RevisiÃ³n de facturas emitidas y recibidas',
-      'PreparaciÃ³n Modelo 303',
-      'PresentaciÃ³n dentro de plazo',
+      'Revisión de facturas emitidas y recibidas',
+      'Preparación Modelo 303',
+      'Presentación dentro de plazo',
       'Resumen anual Modelo 390',
       'Alerta de plazos y recordatorios'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡les son los plazos trimestrales?', a: 'Del 1 al 20 de los meses de abril, julio, octubre y enero (este Ãºltimo hasta el 30).' },
-      { q: 'Â¿Puedo llevar yo las facturas y que solo presentÃ©is?', a: 'SÃ­, puedes enviarnos el registro de facturas y nos encargamos de la liquidaciÃ³n y presentaciÃ³n.' }
+      { q: '¿Cuáles son los plazos trimestrales?', a: 'Del 1 al 20 de los meses de abril, julio, octubre y enero (este último hasta el 30).' },
+      { q: '¿Puedo llevar yo las facturas y que solo presentéis?', a: 'Sí, puedes enviarnos el registro de facturas y nos encargamos de la liquidación y presentación.' }
     ]
   },
   {
     slug: 'impuesto-sociedades',
     categoria: 'declaraciones-impuestos',
     name: 'Impuesto de Sociedades',
-    shortDescription: 'DeclaraciÃ³n anual del IS para sociedades limitadas y anÃ³nimas.',
+    shortDescription: 'Declaración anual del IS para sociedades limitadas y anónimas.',
     description:
-      'Realizamos el cierre contable del ejercicio y preparamos la declaraciÃ³n del Impuesto sobre Sociedades (Modelo 200), incluyendo ajustes fiscales, deducciones aplicables y conciliaciÃ³n contable-fiscal.',
+      'Realizamos el cierre contable del ejercicio y preparamos la declaración del Impuesto sobre Sociedades (Modelo 200), incluyendo ajustes fiscales, deducciones aplicables y conciliación contable-fiscal.',
     price: 'Consultar',
-    duration: '7â€“15 dÃ­as hÃ¡biles',
+    duration: '7–15 días hábiles',
     includes: [
       'Cierre contable del ejercicio',
       'Ajustes y conciliaciones fiscales',
-      'PreparaciÃ³n del Modelo 200',
-      'LiquidaciÃ³n y revisiÃ³n de pagos fraccionados',
-      'PresentaciÃ³n telemÃ¡tica y depÃ³sito de cuentas'
+      'Preparación del Modelo 200',
+      'Liquidación y revisión de pagos fraccionados',
+      'Presentación telemática y depósito de cuentas'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo hay que presentarlo?', a: 'En los 25 dÃ­as naturales siguientes a los 6 meses posteriores al cierre del ejercicio (normalmente en julio para ejercicios que cierran en diciembre).' },
-      { q: 'Â¿Necesito tambiÃ©n llevar la contabilidad con vosotros?', a: 'No es imprescindible, pero facilita el proceso. Si llevas la contabilidad con nosotros, el precio del IS estÃ¡ incluido en el plan mensual.' }
+      { q: '¿Cuándo hay que presentarlo?', a: 'En los 25 días naturales siguientes a los 6 meses posteriores al cierre del ejercicio (normalmente en julio para ejercicios que cierran en diciembre).' },
+      { q: '¿Necesito también llevar la contabilidad con vosotros?', a: 'No es imprescindible, pero facilita el proceso. Si llevas la contabilidad con nosotros, el precio del IS está incluido en el plan mensual.' }
     ]
   },
   {
     slug: 'modelos-informativos',
     categoria: 'declaraciones-impuestos',
     name: 'Modelos Informativos',
-    shortDescription: 'PresentaciÃ³n de modelos 347, 349, 180, 190 y otros declarativos.',
+    shortDescription: 'Presentación de modelos 347, 349, 180, 190 y otros declarativos.',
     description:
-      'Gestionamos la preparaciÃ³n y presentaciÃ³n de los principales modelos informativos anuales: operaciones con terceros (Modelo 347), operaciones intracomunitarias (Modelo 349), retenciones de alquileres (180), retenciones de trabajo (190), entre otros.',
-    price: 'Desde 50 â‚¬ / modelo',
-    duration: '2â€“4 dÃ­as hÃ¡biles',
+      'Gestionamos la preparación y presentación de los principales modelos informativos anuales: operaciones con terceros (Modelo 347), operaciones intracomunitarias (Modelo 349), retenciones de alquileres (180), retenciones de trabajo (190), entre otros.',
+    price: 'Desde 50 € / modelo',
+    duration: '2–4 días hábiles',
     includes: [
-      'RevisiÃ³n y cruce de datos con contabilidad',
-      'PreparaciÃ³n del modelo correspondiente',
-      'PresentaciÃ³n en plazo ante la AEAT',
-      'Copia de justificante de presentaciÃ³n'
+      'Revisión y cruce de datos con contabilidad',
+      'Preparación del modelo correspondiente',
+      'Presentación en plazo ante la AEAT',
+      'Copia de justificante de presentación'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© pasa si presento un modelo informativo fuera de plazo?', a: 'Existe un rÃ©gimen sancionador por presentaciÃ³n extemporÃ¡nea. Te avisamos con antelaciÃ³n para evitar recargos.' }
+      { q: '¿Qué pasa si presento un modelo informativo fuera de plazo?', a: 'Existe un régimen sancionador por presentación extemporánea. Te avisamos con antelación para evitar recargos.' }
     ]
   },
 
-  // â”€â”€ ExtranjerÃ­a y Nacionalidad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Extranjería y Nacionalidad ─────────────────────────────────────────────
   {
     slug: 'arraigo-social',
     categoria: 'extranjeria-nacionalidad',
     name: 'Arraigo Social',
-    shortDescription: 'AutorizaciÃ³n de residencia por arraigo social en EspaÃ±a.',
+    shortDescription: 'Autorización de residencia por arraigo social en España.',
     description:
-      'El arraigo social permite obtener un permiso de residencia temporal para personas que llevan al menos 3 aÃ±os empadronadas en EspaÃ±a, tienen vÃ­nculos familiares con residentes legales o disponen de una oferta de empleo. Preparamos toda la documentaciÃ³n y gestionamos el expediente.',
+      'El arraigo social permite obtener un permiso de residencia temporal para personas que llevan al menos 3 años empadronadas en España, tienen vínculos familiares con residentes legales o disponen de una oferta de empleo. Preparamos toda la documentación y gestionamos el expediente.',
     price: 'Consultar',
-    duration: 'Variable (3â€“6 meses segÃºn DelegaciÃ³n)',
+    duration: 'Variable (3–6 meses según Delegación)',
     includes: [
-      'EvaluaciÃ³n previa de elegibilidad',
-      'PreparaciÃ³n y revisiÃ³n de documentaciÃ³n',
-      'ElaboraciÃ³n del informe de arraigo',
-      'PresentaciÃ³n del expediente',
+      'Evaluación previa de elegibilidad',
+      'Preparación y revisión de documentación',
+      'Elaboración del informe de arraigo',
+      'Presentación del expediente',
       'Seguimiento y respuesta a requerimientos'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡nto tiempo tengo que llevar en EspaÃ±a?', a: 'MÃ­nimo 3 aÃ±os de permanencia continuada y acreditada.' },
-      { q: 'Â¿Necesito contrato de trabajo?', a: 'Para el arraigo social mediante oferta de empleo, sÃ­. Para el arraigo familiar, no es necesario.' }
+      { q: '¿Cuánto tiempo tengo que llevar en España?', a: 'Mínimo 3 años de permanencia continuada y acreditada.' },
+      { q: '¿Necesito contrato de trabajo?', a: 'Para el arraigo social mediante oferta de empleo, sí. Para el arraigo familiar, no es necesario.' }
     ]
   },
   {
     slug: 'arraigo-familiar',
     categoria: 'extranjeria-nacionalidad',
     name: 'Arraigo Familiar',
-    shortDescription: 'Residencia por vÃ­nculos familiares con ciudadanos espaÃ±oles o residentes.',
+    shortDescription: 'Residencia por vínculos familiares con ciudadanos españoles o residentes.',
     description:
-      'Si eres padre o madre de un menor espaÃ±ol, o cÃ³nyuge/pareja de hecho de un ciudadano espaÃ±ol o residente legal, puedes solicitar la autorizaciÃ³n de residencia por arraigo familiar. Gestionamos el expediente desde la evaluaciÃ³n inicial hasta la resoluciÃ³n.',
+      'Si eres padre o madre de un menor español, o cónyuge/pareja de hecho de un ciudadano español o residente legal, puedes solicitar la autorización de residencia por arraigo familiar. Gestionamos el expediente desde la evaluación inicial hasta la resolución.',
     price: 'Consultar',
     duration: 'Variable',
     includes: [
-      'EvaluaciÃ³n de requisitos y vÃ­nculo familiar',
-      'PreparaciÃ³n de documentaciÃ³n',
-      'PresentaciÃ³n ante ExtranjerÃ­a',
+      'Evaluación de requisitos y vínculo familiar',
+      'Preparación de documentación',
+      'Presentación ante Extranjería',
       'Seguimiento del expediente'
     ],
     faqs: [
-      { q: 'Â¿CÃ³mo acredito el vÃ­nculo familiar?', a: 'Mediante libro de familia, certificado de nacimiento, sentencia de filiaciÃ³n u otros documentos segÃºn el caso.' }
+      { q: '¿Cómo acredito el vínculo familiar?', a: 'Mediante libro de familia, certificado de nacimiento, sentencia de filiación u otros documentos según el caso.' }
     ]
   },
   {
     slug: 'renovacion-residencia',
     categoria: 'extranjeria-nacionalidad',
-    name: 'RenovaciÃ³n de Residencia',
-    shortDescription: 'RenovaciÃ³n de permisos de residencia temporal y larga duraciÃ³n.',
+    name: 'Renovación de Residencia',
+    shortDescription: 'Renovación de permisos de residencia temporal y larga duración.',
     description:
-      'Gestionamos la renovaciÃ³n de tu autorizaciÃ³n de residencia (temporal o larga duraciÃ³n) en los plazos adecuados para evitar situaciones de irregularidad sobrevenida. Revisamos tus requisitos, preparamos la documentaciÃ³n y presentamos la solicitud.',
+      'Gestionamos la renovación de tu autorización de residencia (temporal o larga duración) en los plazos adecuados para evitar situaciones de irregularidad sobrevenida. Revisamos tus requisitos, preparamos la documentación y presentamos la solicitud.',
     price: 'Consultar',
-    duration: '1â€“3 meses',
+    duration: '1–3 meses',
     includes: [
-      'RevisiÃ³n de requisitos para la renovaciÃ³n',
-      'PreparaciÃ³n de solicitud y documentaciÃ³n',
-      'PresentaciÃ³n electrÃ³nica',
-      'Seguimiento y atenciÃ³n a requerimientos',
-      'ObtenciÃ³n de la nueva tarjeta TIE'
+      'Revisión de requisitos para la renovación',
+      'Preparación de solicitud y documentación',
+      'Presentación electrónica',
+      'Seguimiento y atención a requerimientos',
+      'Obtención de la nueva tarjeta TIE'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo debo presentar la renovaciÃ³n?', a: 'Se puede presentar 60 dÃ­as antes de la caducidad y hasta 90 dÃ­as despuÃ©s (con posible recargo).' }
+      { q: '¿Cuándo debo presentar la renovación?', a: 'Se puede presentar 60 días antes de la caducidad y hasta 90 días después (con posible recargo).' }
     ]
   },
   {
     slug: 'nacionalidad-espanola',
     categoria: 'extranjeria-nacionalidad',
-    name: 'Nacionalidad EspaÃ±ola',
-    shortDescription: 'Expediente de nacionalidad espaÃ±ola por residencia o por origen.',
+    name: 'Nacionalidad Española',
+    shortDescription: 'Expediente de nacionalidad española por residencia o por origen.',
     description:
-      'AcompaÃ±amos el proceso completo para la obtenciÃ³n de la nacionalidad espaÃ±ola por residencia: desde la preparaciÃ³n de la documentaciÃ³n y los exÃ¡menes CCSE y DELE hasta la presentaciÃ³n del expediente en el Registro Civil o notarÃ­a. Seguimiento continuado hasta la resoluciÃ³n.',
+      'Acompañamos el proceso completo para la obtención de la nacionalidad española por residencia: desde la preparación de la documentación y los exámenes CCSE y DELE hasta la presentación del expediente en el Registro Civil o notaría. Seguimiento continuado hasta la resolución.',
     price: 'Consultar',
-    duration: '1â€“3 aÃ±os (segÃºn expediente)',
+    duration: '1–3 años (según expediente)',
     includes: [
-      'RevisiÃ³n del tiempo de residencia y requisitos',
-      'PreparaciÃ³n de documentaciÃ³n completa',
-      'OrientaciÃ³n para exÃ¡menes CCSE y DELE A2',
-      'PresentaciÃ³n del expediente',
-      'Seguimiento periÃ³dico y respuesta a requerimientos'
+      'Revisión del tiempo de residencia y requisitos',
+      'Preparación de documentación completa',
+      'Orientación para exámenes CCSE y DELE A2',
+      'Presentación del expediente',
+      'Seguimiento periódico y respuesta a requerimientos'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ntos aÃ±os de residencia necesito?', a: 'En general 10 aÃ±os, reducibles a 5 (refugiados), 2 (nacionales de paÃ­ses iberoamericanos, Filipinas, Guinea Ecuatorial, Portugal o Andorra) o 1 aÃ±o en casos especiales.' },
-      { q: 'Â¿Tengo que hacer exÃ¡menes?', a: 'SÃ­: el CCSE (conocimientos constitucionales y socioculturales) y el DELE A2 de espaÃ±ol si no eres hispanohablante.' }
+      { q: '¿Cuántos años de residencia necesito?', a: 'En general 10 años, reducibles a 5 (refugiados), 2 (nacionales de países iberoamericanos, Filipinas, Guinea Ecuatorial, Portugal o Andorra) o 1 año en casos especiales.' },
+      { q: '¿Tengo que hacer exámenes?', a: 'Sí: el CCSE (conocimientos constitucionales y socioculturales) y el DELE A2 de español si no eres hispanohablante.' }
     ]
   },
   {
     slug: 'nie-pasaporte',
     categoria: 'extranjeria-nacionalidad',
     name: 'NIE y Gestiones Consulares',
-    shortDescription: 'ObtenciÃ³n del NÃºmero de IdentificaciÃ³n de Extranjero (NIE) y gestiones consulares.',
+    shortDescription: 'Obtención del Número de Identificación de Extranjero (NIE) y gestiones consulares.',
     description:
-      'Tramitamos la obtenciÃ³n del NIE (para ciudadanos de la UE o no UE), asÃ­ como gestiones relacionadas con el Consulado: citas, documentaciÃ³n para visados, certificados de registro y otras diligencias consulares en EspaÃ±a.',
-    price: 'Desde 60 â‚¬',
-    duration: '1â€“4 semanas',
+      'Tramitamos la obtención del NIE (para ciudadanos de la UE o no UE), así como gestiones relacionadas con el Consulado: citas, documentación para visados, certificados de registro y otras diligencias consulares en España.',
+    price: 'Desde 60 €',
+    duration: '1–4 semanas',
     includes: [
-      'GestiÃ³n de cita previa',
-      'PreparaciÃ³n de formularios y documentaciÃ³n',
-      'TramitaciÃ³n del Modelo EX-15',
-      'AcompaÃ±amiento si es necesario'
+      'Gestión de cita previa',
+      'Preparación de formularios y documentación',
+      'Tramitación del Modelo EX-15',
+      'Acompañamiento si es necesario'
     ],
     faqs: [
-      { q: 'Â¿Para quÃ© necesito el NIE?', a: 'Para firmar contratos, abrir cuentas bancarias, comprar un inmueble, trabajar o iniciar cualquier actividad econÃ³mica en EspaÃ±a.' }
+      { q: '¿Para qué necesito el NIE?', a: 'Para firmar contratos, abrir cuentas bancarias, comprar un inmueble, trabajar o iniciar cualquier actividad económica en España.' }
     ]
   },
   {
     slug: 'reagrupacion-familiar',
     categoria: 'extranjeria-nacionalidad',
-    name: 'ReagrupaciÃ³n Familiar',
-    shortDescription: 'AutorizaciÃ³n de residencia para familiares de residentes legales en EspaÃ±a.',
+    name: 'Reagrupación Familiar',
+    shortDescription: 'Autorización de residencia para familiares de residentes legales en España.',
     description:
-      'Si eres residente legal en EspaÃ±a y quieres traer a tu cÃ³nyuge, hijos menores o ascendientes dependientes, gestionamos el expediente de reagrupaciÃ³n familiar completo: desde los requisitos econÃ³micos y de vivienda hasta la presentaciÃ³n y seguimiento.',
+      'Si eres residente legal en España y quieres traer a tu cónyuge, hijos menores o ascendientes dependientes, gestionamos el expediente de reagrupación familiar completo: desde los requisitos económicos y de vivienda hasta la presentación y seguimiento.',
     price: 'Consultar',
-    duration: '3â€“6 meses',
+    duration: '3–6 meses',
     includes: [
-      'EvaluaciÃ³n de requisitos (vivienda, ingresos, parentesco)',
-      'PreparaciÃ³n del expediente completo',
-      'PresentaciÃ³n en ExtranjerÃ­a',
+      'Evaluación de requisitos (vivienda, ingresos, parentesco)',
+      'Preparación del expediente completo',
+      'Presentación en Extranjería',
       'Seguimiento del expediente'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© familiares puedo reagrupar?', a: 'CÃ³nyuge o pareja de hecho, hijos menores de 18 aÃ±os (o mayores dependientes), y padres mayores dependientes econÃ³micamente.' }
+      { q: '¿Qué familiares puedo reagrupar?', a: 'Cónyuge o pareja de hecho, hijos menores de 18 años (o mayores dependientes), y padres mayores dependientes económicamente.' }
     ]
   },
 
-  // â”€â”€ Empresas y AutÃ³nomos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Empresas y Autónomos ───────────────────────────────────────────────────
   {
     slug: 'alta-autonomo',
     categoria: 'empresas-autonomos',
-    name: 'Alta de AutÃ³nomo',
-    shortDescription: 'TramitaciÃ³n del alta en el RETA y gestiÃ³n de la actividad econÃ³mica.',
+    name: 'Alta de Autónomo',
+    shortDescription: 'Tramitación del alta en el RETA y gestión de la actividad económica.',
     description:
-      'Gestionamos tu alta como autÃ³nomo en la Agencia Tributaria (Modelo 036/037) y en la Seguridad Social (RETA), con asesoramiento sobre el epÃ­grafe de actividad mÃ¡s adecuado, cuota de autÃ³nomos, tarifa plana y obligaciones fiscales desde el inicio.',
-    price: 'Desde 120 â‚¬',
-    duration: '1â€“3 dÃ­as hÃ¡biles',
+      'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036/037) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
+    price: 'Desde 120 €',
+    duration: '1–3 días hábiles',
     includes: [
-      'Modelo 036/037 â€” Alta en Hacienda',
+      'Modelo 036/037 — Alta en Hacienda',
       'Alta en el RETA (Seguridad Social)',
-      'Asesoramiento sobre epÃ­grafe y base de cotizaciÃ³n',
-      'InformaciÃ³n sobre tarifa plana y bonificaciones',
-      'GuÃ­a de obligaciones fiscales del autÃ³nomo'
+      'Asesoramiento sobre epígrafe y base de cotización',
+      'Información sobre tarifa plana y bonificaciones',
+      'Guía de obligaciones fiscales del autónomo'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡nto tarda el alta?', a: 'El alta fiscal es inmediata. El alta en el RETA puede tardar 1â€“3 dÃ­as.' },
-      { q: 'Â¿CuÃ¡l es la cuota de autÃ³nomos en 2025?', a: 'Con el nuevo sistema de cotizaciÃ³n por ingresos reales, la cuota varÃ­a entre 200 â‚¬ y 590 â‚¬ aproximadamente segÃºn el tramo de rendimientos netos.' }
+      { q: '¿Cuánto tarda el alta?', a: 'El alta fiscal es inmediata. El alta en el RETA puede tardar 1–3 días.' },
+      { q: '¿Cuál es la cuota de autónomos en 2025?', a: 'Con el nuevo sistema de cotización por ingresos reales, la cuota varía entre 200 € y 590 € aproximadamente según el tramo de rendimientos netos.' }
     ]
   },
   {
     slug: 'constitucion-sl',
     categoria: 'empresas-autonomos',
-    name: 'ConstituciÃ³n de Sociedad Limitada',
-    shortDescription: 'CreaciÃ³n de una SL con capital mÃ­nimo, estatutos y alta fiscal.',
+    name: 'Constitución de Sociedad Limitada',
+    shortDescription: 'Creación de una SL con capital mínimo, estatutos y alta fiscal.',
     description:
-      'AcompaÃ±amos todo el proceso de constituciÃ³n de una Sociedad Limitada: denominaciÃ³n social, redacciÃ³n de estatutos, elevaciÃ³n a escritura pÃºblica, inscripciÃ³n en el Registro Mercantil y alta fiscal en Hacienda. Incluye asesoramiento sobre estructura societaria y fiscal.',
-    price: 'Desde 490 â‚¬',
-    duration: '7â€“15 dÃ­as hÃ¡biles',
+      'Acompañamos todo el proceso de constitución de una Sociedad Limitada: denominación social, redacción de estatutos, elevación a escritura pública, inscripción en el Registro Mercantil y alta fiscal en Hacienda. Incluye asesoramiento sobre estructura societaria y fiscal.',
+    price: 'Desde 490 €',
+    duration: '7–15 días hábiles',
     includes: [
-      'Certificado de denominaciÃ³n social (BORME)',
-      'RedacciÃ³n de estatutos y pacto de socios',
-      'Escritura pÃºblica notarial',
-      'InscripciÃ³n en Registro Mercantil',
+      'Certificado de denominación social (BORME)',
+      'Redacción de estatutos y pacto de socios',
+      'Escritura pública notarial',
+      'Inscripción en Registro Mercantil',
       'Alta en Hacienda (Modelo 036)',
-      'ObtenciÃ³n del CIF definitivo'
+      'Obtención del CIF definitivo'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡nto capital mÃ­nimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 â‚¬.' },
-      { q: 'Â¿Puedo constituir una SL yo solo?', a: 'SÃ­, se puede constituir una SL unipersonal con un Ãºnico socio.' }
+      { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
+      { q: '¿Puedo constituir una SL yo solo?', a: 'Sí, se puede constituir una SL unipersonal con un único socio.' }
     ]
   },
   {
     slug: 'contabilidad-mensual',
     categoria: 'empresas-autonomos',
     name: 'Contabilidad Mensual',
-    shortDescription: 'Llevanza de contabilidad y registro contable para autÃ³nomos y sociedades.',
+    shortDescription: 'Llevanza de contabilidad y registro contable para autónomos y sociedades.',
     description:
       'Nos encargamos de la contabilidad mensual de tu empresa o actividad: registro de facturas, conciliaciones bancarias, informes mensuales de resultados y balance. Trabajamos con Holded para mayor visibilidad y control.',
-    price: 'Desde 80 â‚¬ / mes',
+    price: 'Desde 80 € / mes',
     duration: 'Servicio recurrente mensual',
     includes: [
       'Registro de facturas emitidas y recibidas',
-      'ConciliaciÃ³n bancaria',
-      'Informes de pÃ©rdidas y ganancias mensuales',
-      'Balance de situaciÃ³n trimestral',
+      'Conciliación bancaria',
+      'Informes de pérdidas y ganancias mensuales',
+      'Balance de situación trimestral',
       'Acceso a Holded con datos actualizados'
     ],
     faqs: [
-      { q: 'Â¿Necesito Holded para contratar este servicio?', a: 'No es obligatorio, pero trabajamos preferentemente con Holded. Si no lo tienes, podemos ayudarte a migrarlo.' },
-      { q: 'Â¿Puedo cancelar en cualquier momento?', a: 'SÃ­, con un preaviso de 30 dÃ­as.' }
+      { q: '¿Necesito Holded para contratar este servicio?', a: 'No es obligatorio, pero trabajamos preferentemente con Holded. Si no lo tienes, podemos ayudarte a migrarlo.' },
+      { q: '¿Puedo cancelar en cualquier momento?', a: 'Sí, con un preaviso de 30 días.' }
     ]
   },
   {
     slug: 'impuestos-trimestrales',
     categoria: 'empresas-autonomos',
     name: 'Impuestos Trimestrales',
-    shortDescription: 'PresentaciÃ³n trimestral de IVA, IRPF y otros modelos recurrentes.',
+    shortDescription: 'Presentación trimestral de IVA, IRPF y otros modelos recurrentes.',
     description:
-      'Gestionamos la presentaciÃ³n trimestral de tus impuestos: IVA (Modelo 303), retenciones a trabajadores (Modelo 111), retenciones de alquileres (Modelo 115) y pagos fraccionados del IRPF (Modelo 130/131). Todo en plazo y con revisiÃ³n previa.',
-    price: 'Desde 120 â‚¬ / trimestre',
+      'Gestionamos la presentación trimestral de tus impuestos: IVA (Modelo 303), retenciones a trabajadores (Modelo 111), retenciones de alquileres (Modelo 115) y pagos fraccionados del IRPF (Modelo 130/131). Todo en plazo y con revisión previa.',
+    price: 'Desde 120 € / trimestre',
     duration: 'Servicio recurrente trimestral',
     includes: [
-      'RevisiÃ³n de datos contables del trimestre',
-      'Modelos 303, 111, 115 y 130/131 segÃºn aplique',
-      'PresentaciÃ³n telemÃ¡tica en plazo',
-      'Informe de liquidaciÃ³n'
+      'Revisión de datos contables del trimestre',
+      'Modelos 303, 111, 115 y 130/131 según aplique',
+      'Presentación telemática en plazo',
+      'Informe de liquidación'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© pasa si no presento los impuestos a tiempo?', a: 'Hacienda aplica recargos e intereses de demora. Con nuestro servicio recibes aviso previo para evitarlo.' }
+      { q: '¿Qué pasa si no presento los impuestos a tiempo?', a: 'Hacienda aplica recargos e intereses de demora. Con nuestro servicio recibes aviso previo para evitarlo.' }
     ]
   },
   {
     slug: 'baja-cese-actividad',
     categoria: 'empresas-autonomos',
     name: 'Baja y Cese de Actividad',
-    shortDescription: 'TramitaciÃ³n de la baja de autÃ³nomo o disoluciÃ³n de sociedad.',
+    shortDescription: 'Tramitación de la baja de autónomo o disolución de sociedad.',
     description:
-      'Gestionamos la baja fiscal y en la Seguridad Social del autÃ³nomo, o el proceso completo de disoluciÃ³n y liquidaciÃ³n de una sociedad: acuerdos de socios, escritura, liquidaciÃ³n de impuestos pendientes e inscripciÃ³n registral del cierre.',
+      'Gestionamos la baja fiscal y en la Seguridad Social del autónomo, o el proceso completo de disolución y liquidación de una sociedad: acuerdos de socios, escritura, liquidación de impuestos pendientes e inscripción registral del cierre.',
     price: 'Consultar',
     duration: 'Variable',
     includes: [
       'Baja en Hacienda (Modelo 036/037)',
       'Baja en el RETA',
-      'LiquidaciÃ³n de impuestos pendientes',
-      'Para sociedades: acta de disoluciÃ³n, escritura e inscripciÃ³n registral'
+      'Liquidación de impuestos pendientes',
+      'Para sociedades: acta de disolución, escritura e inscripción registral'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo conviene darse de baja como autÃ³nomo?', a: 'Cuando cesan de forma definitiva los ingresos de la actividad. La baja en el RETA se puede hacer hasta el Ãºltimo dÃ­a del mes para no pagar ese mes.' }
+      { q: '¿Cuándo conviene darse de baja como autónomo?', a: 'Cuando cesan de forma definitiva los ingresos de la actividad. La baja en el RETA se puede hacer hasta el último día del mes para no pagar ese mes.' }
     ]
   },
 
-  // â”€â”€ TrÃ¡fico y CapitanÃ­a MarÃ­tima â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tráfico y Capitanía Marítima ───────────────────────────────────────────
   {
     slug: 'transferencia-vehiculo',
     categoria: 'trafico-capitania-maritima',
-    name: 'Transferencia de VehÃ­culo',
-    shortDescription: 'GestiÃ³n del cambio de titular en la DGT para compraventas de vehÃ­culos.',
+    name: 'Transferencia de Vehículo',
+    shortDescription: 'Gestión del cambio de titular en la DGT para compraventas de vehículos.',
     description:
-      'Tramitamos la transferencia de titularidad de vehÃ­culos de segunda mano ante la DGT: verificamos documentaciÃ³n, liquidamos el impuesto de transmisiones (ITP), presentamos la solicitud y obtenemos el nuevo permiso de circulaciÃ³n a nombre del comprador.',
-    price: 'Desde 80 â‚¬',
-    duration: '3â€“7 dÃ­as hÃ¡biles',
+      'Tramitamos la transferencia de titularidad de vehículos de segunda mano ante la DGT: verificamos documentación, liquidamos el impuesto de transmisiones (ITP), presentamos la solicitud y obtenemos el nuevo permiso de circulación a nombre del comprador.',
+    price: 'Desde 80 €',
+    duration: '3–7 días hábiles',
     includes: [
-      'VerificaciÃ³n del contrato de compraventa',
-      'LiquidaciÃ³n del ITP (Impuesto de Transmisiones)',
-      'PresentaciÃ³n de la transferencia en DGT',
-      'ObtenciÃ³n del permiso de circulaciÃ³n'
+      'Verificación del contrato de compraventa',
+      'Liquidación del ITP (Impuesto de Transmisiones)',
+      'Presentación de la transferencia en DGT',
+      'Obtención del permiso de circulación'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© documentos necesito para la transferencia?', a: 'Contrato de compraventa firmado, ficha tÃ©cnica del vehÃ­culo, permisos de circulaciÃ³n, DNI/NIE de ambas partes.' },
-      { q: 'Â¿Tengo que pagar impuestos al comprar un coche de segunda mano?', a: 'SÃ­, el Impuesto de Transmisiones Patrimoniales (ITP), cuyo porcentaje varÃ­a segÃºn la comunidad autÃ³noma.' }
+      { q: '¿Qué documentos necesito para la transferencia?', a: 'Contrato de compraventa firmado, ficha técnica del vehículo, permisos de circulación, DNI/NIE de ambas partes.' },
+      { q: '¿Tengo que pagar impuestos al comprar un coche de segunda mano?', a: 'Sí, el Impuesto de Transmisiones Patrimoniales (ITP), cuyo porcentaje varía según la comunidad autónoma.' }
     ]
   },
   {
     slug: 'matriculacion',
     categoria: 'trafico-capitania-maritima',
-    name: 'MatriculaciÃ³n de VehÃ­culos',
-    shortDescription: 'Primera matriculaciÃ³n de vehÃ­culos nuevos e importados.',
+    name: 'Matriculación de Vehículos',
+    shortDescription: 'Primera matriculación de vehículos nuevos e importados.',
     description:
-      'Gestionamos la primera matriculaciÃ³n de vehÃ­culos nuevos o importados: liquidaciÃ³n del IEDMT (impuesto de matriculaciÃ³n), presentaciÃ³n de documentaciÃ³n ante la DGT, obtenciÃ³n de placas y entrega del permiso de circulaciÃ³n definitivo.',
+      'Gestionamos la primera matriculación de vehículos nuevos o importados: liquidación del IEDMT (impuesto de matriculación), presentación de documentación ante la DGT, obtención de placas y entrega del permiso de circulación definitivo.',
     price: 'Consultar',
-    duration: '5â€“10 dÃ­as hÃ¡biles',
+    duration: '5–10 días hábiles',
     includes: [
-      'VerificaciÃ³n de documentaciÃ³n tÃ©cnica',
-      'LiquidaciÃ³n del IEDMT',
-      'TramitaciÃ³n de matrÃ­cula ante la DGT',
-      'ObtenciÃ³n de placas y permiso de circulaciÃ³n'
+      'Verificación de documentación técnica',
+      'Liquidación del IEDMT',
+      'Tramitación de matrícula ante la DGT',
+      'Obtención de placas y permiso de circulación'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo debo pagar el impuesto de matriculaciÃ³n?', a: 'En la primera matriculaciÃ³n en EspaÃ±a o cuando el vehÃ­culo supera ciertos lÃ­mites de emisiones de COâ‚‚.' }
+      { q: '¿Cuándo debo pagar el impuesto de matriculación?', a: 'En la primera matriculación en España o cuando el vehículo supera ciertos límites de emisiones de CO₂.' }
     ]
   },
   {
     slug: 'duplicado-permiso',
     categoria: 'trafico-capitania-maritima',
-    name: 'Duplicado de Documentos de TrÃ¡fico',
-    shortDescription: 'ObtenciÃ³n de duplicados del permiso de conducir, de circulaciÃ³n o ficha tÃ©cnica.',
+    name: 'Duplicado de Documentos de Tráfico',
+    shortDescription: 'Obtención de duplicados del permiso de conducir, de circulación o ficha técnica.',
     description:
-      'Tramitamos duplicados de permiso de conducir, permiso de circulaciÃ³n o ficha tÃ©cnica del vehÃ­culo por pÃ©rdida, robo o deterioro ante la DGT o la prefectura correspondiente.',
-    price: 'Desde 50 â‚¬',
-    duration: '2â€“5 dÃ­as hÃ¡biles',
+      'Tramitamos duplicados de permiso de conducir, permiso de circulación o ficha técnica del vehículo por pérdida, robo o deterioro ante la DGT o la prefectura correspondiente.',
+    price: 'Desde 50 €',
+    duration: '2–5 días hábiles',
     includes: [
-      'GestiÃ³n de la solicitud ante la DGT',
-      'ObtenciÃ³n del duplicado correspondiente'
+      'Gestión de la solicitud ante la DGT',
+      'Obtención del duplicado correspondiente'
     ],
     faqs: [
-      { q: 'Â¿Puedo conducir mientras espero el duplicado del carnet?', a: 'No, necesitas tener el permiso fÃ­sico o el resguardo provisional en vigor para circular legalmente.' }
+      { q: '¿Puedo conducir mientras espero el duplicado del carnet?', a: 'No, necesitas tener el permiso físico o el resguardo provisional en vigor para circular legalmente.' }
     ]
   },
   {
     slug: 'tramites-embarcaciones',
     categoria: 'trafico-capitania-maritima',
-    name: 'TrÃ¡mites de Embarcaciones',
-    shortDescription: 'MatriculaciÃ³n, transferencias y gestiones ante CapitanÃ­a MarÃ­tima.',
+    name: 'Trámites de Embarcaciones',
+    shortDescription: 'Matriculación, transferencias y gestiones ante Capitanía Marítima.',
     description:
-      'Gestionamos los trÃ¡mites de embarcaciones de recreo ante CapitanÃ­a MarÃ­tima: matriculaciÃ³n, cambio de titularidad, despachos, abanderamiento y documentaciÃ³n para titulaciones nÃ¡uticas. TambiÃ©n tramitamos bajas y transferencias de motos de agua.',
+      'Gestionamos los trámites de embarcaciones de recreo ante Capitanía Marítima: matriculación, cambio de titularidad, despachos, abanderamiento y documentación para titulaciones náuticas. También tramitamos bajas y transferencias de motos de agua.',
     price: 'Consultar',
-    duration: '5â€“15 dÃ­as hÃ¡biles',
+    duration: '5–15 días hábiles',
     includes: [
-      'MatriculaciÃ³n de embarcaciones',
+      'Matriculación de embarcaciones',
       'Transferencia de titularidad',
       'Abanderamiento y despachos',
-      'TramitaciÃ³n de bajas'
+      'Tramitación de bajas'
     ],
     faqs: [
-      { q: 'Â¿DÃ³nde se tramitan los permisos de embarcaciones en EspaÃ±a?', a: 'Ante la CapitanÃ­a MarÃ­tima de la provincia correspondiente, dependiente de la DirecciÃ³n General de la Marina Mercante.' }
+      { q: '¿Dónde se tramitan los permisos de embarcaciones en España?', a: 'Ante la Capitanía Marítima de la provincia correspondiente, dependiente de la Dirección General de la Marina Mercante.' }
     ]
   },
 
-  // â”€â”€ NotarÃ­a y Propiedades â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Notaría y Propiedades ──────────────────────────────────────────────────
   {
     slug: 'compraventa-inmueble',
     categoria: 'notaria-propiedades',
     name: 'Compraventa de Inmueble',
     shortDescription: 'Soporte fiscal y documental en la compraventa de viviendas y locales.',
     description:
-      'Ofrecemos acompaÃ±amiento fiscal y documental en operaciones de compraventa inmobiliaria: revisiÃ³n del contrato de arras, cÃ¡lculo de impuestos (ITP o IVA+AJD), representaciÃ³n ante notarÃ­a y liquidaciÃ³n de impuestos ante la Hacienda autonÃ³mica.',
+      'Ofrecemos acompañamiento fiscal y documental en operaciones de compraventa inmobiliaria: revisión del contrato de arras, cálculo de impuestos (ITP o IVA+AJD), representación ante notaría y liquidación de impuestos ante la Hacienda autonómica.',
     price: 'Consultar',
-    duration: 'Variable segÃºn operaciÃ³n',
+    duration: 'Variable según operación',
     includes: [
-      'RevisiÃ³n del contrato de arras o promesa de compraventa',
-      'CÃ¡lculo de ITP o IVA+AJD segÃºn tipologÃ­a',
-      'Soporte en firma ante notarÃ­a',
-      'LiquidaciÃ³n de impuestos ante la Hacienda autonÃ³mica',
-      'InscripciÃ³n en el Registro de la Propiedad'
+      'Revisión del contrato de arras o promesa de compraventa',
+      'Cálculo de ITP o IVA+AJD según tipología',
+      'Soporte en firma ante notaría',
+      'Liquidación de impuestos ante la Hacienda autonómica',
+      'Inscripción en el Registro de la Propiedad'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo varÃ­a segÃºn la comunidad autÃ³noma (entre el 6% y el 10% del precio).' },
-      { q: 'Â¿Y si compro una vivienda nueva?', a: 'En vivienda nueva pagas IVA (10%) mÃ¡s Actos JurÃ­dicos Documentados (AJD, entre el 0,5% y el 1,5% segÃºn CCAA).' }
+      { q: '¿Qué impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo varía según la comunidad autónoma (entre el 6% y el 10% del precio).' },
+      { q: '¿Y si compro una vivienda nueva?', a: 'En vivienda nueva pagas IVA (10%) más Actos Jurídicos Documentados (AJD, entre el 0,5% y el 1,5% según CCAA).' }
     ]
   },
   {
     slug: 'herencia',
     categoria: 'notaria-propiedades',
-    name: 'Herencia y SucesiÃ³n',
-    shortDescription: 'TramitaciÃ³n de herencias: declaraciÃ³n, liquidaciÃ³n y adjudicaciÃ³n.',
+    name: 'Herencia y Sucesión',
+    shortDescription: 'Tramitación de herencias: declaración, liquidación y adjudicación.',
     description:
-      'AcompaÃ±amos el proceso de aceptaciÃ³n y adjudicaciÃ³n de herencias: obtenciÃ³n del certificado de defunciÃ³n y Ãºltimas voluntades, liquidaciÃ³n del Impuesto de Sucesiones y Donaciones, adjudicaciÃ³n notarial de bienes e inscripciÃ³n registral.',
+      'Acompañamos el proceso de aceptación y adjudicación de herencias: obtención del certificado de defunción y últimas voluntades, liquidación del Impuesto de Sucesiones y Donaciones, adjudicación notarial de bienes e inscripción registral.',
     price: 'Consultar',
-    duration: '1â€“6 meses',
+    duration: '1–6 meses',
     includes: [
-      'Certificado de Ãºltimas voluntades y seguro de vida',
+      'Certificado de últimas voluntades y seguro de vida',
       'Inventario del caudal hereditario',
-      'LiquidaciÃ³n del Impuesto de Sucesiones y Donaciones',
-      'Escritura de adjudicaciÃ³n de herencia',
-      'InscripciÃ³n en Registro de la Propiedad y otras gestiones'
+      'Liquidación del Impuesto de Sucesiones y Donaciones',
+      'Escritura de adjudicación de herencia',
+      'Inscripción en Registro de la Propiedad y otras gestiones'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡nto tiempo tengo para aceptar la herencia?', a: 'No hay plazo para aceptar, pero el Impuesto de Sucesiones debe liquidarse en 6 meses (prorrogable otros 6).' },
-      { q: 'Â¿Puedo renunciar a la herencia?', a: 'SÃ­, la renuncia es pura y simple, y puede hacerse ante notario.' }
+      { q: '¿Cuánto tiempo tengo para aceptar la herencia?', a: 'No hay plazo para aceptar, pero el Impuesto de Sucesiones debe liquidarse en 6 meses (prorrogable otros 6).' },
+      { q: '¿Puedo renunciar a la herencia?', a: 'Sí, la renuncia es pura y simple, y puede hacerse ante notario.' }
     ]
   },
   {
     slug: 'donacion',
     categoria: 'notaria-propiedades',
-    name: 'DonaciÃ³n de Bienes',
-    shortDescription: 'TramitaciÃ³n fiscal y documental de donaciones de inmuebles, dinero o bienes.',
+    name: 'Donación de Bienes',
+    shortDescription: 'Tramitación fiscal y documental de donaciones de inmuebles, dinero o bienes.',
     description:
-      'Gestionamos la fiscalidad de las donaciones: cÃ¡lculo del Impuesto sobre Sucesiones y Donaciones (a cargo del donatario), escritura pÃºblica de donaciÃ³n y liquidaciÃ³n ante la Hacienda autonÃ³mica. Asesoramos sobre optimizaciÃ³n fiscal segÃºn el grado de parentesco.',
+      'Gestionamos la fiscalidad de las donaciones: cálculo del Impuesto sobre Sucesiones y Donaciones (a cargo del donatario), escritura pública de donación y liquidación ante la Hacienda autonómica. Asesoramos sobre optimización fiscal según el grado de parentesco.',
     price: 'Consultar',
-    duration: '2â€“4 semanas',
+    duration: '2–4 semanas',
     includes: [
-      'CÃ¡lculo del Impuesto de Donaciones',
-      'Escritura pÃºblica de donaciÃ³n',
-      'LiquidaciÃ³n ante Hacienda',
-      'InscripciÃ³n registral si hay inmuebles'
+      'Cálculo del Impuesto de Donaciones',
+      'Escritura pública de donación',
+      'Liquidación ante Hacienda',
+      'Inscripción registral si hay inmuebles'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡nto se paga por una donaciÃ³n entre padres e hijos?', a: 'Depende de la comunidad autÃ³noma. Algunas tienen reducciones muy significativas (hasta el 99% en Madrid o AndalucÃ­a para ciertas donaciones).' }
+      { q: '¿Cuánto se paga por una donación entre padres e hijos?', a: 'Depende de la comunidad autónoma. Algunas tienen reducciones muy significativas (hasta el 99% en Madrid o Andalucía para ciertas donaciones).' }
     ]
   },
   {
     slug: 'hipoteca-cancelacion',
     categoria: 'notaria-propiedades',
-    name: 'CancelaciÃ³n de Hipoteca',
-    shortDescription: 'CancelaciÃ³n registral de la hipoteca una vez pagado el prÃ©stamo.',
+    name: 'Cancelación de Hipoteca',
+    shortDescription: 'Cancelación registral de la hipoteca una vez pagado el préstamo.',
     description:
-      'Cuando terminas de pagar la hipoteca, el banco no cancela automÃ¡ticamente la carga en el Registro de la Propiedad. Gestionamos la obtenciÃ³n del certificado de deuda cero, la firma notarial de la escritura de cancelaciÃ³n y la inscripciÃ³n registral.',
-    price: 'Desde 150 â‚¬',
-    duration: '2â€“4 semanas',
+      'Cuando terminas de pagar la hipoteca, el banco no cancela automáticamente la carga en el Registro de la Propiedad. Gestionamos la obtención del certificado de deuda cero, la firma notarial de la escritura de cancelación y la inscripción registral.',
+    price: 'Desde 150 €',
+    duration: '2–4 semanas',
     includes: [
-      'ObtenciÃ³n del certificado de saldo cero del banco',
-      'Escritura notarial de cancelaciÃ³n',
-      'PresentaciÃ³n en el Registro de la Propiedad',
+      'Obtención del certificado de saldo cero del banco',
+      'Escritura notarial de cancelación',
+      'Presentación en el Registro de la Propiedad',
       'Nota simple registral actualizada'
     ],
     faqs: [
-      { q: 'Â¿Por quÃ© el banco no cancela la hipoteca por su cuenta?', a: 'El banco solo emite el certificado de deuda cero. La cancelaciÃ³n registral debe tramitarla el titular del prÃ©stamo.' }
+      { q: '¿Por qué el banco no cancela la hipoteca por su cuenta?', a: 'El banco solo emite el certificado de deuda cero. La cancelación registral debe tramitarla el titular del préstamo.' }
     ]
   },
 
-  // â”€â”€ Gestiones Especializadas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Gestiones Especializadas ───────────────────────────────────────────────
   {
     slug: 'certificado-digital',
     categoria: 'gestiones-especializadas',
-    name: 'Certificado Digital â€” Camerfirma',
-    shortDescription: 'ObtenciÃ³n y renovaciÃ³n de certificados digitales reconocidos para empresas y personas.',
+    name: 'Certificado Digital — Camerfirma',
+    shortDescription: 'Obtención y renovación de certificados digitales reconocidos para empresas y personas.',
     description:
-      'Como punto de registro autorizado de Camerfirma, tramitamos la obtenciÃ³n y renovaciÃ³n de certificados digitales cualificados para personas fÃ­sicas, representantes de personas jurÃ­dicas y sellos de empresa. Imprescindibles para relacionarse con la AEAT, Seguridad Social y otros organismos.',
+      'Como punto de registro autorizado de Camerfirma, tramitamos la obtención y renovación de certificados digitales cualificados para personas físicas, representantes de personas jurídicas y sellos de empresa. Imprescindibles para relacionarse con la AEAT, Seguridad Social y otros organismos.',
     price: 'Consultar',
     duration: 'Inmediato (presencialmente)',
     includes: [
-      'VerificaciÃ³n de identidad presencial o videoconferencia',
-      'EmisiÃ³n del certificado en formato software o tarjeta',
-      'InstalaciÃ³n y guÃ­a de uso',
+      'Verificación de identidad presencial o videoconferencia',
+      'Emisión del certificado en formato software o tarjeta',
+      'Instalación y guía de uso',
       'Soporte ante incidencias de uso'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© diferencia hay entre el certificado de persona fÃ­sica y el de representante?', a: 'El de persona fÃ­sica identifica al individuo. El de representante de persona jurÃ­dica permite actuar en nombre de la empresa.' },
-      { q: 'Â¿CuÃ¡nto dura un certificado Camerfirma?', a: 'Generalmente 2 o 3 aÃ±os, segÃºn el tipo de certificado.' }
+      { q: '¿Qué diferencia hay entre el certificado de persona física y el de representante?', a: 'El de persona física identifica al individuo. El de representante de persona jurídica permite actuar en nombre de la empresa.' },
+      { q: '¿Cuánto dura un certificado Camerfirma?', a: 'Generalmente 2 o 3 años, según el tipo de certificado.' }
     ]
   },
   {
     slug: 'migracion-holded',
     categoria: 'gestiones-especializadas',
-    name: 'MigraciÃ³n a Holded',
-    shortDescription: 'MigraciÃ³n contable y configuraciÃ³n de Holded para tu empresa.',
+    name: 'Migración a Holded',
+    shortDescription: 'Migración contable y configuración de Holded para tu empresa.',
     description:
-      'Como Holded Solution Partner, realizamos la migraciÃ³n de tu contabilidad y facturaciÃ³n a Holded: importaciÃ³n de datos histÃ³ricos, configuraciÃ³n de plan de cuentas, integraciÃ³n bancaria, personalizaciÃ³n de facturas y formaciÃ³n inicial para tu equipo.',
-    price: 'Desde 490 â‚¬',
-    duration: '1â€“3 semanas',
+      'Como Holded Solution Partner, realizamos la migración de tu contabilidad y facturación a Holded: importación de datos históricos, configuración de plan de cuentas, integración bancaria, personalización de facturas y formación inicial para tu equipo.',
+    price: 'Desde 490 €',
+    duration: '1–3 semanas',
     includes: [
-      'AnÃ¡lisis del sistema actual',
-      'ImportaciÃ³n de clientes, proveedores y productos',
-      'ConfiguraciÃ³n del plan de cuentas',
-      'IntegraciÃ³n de cuentas bancarias',
-      'PersonalizaciÃ³n de plantillas de factura',
-      'FormaciÃ³n inicial (2 horas incluidas)'
+      'Análisis del sistema actual',
+      'Importación de clientes, proveedores y productos',
+      'Configuración del plan de cuentas',
+      'Integración de cuentas bancarias',
+      'Personalización de plantillas de factura',
+      'Formación inicial (2 horas incluidas)'
     ],
     faqs: [
-      { q: 'Â¿Pierdo datos al migrar a Holded?', a: 'No. Hacemos una migraciÃ³n ordenada por fases para que tengas continuidad total de datos histÃ³ricos.' },
-      { q: 'Â¿QuÃ© pasa si ya uso otro software de contabilidad?', a: 'Migramos desde ContaPlus, Sage, Excel u otros. Analizamos el caso antes de empezar.' }
+      { q: '¿Pierdo datos al migrar a Holded?', a: 'No. Hacemos una migración ordenada por fases para que tengas continuidad total de datos históricos.' },
+      { q: '¿Qué pasa si ya uso otro software de contabilidad?', a: 'Migramos desde ContaPlus, Sage, Excel u otros. Analizamos el caso antes de empezar.' }
     ]
   },
   {
     slug: 'representacion-fiscal',
     categoria: 'gestiones-especializadas',
-    name: 'RepresentaciÃ³n Fiscal',
-    shortDescription: 'Representante fiscal en EspaÃ±a para no residentes con obligaciones tributarias.',
+    name: 'Representación Fiscal',
+    shortDescription: 'Representante fiscal en España para no residentes con obligaciones tributarias.',
     description:
-      'Los no residentes con bienes o intereses econÃ³micos en EspaÃ±a pueden estar obligados a designar un representante fiscal. Actuamos como representante fiscal ante la AEAT, gestionando notificaciones, obligaciones declarativas y comunicaciones oficiales.',
-    price: 'Desde 120 â‚¬ / aÃ±o',
+      'Los no residentes con bienes o intereses económicos en España pueden estar obligados a designar un representante fiscal. Actuamos como representante fiscal ante la AEAT, gestionando notificaciones, obligaciones declarativas y comunicaciones oficiales.',
+    price: 'Desde 120 € / año',
     duration: 'Servicio anual recurrente',
     includes: [
-      'DesignaciÃ³n como representante fiscal ante la AEAT',
-      'RecepciÃ³n de notificaciones de Hacienda',
-      'GestiÃ³n de comunicaciones y requerimientos',
-      'Informe periÃ³dico al cliente no residente'
+      'Designación como representante fiscal ante la AEAT',
+      'Recepción de notificaciones de Hacienda',
+      'Gestión de comunicaciones y requerimientos',
+      'Informe periódico al cliente no residente'
     ],
     faqs: [
-      { q: 'Â¿CuÃ¡ndo es obligatorio el representante fiscal?', a: 'Para no residentes fuera de la UE/EEE con propiedades o rentas en EspaÃ±a, y en algunos casos para no residentes de la UE.' }
+      { q: '¿Cuándo es obligatorio el representante fiscal?', a: 'Para no residentes fuera de la UE/EEE con propiedades o rentas en España, y en algunos casos para no residentes de la UE.' }
     ]
   },
   {
     slug: 'apostilla-legalizacion',
     categoria: 'gestiones-especializadas',
-    name: 'Apostilla y LegalizaciÃ³n',
-    shortDescription: 'Apostilla de documentos espaÃ±oles y legalizaciÃ³n de documentos extranjeros.',
+    name: 'Apostilla y Legalización',
+    shortDescription: 'Apostilla de documentos españoles y legalización de documentos extranjeros.',
     description:
-      'Tramitamos la apostilla de la Haya para documentos espaÃ±oles destinados al extranjero, y la legalizaciÃ³n de documentos extranjeros para su uso en EspaÃ±a. TambiÃ©n gestionamos traducciones juradas cuando son necesarias.',
-    price: 'Desde 60 â‚¬',
-    duration: '3â€“10 dÃ­as hÃ¡biles',
+      'Tramitamos la apostilla de la Haya para documentos españoles destinados al extranjero, y la legalización de documentos extranjeros para su uso en España. También gestionamos traducciones juradas cuando son necesarias.',
+    price: 'Desde 60 €',
+    duration: '3–10 días hábiles',
     includes: [
-      'VerificaciÃ³n del tipo de documento y paÃ­s de destino/origen',
-      'TramitaciÃ³n de la apostilla ante el organismo competente',
-      'Coordinar traducciÃ³n jurada si es necesaria',
+      'Verificación del tipo de documento y país de destino/origen',
+      'Tramitación de la apostilla ante el organismo competente',
+      'Coordinar traducción jurada si es necesaria',
       'Entrega del documento completo'
     ],
     faqs: [
-      { q: 'Â¿QuÃ© es la apostilla?', a: 'Es una certificaciÃ³n que autentica la firma de un funcionario pÃºblico en un documento para que tenga validez en otro paÃ­s firmante del Convenio de La Haya.' },
-      { q: 'Â¿Todos los paÃ­ses aceptan la apostilla?', a: 'Solo los paÃ­ses que han firmado el Convenio de La Haya (actualmente mÃ¡s de 120 paÃ­ses). Para el resto, es necesaria la legalizaciÃ³n diplomÃ¡tica.' }
+      { q: '¿Qué es la apostilla?', a: 'Es una certificación que autentica la firma de un funcionario público en un documento para que tenga validez en otro país firmante del Convenio de La Haya.' },
+      { q: '¿Todos los países aceptan la apostilla?', a: 'Solo los países que han firmado el Convenio de La Haya (actualmente más de 120 países). Para el resto, es necesaria la legalización diplomática.' }
     ]
   },
 
-  // â”€â”€ FormaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Formación ──────────────────────────────────────────────────────────────
   {
     slug: 'formacion-fiscal-contable',
     categoria: 'formacion',
-    name: 'FormaciÃ³n Fiscal y Contable',
-    shortDescription: 'Sesiones prÃ¡cticas sobre fiscalidad, contabilidad y obligaciones tributarias.',
+    name: 'Formación Fiscal y Contable',
+    shortDescription: 'Sesiones prácticas sobre fiscalidad, contabilidad y obligaciones tributarias.',
     description:
-      'Impartimos formaciÃ³n prÃ¡ctica en materia fiscal y contable para autÃ³nomos, pymes y equipos de administraciÃ³n: IRPF, IVA, cierre contable, modelos tributarios, declaraciones y planificaciÃ³n fiscal. Bloques de 2 horas desde 180 â‚¬.',
-    price: 'Desde 180 â‚¬ / bloque de 2 h',
+      'Impartimos formación práctica en materia fiscal y contable para autónomos, pymes y equipos de administración: IRPF, IVA, cierre contable, modelos tributarios, declaraciones y planificación fiscal. Bloques de 2 horas desde 180 €.',
+    price: 'Desde 180 € / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
-      'SesiÃ³n online o presencial (segÃºn disponibilidad)',
-      'Material didÃ¡ctico y resumen escrito',
-      'Ejercicios prÃ¡cticos sobre casos reales',
-      'ResoluciÃ³n de dudas en directo',
-      'GrabaciÃ³n de la sesiÃ³n (si es online)'
+      'Sesión online o presencial (según disponibilidad)',
+      'Material didáctico y resumen escrito',
+      'Ejercicios prácticos sobre casos reales',
+      'Resolución de dudas en directo',
+      'Grabación de la sesión (si es online)'
     ],
     faqs: [
-      { q: 'Â¿Puedo solicitar un tema especÃ­fico?', a: 'SÃ­. La formaciÃ³n se adapta a tus necesidades concretas: cierre fiscal, IVA de importaciones, IRPF de expatriados, etc.' },
-      { q: 'Â¿Es posible hacer la formaciÃ³n para un equipo?', a: 'SÃ­, podemos adaptar el contenido y el formato para equipos de hasta 10 personas.' }
+      { q: '¿Puedo solicitar un tema específico?', a: 'Sí. La formación se adapta a tus necesidades concretas: cierre fiscal, IVA de importaciones, IRPF de expatriados, etc.' },
+      { q: '¿Es posible hacer la formación para un equipo?', a: 'Sí, podemos adaptar el contenido y el formato para equipos de hasta 10 personas.' }
     ]
   },
   {
     slug: 'formacion-laboral-rrhh',
     categoria: 'formacion',
-    name: 'FormaciÃ³n Laboral y RRHH',
-    shortDescription: 'FormaciÃ³n sobre contratos, nÃ³minas, gestiÃ³n laboral y recursos humanos.',
+    name: 'Formación Laboral y RRHH',
+    shortDescription: 'Formación sobre contratos, nóminas, gestión laboral y recursos humanos.',
     description:
-      'FormaciÃ³n prÃ¡ctica para responsables de administraciÃ³n, gerentes y equipos de RRHH: tipos de contratos, nÃ³minas, altas y bajas en Seguridad Social, gestiÃ³n de ausencias, despidos y documentaciÃ³n laboral. Bloques de 2 horas desde 180 â‚¬.',
-    price: 'Desde 180 â‚¬ / bloque de 2 h',
+      'Formación práctica para responsables de administración, gerentes y equipos de RRHH: tipos de contratos, nóminas, altas y bajas en Seguridad Social, gestión de ausencias, despidos y documentación laboral. Bloques de 2 horas desde 180 €.',
+    price: 'Desde 180 € / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
-      'SesiÃ³n online o presencial',
-      'Material didÃ¡ctico adaptado',
-      'Casos prÃ¡cticos de gestiÃ³n laboral',
-      'ResoluciÃ³n de dudas',
+      'Sesión online o presencial',
+      'Material didáctico adaptado',
+      'Casos prácticos de gestión laboral',
+      'Resolución de dudas',
       'Acceso a plantillas y modelos'
     ],
     faqs: [
-      { q: 'Â¿Es apta para personas sin formaciÃ³n previa en RRHH?', a: 'SÃ­, adaptamos el nivel al perfil del participante.' }
+      { q: '¿Es apta para personas sin formación previa en RRHH?', a: 'Sí, adaptamos el nivel al perfil del participante.' }
     ]
   },
   {
     slug: 'formacion-holded',
     categoria: 'formacion',
-    name: 'FormaciÃ³n en Holded',
-    shortDescription: 'Aprende a gestionar tu contabilidad, facturaciÃ³n y CRM en Holded.',
+    name: 'Formación en Holded',
+    shortDescription: 'Aprende a gestionar tu contabilidad, facturación y CRM en Holded.',
     description:
-      'Como Holded Solution Partner, impartimos formaciÃ³n especÃ­fica en el uso de Holded: mÃ³dulos de facturaciÃ³n, contabilidad, inventario, proyectos y CRM. Sesiones de 2 horas adaptadas a tu nivel y caso de uso real. Precio: 180 â‚¬ por bloque.',
-    price: '180 â‚¬ / bloque de 2 h',
+      'Como Holded Solution Partner, impartimos formación específica en el uso de Holded: módulos de facturación, contabilidad, inventario, proyectos y CRM. Sesiones de 2 horas adaptadas a tu nivel y caso de uso real. Precio: 180 € por bloque.',
+    price: '180 € / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
-      'SesiÃ³n prÃ¡ctica sobre tu propio entorno Holded',
-      'Recorrido por los mÃ³dulos que uses',
-      'ConfiguraciÃ³n de automatizaciones bÃ¡sicas',
-      'GuÃ­a personalizada de uso',
-      'Soporte post-sesiÃ³n por email (7 dÃ­as)'
+      'Sesión práctica sobre tu propio entorno Holded',
+      'Recorrido por los módulos que uses',
+      'Configuración de automatizaciones básicas',
+      'Guía personalizada de uso',
+      'Soporte post-sesión por email (7 días)'
     ],
     faqs: [
-      { q: 'Â¿Necesito tener Holded contratado para hacer la formaciÃ³n?', a: 'SÃ­, trabajamos directamente sobre tu cuenta. Si aÃºn no tienes Holded, podemos ayudarte a configurarlo antes.' },
-      { q: 'Â¿CuÃ¡ntos bloques de formaciÃ³n necesito?', a: 'Depende del mÃ³dulo. Para facturaciÃ³n bÃ¡sica suele ser suficiente con 1â€“2 bloques. Para contabilidad completa, 3â€“4 bloques.' }
+      { q: '¿Necesito tener Holded contratado para hacer la formación?', a: 'Sí, trabajamos directamente sobre tu cuenta. Si aún no tienes Holded, podemos ayudarte a configurarlo antes.' },
+      { q: '¿Cuántos bloques de formación necesito?', a: 'Depende del módulo. Para facturación básica suele ser suficiente con 1–2 bloques. Para contabilidad completa, 3–4 bloques.' }
     ]
   }
 ];

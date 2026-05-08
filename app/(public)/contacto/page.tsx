@@ -126,18 +126,21 @@ export default function ContactoPage() {
               Escribir por WhatsApp
             </a>
 
-            <div className="border border-[#D4A017]/25 bg-white p-5 text-sm text-[#23364D]">
-              <p className="font-semibold text-[#0D1B2A]">¿Prefieres una reunión?</p>
-              <p className="mt-1 leading-6">
-                Podemos hacer una videollamada de 20 minutos sin coste para entender tu caso y ver cómo podemos ayudarte.
+            <a
+              href="https://calendly.com/soy-kseniailicheva/reunion-informativa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col border border-[#D4A017] bg-white p-5 transition hover:bg-[#D4A017]/5"
+            >
+              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Gratis · 15 minutos</p>
+              <p className="mt-1 font-serif text-base font-bold text-[#0D1B2A]">Llamada informativa</p>
+              <p className="mt-1 text-sm leading-6 text-[#23364D]">
+                Cuéntanos tu caso en una llamada sin compromiso y te decimos exactamente cómo podemos ayudarte.
               </p>
-              <Link
-                href="/solicitar-presupuesto"
-                className="mt-3 inline-block text-sm font-bold text-[#D4A017] hover:text-[#F2C14E]"
-              >
-                Solicitar videollamada →
-              </Link>
-            </div>
+              <span className="mt-3 text-sm font-bold text-[#D4A017]">
+                Reservar llamada →
+              </span>
+            </a>
           </div>
         </div>
       </section>
