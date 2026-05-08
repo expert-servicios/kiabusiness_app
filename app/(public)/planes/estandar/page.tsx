@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
+import { Breadcrumb } from '@/components/site/Breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Plan Estándar — 199 €/mes | EXPERT',
+  title: 'Plan Colaborativo — 199 €/mes | EXPERT',
   description:
-    'Plan Estándar de asesoría fiscal y administrativa para autónomos activos y pymes. 199 €/mes. Contabilidad completa, impuestos, nóminas y soporte prioritario.'
+    'Plan Colaborativo de asesoría fiscal y administrativa para autónomos activos y pymes. 199 €/mes. Contabilidad completa, impuestos, nóminas y soporte prioritario.'
 };
 
 const includes = [
-  'Todo lo del Plan Básico',
+  'Todo lo del Plan Avanzado',
   'Contabilidad mensual completa (hasta 150 asientos/mes)',
   'Presentación de nóminas (hasta 3 empleados)',
   'Impuesto de Sociedades anual (si aplica)',
@@ -31,6 +32,9 @@ const notIncludes = [
 export default function PlanEstandarPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <div className="mx-auto max-w-4xl px-6 pt-5 pb-2">
+        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Colaborativo' }]} />
+      </div>
       {/* Hero */}
       <div className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-4xl text-center">
@@ -38,7 +42,7 @@ export default function PlanEstandarPage() {
           <div className="mt-2 inline-block border border-[#D4A017]/50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#D4A017]">
             Más popular
           </div>
-          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Estándar</h1>
+          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Colaborativo</h1>
           <div className="mt-5 flex items-end justify-center gap-1">
             <span className="font-serif text-5xl font-bold text-[#D4A017]">199</span>
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes</span>

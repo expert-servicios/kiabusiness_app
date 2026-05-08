@@ -149,9 +149,10 @@ export function Footer() {
         <p>© 2026 EXPERT | Todos los derechos reservados</p>
         <div className="flex flex-wrap gap-4">
           <Link href="/aviso-legal" className="transition hover:text-[#D4A017]">Aviso legal</Link>
-          <Link href="/privacidad" className="transition hover:text-[#D4A017]">Política de privacidad</Link>
+          <Link href="/privacidad" className="transition hover:text-[#D4A017]">Privacidad</Link>
           <Link href="/terminos" className="transition hover:text-[#D4A017]">Términos</Link>
           <Link href="/cookies" className="transition hover:text-[#D4A017]">Cookies</Link>
+          <Link href="/condiciones" className="transition hover:text-[#D4A017]">Condiciones</Link>
         </div>
       </div>
     </footer>

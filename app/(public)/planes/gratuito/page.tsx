@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, Gift, Loader2 } from 'lucide-react';
+import { Breadcrumb } from '@/components/site/Breadcrumb';
 
 const STEPS_INCLUDED = [
   { step: '01', title: 'Activamos tu demo', desc: 'En menos de 24 horas hábiles activamos tu prueba gratuita de Holded de 14 días.' },
@@ -72,7 +73,9 @@ export default function PlanGratuitoPage() {
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-
+      <div className="mx-auto max-w-4xl px-6 pt-5 pb-2">
+        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Gratuito Holded' }]} />
+      </div>
       {/* Hero */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-24">
         <div className="mx-auto max-w-4xl text-center">

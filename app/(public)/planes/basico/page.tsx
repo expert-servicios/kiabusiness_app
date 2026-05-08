@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
+import { Breadcrumb } from '@/components/site/Breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Plan Básico — 99 €/mes | EXPERT',
+  title: 'Plan Avanzado — 99 €/mes | EXPERT',
   description:
-    'Plan Básico de asesoría fiscal y administrativa para autónomos y pequeños negocios. 99 €/mes. Impuestos trimestrales, contabilidad básica y soporte por email.'
+    'Plan Avanzado de asesoría fiscal y administrativa para autónomos y PYMEs. 99 €/mes. Impuestos trimestrales, contabilidad básica y soporte por email.'
 };
 
 const includes = [
@@ -29,11 +30,14 @@ const notIncludes = [
 export default function PlanBasicoPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <div className="mx-auto max-w-4xl px-6 pt-5 pb-2">
+        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Avanzado' }]} />
+      </div>
       {/* Hero */}
       <div className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Planes de suscripción</p>
-          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Básico</h1>
+          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Avanzado</h1>
           <div className="mt-5 flex items-end justify-center gap-1">
             <span className="font-serif text-5xl font-bold text-[#D4A017]">99</span>
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes</span>

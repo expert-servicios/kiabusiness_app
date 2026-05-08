@@ -7,23 +7,34 @@ import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
 import { categories } from '@/lib/utils/catalog';
 
 const navLinks = [
-  { label: 'Planes', href: '/planes' },
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
-  { label: 'Recursos', href: '/blog' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' }
 ] as const;
+
+const planesLinks = [
+  { label: 'Ver todos los planes', href: '/planes', highlight: true },
+  { label: 'Plan Gratuito — Holded demo', href: '/planes/gratuito' },
+  { label: 'Plan Avanzado — 99 €/mes', href: '/planes/basico' },
+  { label: 'Plan Colaborativo — 199 €/mes', href: '/planes/estandar' },
+  { label: 'Plan Delegado — 349 €/mes', href: '/planes/premium' }
+];
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
+  const [planesOpen, setPlanesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const planesDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setServicesOpen(false);
+      }
+      if (planesDropdownRef.current && !planesDropdownRef.current.contains(e.target as Node)) {
+        setPlanesOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -33,6 +44,7 @@ export function Header() {
   function closeMobile() {
     setMobileOpen(false);
     setServicesOpen(false);
+    setPlanesOpen(false);
   }
 
   return (
@@ -60,11 +72,13 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 lg:flex xl:gap-7">
-          {/* Services dropdown */}
+          <Link href="/" className="transition hover:text-[#D4A017]">Inicio</Link>
+
+          {/* Servicios dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => setServicesOpen((v) => !v)}
+              onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={servicesOpen ? 'true' : 'false'}
             >
@@ -89,6 +103,37 @@ export function Header() {
                     className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                   >
                     {cat.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Planes dropdown */}
+          <div className="relative" ref={planesDropdownRef}>
+            <button
+              type="button"
+              onClick={() => { setPlanesOpen((v) => !v); setServicesOpen(false); }}
+              className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
+              aria-expanded={planesOpen}
+            >
+              Planes
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {planesOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-64 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
+                {planesLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setPlanesOpen(false)}
+                    className={link.highlight
+                      ? 'block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]'
+                      : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
+                    }
+                  >
+                    {link.highlight ? `${link.label} →` : link.label}
                   </Link>
                 ))}
               </div>
@@ -133,7 +178,15 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-white/10 bg-[#0D1B2A] lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3">
-            {/* Mobile Services accordion */}
+            <Link
+              href="/"
+              onClick={closeMobile}
+              className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+            >
+              Inicio
+            </Link>
+
+            {/* Mobile Servicios accordion */}
             <div>
               <button
                 type="button"
@@ -160,6 +213,35 @@ export function Header() {
                       className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
                     >
                       {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Planes accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setPlanesOpen((v) => !v)}
+                className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+              >
+                Planes
+                <ChevronDown className={`h-4 w-4 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {planesOpen && (
+                <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
+                  {planesLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobile}
+                      className={link.highlight
+                        ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
+                        : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
+                      }
+                    >
+                      {link.label}
                     </Link>
                   ))}
                 </div>

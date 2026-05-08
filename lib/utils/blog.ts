@@ -375,6 +375,120 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
     `
   },
   {
+    slug: 'ley-antifraude-software-contable',
+    category: 'Fiscalidad',
+    title: 'Ley Antifraude y software contable: lo que debes saber en 2025',
+    excerpt:
+      'La Ley 11/2021 prohíbe el software de doble uso y exige sistemas de facturación certificados. Analizamos qué implica para autónomos, pymes y sus asesores.',
+    date: '5 may 2026',
+    readTime: '6 min',
+    body: `
+## ¿Qué es la Ley Antifraude?
+
+La **Ley 11/2021, de 9 de julio, de medidas de prevención y lucha contra el fraude fiscal** introdujo cambios fundamentales en la forma en que empresas y autónomos deben gestionar su facturación y contabilidad. Su objetivo principal: eliminar el denominado **"software de doble uso"**, es decir, los programas que permitían llevar una contabilidad oficial y otra paralela no declarada.
+
+## ¿Qué prohíbe exactamente?
+
+El artículo 29.j de la Ley General Tributaria (modificado por la Ley 11/2021) prohíbe:
+
+- Los sistemas que **alteren o permitan alterar** los registros contables o de facturación sin dejar huella auditable.
+- El software que permita **llevar contabilidades distintas** que no reflejen la actividad real.
+- Los programas que **no garanticen la integridad** de los datos registrados.
+
+El incumplimiento puede acarrear **sanciones de hasta 50.000 €** por cada ejercicio en que se haya utilizado software no conforme.
+
+## El Reglamento VeriFactu: la implementación técnica
+
+El desarrollo reglamentario de esta prohibición se concreta en el **Real Decreto 1007/2023** (Reglamento de Requisitos de los Sistemas Informáticos de Facturación), que establece dos vías de cumplimiento:
+
+1. **Sistemas VERI*FACTU**: El software envía cada registro de facturación en tiempo real a la AEAT. A cambio, la empresa queda exonerada de la obligación de expedir factura electrónica en ciertos supuestos.
+2. **Sistemas no VERI*FACTU**: El software no envía datos a Hacienda, pero debe cumplir requisitos técnicos estrictos (encadenamiento de registros con hash, huella digital, QR en facturas) y conservar los registros de forma inalterable.
+
+## ¿A quién afecta y desde cuándo?
+
+| Colectivo | Fecha de entrada en vigor |
+|---|---|
+| Grandes empresas (facturación > 6 M€) | 1 de julio de 2025 |
+| Resto de empresas y autónomos | 1 de julio de 2026 |
+| Software de terceros (ERP, gestión) | Deben certificarse antes de esas fechas |
+
+## ¿Qué debo hacer?
+
+Si usas un programa de facturación o contabilidad:
+
+1. **Verifica que tu proveedor de software esté adaptando su producto** a los requisitos del Reglamento. Pregunta explícitamente si cumplirá con VeriFactu antes de las fechas indicadas.
+2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema certificado. Excel no cumple los requisitos.
+3. **Si eres asesor o gestoría**, asegúrate de que los programas que usas para tus clientes también estén certificados.
+
+## Holded y la Ley Antifraude
+
+**Holded** trabaja activamente en la adaptación de su plataforma a los requisitos del Reglamento VeriFactu. Como software cloud nativo, su arquitectura facilita el cumplimiento de los requisitos de integridad e inmutabilidad de los registros.
+
+En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema actual cumple la normativa y a migrar a Holded si es necesario.
+    `
+  },
+  {
+    slug: 'verifactu-facturacion-electronica',
+    category: 'Fiscalidad',
+    title: 'VeriFactu: la facturación electrónica obligatoria que llega en 2025-2026',
+    excerpt:
+      'El sistema VeriFactu será obligatorio para grandes empresas desde julio de 2025 y para pymes y autónomos desde julio de 2026. Explicamos cómo funciona y cómo prepararte.',
+    date: '8 may 2026',
+    readTime: '7 min',
+    body: `
+## ¿Qué es VeriFactu?
+
+**VERI*FACTU** es el sistema de verificación de facturas de la Agencia Tributaria española, regulado por el **Real Decreto 1007/2023**. Permite a empresas y autónomos enviar sus registros de facturación directamente a la AEAT en tiempo real, garantizando su autenticidad e integridad mediante una cadena de huellas digitales (hash).
+
+El nombre es un acrónimo de **VERIficación de FACTURas**.
+
+## ¿Es obligatorio o voluntario?
+
+Aquí es donde existe confusión. El sistema funciona en dos niveles:
+
+### 1. Sistemas VERI*FACTU (envío a la AEAT)
+Es **voluntario** optar por esta modalidad. Las empresas que lo adoptan envían cada factura a la AEAT en el momento de su emisión. A cambio, obtienen ciertas ventajas:
+- Quedan **exoneradas** de expedir factura electrónica a sus clientes en determinados supuestos.
+- Generan confianza adicional frente a la Administración.
+
+### 2. Sistemas de facturación no VERI*FACTU
+Si no se opta por el envío a la AEAT, el software debe igualmente cumplir los **requisitos técnicos del Reglamento**: encadenamiento de registros, hash, QR en facturas, inmutabilidad de datos. Esto es **obligatorio** para todos.
+
+## Requisitos técnicos obligatorios para todo el software
+
+Independientemente de si se opta por VeriFactu o no, todos los sistemas de facturación deberán:
+
+- **Generar un código hash** único para cada registro de facturación, encadenado con el anterior (similar a una blockchain).
+- **Incluir un código QR** en cada factura que permita a la AEAT verificar su autenticidad.
+- **Garantizar la inmutabilidad** de los registros: ningún registro podrá modificarse o eliminarse sin dejar huella.
+- **Conservar los registros** durante el período de prescripción tributaria (generalmente 4 años, pero se recomienda 6).
+
+## Calendario de implantación
+
+| Colectivo | Obligatorio desde |
+|---|---|
+| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |
+| Pymes, autónomos y resto de empresas | **1 julio 2026** |
+
+Los **proveedores de software** (ERP, programas de facturación, contabilidad) deberán tener sus productos certificados antes de que sus clientes estén obligados a cumplir.
+
+## ¿Qué pasa con la factura electrónica entre empresas (B2B)?
+
+VeriFactu es distinto a la **obligación de factura electrónica B2B** que introduce la Ley Crea y Crece (Ley 18/2022). Esta última, pendiente de reglamentación definitiva, exigirá la emisión de facturas en formato electrónico estructurado (principalmente **Facturae** o **UBL**) entre empresas y autónomos.
+
+Ambas normativas son complementarias pero independientes. VeriFactu se centra en la integridad y trazabilidad; la factura electrónica B2B, en el formato de intercambio.
+
+## Cómo prepararte ahora
+
+1. **Pregunta a tu proveedor de software** si su sistema cumplirá con el Reglamento antes de julio de 2025 (grandes empresas) o julio de 2026 (pymes/autónomos).
+2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
+3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
+4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
+
+En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para el cumplimiento de la normativa VeriFactu.
+    `
+  },
+  {
     slug: 'holded-autonomos-vale-la-pena',
     category: 'Holded',
     title: 'Holded para autónomos: ¿vale la pena el coste frente a otras opciones?',

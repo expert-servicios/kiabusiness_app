@@ -48,7 +48,9 @@ export default function AvisoLegalPage() {
                 ['Correo electrónico', 'soy@kseniailicheva.com'],
                 ['Teléfono / WhatsApp Business', '+34 696 55 04 80'],
                 ['Sitio web', 'https://kseniailicheva.com'],
-                ['Inscripción registral', 'Inscrita en el Registro Mercantil de Alicante'],
+                ['Registro Mercantil', 'Registro Mercantil de Alicante — Tomo 4562, Folio 146, Hoja A-184902'],
+                ['IRUE', '1000176714766'],
+                ['Representante legal', 'Ksenia Ilicheva'],
               ].map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-1 border-b border-[#f0e8d8] px-5 py-3 last:border-b-0 sm:flex-row sm:gap-4">
                   <span className="w-52 shrink-0 text-xs font-bold uppercase tracking-wide text-[#c88b25]">{label}</span>

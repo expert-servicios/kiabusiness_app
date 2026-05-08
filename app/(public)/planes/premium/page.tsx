@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
+import { Breadcrumb } from '@/components/site/Breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Plan Premium — 349 €/mes | EXPERT',
+  title: 'Plan Delegado — 349 €/mes | EXPERT',
   description:
-    'Plan Premium de asesoría fiscal y administrativa sin límites. 349 €/mes. Contabilidad ilimitada, gestiones de extranjería, nóminas, formación incluida y atención personalizada.'
+    'Plan Delegado de asesoría fiscal y administrativa sin límites. 349 €/mes. Contabilidad ilimitada, gestiones de extranjería, nóminas, formación incluida y atención personalizada.'
 };
 
 const includes = [
-  'Todo lo del Plan Estándar',
+  'Todo lo del Plan Colaborativo',
   'Contabilidad mensual ilimitada',
   'Nóminas hasta 10 empleados',
   'Una gestión de extranjería por trimestre incluida',
@@ -25,6 +26,9 @@ const includes = [
 export default function PlanPremiumPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <div className="mx-auto max-w-4xl px-6 pt-5 pb-2">
+        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Delegado' }]} />
+      </div>
       {/* Hero */}
       <div className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-4xl text-center">
@@ -32,7 +36,7 @@ export default function PlanPremiumPage() {
           <div className="mt-2 inline-block bg-[#D4A017] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#0D1B2A]">
             Cobertura total
           </div>
-          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Premium</h1>
+          <h1 className="mt-3 font-serif text-3xl font-bold md:text-5xl">Plan Delegado</h1>
           <div className="mt-5 flex items-end justify-center gap-1">
             <span className="font-serif text-5xl font-bold text-[#D4A017]">349</span>
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes</span>
