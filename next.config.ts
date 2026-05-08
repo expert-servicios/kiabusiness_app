@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: rootDir
+  },
+  async redirects() {
+    return [
+      { source: '/planes/basico', destination: '/planes/avanzado', permanent: true },
+      { source: '/planes/estandar', destination: '/planes/colaborativo', permanent: true },
+      { source: '/planes/premium', destination: '/planes/presupuesto-personalizado', permanent: true }
+    ];
   }
 };
 

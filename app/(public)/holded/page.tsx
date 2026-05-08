@@ -383,7 +383,7 @@ export default async function HoldedPage() {
                 ¿Quieres probar Holded antes de comprometerte? Solicítanos acceso a una prueba gratuita de 14 días con nuestra cuenta de partner. Sin tarjeta de crédito.
               </p>
               <Link
-                href="/contacto?asunto=Prueba%20gratuita%20Holded%2014%20d%C3%ADas"
+                href="/planes/gratuito"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
               >
                 Solicitar prueba gratuita <ArrowRight className="h-4 w-4" />
