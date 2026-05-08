@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowRight, Check, Calendar, Gift,
-  MonitorCheck, BookOpen, Database, Eye, Users, AlertCircle
+  MonitorCheck, BookOpen, Database, Eye, Users, AlertCircle, Sparkles
 } from 'lucide-react';
 import { FaqSection } from '@/components/site/FaqSection';
 import { RelatedArticles } from '@/components/site/RelatedArticles';
@@ -32,7 +32,7 @@ const plans = [
     tagline: 'Tienes el control, yo superviso',
     badge: null as string | null,
     price: 99,
-    persona: 'Para autónomos que ya llevan su contabilidad y solo necesitan supervisión profesional y presentación de impuestos.',
+    persona: 'Para autónomos y PYMEs que ya llevan su contabilidad y solo necesitan supervisión profesional y presentación de impuestos.',
     Icon: BookOpen,
     involvement: 'Alta implicación',
     features: [
@@ -270,6 +270,59 @@ export default function PlanesPage() {
         </div>
       </section>
 
+      {/* Plan Gratuito */}
+      <section className="px-6 pb-4 md:pb-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="border border-dashed border-[#D4A017]/50 bg-white p-8 md:p-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-5">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/10">
+                  <Sparkles className="h-7 w-7 text-[#D4A017]" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-serif text-2xl font-bold text-[#0D1B2A]">Plan Gratuito</h3>
+                    <span className="rounded-full border border-[#D4A017]/40 bg-[#D4A017]/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
+                      Sin coste
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                    ¿Todavía no conoces Holded o quieres probarlo antes de comprometerte? Activa tu demo de <strong>14 días gratuitos</strong>.
+                    Nosotros lo configuramos contigo y te formamos.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+                    {[
+                      'Demo Holded de 14 días',
+                      'Onboarding de 1 hora (videollamada)',
+                      'Formación de 2 horas gratuita',
+                      'Sin tarjeta de crédito'
+                    ].map((f) => (
+                      <span key={f} className="inline-flex items-center gap-1.5 text-xs text-[#23364D]">
+                        <Check className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 md:items-end">
+                <p className="text-right">
+                  <span className="font-serif text-4xl font-bold text-[#0D1B2A]">0</span>
+                  <span className="ml-1 text-sm text-[#9CA3AF]">€</span>
+                </p>
+                <Link
+                  href="/planes/gratuito"
+                  className="inline-flex items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                >
+                  <Gift className="h-4 w-4" />
+                  Solicitar plan gratuito
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Holded obligatorio */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-7xl">
@@ -298,10 +351,10 @@ export default function PlanesPage() {
                 Prueba Holded sin tarjeta de crédito. Solicitamos el acceso de partner para ti.
               </p>
               <Link
-                href="/contacto?asunto=Prueba%20gratuita%20Holded%2014%20d%C3%ADas"
+                href="/planes/gratuito"
                 className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] hover:text-[#F2C14E]"
               >
-                Solicitar prueba <ArrowRight className="h-4 w-4" />
+                Solicitar plan gratuito <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 

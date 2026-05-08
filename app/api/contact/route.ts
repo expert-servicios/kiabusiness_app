@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email/send';
 import { contactMessage, contactAutoReply } from '@/lib/email/templates';
+import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,6 +28,11 @@ export async function POST(request: NextRequest) {
     // Honeypot
     if (body.hp_url) return NextResponse.json({ ok: true });
 
+    const ip = getClientIp(request.headers);
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
+    }
+
     const nombre = String(body.nombre ?? '').trim();
     const email = String(body.email ?? '').trim();
     const telefono = String(body.telefono ?? '').trim();
@@ -39,6 +45,11 @@ export async function POST(request: NextRequest) {
     }
     if (!EMAIL_RE.test(email)) {
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
+    }
+
+    const spam = checkSpam({ name: nombre, email, message: mensaje, subject: asunto });
+    if (spam.isSpam) {
+      return NextResponse.json({ ok: true });
     }
 
     const valid = await verifyRecaptcha(recaptcha_token);

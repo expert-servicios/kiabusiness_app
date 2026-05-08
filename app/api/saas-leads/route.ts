@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/email/send';
 import { saasLeadAutoReply, saasLeadReceivedAdmin } from '@/lib/email/templates';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { saasLeadSchema } from '@/lib/schemas/saas-lead';
+import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 function parseRecipients(value: string) {
   return value
@@ -19,7 +20,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    const ip = getClientIp(request.headers);
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
+    }
+
     const parsed = saasLeadSchema.safeParse(body);
+    if (parsed.success) {
+      const spam = checkSpam({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        message: parsed.data.operationalProblem
+      });
+      if (spam.isSpam) return NextResponse.json({ ok: true });
+    }
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? 'Datos invalidos.' },

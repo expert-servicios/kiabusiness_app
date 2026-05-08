@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { quoteReceivedClient, quoteReceivedAdmin } from '@/lib/email/templates';
+import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 const quoteRequestSchema = z.object({
+  hp_url: z.string().optional(),
   email: z.string().email(),
-  name: z.string().min(2),
+  name: z.string().min(2).max(100),
   services: z.array(z.string().min(1)).min(1),
   description: z.string().max(1000).optional()
 });
@@ -14,7 +16,26 @@ const quoteRequestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const requestBody = await request.json();
+
+    if (String(requestBody.hp_url ?? '').trim()) {
+      return NextResponse.json({ success: true });
+    }
+
+    const ip = getClientIp(request.headers);
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
+    }
+
     const validated = quoteRequestSchema.parse(requestBody);
+
+    const spam = checkSpam({
+      name: validated.name,
+      email: validated.email,
+      message: validated.description
+    });
+    if (spam.isSpam) {
+      return NextResponse.json({ success: true });
+    }
 
     const adminId = await getFirstAdminProfileId();
     if (!adminId) {

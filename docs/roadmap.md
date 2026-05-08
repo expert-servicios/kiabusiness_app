@@ -1,6 +1,6 @@
 # EXPERT - Roadmap maestro de implementacion
 
-Ultima actualizacion: 2026-05-07
+Ultima actualizacion: 2026-05-07 (sesion 2)
 
 ## Vision
 
@@ -83,7 +83,7 @@ Criterios de aceptacion:
 
 ## Fase 2 - Web publica y validacion B2B discreta
 
-Estado: en curso.
+Estado: completada el 2026-05-07.
 
 Tipo: captacion, conversion, escalabilidad SaaS.
 
@@ -149,7 +149,13 @@ Criterios de aceptacion:
 
 ## Fase 4 - Portal cliente por proxima accion
 
-Estado: pendiente.
+Estado: parcialmente completada el 2026-05-07.
+
+Entregado:
+
+- Dashboard cliente orientado a proxima accion (primary action banner, KPIs, expedientes activos).
+- Expediente detail con barra de progreso de 5 pasos y guidance panel por estado.
+- Mensaje contextual por estado: que falta, que estamos haciendo, que sigue.
 
 Tipo: operacion, comunicacion, retencion.
 
@@ -171,7 +177,13 @@ Criterios de aceptacion:
 
 ## Fase 5 - Admin operativo
 
-Estado: pendiente.
+Estado: parcialmente completada el 2026-05-07.
+
+Entregado:
+
+- Admin dashboard rediseñado como bandeja operativa: seccion "Requiere atencion ahora" + "En seguimiento".
+- Vista de leads SaaS (/admin/saas-leads) con estados gestionables (nuevo, contactado, cualificado, descartado).
+- API admin para saas_leads con GET + PATCH de estado.
 
 Tipo: operacion, automatizacion.
 
@@ -193,7 +205,20 @@ Criterios de aceptacion:
 
 ## Fase 6 - Holded
 
-Estado: pendiente.
+Estado: base completada el 2026-05-07.
+
+Entregado:
+
+- `lib/integrations/holded.ts`: cliente API completo (upsertContact, createInvoice, syncOrderToHolded).
+- Integracion en webhook Stripe: tras pago confirmado, sync non-blocking a Holded.
+- Holded IDs guardados en orders.metadata.holded.
+- Degradacion elegante si HOLDED_API_KEY no esta configurado.
+
+Pendiente:
+
+- Configurar variable HOLDED_API_KEY en produccion.
+- Verificar formato de items y taxes segun cuenta Holded real.
+- Crear facturas tambien para pagos de suscripcion.
 
 Tipo: operacion, automatizacion, escalabilidad SaaS.
 

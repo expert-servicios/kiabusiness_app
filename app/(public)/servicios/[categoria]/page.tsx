@@ -19,7 +19,12 @@ export async function generateMetadata({
   if (!category) return {};
   return {
     title: `${category.name} | EXPERT`,
-    description: category.description
+    description: category.description,
+    openGraph: {
+      title: `${category.name} | EXPERT`,
+      description: category.description,
+      url: `https://kseniailicheva.com/servicios/${categoria}`
+    }
   };
 }
 

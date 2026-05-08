@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
+import { syncOrderToHolded } from '@/lib/integrations/holded';
 import {
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest) {
             .update({ status: 'paid', stripe_checkout_id: session.id })
             .eq('id', quoteId);
 
-          await supabaseAdmin.from('orders').insert({
+          // ── Insert order ──
+          const { data: newOrder } = await supabaseAdmin.from('orders').insert({
             quote_id: quoteId,
             client_id: quote.client_id,
             stripe_payment_id: paymentId,
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
                 customer_email: session.customer_email
               }
             }
-          });
+          }).select('id').single();
 
           if (quote.client_id) {
             await supabaseAdmin.from('cases').insert({
@@ -101,12 +103,15 @@ export async function POST(req: NextRequest) {
 
           const clientEmail =
             session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+
           if (clientEmail) {
             let clientName = clientEmail.split('@')[0];
             if (quote.client_id) {
               const info = await getClientEmail(quote.client_id);
               if (info) clientName = info.name;
             }
+
+            // ── Send confirmation email ──
             const tpl = paymentConfirmed(clientName, amountEur, quote.title ?? 'Servicio contratado');
             await sendEmail({
               to: clientEmail,
@@ -114,6 +119,24 @@ export async function POST(req: NextRequest) {
               ...tpl,
               metadata: { quote_id: quoteId, session_id: session.id }
             });
+
+            // ── Holded sync (non-blocking — errors don't affect main flow) ──
+            syncOrderToHolded({
+              clientName,
+              clientEmail,
+              description: quote.title ?? 'Servicio EXPERT',
+              amountEur,
+              orderId: newOrder?.id
+            }).then((result) => {
+              if (result.invoiceId && newOrder?.id) {
+                supabaseAdmin.from('orders').update({
+                  metadata: {
+                    checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: session.customer_email },
+                    holded: { contact_id: result.contactId, invoice_id: result.invoiceId }
+                  }
+                }).eq('id', newOrder.id).then(() => {});
+              }
+            }).catch((err) => console.error('[webhook] holded sync failed:', err));
           }
         }
       }

@@ -58,7 +58,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
-      <head>
+      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
+        {/* GTM noscript fallback — must be first in body */}
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            className="gtm-noscript"
+          />
+        </noscript>
+        {/* GTM — manages GA4 internally; do NOT add standalone gtag.js to avoid double-tracking */}
         <Script
           id="gtm-script"
           strategy="afterInteractive"
@@ -70,16 +80,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','${GTM_ID}');`
           }}
         />
-      </head>
-      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            className="gtm-noscript"
-          />
-        </noscript>
         <Header />
         {children}
         <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />

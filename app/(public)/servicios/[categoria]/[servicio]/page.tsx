@@ -26,7 +26,12 @@ export async function generateMetadata({
   if (!service) return {};
   return {
     title: `${service.name} | EXPERT`,
-    description: service.shortDescription
+    description: service.shortDescription,
+    openGraph: {
+      title: `${service.name} | EXPERT`,
+      description: service.shortDescription,
+      url: `https://kseniailicheva.com/servicios/${categoria}/${servicio}`
+    }
   };
 }
 
