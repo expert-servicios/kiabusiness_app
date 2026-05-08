@@ -482,6 +482,290 @@ export function saasLeadAutoReply(name: string) {
   };
 }
 
+// ── Enhancement helpers ───────────────────────────────────────────────────────
+
+function funFactBlock(fact: string): string {
+  return `<div style="margin-top:28px;padding:16px 20px;background:#f8f4eb;border-left:3px solid #c88b25;border-radius:0 8px 8px 0;">
+    <p style="margin:0 0 4px;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;color:#c88b25;">¿Sabías que...?</p>
+    <p style="margin:0;font-size:13px;color:#29384a;line-height:1.5;">${fact}</p>
+  </div>`;
+}
+
+function stepsBlock(steps: string[]): string {
+  const items = steps.map((s, i) => `
+    <tr>
+      <td style="padding:8px 12px;vertical-align:top;width:28px;">
+        <span style="display:inline-block;width:22px;height:22px;background:#c88b25;border-radius:50%;color:#061321;font-size:11px;font-weight:bold;text-align:center;line-height:22px;">${i + 1}</span>
+      </td>
+      <td style="padding:8px 0;font-size:13px;color:#29384a;line-height:1.5;">${s}</td>
+    </tr>`).join('');
+  return `<div style="margin:20px 0;">
+    <p style="margin:0 0 10px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.08em;color:#07111d;">Próximos pasos</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;">${items}</table>
+  </div>`;
+}
+
+function noteBlock(note: string): string {
+  return `<div style="margin:16px 0;padding:14px 18px;background:#fff8ec;border:1px solid #f0d8a0;border-radius:8px;">
+    <p style="margin:0 0 4px;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;color:#c88b25;">Nota de tu gestor</p>
+    <p style="margin:0;font-size:13px;color:#29384a;line-height:1.5;">${escapeHtml(note)}</p>
+  </div>`;
+}
+
+// ── 22. Admin-created quote with direct Stripe link ───────────────────────────
+export function quoteWithPaymentLink(
+  name: string,
+  amount: number,
+  service: string,
+  stripeUrl: string,
+  expiresAt: string | null,
+  funFact: string
+) {
+  const expiry = expiresAt
+    ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+  return {
+    subject: `Tu presupuesto EXPERT está listo — ${service}`,
+    html: base('Presupuesto listo para pagar', `
+      ${heading('Tu propuesta personalizada está lista')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos preparado tu presupuesto para <strong>${escapeHtml(service)}</strong>. Puedes completar el pago directamente desde el botón de abajo — sin necesidad de buscar nada en el panel.`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Importe total', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}</strong>`),
+        ...(expiry ? [detail('Válido hasta', expiry)] : [])
+      )}
+      ${btn('Pagar ahora — €' + amount.toFixed(2), stripeUrl)}
+      ${stepsBlock([
+        'Haz clic en "Pagar ahora" y completa el pago de forma segura (Visa / Mastercard / Amex).',
+        'Recibirás un email de confirmación con los detalles de tu expediente.',
+        'Accede a tu panel privado para seguir el estado en tiempo real y subir documentación.',
+        'Tu gestor te contactará en menos de 24 horas hábiles para coordinar el inicio.'
+      ])}
+      ${para('<small style="color:#8899aa;">El pago se procesa de forma segura a través de Stripe (PCI-DSS). EXPERT no almacena datos de tu tarjeta. Si tienes alguna duda sobre el presupuesto, responde a este email.</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// ── 23. Subscription invite — admin sends subscription link to client ──────────
+export function subscriptionInvite(
+  name: string,
+  planName: string,
+  amount: number,
+  stripeUrl: string,
+  funFact: string
+) {
+  return {
+    subject: `Tu plan mensual EXPERT está listo para activar — ${planName}`,
+    html: base('Plan mensual listo', `
+      ${heading('Activa tu plan mensual')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu plan de suscripción mensual <strong>${escapeHtml(planName)}</strong> está listo para activar. Desde el momento en que completes el pago, nos ocupamos de tus trámites de forma continua mes a mes.`)}
+      ${table(
+        detail('Plan', escapeHtml(planName)),
+        detail('Cuota mensual', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}/mes</strong>`),
+        detail('Renovación', 'Automática cada mes, cancelable en cualquier momento'),
+        detail('Pago', 'Seguro a través de Stripe (Visa / Mastercard / Amex)')
+      )}
+      ${btn('Activar mi plan — €' + amount.toFixed(2) + '/mes', stripeUrl)}
+      ${stepsBlock([
+        'Haz clic en "Activar mi plan" y completa el pago de forma segura.',
+        'Recibirás un email de confirmación con los detalles de tu suscripción.',
+        'Accede a tu panel privado para gestionar tu plan, descargar facturas o cancelar cuando quieras.',
+        'Tu gestor te contactará para coordinar la operativa del primer mes.'
+      ])}
+      ${para('<small style="color:#8899aa;">Puedes cancelar tu suscripción en cualquier momento desde tu panel en <a href="' + BRAND.appUrl + '/dashboard/suscripciones" style="color:#c88b25;">Mi área privada</a>. La cancelación surte efecto al final del período de facturación en curso.</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// ── New case-stage templates (8 stages) ───────────────────────────────────────
+
+// Stage 1: nuevo — expediente abierto tras pago
+export function caseOpened(name: string, service: string, note: string | null, funFact: string) {
+  return {
+    subject: `Tu expediente de ${service} está abierto — EXPERT`,
+    html: base('Expediente abierto', `
+      ${heading('¡Tu expediente ya está abierto!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos abierto tu expediente para <strong>${escapeHtml(service)}</strong>. Tu gestor ya está asignado y comenzará a trabajar en tu caso.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Espera la solicitud de documentación — te llegará por email en breve.',
+        'Accede a tu panel privado para ver el estado en tiempo real.',
+        'Sube los documentos que te solicitemos directamente desde el panel.',
+        'Tu gestor te mantendrá informado en cada avance importante.'
+      ])}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 2: docs_pendientes — documentación solicitada
+export function caseDocsRequired(
+  name: string,
+  service: string,
+  docs: string[],
+  note: string | null,
+  funFact: string
+) {
+  const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${escapeHtml(d)}</li>`).join('');
+  return {
+    subject: `Documentación necesaria para tu expediente — ${service}`,
+    html: base('Documentación requerida', `
+      ${heading('Necesitamos tu documentación')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Para avanzar con tu expediente de <strong>${escapeHtml(service)}</strong>, necesitamos que nos proporciones los siguientes documentos:`)}
+      <ul style="margin:16px 0;padding-left:20px;">${list || '<li style="color:#29384a;">Tu gestor te indicará la documentación necesaria directamente.</li>'}</ul>
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Reúne los documentos listados arriba (escaneados o en foto clara).',
+        'Accede a tu panel privado y súbelos en la sección "Documentos" de tu expediente.',
+        'También puedes enviarlos directamente por email respondiendo a este mensaje.',
+        'Una vez recibidos, comenzaremos la revisión y te avisaremos del siguiente paso.'
+      ])}
+      ${btn('Subir documentos ahora', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${para('<small style="color:#8899aa;">Si tienes dudas sobre algún documento o no sabes dónde obtenerlo, responde a este email y te ayudamos.</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 3: docs_recibidos — documentación recibida
+export function caseDocsReceived(name: string, service: string, note: string | null, funFact: string) {
+  return {
+    subject: `Documentación recibida — comenzamos la revisión de tu expediente`,
+    html: base('Documentación recibida', `
+      ${heading('Documentación recibida')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido la documentación de tu expediente de <strong>${escapeHtml(service)}</strong>. Comenzamos la revisión.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Tu gestor revisará la documentación en detalle (plazo habitual: 1-2 días hábiles).',
+        'Si necesitamos algo adicional, te lo comunicaremos por email.',
+        'Una vez revisada toda la documentación, te informaremos del siguiente paso.',
+        'Puedes consultar el estado en tiempo real desde tu panel privado.'
+      ])}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 4: en_tramitacion — tramitación activa
+export function caseInProgress(name: string, service: string, note: string | null, funFact: string) {
+  return {
+    subject: `Tu expediente de ${service} está en tramitación — EXPERT`,
+    html: base('Expediente en tramitación', `
+      ${heading('Tu expediente está en tramitación')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> está siendo gestionado activamente por tu gestor. Estamos trabajando en ello.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Tu gestor está tramitando activamente tu expediente.',
+        'Te notificaremos por email en cada avance relevante.',
+        'Si tienes cualquier duda urgente, escríbenos por WhatsApp al +34 696 55 04 80.',
+        'Consulta el estado en tiempo real desde tu panel privado.'
+      ])}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${para('<small style="color:#8899aa;">Los plazos de tramitación dependen en parte de organismos externos (Hacienda, Registro, Extranjería...). Te mantendremos informado de cualquier novedad.</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 5: pendiente_externo — presentado, esperando respuesta de organismo
+export function casePendingExternal(
+  name: string,
+  service: string,
+  organism: string | null,
+  note: string | null,
+  funFact: string
+) {
+  const org = organism ? escapeHtml(organism) : 'el organismo correspondiente';
+  return {
+    subject: `Expediente presentado ante ${org} — Pendiente de resolución`,
+    html: base('Expediente presentado', `
+      ${heading('Tu expediente ha sido presentado')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha sido presentado correctamente ante <strong>${org}</strong>. Ahora estamos pendientes de su resolución.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        `Hemos presentado tu expediente ante ${org} — recibirás acuse de recibo si aplica.`,
+        'Los plazos de resolución los fija el organismo: te informaremos en cuanto tengamos noticias.',
+        'Mientras tanto, no necesitas hacer nada. Nosotros hacemos el seguimiento.',
+        'Si el organismo solicita documentación adicional, te lo comunicaremos de inmediato.'
+      ])}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${para('<small style="color:#8899aa;">Los plazos administrativos pueden variar. Hacemos el seguimiento activo de tu expediente y te notificamos cualquier novedad.</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 6: resolucion_recibida — resolución del organismo recibida
+export function caseResolutionReceived(name: string, service: string, note: string | null, funFact: string) {
+  return {
+    subject: `Resolución recibida para tu expediente de ${service} — EXPERT`,
+    html: base('Resolución recibida', `
+      ${heading('Hemos recibido resolución')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido la resolución correspondiente a tu expediente de <strong>${escapeHtml(service)}</strong>. Tu gestor la está revisando y te informará del resultado en detalle.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Tu gestor ha recibido y está analizando la resolución.',
+        'Te contactaremos por email (y si es urgente, por teléfono/WhatsApp) con el resultado.',
+        'Si la resolución requiere alguna acción por tu parte, te lo indicaremos con claridad.',
+        'Accede a tu panel para ver si hay documentos o actualizaciones disponibles.'
+      ])}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// Stage 7: entregado — servicio entregado al cliente
+export function caseDelivered(name: string, service: string, note: string | null, funFact: string) {
+  return {
+    subject: `Tu expediente de ${service} está completado — Documentación disponible`,
+    html: base('Servicio entregado', `
+      ${heading('¡Tu expediente está completado!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha sido completado y la documentación final está disponible en tu panel privado.`)}
+      ${note ? noteBlock(note) : ''}
+      ${stepsBlock([
+        'Accede a tu panel y descarga la documentación final en la sección "Documentos".',
+        'Revisa que todo esté correcto — si hay algún error, escríbenos de inmediato.',
+        'Guarda una copia de la documentación en un lugar seguro.',
+        'Si en el futuro necesitas renovar o gestionar algo relacionado, ya sabemos dónde estamos.'
+      ])}
+      ${btn('Descargar mi documentación', `${BRAND.appUrl}/dashboard/expedientes`)}
+      ${para('<small style="color:#8899aa;">En breve recibirás un email para que puedas compartir tu opinión sobre el servicio. Tu valoración nos ayuda mucho. ¡Gracias por confiar en EXPERT!</small>')}
+      ${funFactBlock(funFact)}
+    `)
+  };
+}
+
+// ── Extended STATE_LABELS (all 12 states) ─────────────────────────────────────
+export const ALL_CASE_STATE_LABELS: Record<string, string> = {
+  nuevo: 'Expediente abierto',
+  docs_pendientes: 'Documentación pendiente',
+  docs_recibidos: 'Documentación recibida',
+  en_tramitacion: 'En tramitación',
+  pendiente_externo: 'Pendiente de organismo',
+  resolucion_recibida: 'Resolución recibida',
+  entregado: 'Entregado al cliente',
+  finalizado: 'Finalizado',
+  // Legacy states (backward compat)
+  pendiente_documentacion: 'Pendiente de documentación',
+  en_revision: 'En revisión',
+  en_proceso: 'En proceso',
+  presentado: 'Presentado',
+};
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',

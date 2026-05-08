@@ -2,12 +2,19 @@ import { getResendClient } from '@/lib/integrations/resend';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
 
+export interface EmailAttachment {
+  filename: string;
+  content: string; // base64
+  type?: string;
+}
+
 interface SendEmailOptions {
   to: string | string[];
   eventType: string;
   subject: string;
   html: string;
   metadata?: Record<string, unknown>;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail({
@@ -15,7 +22,8 @@ export async function sendEmail({
   eventType,
   subject,
   html,
-  metadata
+  metadata,
+  attachments
 }: SendEmailOptions): Promise<string | null> {
   const recipients = Array.isArray(to) ? to : [to];
 
@@ -25,7 +33,16 @@ export async function sendEmail({
       from: BRAND.from,
       to: recipients,
       subject,
-      html
+      html,
+      ...(attachments?.length
+        ? {
+            attachments: attachments.map((a) => ({
+              filename: a.filename,
+              content: Buffer.from(a.content, 'base64'),
+              ...(a.type ? { type: a.type } : {})
+            }))
+          }
+        : {})
     });
 
     const resendId = data?.id ?? null;

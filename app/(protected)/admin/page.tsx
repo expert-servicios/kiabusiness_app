@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
   AlertCircle, BarChart3, CheckCircle2,
-  CreditCard, FileText, FolderOpen, Mail, Users, Zap, Sparkles
+  CreditCard, FileText, FolderOpen, Mail, Users, UserPlus, Zap, Sparkles
 } from 'lucide-react';
 
 interface AdminStats {
@@ -190,6 +190,18 @@ export default async function AdminPage() {
 
         {/* Navigation tiles */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/admin/onboarding"
+            className="group rounded-2xl border-2 border-[#d7a33a] bg-[#d7a33a]/5 p-5 shadow-sm transition hover:bg-[#d7a33a]/10 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <UserPlus className="h-6 w-6 text-[#d7a33a]" />
+              <span className="rounded-full bg-[#d7a33a] px-2.5 py-0.5 text-xs font-bold text-[#07111d]">Nuevo</span>
+            </div>
+            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Onboarding de cliente</h3>
+            <p className="mt-1 text-xs text-[#29384a]">Alta de cliente + presupuesto o suscripción + contrato por email</p>
+            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Empezar →</p>
+          </Link>
           <Link
             href="/admin/presupuestos"
             className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
