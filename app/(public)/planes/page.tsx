@@ -205,6 +205,32 @@ export default function PlanesPage() {
         </div>
       </section>
 
+      {/* Holded discovery strip */}
+      <section className="bg-[#F8F6F1] px-6 py-5">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-between gap-4 border border-[#D4A017]/30 bg-white px-6 py-5 sm:flex-row">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#D4A017]/10">
+                <Sparkles className="h-5 w-5 text-[#D4A017]" />
+              </div>
+              <div>
+                <p className="font-semibold text-[#0D1B2A]">¿Todavía no tienes Holded?</p>
+                <p className="text-sm text-[#23364D]">
+                  Todos los planes requieren Holded. Pruébalo <strong>14 días gratis</strong> — nosotros lo configuramos, hacemos el onboarding y te formamos.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/planes/gratuito"
+              className="inline-flex shrink-0 items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+            >
+              <Gift className="h-4 w-4" />
+              Solicitar demo gratuita
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Plan cards */}
       <section id="planes" className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
@@ -278,7 +304,7 @@ export default function PlanesPage() {
                     ))}
                   </ul>
 
-                  <div className="mt-7 space-y-2">
+                  <div className="mt-7 space-y-3">
                     <Link
                       href={isFree ? '/planes/gratuito' : '/auth/login'}
                       className="inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
@@ -287,14 +313,12 @@ export default function PlanesPage() {
                       {plan.ctaLabel}
                     </Link>
                     {!isFree && (
-                      <a
-                        href={CALENDLY_DEMO}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                      <Link
+                        href="/planes/gratuito"
+                        className="block text-center text-xs text-[#9CA3AF] transition hover:text-[#D4A017]"
                       >
-                        Pedir demo gratuita
-                      </a>
+                        ¿Todavía no tienes Holded? → Prueba gratis 14 días
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -352,14 +376,13 @@ export default function PlanesPage() {
                   <ClipboardList className="h-4 w-4" />
                   Solicitar presupuesto
                 </Link>
-                <a
-                  href={CALENDLY_DEMO}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/planes/gratuito"
                   className="inline-flex items-center justify-center gap-2 border border-[#D4A017]/40 px-6 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017]/10"
                 >
-                  Pedir demo gratuita
-                </a>
+                  <Gift className="h-4 w-4" />
+                  ¿Sin Holded? Prueba gratis 14 días
+                </Link>
               </div>
             </div>
           </div>
@@ -491,27 +514,25 @@ export default function PlanesPage() {
         <div className="mx-auto max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Siguiente paso</p>
           <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">
-            ¿Dudas sobre qué plan es el tuyo?
+            ¿Por dónde empezamos?
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#23364D]">
-            Reserva una demo gratuita de 30 minutos. Te explico las diferencias, resuelvo tus dudas
-            y te ayudo a elegir el plan que mejor encaja con tu situación.
+            Si aún no tienes Holded, solicita tu prueba gratuita de 14 días — te lo configuramos y formamos.
+            Si ya lo tienes, elige el plan que mejor encaje con tu nivel de implicación.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href={CALENDLY_DEMO}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/planes/gratuito"
               className="inline-flex min-h-12 items-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
-              <Calendar className="h-4 w-4" />
-              Reservar demo gratuita
-            </a>
+              <Gift className="h-4 w-4" />
+              Solicitar demo gratuita de Holded
+            </Link>
             <Link
               href="#planes"
               className="inline-flex min-h-12 items-center gap-2 border border-[#0D1B2A]/25 px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]"
             >
-              Ver planes <ArrowRight className="h-4 w-4" />
+              Ya tengo Holded — ver planes <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
