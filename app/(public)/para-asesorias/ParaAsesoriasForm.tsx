@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const inputClass =
   'mt-1.5 w-full rounded-md border border-[#D4A017]/25 bg-white px-4 py-3 text-sm text-[#0D1B2A] outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10';
@@ -13,14 +14,14 @@ const clientRanges = [
   '25-75 clientes',
   '75-150 clientes',
   '150-300 clientes',
-  'Mas de 300 clientes',
+  'Más de 300 clientes',
   'Prefiero comentarlo'
 ];
 
 const pilotOptions = [
   'Quiero participar en el piloto',
-  'Quiero recibir informacion',
-  'Quiero una demo cuando este lista'
+  'Quiero recibir información',
+  'Quiero una demo cuando esté lista'
 ];
 
 type FormState = {
@@ -70,10 +71,11 @@ export function ParaAsesoriasForm() {
     setError('');
 
     try {
+      const recaptcha_token = await getRecaptchaToken('saas_lead');
       const response = await fetch('/api/saas-leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, source: 'para-asesorias' })
+        body: JSON.stringify({ ...form, source: 'para-asesorias', recaptcha_token })
       });
       const data = await response.json();
 
@@ -86,7 +88,7 @@ export function ParaAsesoriasForm() {
       setStatus('success');
       setForm(initialState);
     } catch {
-      setError('Error de conexion. Intentalo de nuevo.');
+      setError('Error de conexión. Inténtalo de nuevo.');
       setStatus('error');
     }
   };
@@ -99,7 +101,7 @@ export function ParaAsesoriasForm() {
           <div>
             <h3 className="font-serif text-xl font-bold">Solicitud recibida</h3>
             <p className="mt-2 text-sm leading-7 text-[#23364D]">
-              Gracias por tu interes. Revisaremos tu caso y te responderemos con los siguientes pasos del piloto.
+              Gracias por tu interés. Revisaremos tu caso y te responderemos con los siguientes pasos del piloto.
             </p>
             <button
               type="button"
@@ -168,7 +170,7 @@ export function ParaAsesoriasForm() {
           />
         </div>
         <div>
-          <label className={labelClass}>Telefono / WhatsApp</label>
+          <label className={labelClass}>Teléfono / WhatsApp</label>
           <input
             type="tel"
             value={form.phone}
@@ -181,14 +183,14 @@ export function ParaAsesoriasForm() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className={labelClass}>Numero aproximado de clientes *</label>
+          <label className={labelClass}>Número aproximado de clientes *</label>
           <select
             required
             value={form.clientCountRange}
             onChange={(event) => setField('clientCountRange', event.target.value)}
             className={inputClass}
           >
-            <option value="">Selecciona una opcion</option>
+            <option value="">Selecciona una opción</option>
             {clientRanges.map((range) => (
               <option key={range} value={range}>
                 {range}
@@ -197,7 +199,7 @@ export function ParaAsesoriasForm() {
           </select>
         </div>
         <div>
-          <label className={labelClass}>Interes en piloto *</label>
+          <label className={labelClass}>Interés en piloto *</label>
           <select
             required
             value={form.pilotInterest}
@@ -232,7 +234,7 @@ export function ParaAsesoriasForm() {
           value={form.operationalProblem}
           onChange={(event) => setField('operationalProblem', event.target.value)}
           className={inputClass}
-          placeholder="Cuéntanos que proceso te consume mas tiempo o genera mas bloqueo."
+          placeholder="Cuéntanos qué proceso te consume más tiempo o genera más bloqueo."
         />
       </div>
 
@@ -245,9 +247,9 @@ export function ParaAsesoriasForm() {
           className="mt-1 h-4 w-4 rounded border-[#D4A017]/40 text-[#D4A017]"
         />
         <span>
-          Acepto que EXPERT trate mis datos para responder a esta solicitud y contactar conmigo sobre el piloto. He leido la{' '}
+          Acepto que EXPERT trate mis datos para responder a esta solicitud y contactar conmigo sobre el piloto. He leído la{' '}
           <Link href="/privacidad" className="font-semibold text-[#D4A017] hover:text-[#F2C14E]">
-            politica de privacidad
+            política de privacidad
           </Link>
           .
         </span>
@@ -258,7 +260,7 @@ export function ParaAsesoriasForm() {
         disabled={status === 'loading'}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E] disabled:opacity-60 sm:w-auto"
       >
-        {status === 'loading' ? 'Enviando...' : 'Solicitar informacion'}
+        {status === 'loading' ? 'Enviando...' : 'Solicitar información'}
         <ArrowRight className="h-4 w-4" />
       </button>
     </form>

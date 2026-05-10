@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, Building2, Mail, MessageSquare, Phone, Users } from 'lucide-react';
 import { LeadStatusSelect } from '@/components/admin/LeadStatusSelect';
+import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 
 interface SaasLead {
   id: string;
@@ -156,13 +157,20 @@ export default async function AdminSaasLeadsPage() {
                   {/* Actions */}
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#f0e8d8] pt-4">
                     <LeadStatusSelect leadId={lead.id} currentStatus={lead.status} />
-                    <a
-                      href={`mailto:${lead.email}?subject=EXPERT SaaS – Piloto para ${encodeURIComponent(lead.company_name)}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#d7a33a] px-4 py-1.5 text-xs font-bold text-[#061321] transition hover:bg-[#f0bf54]"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      Contactar
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <HoldedSyncButton
+                        endpoint="/api/admin/integrations/holded/sync-lead"
+                        payload={{ saasLeadId: lead.id }}
+                        label="Sync CRM Holded"
+                      />
+                      <a
+                        href={`mailto:${lead.email}?subject=EXPERT SaaS – Piloto para ${encodeURIComponent(lead.company_name)}`}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[#d7a33a] px-4 py-2 text-xs font-bold text-[#061321] transition hover:bg-[#f0bf54]"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Contactar
+                      </a>
+                    </div>
                   </div>
                 </div>
               );

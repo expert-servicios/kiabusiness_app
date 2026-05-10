@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, FolderOpen, User, Download, FileText } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
 import { DocStateSelect } from '@/components/admin/DocStateSelect';
+import { CaseChecklistEditor } from '@/components/admin/CaseChecklistEditor';
+import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 
 interface Document {
   id: string;
@@ -21,6 +23,8 @@ interface CaseDetail {
   opened_at: string;
   closed_at: string | null;
   client_id: string;
+  admin_note: string | null;
+  docs_checklist: string[] | null;
   client: { email: string; full_name: string | null; phone: string | null };
 }
 
@@ -91,6 +95,26 @@ export default async function AdminCaseDetailPage({
               <p className="text-xs text-[#29384a]">Teléfono</p>
               <p className="font-semibold text-[#07111d]">{c.client.phone ?? '—'}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Holded Projects</p>
+              <p className="mt-1 text-sm text-[#29384a]">
+                Crear o enlazar este expediente como proyecto operativo en Holded.
+              </p>
+            </div>
+            <HoldedSyncButton
+              endpoint="/api/admin/integrations/holded/sync-project"
+              payload={{ caseId: id }}
+              label="Sync proyecto"
+            />
           </div>
         </div>
 

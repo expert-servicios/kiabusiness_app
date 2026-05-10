@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock, FolderOpen, Info } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, FolderOpen, Info } from 'lucide-react';
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
+import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
 
 interface CaseDetail {
   id: string;
@@ -12,6 +13,7 @@ interface CaseDetail {
   state: string;
   opened_at: string;
   closed_at: string | null;
+  docs_checklist: string[] | null;
 }
 
 interface Document {
@@ -29,15 +31,14 @@ interface Message {
   profiles: { full_name: string | null } | null;
 }
 
-const STATE_LABELS: Record<string, string> = {
-  pendiente_documentacion: 'Pendiente de documentación',
-  en_revision: 'En revisión',
-  en_proceso: 'En proceso',
-  presentado: 'Presentado',
-  finalizado: 'Finalizado'
-};
-
 const STATE_COLORS: Record<string, string> = {
+  nuevo: 'bg-slate-100 text-slate-800',
+  docs_pendientes: 'bg-amber-100 text-amber-800',
+  docs_recibidos: 'bg-blue-100 text-blue-800',
+  en_tramitacion: 'bg-purple-100 text-purple-800',
+  pendiente_externo: 'bg-cyan-100 text-cyan-800',
+  resolucion_recibida: 'bg-emerald-100 text-emerald-800',
+  entregado: 'bg-green-100 text-green-800',
   pendiente_documentacion: 'bg-amber-100 text-amber-800',
   en_revision: 'bg-blue-100 text-blue-800',
   en_proceso: 'bg-purple-100 text-purple-800',
@@ -55,6 +56,62 @@ interface StateGuide {
 }
 
 const STATE_GUIDE: Record<string, StateGuide> = {
+  nuevo: {
+    icon: 'info',
+    title: 'Expediente abierto',
+    desc: 'Hemos creado tu expediente y estamos preparando el siguiente paso operativo. Te avisaremos si necesitamos documentación o alguna confirmación.',
+    borderColor: 'border-slate-200',
+    bgColor: 'bg-slate-50',
+    iconColor: 'text-slate-500'
+  },
+  docs_pendientes: {
+    icon: 'alert',
+    title: 'Necesitamos tu documentación para continuar',
+    desc: 'Para poder gestionar tu expediente, sube los documentos que te hemos indicado. Si tienes dudas sobre qué necesitas, pregúntanos en el hilo de mensajes.',
+    borderColor: 'border-amber-200',
+    bgColor: 'bg-amber-50',
+    iconColor: 'text-amber-500'
+  },
+  docs_recibidos: {
+    icon: 'clock',
+    title: 'Documentación recibida',
+    desc: 'Hemos recibido tus documentos y los estamos revisando. Te avisaremos si necesitamos algo adicional.',
+    borderColor: 'border-blue-200',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-500'
+  },
+  en_tramitacion: {
+    icon: 'info',
+    title: 'Tu trámite está en curso',
+    desc: 'Hemos iniciado la gestión de tu expediente. Te informaremos de cada avance relevante.',
+    borderColor: 'border-purple-200',
+    bgColor: 'bg-purple-50',
+    iconColor: 'text-purple-500'
+  },
+  pendiente_externo: {
+    icon: 'clock',
+    title: 'Pendiente de respuesta externa',
+    desc: 'El expediente depende ahora de un organismo, proveedor o respuesta externa. Lo estamos monitorizando y te avisaremos cuando haya novedades.',
+    borderColor: 'border-cyan-200',
+    bgColor: 'bg-cyan-50',
+    iconColor: 'text-cyan-500'
+  },
+  resolucion_recibida: {
+    icon: 'info',
+    title: 'Resolución recibida',
+    desc: 'Ya tenemos una respuesta o resolución. Estamos preparando la revisión final y la entrega correspondiente.',
+    borderColor: 'border-emerald-200',
+    bgColor: 'bg-emerald-50',
+    iconColor: 'text-emerald-500'
+  },
+  entregado: {
+    icon: 'check',
+    title: 'Servicio entregado',
+    desc: 'El resultado del servicio ya está preparado o entregado. Revisa los documentos finales y escríbenos si necesitas alguna aclaración.',
+    borderColor: 'border-green-200',
+    bgColor: 'bg-green-50',
+    iconColor: 'text-green-500'
+  },
   pendiente_documentacion: {
     icon: 'alert',
     title: 'Necesitamos tu documentación para continuar',
@@ -97,19 +154,16 @@ const STATE_GUIDE: Record<string, StateGuide> = {
   }
 };
 
-const STEPS = [
-  'pendiente_documentacion',
-  'en_revision',
-  'en_proceso',
-  'presentado',
-  'finalizado'
-] as const;
+const STEPS = CASE_PROGRESS_STATES;
 
 const STEP_LABELS: Record<string, string> = {
-  pendiente_documentacion: 'Docs.',
-  en_revision: 'Revisión',
-  en_proceso: 'En proceso',
-  presentado: 'Presentado',
+  nuevo: 'Abierto',
+  docs_pendientes: 'Docs.',
+  docs_recibidos: 'Recibido',
+  en_tramitacion: 'Trámite',
+  pendiente_externo: 'Espera',
+  resolucion_recibida: 'Resolución',
+  entregado: 'Entregado',
   finalizado: 'Finalizado'
 };
 
@@ -140,10 +194,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const messages: Message[] = messagesData?.messages ?? [];
 
   const guide = STATE_GUIDE[caseItem.state] ?? STATE_GUIDE.en_proceso;
-  const currentStepIndex = STEPS.indexOf(caseItem.state as typeof STEPS[number]);
+  const progressState = normalizeCaseStateForProgress(caseItem.state);
+  const currentStepIndex = STEPS.indexOf(progressState as typeof STEPS[number]);
 
   const uploadedCount = documents.length;
   const reviewedCount = documents.filter((d) => d.state === 'revisado').length;
+  const checklist = Array.isArray(caseItem.docs_checklist) ? caseItem.docs_checklist : [];
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-10">
@@ -171,7 +227,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
             <span className={`self-start rounded-full px-3 py-1.5 text-xs font-semibold ${STATE_COLORS[caseItem.state] ?? 'bg-gray-100 text-gray-600'}`}>
-              {STATE_LABELS[caseItem.state] ?? caseItem.state}
+              {CASE_STATE_LABELS[caseItem.state] ?? caseItem.state}
             </span>
           </div>
 
@@ -226,6 +282,30 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
         </div>
+
+        {checklist.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4 text-[#c88b25]" />
+                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Documentacion solicitada</p>
+              </div>
+              <span className="rounded-full bg-[#f8f4eb] px-3 py-1 text-xs font-semibold text-[#29384a]">
+                {uploadedCount} subido{uploadedCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {checklist.map((item, index) => (
+                <li key={`${item}-${index}`} className="flex gap-3 rounded-xl border border-[#f0e8d8] bg-[#f8f4eb] px-4 py-3 text-sm text-[#29384a]">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/15 text-xs font-bold text-[#c88b25]">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Main grid */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">

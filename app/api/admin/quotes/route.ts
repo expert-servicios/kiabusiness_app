@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         status: 'sent',
         expires_at: expiresAt,
         created_by: actorId,
-        ...(docsChecklist.length ? {} : {}) // no docs_checklist column, stored in cases
+        docs_checklist: docsChecklist
       })
       .select('id')
       .single();

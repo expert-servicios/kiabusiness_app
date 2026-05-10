@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, Gift, Loader2 } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const STEPS_INCLUDED = [
   { step: '01', title: 'Activamos tu demo', desc: 'En menos de 24 horas hábiles activamos tu prueba gratuita de Holded de 14 días.' },
@@ -29,10 +30,11 @@ export default function PlanGratuitoPage() {
     setErrorMsg('');
 
     try {
+      const recaptcha_token = await getRecaptchaToken('holded_demo');
       const res = await fetch('/api/holded-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, recaptcha_token })
       });
       const data = await res.json();
       if (res.ok && data.ok) {

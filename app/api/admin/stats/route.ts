@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isOperationallyActiveCase } from '@/lib/utils/case-states';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const [profilesResult, pendingQuotesResult, ordersResult, activeCasesResult] = await Promise.all([
+    const [profilesResult, pendingQuotesResult, ordersResult, casesResult] = await Promise.all([
       adminSupabase.from('profiles').select('id', { count: 'exact', head: true }),
       adminSupabase
         .from('quotes')
@@ -30,13 +31,14 @@ export async function GET(request: NextRequest) {
       adminSupabase.from('orders').select('amount_eur').eq('status', 'paid'),
       adminSupabase
         .from('cases')
-        .select('id', { count: 'exact', head: true })
-        .neq('state', 'finalizado')
+        .select('state')
     ]);
 
     const totalUsers = profilesResult.count ?? 0;
     const pendingQuotes = pendingQuotesResult.count ?? 0;
-    const activeCases = activeCasesResult.count ?? 0;
+    const activeCases = (casesResult.data ?? []).filter((caseItem) =>
+      isOperationallyActiveCase(String(caseItem.state))
+    ).length;
     const totalRevenue = (ordersResult.data ?? []).reduce(
       (sum, order) => sum + Number(order.amount_eur),
       0

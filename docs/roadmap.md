@@ -1,6 +1,6 @@
 # EXPERT - Roadmap maestro de implementacion
 
-Ultima actualizacion: 2026-05-07 (sesion 2)
+Ultima actualizacion: 2026-05-10
 
 ## Vision
 
@@ -35,6 +35,8 @@ Entregado:
 - Conflictos de merge eliminados.
 - `package.json` y `package-lock.json` recuperados.
 - `npm install` ejecutado.
+- Supabase local inicializado con `supabase/config.toml`.
+- Migraciones validadas localmente con Docker y `supabase db reset --local`.
 - `npm run lint` migrado a ESLint y verificado.
 - `npm run typecheck` pasa.
 - `npm run build` pasa.
@@ -154,8 +156,11 @@ Estado: parcialmente completada el 2026-05-07.
 Entregado:
 
 - Dashboard cliente orientado a proxima accion (primary action banner, KPIs, expedientes activos).
-- Expediente detail con barra de progreso de 5 pasos y guidance panel por estado.
+- Expediente detail con barra de progreso operativa y guidance panel por estado.
 - Mensaje contextual por estado: que falta, que estamos haciendo, que sigue.
+- Checklist documental visible en detalle de expediente cliente.
+- Editor admin de checklist documental por expediente.
+- Checklist de onboarding/presupuesto persistido hasta la creacion del expediente tras pago.
 
 Tipo: operacion, comunicacion, retencion.
 
@@ -184,6 +189,9 @@ Entregado:
 - Admin dashboard rediseñado como bandeja operativa: seccion "Requiere atencion ahora" + "En seguimiento".
 - Vista de leads SaaS (/admin/saas-leads) con estados gestionables (nuevo, contactado, cualificado, descartado).
 - API admin para saas_leads con GET + PATCH de estado.
+- Bandeja admin alineada con estados nuevos y legacy de expedientes: documentacion pendiente, documentos por revisar, en tramitacion, pendiente externo y resolucion por entregar.
+- Bandeja admin con pagos recurrentes en incidencia (`past_due`/`unpaid`) y mensajes de cliente sin responder.
+- Admin de usuarios con borrado seguro para limpiar usuarios spam sin actividad operativa.
 
 Tipo: operacion, automatizacion.
 
@@ -205,20 +213,47 @@ Criterios de aceptacion:
 
 ## Fase 6 - Holded
 
-Estado: base completada el 2026-05-07.
+Estado: base completada, alcance corregido y plan CRM/Projects documentado el 2026-05-09.
 
 Entregado:
 
-- `lib/integrations/holded.ts`: cliente API completo (upsertContact, createInvoice, syncOrderToHolded).
+- `lib/integrations/holded.ts`: cliente API base (contactos/facturas heredadas del primer enfoque).
 - Integracion en webhook Stripe: tras pago confirmado, sync non-blocking a Holded.
 - Holded IDs guardados en orders.metadata.holded.
+- `integration_sync_events`: registro auditable de sincronizaciones con Holded.
+- `/admin/integraciones`: vista interna de eventos de sincronizacion Holded.
 - Degradacion elegante si HOLDED_API_KEY no esta configurado.
+- Plan de accion detallado: `docs/holded-sync-action-plan.md`.
+- Criterio actualizado: Holded ya sincroniza con Stripe/banco; la API propia debe cubrir CRM, proyectos, clientes, presupuestos y facturacion con control de duplicados.
+- `HOLDED_CREATE_INVOICES_FROM_STRIPE=false` protege por defecto contra facturas duplicadas desde webhooks Stripe.
+- Cliente API base para Holded CRM: funnels, leads y etapas.
+- Cliente API base para Holded Projects: proyectos, tareas y resumen.
+- Cliente API base para documentos Holded: `estimate`, `proform` e `invoice`.
+- Migracion `external_mappings` creada para mappings idempotentes.
+- Helper `lib/integrations/external-mappings.ts` creado y conectado a sync de presupuestos/facturas.
+- Endpoints admin creados:
+  - `POST /api/admin/integrations/holded/sync-lead`
+  - `POST /api/admin/integrations/holded/sync-project`
+  - `POST /api/admin/integrations/holded/sync-quote`
+  - `POST /api/admin/integrations/holded/sync-invoice`
+- Boton admin en presupuestos para sincronizar documento Holded.
+- Boton admin en detalle de expediente para sincronizar proyecto Holded.
+- Endpoint `GET /api/admin/integrations/holded/status` creado para comprobar API/configuracion sin exponer datos sensibles.
+- `/admin/integraciones` muestra estado de Holded, checks read-only y flags activos.
+- `/admin/saas-leads` permite sincronizar leads B2B como leads CRM en Holded.
 
 Pendiente:
 
 - Configurar variable HOLDED_API_KEY en produccion.
-- Verificar formato de items y taxes segun cuenta Holded real.
-- Crear facturas tambien para pagos de suscripcion.
+- Aplicar migracion P0 en Supabase remoto.
+- Aplicar migracion `external_mappings` en Supabase remoto.
+- Completar automatizacion de `quotes` -> leads Holded y actualizacion de etapas CRM.
+- Verificar en remoto los mappings `quotes` -> presupuestos Holded.
+- Verificar en remoto los mappings `orders`/Stripe payments -> facturas Holded sin duplicados.
+- Verificar en remoto los mappings `cases` -> proyectos Holded.
+- Verificar en remoto los mappings checklist/tareas -> tareas Holded.
+- Anadir reintentos manuales y refresco Holded CRM/Projects -> EXPERT en admin.
+- Mostrar presupuestos/facturas/pagos en dashboard con conciliacion Holded/Stripe/banco.
 
 Tipo: operacion, automatizacion, escalabilidad SaaS.
 
@@ -241,9 +276,16 @@ Criterios de aceptacion:
 
 ## Fase 7 - Emails, WhatsApp y automatizaciones
 
-Estado: pendiente.
+Estado: parcialmente completada el 2026-05-10.
 
 Tipo: comunicacion, automatizacion, retencion.
+
+Entregado:
+
+- reCAPTCHA v3 cargado de forma global cuando existe `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`.
+- Verificacion server-side centralizada antes de crear leads o enviar emails publicos.
+- Formularios protegidos: contacto, solicitud de presupuesto, presupuesto avanzado, demo Holded, newsletter y lead B2B SaaS.
+- Newsletter reforzada con honeypot, rate limit, spam guard y reCAPTCHA.
 
 Tareas:
 

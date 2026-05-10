@@ -1,0 +1,2 @@
+-- Local development seed file.
+-- Keep empty until we need deterministic local fixtures.

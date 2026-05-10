@@ -21,7 +21,11 @@ export async function GET(
     }
 
     const [caseResult, docsResult] = await Promise.all([
-      admin.from('cases').select('id,category,service,state,opened_at,closed_at,client_id').eq('id', id).single(),
+      admin
+        .from('cases')
+        .select('id,category,service,state,opened_at,closed_at,client_id,admin_note,docs_checklist')
+        .eq('id', id)
+        .single(),
       admin.from('documents').select('id,original_name,state,created_at,file_path').eq('case_id', id).order('created_at', { ascending: false })
     ]);
 

@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/email/send';
 import { saasLeadAutoReply, saasLeadReceivedAdmin } from '@/lib/email/templates';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { saasLeadSchema } from '@/lib/schemas/saas-lead';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 function parseRecipients(value: string) {
@@ -42,6 +43,14 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data;
+    const recaptcha = await verifyRecaptchaToken({
+      token: String(body.recaptcha_token ?? ''),
+      action: 'saas_lead'
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
+    }
+
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from('saas_leads').insert({
       name: input.name,

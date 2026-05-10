@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Script from 'next/script';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 
@@ -50,17 +48,8 @@ const contactItems = [
 ];
 
 export default function ContactoPage() {
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-      {siteKey && (
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
-          strategy="afterInteractive"
-        />
-      )}
-
       {/* Hero */}
       <div className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-5xl">
@@ -82,7 +71,7 @@ export default function ContactoPage() {
             <p className="mt-2 text-sm text-[#23364D]">
               Rellena el formulario y te respondemos en menos de 24 horas hábiles.
             </p>
-            <ContactForm siteKey={siteKey} />
+            <ContactForm />
           </div>
 
           {/* Contact info sidebar */}

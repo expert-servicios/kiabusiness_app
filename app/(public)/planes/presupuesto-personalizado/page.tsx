@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, ClipboardList, Loader2 } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 // ── Opciones del formulario ───────────────────────────────────────────────────
 
@@ -169,10 +170,11 @@ export default function PresupuestoPersonalizadoPage() {
     setStatus('loading');
     setErrorMsg('');
     try {
+      const recaptcha_token = await getRecaptchaToken('advanced_quote');
       const res = await fetch('/api/presupuesto-avanzado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, recaptcha_token })
       });
       const data = await res.json();
       if (res.ok && data.ok) {

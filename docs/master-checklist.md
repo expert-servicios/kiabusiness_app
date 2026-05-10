@@ -1,6 +1,6 @@
 # EXPERT - Checklist maestro
 
-Ultima actualizacion: 2026-05-07
+Ultima actualizacion: 2026-05-10
 
 Estados:
 
@@ -14,12 +14,15 @@ Estados:
 - [x] Recuperar `package.json` y `package-lock.json`.
 - [x] Recuperar `typecheck`.
 - [x] Recuperar `build`.
+- [x] Inicializar Supabase local con `supabase/config.toml`.
+- [x] Validar migraciones localmente con Docker y `supabase db reset --local`.
 - [x] Migrar `npm run lint` a ESLint compatible con Next actual.
 - [x] Alinear `orders` vs `expert_orders`.
 - [x] Alinear `documents` vs `case_documents`.
 - [x] Alinear bucket `client-documents` vs `user-files`.
 - [x] Eliminar rutas duplicadas `app/(app)` frente a `app/(protected)`.
 - [x] Fijar `turbopack.root` para evitar que Next use un lockfile externo.
+- [x] Centralizar reCAPTCHA v3 y proteccion anti-spam para formularios publicos.
 - [~] Limpiar documentacion principal. `roadmap`, `checklist` y `architecture` quedan normalizados; README puede revisarse despues.
 
 ## 1. Vision EXPERT
@@ -43,9 +46,9 @@ Estados:
 - [~] Presupuestos, pagos y suscripciones.
 - [~] Portal cliente con expedientes y documentos.
 - [~] Comunicaciones automaticas por email.
-- [ ] Checklist documental visible para cliente.
+- [x] Checklist documental visible para cliente.
 - [ ] Entregables descargables finales.
-- [ ] Facturas integradas con Holded.
+- [~] Facturas integradas con Holded.
 - [ ] Resenas por servicio.
 
 ## 4. Producto futuro: SaaS para asesorias
@@ -73,16 +76,36 @@ Estados:
 ## 6. Holded
 
 - [x] Holded identificado como integracion estrategica.
-- [ ] Conector Holded incorporado en este proyecto.
-- [ ] Variables `HOLDED_*`.
-- [ ] Sincronizacion de contactos/clientes.
-- [ ] Creacion de facturas desde pagos Stripe.
-- [ ] Mapping Stripe `orders` -> Holded invoice.
+- [x] Plan de accion Holded documentado en `docs/holded-sync-action-plan.md`.
+- [x] Conector Holded incorporado en este proyecto.
+- [x] Variables `HOLDED_*`.
+- [x] Criterio actualizado: Holded ya sincroniza con Stripe; EXPERT no debe duplicar facturas por defecto.
+- [~] Sincronizacion de contactos/clientes.
+- [x] Proteger la creacion de facturas desde webhooks Stripe con `HOLDED_CREATE_INVOICES_FROM_STRIPE=false` por defecto.
+- [x] Cliente API para Holded CRM: funnels, leads y etapas.
+- [x] Cliente API para Holded Projects: proyectos, tareas y resumen.
+- [x] Cliente API para documentos Holded: `estimate`, `proform` e `invoice`.
+- [~] Mapping EXPERT `quotes`/`saas_leads` -> Holded leads. `saas_leads` ya puede enviarse manualmente al CRM Holded desde admin.
+- [ ] Mapping EXPERT `quotes` -> Holded `estimate`/`proform`.
+- [ ] Mapping EXPERT `orders`/Stripe payments -> Holded invoices sin duplicados.
+- [ ] Mapping EXPERT `cases` -> Holded projects.
+- [ ] Mapping checklist/tareas EXPERT -> Holded tasks.
+- [~] Dashboard admin de sincronizaciones Holded.
+- [x] Endpoints admin para sincronizar lead, proyecto, presupuesto y factura.
+- [x] Accion admin para sincronizar presupuesto con Holded.
+- [x] Accion admin para sincronizar expediente como proyecto Holded.
+- [x] Endpoint admin de estado/configuracion Holded.
+- [x] Tarjeta de estado Holded en `/admin/integraciones`.
+- [~] Idempotencia robusta con mappings externos: migracion y helper creados; falta aplicar en remoto y usar en todos los flujos.
+- [ ] Sincronizacion de vuelta Holded CRM/Projects -> EXPERT.
+- [ ] Reintento manual desde admin.
+- [ ] Sincronizacion financiera Holded con lectura, presupuestos y facturacion controlada.
 - [ ] Configuracion por tenant futura.
 
 ## 7. Automatizacion
 
 - [x] Email por eventos principales.
+- [x] Formularios publicos con reCAPTCHA server-side antes de crear leads o enviar emails.
 - [x] Creacion de expediente tras pago alineada con tabla `orders`.
 - [~] Solicitud de resena al finalizar expediente.
 - [ ] Checklist documental automatico.
@@ -124,9 +147,10 @@ Estados:
 
 - [~] Web publica premium y clara.
 - [~] Panel cliente con expedientes, pero falta orientar por proxima accion.
-- [~] Admin con KPIs, pero falta bandeja de accion operativa.
+- [x] Admin con bandeja de accion operativa.
+- [x] Admin de usuarios permite limpieza segura de usuarios spam sin actividad operativa.
 - [ ] Dashboard cliente responde: que falta, en que estado esta, cual es el siguiente paso.
-- [ ] Dashboard admin responde: que requiere accion ahora.
+- [x] Dashboard admin responde: que requiere accion ahora.
 
 ## 12. Regla de producto
 
@@ -142,9 +166,10 @@ Toda funcionalidad nueva debe clasificarse como una o varias de estas categorias
 
 ## Siguiente bloque recomendado
 
-Ejecutar Fase 1 y Fase 2:
+Ejecutar el siguiente tramo operativo:
 
-1. Consolidar header/footer con el menu publico recomendado.
-2. Estandarizar paginas de categoria y servicio.
-3. Mejorar portal cliente alrededor de proxima accion.
-4. Incorporar el conector Holded existente.
+1. Aplicar migraciones P0 y `external_mappings` en Supabase remoto.
+2. Mostrar badges de sincronizacion Holded en leads, presupuestos y expedientes.
+3. Crear reintento manual de sincronizaciones fallidas desde `/admin/integraciones`.
+4. Completar automatizaciones por estado: emails, recordatorios y seguimiento de presupuestos.
+5. Estandarizar paginas de categoria y servicio.

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { presupuestoAvanzadoRequested, presupuestoAvanzadoAdmin } from '@/lib/email/templates';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 const schema = z.object({
@@ -18,7 +19,8 @@ const schema = z.object({
   current_software: z.string().max(80).optional(),
   urgency: z.string().max(80).optional(),
   services: z.array(z.string().max(60)).min(1, 'Selecciona al menos un servicio'),
-  message: z.string().max(2000).optional()
+  message: z.string().max(2000).optional(),
+  recaptcha_token: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
@@ -49,6 +51,14 @@ export async function POST(request: NextRequest) {
     // Spam check
     const spam = checkSpam({ name: d.name, email: d.email, message: d.message });
     if (spam.isSpam) return NextResponse.json({ ok: true });
+
+    const recaptcha = await verifyRecaptchaToken({
+      token: String(d.recaptcha_token ?? ''),
+      action: 'advanced_quote'
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
+    }
 
     // Build message summary for leads table
     const servicesSummary = d.services.join(', ');

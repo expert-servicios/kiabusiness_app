@@ -3,15 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-declare global {
-  interface Window {
-    grecaptcha: {
-      ready: (cb: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
-    };
-  }
-}
+import { getRecaptchaSiteKey, getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const AREAS = [
   'Declaraciones e impuestos (IRPF, IVA, IS...)',
@@ -28,22 +20,14 @@ const AREAS = [
 const inputCls = 'mt-1.5 w-full border border-[#D4A017]/25 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/10';
 const labelCls = 'block text-sm font-semibold text-[#0D1B2A]';
 
-export function ContactForm({ siteKey }: { siteKey: string | undefined }) {
+export function ContactForm() {
   const router = useRouter();
+  const recaptchaEnabled = Boolean(getRecaptchaSiteKey());
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [error, setError] = useState('');
   const [form, setForm] = useState({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '', hp_url: '' });
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
-
-  const getToken = (): Promise<string> => {
-    if (!siteKey || typeof window === 'undefined' || !window.grecaptcha) return Promise.resolve('');
-    return new Promise((resolve) =>
-      window.grecaptcha.ready(() =>
-        window.grecaptcha.execute(siteKey, { action: 'contact' }).then(resolve)
-      )
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +35,7 @@ export function ContactForm({ siteKey }: { siteKey: string | undefined }) {
     setStatus('loading');
     setError('');
     try {
-      const recaptcha_token = await getToken();
+      const recaptcha_token = await getRecaptchaToken('contact');
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +100,7 @@ export function ContactForm({ siteKey }: { siteKey: string | undefined }) {
       <p className="text-xs text-[#9CA3AF]">
         Al enviar aceptas nuestra{' '}
         <Link href="/privacidad" className="text-[#D4A017] hover:text-[#F2C14E]">Política de privacidad</Link>.
-        {siteKey && ' Este formulario está protegido por reCAPTCHA.'}
+        {recaptchaEnabled && ' Este formulario está protegido por reCAPTCHA.'}
       </p>
 
       <button

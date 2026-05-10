@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id,lead_id,title')
+          .select('client_id,lead_id,title,docs_checklist')
           .eq('id', quoteId)
           .single();
 
@@ -97,7 +97,8 @@ export async function POST(req: NextRequest) {
               client_id: quote.client_id,
               category: 'presupuesto',
               service: quote.title ?? 'servicio',
-              state: 'pendiente_documentacion'
+              state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
+              docs_checklist: Array.isArray(quote.docs_checklist) ? quote.docs_checklist : []
             });
           }
 
@@ -126,13 +127,18 @@ export async function POST(req: NextRequest) {
               clientEmail,
               description: quote.title ?? 'Servicio EXPERT',
               amountEur,
-              orderId: newOrder?.id
+              orderId: newOrder?.id,
+              localEntity: 'orders'
             }).then((result) => {
               if (result.invoiceId && newOrder?.id) {
                 supabaseAdmin.from('orders').update({
                   metadata: {
                     checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: session.customer_email },
-                    holded: { contact_id: result.contactId, invoice_id: result.invoiceId }
+                    holded: {
+                      contact_id: result.contactId,
+                      invoice_id: result.invoiceId,
+                      sync_event_id: result.syncEventId
+                    }
                   }
                 }).eq('id', newOrder.id).then(() => {});
               }
@@ -168,7 +174,8 @@ export async function POST(req: NextRequest) {
             clientEmail: customerEmail,
             description: packageName,
             amountEur: holdedAmountEur,
-            orderId: session.id
+            orderId: session.id,
+            localEntity: 'stripe_checkout_sessions'
           }).catch((err) => console.error('[webhook] holded sync (migration) failed:', err));
         } else {
           const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
@@ -184,7 +191,8 @@ export async function POST(req: NextRequest) {
             clientEmail: customerEmail,
             description: 'Formación EXPERT — sesión 2 h',
             amountEur: holdedAmountEur,
-            orderId: session.id
+            orderId: session.id,
+            localEntity: 'stripe_checkout_sessions'
           }).catch((err) => console.error('[webhook] holded sync (formacion) failed:', err));
         }
       }
@@ -256,7 +264,20 @@ export async function POST(req: NextRequest) {
           clientEmail: clientInfo.email,
           planName,
           amountEur: monthlyAmount,
-          subscriptionId: sub.id
+          subscriptionId: sub.id,
+          localEntity: 'stripe_subscriptions'
+        }).then((result) => {
+          if (result.invoiceId) {
+            supabaseAdmin.from('subscriptions').update({
+              metadata: {
+                holded: {
+                  contact_id: result.contactId,
+                  invoice_id: result.invoiceId,
+                  sync_event_id: result.syncEventId
+                }
+              }
+            }).eq('stripe_subscription_id', sub.id).then(() => {});
+          }
         }).catch((err) => console.error('[webhook] holded sync (subscription) failed:', err));
       }
     }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { Users, FileText, FolderOpen, MessageCircle, Building2 } from 'lucide-react';
 import { UserRoleSelect } from '@/components/admin/UserRoleSelect';
+import { DeleteUserButton } from '@/components/admin/DeleteUserButton';
 
 interface AdminUser {
   id: string;
@@ -16,6 +17,14 @@ interface AdminUser {
   totalCases: number;
   activeCases: number;
   companies: Array<{ id: string; razon_social: string; cif_nif: string | null; role: string }>;
+}
+
+function getDeleteDisabledReason(user: AdminUser) {
+  if (user.role === 'admin') return 'Admin protegido';
+  if (user.totalQuotes > 0 || user.totalCases > 0 || user.companies.length > 0) {
+    return 'Tiene actividad vinculada';
+  }
+  return null;
 }
 
 async function getUsers(): Promise<AdminUser[]> {
@@ -70,7 +79,8 @@ export default async function AdminUsersPage() {
                     <th className="pb-3 pr-4 text-center">Expedientes</th>
                     <th className="pb-3 pr-4">WhatsApp</th>
                     <th className="pb-3 pr-4">Alta</th>
-                    <th className="pb-3">Rol</th>
+                    <th className="pb-3 pr-4">Rol</th>
+                    <th className="pb-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,8 +137,15 @@ export default async function AdminUsersPage() {
                       <td className="py-3 pr-4 text-xs text-[#29384a]">
                         {new Date(user.created_at).toLocaleDateString('es-ES')}
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 pr-4">
                         <UserRoleSelect userId={user.id} currentRole={user.role} />
+                      </td>
+                      <td className="py-3">
+                        <DeleteUserButton
+                          userId={user.id}
+                          userEmail={user.email}
+                          disabledReason={getDeleteDisabledReason(user)}
+                        />
                       </td>
                     </tr>
                   ))}

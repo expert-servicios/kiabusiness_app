@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Check, ArrowLeft } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const serviceCategories = [
   {
@@ -41,6 +42,7 @@ export default function SolicitarPresupuestoPage() {
   const [phone, setPhone] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [description, setDescription] = useState('');
+  const [hp, setHp] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -56,10 +58,11 @@ export default function SolicitarPresupuestoPage() {
     setLoading(true);
     setError('');
     try {
+      const recaptcha_token = await getRecaptchaToken('quote_request');
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, services: selectedServices, description })
+        body: JSON.stringify({ name, email, phone, services: selectedServices, description, hp_url: hp, recaptcha_token })
       });
       if (res.ok) {
         setSubmitted(true);
@@ -116,6 +119,16 @@ export default function SolicitarPresupuestoPage() {
       <section className="px-6 py-12">
         <div className="mx-auto max-w-3xl">
           <form onSubmit={handleSubmit} className="space-y-8">
+            <input
+              type="text"
+              name="hp_url"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={hp}
+              onChange={(e) => setHp(e.target.value)}
+              className="absolute -left-[9999px] h-px w-px overflow-hidden"
+            />
 
             {/* Datos personales */}
             <div>

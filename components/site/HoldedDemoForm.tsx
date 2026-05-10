@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 export function HoldedDemoForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [fields, setFields] = useState({ nombre: '', email: '', empresa: '', mensaje: '' });
+  const [fields, setFields] = useState({ nombre: '', email: '', empresa: '', mensaje: '', hp_url: '' });
 
   function onChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFields((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -17,6 +18,7 @@ export function HoldedDemoForm() {
     if (!fields.nombre || !fields.email || !fields.mensaje) return;
     setStatus('loading');
     try {
+      const recaptcha_token = await getRecaptchaToken('contact');
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -24,7 +26,9 @@ export function HoldedDemoForm() {
           nombre: fields.nombre,
           email: fields.email,
           asunto: 'Demo Holded',
-          mensaje: `Empresa/Actividad: ${fields.empresa || '—'}\n\n${fields.mensaje}`
+          mensaje: `Empresa/Actividad: ${fields.empresa || '—'}\n\n${fields.mensaje}`,
+          hp_url: fields.hp_url,
+          recaptcha_token
         })
       });
       if (!res.ok) throw new Error();
@@ -63,6 +67,16 @@ export function HoldedDemoForm() {
         Cuéntanos el punto de partida y prepararemos una propuesta de migración o formación en Holded.
       </p>
       <div className="mt-6 grid gap-3">
+        <input
+          type="text"
+          name="hp_url"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={fields.hp_url}
+          onChange={onChange}
+          className="absolute -left-[9999px] h-px w-px overflow-hidden"
+        />
         <input
           name="nombre"
           value={fields.nombre}

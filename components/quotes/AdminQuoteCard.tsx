@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Pencil } from 'lucide-react';
+import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 
 interface Quote {
   id: string;
@@ -131,6 +132,12 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
             <Pencil className="h-4 w-4" />
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
+
+          <HoldedSyncButton
+            endpoint="/api/admin/integrations/holded/sync-quote"
+            payload={{ quoteId: quote.id }}
+            label="Sync Holded"
+          />
 
           {message ? <p className="text-sm text-[#29384a]">{message}</p> : null}
         </div>

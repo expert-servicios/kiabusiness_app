@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FolderOpen, ExternalLink } from 'lucide-react';
+import { CASE_PROGRESS_STATES, CASE_STATE_LABELS } from '@/lib/utils/case-states';
 
 interface Case {
   id: string;
@@ -16,22 +17,14 @@ interface Case {
 }
 
 const caseStates = [
+  ...CASE_PROGRESS_STATES,
   'pendiente_documentacion',
   'en_revision',
   'en_proceso',
-  'presentado',
-  'finalizado'
+  'presentado'
 ] as const;
 
 type CaseState = (typeof caseStates)[number];
-
-const stateLabels: Record<CaseState, string> = {
-  pendiente_documentacion: 'Pendiente documentación',
-  en_revision: 'En revisión',
-  en_proceso: 'En proceso',
-  presentado: 'Presentado',
-  finalizado: 'Finalizado'
-};
 
 export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const router = useRouter();
@@ -73,7 +66,7 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
           </div>
         </div>
         <span className="inline-flex items-center rounded-full bg-[#061321] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#F8F6F1]">
-          {stateLabels[caseItem.state as CaseState] ?? caseItem.state}
+          {CASE_STATE_LABELS[caseItem.state] ?? caseItem.state}
         </span>
       </div>
 
@@ -90,7 +83,7 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
         >
           {caseStates.map((s) => (
             <option key={s} value={s}>
-              {stateLabels[s]}
+              {CASE_STATE_LABELS[s]}
             </option>
           ))}
         </select>

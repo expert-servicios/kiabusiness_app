@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { quoteReceivedClient, quoteReceivedAdmin } from '@/lib/email/templates';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 const quoteRequestSchema = z.object({
@@ -10,7 +11,8 @@ const quoteRequestSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),
   services: z.array(z.string().min(1)).min(1),
-  description: z.string().max(1000).optional()
+  description: z.string().max(1000).optional(),
+  recaptcha_token: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
@@ -35,6 +37,14 @@ export async function POST(request: NextRequest) {
     });
     if (spam.isSpam) {
       return NextResponse.json({ success: true });
+    }
+
+    const recaptcha = await verifyRecaptchaToken({
+      token: String(validated.recaptcha_token ?? ''),
+      action: 'quote_request'
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 
     const adminId = await getFirstAdminProfileId();

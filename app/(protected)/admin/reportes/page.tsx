@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { BarChart3, TrendingUp, Mail, CreditCard, FileText, FolderOpen } from 'lucide-react';
+import { CASE_STATE_LABELS } from '@/lib/utils/case-states';
 
 interface ReportData {
   totalRevenue: number;
@@ -10,12 +11,9 @@ interface ReportData {
   emailStats: { total: number; delivered: number; bounced: number; failed: number };
   subsByPlan: Record<string, number>;
   activeSubs: number;
+  paymentIssuesCount: number;
+  clientMessagesAwaitingResponse: number;
 }
-
-const CASE_STATE_LABELS: Record<string, string> = {
-  nuevo: 'Nuevo', en_revision: 'En revisión', documentacion: 'Documentación',
-  tramitacion: 'Tramitación', resolucion: 'Resolución', finalizado: 'Finalizado'
-};
 
 const QUOTE_STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador', sent: 'Enviado', accepted: 'Aceptado', rejected: 'Rechazado', paid: 'Pagado'
@@ -83,10 +81,12 @@ export default async function AdminReportesPage() {
         </div>
 
         {/* KPI row */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
             { label: 'Ingresos totales', value: `€${data.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`, icon: <TrendingUp className="h-5 w-5" />, color: 'text-[#1fae4b] bg-[#1fae4b]/10' },
             { label: 'Suscripciones activas', value: String(data.activeSubs), icon: <CreditCard className="h-5 w-5" />, color: 'text-[#c88b25] bg-[#c88b25]/10' },
+            { label: 'Pagos con incidencia', value: String(data.paymentIssuesCount ?? 0), icon: <CreditCard className="h-5 w-5" />, color: 'text-red-600 bg-red-50' },
+            { label: 'Mensajes sin responder', value: String(data.clientMessagesAwaitingResponse ?? 0), icon: <Mail className="h-5 w-5" />, color: 'text-amber-700 bg-amber-50' },
             { label: 'Tasa de entrega email', value: `${deliveryRate}%`, icon: <Mail className="h-5 w-5" />, color: 'text-[#07111d] bg-[#07111d]/10' }
           ].map((kpi) => (
             <div key={kpi.label} className="rounded-2xl border border-[#d8cbb5] bg-white p-6">

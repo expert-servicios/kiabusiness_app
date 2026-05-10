@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { holdedDemoRequested, holdedDemoRequestAdmin } from '@/lib/email/templates';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 
 const schema = z.object({
@@ -14,7 +15,8 @@ const schema = z.object({
   company_type: z.string().optional(),
   employees_count: z.string().optional(),
   current_software: z.string().optional(),
-  needs: z.string().max(800).optional()
+  needs: z.string().max(800).optional(),
+  recaptcha_token: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
@@ -42,6 +44,14 @@ export async function POST(request: NextRequest) {
 
     const spam = checkSpam({ name: d.name, email: d.email, message: d.needs });
     if (spam.isSpam) return NextResponse.json({ ok: true });
+
+    const recaptcha = await verifyRecaptchaToken({
+      token: String(d.recaptcha_token ?? ''),
+      action: 'holded_demo'
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
+    }
 
     const supabase = getSupabaseAdmin();
     const { data: demo, error } = await supabase

@@ -1,31 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email/send';
-import { contactMessage, contactAutoReply } from '@/lib/email/templates';
-import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { contactAutoReply, contactMessage } from '@/lib/email/templates';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
+import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-async function verifyRecaptcha(token: string): Promise<boolean> {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret || !token) return !secret; // skip if not configured
-  try {
-    const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${secret}&response=${token}`
-    });
-    const data = await res.json();
-    return data.success === true && (data.score ?? 1) >= 0.5;
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Honeypot
     if (body.hp_url) return NextResponse.json({ ok: true });
 
     const ip = getClientIp(request.headers);
@@ -38,7 +22,7 @@ export async function POST(request: NextRequest) {
     const telefono = String(body.telefono ?? '').trim();
     const asunto = String(body.asunto ?? '').trim();
     const mensaje = String(body.mensaje ?? '').trim();
-    const recaptcha_token = String(body.recaptcha_token ?? '');
+    const recaptchaToken = String(body.recaptcha_token ?? '');
 
     if (!nombre || !email || !mensaje) {
       return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
@@ -52,8 +36,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const valid = await verifyRecaptcha(recaptcha_token);
-    if (!valid) {
+    const recaptcha = await verifyRecaptchaToken({ token: recaptchaToken, action: 'contact' });
+    if (!recaptcha.ok) {
       return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 

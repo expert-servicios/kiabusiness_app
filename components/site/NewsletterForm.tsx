@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 interface Props {
   source?: string;
@@ -24,10 +25,11 @@ export function NewsletterForm({ source = 'website', variant = 'dark', layout = 
     setErrorMsg('');
 
     try {
+      const recaptcha_token = await getRecaptchaToken('newsletter');
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source, hp_url: hp })
+        body: JSON.stringify({ email, source, hp_url: hp, recaptcha_token })
       });
       const data = await res.json();
       if (!res.ok) {

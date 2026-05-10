@@ -48,6 +48,7 @@ Cliente compra en EXPERT -> Stripe cobra -> Supabase crea `order` y `case` -> Ho
 - `ai_logs`: salidas IA auditables.
 - `companies`: empresas o actividades fiscales de clientes.
 - `saas_leads`: interes B2B para pilotos y futura validacion SaaS.
+- `integration_sync_events`: trazabilidad de sincronizaciones con Holded y futuras integraciones.
 
 ## Preparacion multi-tenant
 
@@ -81,6 +82,8 @@ Stripe es fuente de verdad de cobros, suscripciones y customer portal. Los pagos
 Holded sera fuente de verdad para contactos, clientes, facturas, productos/servicios, contabilidad y reporting financiero.
 
 EXPERT no sustituye Holded. EXPERT es la capa de captacion, workflow, documentacion, comunicacion y automatizacion.
+
+Cada sincronizacion con Holded debe dejar rastro en `integration_sync_events` para que el dashboard pueda mostrar si la operacion se completo, fallo o quedo omitida por configuracion.
 
 ### Resend
 

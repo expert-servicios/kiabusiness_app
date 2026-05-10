@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { requireAdminClient } from '@/lib/auth/require-admin';
 import { getResendClient } from '@/lib/integrations/resend';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const admin = await requireAdminClient(request);
+  if (!admin) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
   const resend = getResendClient();
 
   await resend.emails.send({

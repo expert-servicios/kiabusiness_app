@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
   AlertCircle, BarChart3, CheckCircle2,
-  CreditCard, FileText, FolderOpen, Mail, Users, UserPlus, Zap, Sparkles
+  CreditCard, FileText, FolderOpen, Mail, Users, UserPlus, Zap, Sparkles, PlugZap
 } from 'lucide-react';
+import { CASE_ACTION_GROUPS, countCaseStates } from '@/lib/utils/case-states';
 
 interface AdminStats {
   totalUsers: number;
@@ -17,6 +18,8 @@ interface AdminReports {
   quotesByStatus: Record<string, number>;
   totalRevenue: number;
   activeSubs: number;
+  paymentIssuesCount: number;
+  clientMessagesAwaitingResponse: number;
 }
 
 async function fetchAdmin<T>(path: string, fallback: T): Promise<T> {
@@ -33,14 +36,33 @@ async function fetchAdmin<T>(path: string, fallback: T): Promise<T> {
 export default async function AdminPage() {
   const [stats, reports] = await Promise.all([
     fetchAdmin<AdminStats>('/api/admin/stats', { totalUsers: 0, pendingQuotes: 0, activeCases: 0, totalRevenue: 0 }),
-    fetchAdmin<AdminReports>('/api/admin/reports', { casesByState: {}, quotesByStatus: {}, totalRevenue: 0, activeSubs: 0 })
+    fetchAdmin<AdminReports>('/api/admin/reports', {
+      casesByState: {},
+      quotesByStatus: {},
+      totalRevenue: 0,
+      activeSubs: 0,
+      paymentIssuesCount: 0,
+      clientMessagesAwaitingResponse: 0
+    })
   ]);
 
   const quotesNeedingResponse = reports.quotesByStatus?.draft ?? 0;
   const quotesAwaitingClient = reports.quotesByStatus?.sent ?? 0;
-  const casesPendingDocs = reports.casesByState?.pendiente_documentacion ?? 0;
-  const casesInReview = reports.casesByState?.en_revision ?? 0;
-  const urgentCount = quotesNeedingResponse + casesPendingDocs;
+  const casesPendingDocs = countCaseStates(reports.casesByState, CASE_ACTION_GROUPS.pendingDocs);
+  const casesDocsToReview = countCaseStates(reports.casesByState, CASE_ACTION_GROUPS.docsToReview);
+  const casesInProgress = countCaseStates(reports.casesByState, CASE_ACTION_GROUPS.inProgress);
+  const casesWaitingExternal = countCaseStates(reports.casesByState, CASE_ACTION_GROUPS.waitingExternal);
+  const casesReadyToDeliver = countCaseStates(reports.casesByState, CASE_ACTION_GROUPS.readyToDeliver);
+  const paymentIssuesCount = reports.paymentIssuesCount ?? 0;
+  const clientMessagesAwaitingResponse = reports.clientMessagesAwaitingResponse ?? 0;
+  const urgentCount =
+    quotesNeedingResponse +
+    casesPendingDocs +
+    casesDocsToReview +
+    casesReadyToDeliver +
+    paymentIssuesCount +
+    clientMessagesAwaitingResponse;
+  const followUpCount = quotesAwaitingClient + casesInProgress + casesWaitingExternal;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb]">
@@ -97,12 +119,76 @@ export default async function AdminPage() {
                   </span>
                 </Link>
               )}
+              {casesDocsToReview > 0 && (
+                <Link
+                  href="/admin/expedientes"
+                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-amber-100"
+                >
+                  <div>
+                    <p className="font-semibold text-amber-900">
+                      {casesDocsToReview} expediente{casesDocsToReview !== 1 ? 's' : ''} con documentos por revisar
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">Documentacion recibida pendiente de validacion</p>
+                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                    {casesDocsToReview}
+                  </span>
+                </Link>
+              )}
+              {casesReadyToDeliver > 0 && (
+                <Link
+                  href="/admin/expedientes"
+                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-amber-100"
+                >
+                  <div>
+                    <p className="font-semibold text-amber-900">
+                      {casesReadyToDeliver} resolucion{casesReadyToDeliver !== 1 ? 'es' : ''} por entregar
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">Resultado recibido, falta preparar entrega al cliente</p>
+                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                    {casesReadyToDeliver}
+                  </span>
+                </Link>
+              )}
+              {clientMessagesAwaitingResponse > 0 && (
+                <Link
+                  href="/admin/expedientes"
+                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-amber-100"
+                >
+                  <div>
+                    <p className="font-semibold text-amber-900">
+                      {clientMessagesAwaitingResponse} mensaje{clientMessagesAwaitingResponse !== 1 ? 's' : ''} de cliente sin responder
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">El último mensaje del expediente lo envió el cliente</p>
+                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                    {clientMessagesAwaitingResponse}
+                  </span>
+                </Link>
+              )}
+              {paymentIssuesCount > 0 && (
+                <Link
+                  href="/admin/suscripciones"
+                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-amber-100"
+                >
+                  <div>
+                    <p className="font-semibold text-amber-900">
+                      {paymentIssuesCount} pago{paymentIssuesCount !== 1 ? 's' : ''} recurrente{paymentIssuesCount !== 1 ? 's' : ''} con incidencia
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">Suscripciones en estado past_due o unpaid</p>
+                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                    {paymentIssuesCount}
+                  </span>
+                </Link>
+              )}
             </div>
           </div>
         )}
 
         {/* EN SEGUIMIENTO */}
-        {(quotesAwaitingClient > 0 || casesInReview > 0) && (
+        {followUpCount > 0 && (
           <div className="overflow-hidden rounded-2xl border border-blue-200 bg-blue-50">
             <div className="flex items-center gap-3 border-b border-blue-200 px-6 py-4">
               <CheckCircle2 className="h-5 w-5 text-blue-600" />
@@ -125,19 +211,35 @@ export default async function AdminPage() {
                   </span>
                 </Link>
               )}
-              {casesInReview > 0 && (
+              {casesInProgress > 0 && (
                 <Link
                   href="/admin/expedientes"
                   className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-blue-100"
                 >
                   <div>
                     <p className="font-semibold text-blue-900">
-                      {casesInReview} expediente{casesInReview !== 1 ? 's' : ''} en revisión interna
+                      {casesInProgress} expediente{casesInProgress !== 1 ? 's' : ''} en tramitacion
                     </p>
-                    <p className="mt-0.5 text-xs text-blue-700">Documentación recibida, revisando</p>
+                    <p className="mt-0.5 text-xs text-blue-700">Gestiones en curso dentro del flujo operativo</p>
                   </div>
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-400 text-xs font-bold text-white">
-                    {casesInReview}
+                    {casesInProgress}
+                  </span>
+                </Link>
+              )}
+              {casesWaitingExternal > 0 && (
+                <Link
+                  href="/admin/expedientes"
+                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-blue-100"
+                >
+                  <div>
+                    <p className="font-semibold text-blue-900">
+                      {casesWaitingExternal} expediente{casesWaitingExternal !== 1 ? 's' : ''} pendiente{casesWaitingExternal !== 1 ? 's' : ''} de organismo
+                    </p>
+                    <p className="mt-0.5 text-xs text-blue-700">Presentado o esperando respuesta externa</p>
+                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-400 text-xs font-bold text-white">
+                    {casesWaitingExternal}
                   </span>
                 </Link>
               )}
@@ -145,7 +247,7 @@ export default async function AdminPage() {
           </div>
         )}
 
-        {urgentCount === 0 && quotesAwaitingClient === 0 && casesInReview === 0 && (
+        {urgentCount === 0 && followUpCount === 0 && (
           <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
             <p className="text-sm font-semibold text-green-800">Todo al día — sin elementos pendientes de acción</p>
@@ -314,6 +416,17 @@ export default async function AdminPage() {
             <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Plan Gratuito Holded</h3>
             <p className="mt-1 text-xs text-[#29384a]">Solicitudes de demo + onboarding + formación gratuita</p>
             <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Gestionar →</p>
+          </Link>
+          <Link
+            href="/admin/integraciones"
+            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
+          >
+            <div className="flex items-start justify-between">
+              <PlugZap className="h-6 w-6 text-[#d7a33a]" />
+            </div>
+            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Integraciones</h3>
+            <p className="mt-1 text-xs text-[#29384a]">Estado de sincronizaciones con Holded</p>
+            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Revisar -&gt;</p>
           </Link>
         </div>
 

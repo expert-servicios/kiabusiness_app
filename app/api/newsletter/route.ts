@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
+import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -10,12 +12,25 @@ export async function POST(request: NextRequest) {
     const name = String(body.name ?? '').trim() || null;
     const source = String(body.source ?? 'website').trim();
     const hp = String(body.hp_url ?? '');
+    const recaptchaToken = String(body.recaptcha_token ?? '');
 
-    // Honeypot: bots fill this, humans don't
     if (hp) return NextResponse.json({ ok: true });
+
+    const ip = getClientIp(request.headers);
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
+    }
 
     if (!email || !EMAIL_RE.test(email)) {
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
+    }
+
+    const spam = checkSpam({ name: name ?? '', email, message: source });
+    if (spam.isSpam) return NextResponse.json({ ok: true });
+
+    const recaptcha = await verifyRecaptchaToken({ token: recaptchaToken, action: 'newsletter' });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 
     const supabase = getSupabaseAdmin();

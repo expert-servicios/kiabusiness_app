@@ -1,20 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
+async function getAdminContext(request: NextRequest) {
+  const supabase = createServerSupabaseClient(request);
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { error: NextResponse.json({ error: 'No autenticado' }, { status: 401 }) };
+  }
+
+  const adminSupabase = getSupabaseAdmin();
+  const { data: profile } = await adminSupabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    return { error: NextResponse.json({ error: 'No autorizado' }, { status: 403 }) };
+  }
+
+  return { adminSupabase, user };
+}
+
+async function countLinkedRows(
+  adminSupabase: ReturnType<typeof getSupabaseAdmin>,
+  table: string,
+  column: string,
+  userId: string
+) {
+  const { count, error } = await adminSupabase
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+    .eq(column, userId);
+
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session?.user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    const adminSupabase = getSupabaseAdmin();
-    const { data: profile } = await adminSupabase
-      .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    const context = await getAdminContext(request);
+    if (context.error) return context.error;
+    const { adminSupabase } = context;
 
     const { data: profiles, error } = await adminSupabase
       .from('profiles')
@@ -75,18 +109,9 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session?.user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    const adminSupabase = getSupabaseAdmin();
-    const { data: profile } = await adminSupabase
-      .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    const context = await getAdminContext(request);
+    if (context.error) return context.error;
+    const { adminSupabase } = context;
 
     const { userId, role } = await request.json();
     if (!userId || !['admin', 'client'].includes(role)) {
@@ -105,6 +130,79 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Admin users PATCH error:', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const context = await getAdminContext(request);
+    if (context.error) return context.error;
+    const { adminSupabase, user } = context;
+
+    const { userId } = await request.json();
+    if (!userId || typeof userId !== 'string') {
+      return NextResponse.json({ error: 'Usuario no válido' }, { status: 400 });
+    }
+
+    if (userId === user.id) {
+      return NextResponse.json({ error: 'No puedes eliminar tu propio usuario admin.' }, { status: 400 });
+    }
+
+    const { data: targetProfile, error: profileError } = await adminSupabase
+      .from('profiles')
+      .select('id,role,full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileError) {
+      return NextResponse.json({ error: 'No se pudo comprobar el usuario' }, { status: 500 });
+    }
+
+    if (!targetProfile) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    }
+
+    if (targetProfile.role === 'admin') {
+      return NextResponse.json(
+        { error: 'No se puede eliminar un admin desde esta acción. Cambia primero su rol si procede.' },
+        { status: 400 }
+      );
+    }
+
+    const linkedChecks = await Promise.all([
+      countLinkedRows(adminSupabase, 'quotes', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'cases', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'documents', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'review_requests', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'reviews', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'orders', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'subscriptions', 'client_id', userId),
+      countLinkedRows(adminSupabase, 'messages', 'sender_id', userId),
+      countLinkedRows(adminSupabase, 'profile_companies', 'profile_id', userId),
+      countLinkedRows(adminSupabase, 'companies', 'created_by', userId)
+    ]);
+
+    const linkedTotal = linkedChecks.reduce((total, count) => total + count, 0);
+    if (linkedTotal > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Este usuario tiene datos operativos asociados. Por seguridad no se elimina desde limpieza rápida.'
+        },
+        { status: 409 }
+      );
+    }
+
+    const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      console.error('Admin users DELETE auth error:', deleteError);
+      return NextResponse.json({ error: 'No se pudo eliminar el usuario en Auth' }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Admin users DELETE error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
