@@ -168,6 +168,29 @@ export function paymentConfirmed(name: string, amount: number, service: string) 
   };
 }
 
+export function servicePaymentConfirmed(name: string, amount: number, service: string) {
+  return {
+    subject: 'Pago recibido - empezamos con tu trámite',
+    html: base('Pago confirmado', `
+      ${heading('Pago confirmado')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para('Hemos recibido tu pago correctamente. A partir de ahora revisaremos la documentación necesaria para preparar tu trámite.')}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Importe abonado', `€${amount.toFixed(2)}`)
+      )}
+      ${stepsBlock([
+        'Reúne la documentación indicada en la página del servicio.',
+        'Envíanos los documentos por WhatsApp o respondiendo a este email.',
+        'Revisaremos la viabilidad y te indicaremos si falta algo antes de presentar.',
+        'Cuando el expediente esté preparado, te avisaremos para el pago de la tasa oficial si corresponde.'
+      ])}
+      ${para('<small style="color:#8899aa;">La tasa administrativa del Ministerio de Justicia no está incluida en este pago y se abonará aparte cuando proceda.</small>')}
+      ${btn('Escribir por WhatsApp', 'https://wa.me/34696550480')}
+    `)
+  };
+}
+
 // ── 6. Case status updated ────────────────────────────────────────────────────
 const STATE_LABELS: Record<string, string> = {
   pendiente_documentacion: 'Pendiente de documentación',

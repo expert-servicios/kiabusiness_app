@@ -45,8 +45,23 @@ export type Service = {
   name: string;
   shortDescription: string;
   description: string;
+  metaTitle?: string;
+  metaDescription?: string;
   price?: string;
   duration?: string;
+  officialFee?: string;
+  servicePriceDetail?: string;
+  stripePriceId?: string;
+  checkoutLabel?: string;
+  checkoutLegal?: string;
+  audience?: string[];
+  requirements?: string[];
+  keyPoints?: { title: string; text: string }[];
+  documents?: { title: string; items: string[] }[];
+  process?: { title: string; text: string }[];
+  notIncluded?: string[];
+  reviewBeforeHiring?: string[];
+  finalCta?: { title: string; text: string };
   includes: string[];
   faqs: { q: string; a: string }[];
 };
@@ -260,6 +275,196 @@ export const services: Service[] = [
     faqs: [
       { q: '¿Cuántos años de residencia necesito?', a: 'En general 10 años, reducibles a 5 (refugiados), 2 (nacionales de países iberoamericanos, Filipinas, Guinea Ecuatorial, Portugal o Andorra) o 1 año en casos especiales.' },
       { q: '¿Tengo que hacer exámenes?', a: 'Sí: el CCSE (conocimientos constitucionales y socioculturales) y el DELE A2 de español si no eres hispanohablante.' }
+    ]
+  },
+  {
+    slug: 'nacionalidad-espanola-menor-nacido-en-espana',
+    categoria: 'extranjeria-nacionalidad',
+    name: 'Nacionalidad española para menor nacido en España',
+    shortDescription:
+      'Preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España.',
+    description:
+      'Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede solicitar la nacionalidad española por residencia con el plazo reducido de 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud. Revisamos la viabilidad del caso, preparamos la documentación y presentamos el expediente ante el Ministerio de Justicia cuando proceda.',
+    metaTitle: 'Nacionalidad española para menor nacido en España | Ksenia Ilicheva',
+    metaDescription:
+      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 302,50 € IVA incluido.',
+    price: '302,50 € IVA incluido',
+    duration: 'Preparación según documentación; resolución legal hasta 1 año',
+    officialFee: 'Tasa administrativa 790-026: 104,05 € no incluida',
+    servicePriceDetail: 'Honorarios profesionales: 250,00 € + IVA 21 % = 302,50 €',
+    stripePriceId: 'price_1TQn6XLeYwwgvux4PQCePaoa',
+    checkoutLabel: 'Contratar servicio - 302,50 €',
+    checkoutLegal:
+      'El pago corresponde exclusivamente a los honorarios profesionales por la preparación y presentación del expediente. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, no está incluida y se abonará aparte.',
+    keyPoints: [
+      {
+        title: 'Plazo reducido de 1 año',
+        text:
+          'El artículo 22 del Código Civil permite solicitar la nacionalidad por residencia con 1 año de residencia para quienes han nacido en territorio español. La residencia debe ser legal, continuada e inmediatamente anterior a la solicitud.'
+      },
+      {
+        title: 'Firma de representantes legales',
+        text:
+          'Para menores de 14 años, cuando existe acuerdo y firman ambos representantes legales, el Ministerio de Justicia informa que no se exige la autorización previa del Encargado del Registro Civil tras la Ley 8/2021. Si hay discrepancia o solo firma un progenitor sin justificación suficiente, revisamos el caso antes de presentar.'
+      },
+      {
+        title: 'Fecha de residencia legal',
+        text:
+          'Nacer en España no equivale a obtener la nacionalidad automáticamente. Antes de presentar revisamos la concesión de residencia, TIE, tarjetas anteriores y continuidad para evitar solicitudes prematuras.'
+      }
+    ],
+    audience: [
+      'Menor nacido en España e inscrito en el Registro Civil español.',
+      'Menor con NIE/TIE o autorización de residencia legal en España.',
+      'Familias que ya han cumplido, o están próximas a cumplir, 1 año de residencia legal del menor.',
+      'Ambos progenitores o representantes legales están dispuestos a firmar la solicitud.',
+      'Familias que quieren evitar errores documentales, requerimientos y retrasos innecesarios.'
+    ],
+    requirements: [
+      'Nacimiento en España inscrito en el Registro Civil español.',
+      'Residencia legal del menor en España.',
+      'Al menos 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud.',
+      'Solicitud firmada por los progenitores o representantes legales que correspondan.',
+      'Pago de la tasa administrativa del Ministerio de Justicia mediante modelo 790 código 026.',
+      'Documentación exigida por el Ministerio de Justicia digitalizada y revisada.'
+    ],
+    includes: [
+      'Revisión previa de viabilidad del caso',
+      'Comprobación del plazo de 1 año de residencia legal del menor',
+      'Revisión de NIE/TIE, pasaportes, certificado de nacimiento, empadronamiento y documentación familiar',
+      'Preparación del expediente documental',
+      'Cumplimentación de formularios oficiales',
+      'Instrucciones para el pago de la tasa administrativa 790-026',
+      'Presentación telemática ante el Ministerio de Justicia, cuando proceda',
+      'Entrega del justificante de presentación y número de expediente',
+      'Seguimiento básico inicial del expediente',
+      'Orientación sobre requerimientos ordinarios'
+    ],
+    documents: [
+      {
+        title: 'Documentación del menor',
+        items: [
+          'Certificación literal de nacimiento española expedida por el Registro Civil',
+          'Pasaporte completo y en vigor, con copia de todas las páginas',
+          'NIE/TIE o documento acreditativo de residencia legal en España',
+          'Tarjeta de residencia anterior, si existe',
+          'Resolución inicial de concesión de residencia o protección temporal, si existe',
+          'Certificado de empadronamiento familiar o colectivo actualizado',
+          'Certificado de guardería o centro infantil, solo si el menor asiste a un centro'
+        ]
+      },
+      {
+        title: 'Documentación de los progenitores',
+        items: [
+          'Pasaporte completo y en vigor de ambos progenitores',
+          'NIE/TIE de ambos progenitores por ambas caras',
+          'Certificado de empadronamiento familiar, si no se aporta por separado',
+          'Datos de contacto: teléfono, correo electrónico y domicilio actual',
+          'Firma de ambos progenitores como representantes legales del menor',
+          'Documentación adicional si solo uno de los progenitores puede firmar'
+        ]
+      }
+    ],
+    process: [
+      {
+        title: 'Pago del servicio',
+        text: 'El cliente contrata el servicio mediante pago online seguro.'
+      },
+      {
+        title: 'Envío de documentación',
+        text: 'Después del pago, se envía la documentación necesaria por WhatsApp o correo electrónico.'
+      },
+      {
+        title: 'Revisión de viabilidad',
+        text: 'Comprobamos el requisito de 1 año de residencia legal y revisamos si el expediente está completo.'
+      },
+      {
+        title: 'Preparación del expediente',
+        text: 'Preparamos la solicitud, formularios y documentación digitalizada.'
+      },
+      {
+        title: 'Pago de tasa administrativa',
+        text: 'Cuando el expediente está preparado, indicamos cómo abonar la tasa oficial del Ministerio de Justicia.'
+      },
+      {
+        title: 'Presentación de la solicitud',
+        text: 'Presentamos la solicitud ante el Ministerio de Justicia o dejamos el expediente preparado para su presentación, según el caso contratado.'
+      },
+      {
+        title: 'Justificante y seguimiento inicial',
+        text: 'Entregamos el justificante de presentación, el número de expediente y una primera orientación de seguimiento.'
+      }
+    ],
+    notIncluded: [
+      'Tasa administrativa del Ministerio de Justicia: 104,05 €',
+      'Traducciones juradas, si fueran necesarias',
+      'Apostillas o legalizaciones, si fueran necesarias',
+      'Certificados oficiales que deban solicitarse aparte',
+      'Actuaciones extraordinarias por requerimientos complejos',
+      'Recursos administrativos o judiciales en caso de denegación',
+      'Trámites posteriores no incluidos expresamente'
+    ],
+    reviewBeforeHiring: [
+      'El menor aún no tiene clara la fecha de inicio de residencia legal.',
+      'Solo uno de los progenitores puede firmar.',
+      'Existen diferencias en nombres, apellidos o transliteraciones entre documentos.',
+      'El pasaporte está caducado.',
+      'No existe certificado literal de nacimiento español.',
+      'La residencia se ha concedido recientemente.',
+      'Hay cambios de domicilio no reflejados en el empadronamiento.',
+      'Hay documentación extranjera sin traducir o sin legalizar.'
+    ],
+    finalCta: {
+      title: '¿Tu hijo nació en España y ya tiene residencia legal?',
+      text:
+        'Podemos ayudarte a preparar y presentar su solicitud de nacionalidad española por residencia, revisando previamente si cumple el plazo legal de 1 año y si la documentación está completa.'
+    },
+    faqs: [
+      {
+        q: '¿Mi hijo obtiene la nacionalidad automáticamente por haber nacido en España?',
+        a:
+          'No. Nacer en España puede reducir el plazo exigido para solicitar la nacionalidad por residencia a 1 año, pero no concede automáticamente la nacionalidad española en todos los casos.'
+      },
+      {
+        q: '¿Cuándo se puede presentar la solicitud?',
+        a:
+          'Cuando el menor haya cumplido 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud.'
+      },
+      {
+        q: '¿Sirve la residencia de los padres?',
+        a:
+          'No basta con la residencia legal de los padres. Hay que verificar la residencia legal del menor.'
+      },
+      {
+        q: '¿La tasa está incluida en el precio?',
+        a:
+          'No. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, se paga aparte.'
+      },
+      {
+        q: '¿Pueden pagar ustedes la tasa por mí?',
+        a:
+          'Sí, podemos gestionarla en nombre del cliente cuando el expediente esté preparado, avisando previamente y cumplimentando los datos a nombre del menor solicitante.'
+      },
+      {
+        q: '¿Tienen que firmar los dos progenitores?',
+        a:
+          'Si ambos ejercen la patria potestad, lo recomendable es que firmen ambos progenitores como representantes legales del menor. Si solo puede firmar uno, revisamos la documentación que justifica la representación suficiente.'
+      },
+      {
+        q: '¿Hace falta autorización previa del Registro Civil?',
+        a:
+          'Si ambos progenitores están de acuerdo y firman la solicitud, conforme a la nota informativa del Ministerio de Justicia tras la Ley 8/2021, no debería exigirse autorización previa del Encargado del Registro Civil. Si hay discrepancia, debe estudiarse el caso concreto.'
+      },
+      {
+        q: '¿El menor tiene que hacer examen CCSE o DELE?',
+        a:
+          'En menores de edad no se exige realizar las pruebas de adultos en los términos ordinarios. La integración se valora conforme a la edad y circunstancias del menor.'
+      },
+      {
+        q: '¿Qué pasa si falta algún documento?',
+        a:
+          'Te indicaremos qué documento falta y cómo obtenerlo. No recomendamos presentar expedientes incompletos salvo estrategia justificada, porque suele terminar en requerimientos.'
+      }
     ]
   },
   {

@@ -1,11 +1,13 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Clock, ArrowRight } from 'lucide-react';
-import { articles, getArticle } from '@/lib/utils/blog';
+import { ArrowLeft, Clock, ArrowRight, Tag } from 'lucide-react';
+import { NewsletterForm } from '@/components/site/NewsletterForm';
+import { blogArticles, getArticle } from '@/lib/utils/blog';
+import { getDocRedirectTarget } from '@/lib/utils/docs';
 
 export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
+  return blogArticles.map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({
@@ -14,11 +16,39 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const doc = getDocRedirectTarget(slug);
+  if (doc) {
+    return {
+      title: doc.seoTitle ?? `${doc.title} | EXPERT Docs`,
+      description: doc.seoDescription ?? doc.excerpt,
+      alternates: {
+        canonical: `https://kseniailicheva.com/docs/${doc.slug}`
+      }
+    };
+  }
+
   const article = getArticle(slug);
   if (!article) return {};
+  const title = `${article.title} | EXPERT Blog`;
+  const canonicalUrl = `https://kseniailicheva.com/blog/${slug}`;
+
   return {
-    title: `${article.title} | EXPERT Blog`,
-    description: article.excerpt
+    title,
+    description: article.excerpt,
+    alternates: {
+      canonical: canonicalUrl
+    },
+    openGraph: {
+      title,
+      description: article.excerpt,
+      url: canonicalUrl,
+      type: 'article'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: article.excerpt
+    }
   };
 }
 
@@ -36,10 +66,13 @@ export default async function BlogArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const doc = getDocRedirectTarget(slug);
+  if (doc) redirect(`/docs/${doc.slug}`);
+
   const article = getArticle(slug);
   if (!article) return notFound();
 
-  const related = articles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
+  const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
   const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
 
   // Convert markdown-like body to simple HTML sections
@@ -82,10 +115,19 @@ export default async function BlogArticlePage({
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-3xl px-6 py-12 md:py-16">
+      <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
         <div className="grid gap-12 lg:grid-cols-[1fr_260px] lg:items-start">
           {/* Article body */}
           <article className="space-y-8">
+            <div className="flex flex-wrap gap-2">
+              {article.tags.map((tag) => (
+                <span key={tag} className="inline-flex min-h-8 items-center gap-1 border border-[#D4A017]/25 bg-white px-2.5 text-xs text-[#23364D]">
+                  <Tag className="h-3 w-3 text-[#D4A017]" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+
             {sections.map(({ heading, content }) => (
               <Section key={heading} heading={heading} content={content} />
             ))}
@@ -129,6 +171,16 @@ export default async function BlogArticlePage({
               </Link>
             </div>
 
+            <div className="border border-[#D4A017]/25 bg-white p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Novedades</p>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Recibe avisos sobre nuevos trámites, guías y cambios prácticos.
+              </p>
+              <div className="mt-4">
+                <NewsletterForm source={`blog:${article.slug}`} variant="light" layout="vertical" />
+              </div>
+            </div>
+
             {related.length > 0 && (
               <div className="border border-[#D4A017]/25 bg-white p-5">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Artículos relacionados</p>
@@ -151,6 +203,7 @@ export default async function BlogArticlePage({
             <div className="border border-[#D4A017]/25 bg-white p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Servicios relacionados</p>
               <ul className="mt-3 space-y-2 text-sm">
+                <li><Link href="/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana" className="text-[#D4A017] hover:text-[#F2C14E]">Nacionalidad menor nacido en España</Link></li>
                 <li><Link href="/servicios/declaraciones-impuestos" className="text-[#D4A017] hover:text-[#F2C14E]">Declaraciones e Impuestos</Link></li>
                 <li><Link href="/servicios/extranjeria-nacionalidad" className="text-[#D4A017] hover:text-[#F2C14E]">Extranjería y Nacionalidad</Link></li>
                 <li><Link href="/servicios/empresas-autonomos" className="text-[#D4A017] hover:text-[#F2C14E]">Empresas y Autónomos</Link></li>

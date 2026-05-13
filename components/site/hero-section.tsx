@@ -44,7 +44,7 @@ export function HeroSection() {
         <div className="relative z-10 flex items-center justify-center">
           <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-brand-gold/30 bg-brand-slate/90 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
             <div className="absolute inset-0 opacity-10">
-              <Image src="/logos/expert-isotipo.png" alt="EXPERT isotipo" fill className="object-contain" />
+              <Image src="/logos/EXPERT_logo/expert-isotipo.png" alt="EXPERT isotipo" fill className="object-contain" />
             </div>
             <div className="relative rounded-[28px] border border-brand-cream/10 bg-brand-navy p-4">
               <div className="overflow-hidden rounded-full border border-brand-gold/20 bg-brand-slate p-1">

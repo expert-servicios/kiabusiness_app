@@ -11,10 +11,11 @@ const quickLinks = [
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Para asesorias', href: '/para-asesorias' }
+  { label: 'Para asesorías', href: '/para-asesorias' }
 ] as const;
 
 const serviceLinks = [
+  { label: 'Nacionalidad menor nacido en España', href: '/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana' },
   { label: 'Declaraciones e Impuestos', href: '/servicios/declaraciones-impuestos' },
   { label: 'Extranjería y Nacionalidad', href: '/servicios/extranjeria-nacionalidad' },
   { label: 'Empresas y Autónomos', href: '/servicios/empresas-autonomos' },
@@ -22,6 +23,13 @@ const serviceLinks = [
   { label: 'Notaría y Propiedades', href: '/servicios/notaria-propiedades' },
   { label: 'Gestiones Especializadas', href: '/servicios/gestiones-especializadas' },
   { label: 'Formación', href: '/servicios/formacion' }
+] as const;
+
+const resourceLinks = [
+  { label: 'Base de conocimientos', href: '/docs' },
+  { label: 'Nacionalidad menor nacido en España', href: '/docs/nacionalidad-espanola-menor-nacido-en-espana' },
+  { label: 'Residencia legal del menor', href: '/docs/residencia-legal-menor-nacido-espana-nacionalidad' },
+  { label: 'Documentos para el expediente', href: '/docs/documentos-nacionalidad-menor-nacido-espana' }
 ] as const;
 
 const socialLinks = [
@@ -66,7 +74,7 @@ const socialLinks = [
 export function Footer() {
   return (
     <footer className="bg-[#0D1B2A] py-10 text-[#F8F6F1]">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-[1.25fr_0.75fr_0.9fr_1fr]">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-2 lg:grid-cols-[1.15fr_0.72fr_0.95fr_0.95fr_1fr]">
         <div>
           <Link href="/" className="inline-block">
             <Image
@@ -82,9 +90,11 @@ export function Footer() {
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
               Holded Solution Partner certificado
             </p>
-            <img
+            <Image
               src="/Holded-Logotype-Red_Light.svg"
               alt="Holded"
+              width={128}
+              height={32}
               className="h-8 w-auto opacity-90"
             />
           </div>
@@ -107,6 +117,19 @@ export function Footer() {
           <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Servicios</h3>
           <ul className="space-y-2 text-sm text-[#9CA3AF]">
             {serviceLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="transition hover:text-[#D4A017]">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Guías</h3>
+          <ul className="space-y-2 text-sm text-[#9CA3AF]">
+            {resourceLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="transition hover:text-[#D4A017]">
                   {link.label}

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { categories } from '@/lib/utils/catalog';
-import { articles } from '@/lib/utils/blog';
+import { categories, services } from '@/lib/utils/catalog';
+import { blogArticles } from '@/lib/utils/blog';
+import { docs } from '@/lib/utils/docs';
 
 const BASE = 'https://kseniailicheva.com';
 
@@ -12,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/holded`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/sobre-mi`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/blog`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/docs`, changeFrequency: 'weekly', priority: 0.85 },
     { url: `${BASE}/contacto`, changeFrequency: 'yearly', priority: 0.6 },
     { url: `${BASE}/solicitar-presupuesto`, changeFrequency: 'yearly', priority: 0.6 },
     { url: `${BASE}/para-asesorias`, changeFrequency: 'monthly', priority: 0.5 },
@@ -31,11 +33,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8
   }));
 
-  const blogRoutes: MetadataRoute.Sitemap = articles.map((article) => ({
+  const serviceRoutes: MetadataRoute.Sitemap = services.map((service) => ({
+    url: `${BASE}/servicios/${service.categoria}/${service.slug}`,
+    changeFrequency: 'monthly',
+    priority: 0.7
+  }));
+
+  const blogRoutes: MetadataRoute.Sitemap = blogArticles.map((article) => ({
     url: `${BASE}/blog/${article.slug}`,
     changeFrequency: 'yearly',
     priority: 0.6
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...blogRoutes];
+  const docRoutes: MetadataRoute.Sitemap = docs.map((doc) => ({
+    url: `${BASE}/docs/${doc.slug}`,
+    changeFrequency: 'monthly',
+    priority: 0.75
+  }));
+
+  return [...staticRoutes, ...categoryRoutes, ...serviceRoutes, ...docRoutes, ...blogRoutes];
 }
