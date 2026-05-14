@@ -69,80 +69,102 @@ export async function POST(req: NextRequest) {
           const paymentId = (session.payment_intent as string) ?? session.id;
           const currency = session.currency?.toUpperCase() ?? 'EUR';
 
-          await supabaseAdmin
-            .from('quotes')
-            .update({ status: 'paid', stripe_checkout_id: session.id })
-            .eq('id', quoteId);
+          // ── Idempotency: skip if order already exists for this payment ──
+          const { data: existingOrder } = await supabaseAdmin
+            .from('orders')
+            .select('id')
+            .eq('stripe_payment_id', paymentId)
+            .maybeSingle();
 
-          // ── Insert order ──
-          const { data: newOrder } = await supabaseAdmin.from('orders').insert({
-            quote_id: quoteId,
-            client_id: quote.client_id,
-            stripe_payment_id: paymentId,
-            amount_eur: amountEur,
-            currency,
-            status: 'paid',
-            metadata: {
-              checkout_session: {
-                id: session.id,
-                payment_intent: session.payment_intent,
-                customer_email: session.customer_email
-              }
-            }
-          }).select('id').single();
+          if (existingOrder) {
+            console.log('[webhook] order already exists for payment', paymentId, '— skipping');
+          } else {
+            await supabaseAdmin
+              .from('quotes')
+              .update({ status: 'paid', stripe_checkout_id: session.id })
+              .eq('id', quoteId);
 
-          if (quote.client_id) {
-            await supabaseAdmin.from('cases').insert({
+            // ── Insert order ──
+            const { data: newOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
               quote_id: quoteId,
               client_id: quote.client_id,
-              category: 'presupuesto',
-              service: quote.title ?? 'servicio',
-              state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
-              docs_checklist: Array.isArray(quote.docs_checklist) ? quote.docs_checklist : []
-            });
-          }
+              stripe_payment_id: paymentId,
+              amount_eur: amountEur,
+              currency,
+              status: 'paid',
+              metadata: {
+                checkout_session: {
+                  id: session.id,
+                  payment_intent: session.payment_intent,
+                  customer_email: session.customer_email
+                }
+              }
+            }).select('id').single();
 
-          const clientEmail =
-            session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
-
-          if (clientEmail) {
-            let clientName = clientEmail.split('@')[0];
-            if (quote.client_id) {
-              const info = await getClientEmail(quote.client_id);
-              if (info) clientName = info.name;
+            if (orderError) {
+              console.error('[webhook] order insert failed:', orderError);
             }
 
-            // ── Send confirmation email ──
-            const tpl = paymentConfirmed(clientName, amountEur, quote.title ?? 'Servicio contratado');
-            await sendEmail({
-              to: clientEmail,
-              eventType: 'payment.confirmed',
-              ...tpl,
-              metadata: { quote_id: quoteId, session_id: session.id }
-            });
+            if (quote.client_id) {
+              const { data: existingCase } = await supabaseAdmin
+                .from('cases')
+                .select('id')
+                .eq('quote_id', quoteId)
+                .maybeSingle();
 
-            // ── Holded sync (non-blocking — errors don't affect main flow) ──
-            syncOrderToHolded({
-              clientName,
-              clientEmail,
-              description: quote.title ?? 'Servicio EXPERT',
-              amountEur,
-              orderId: newOrder?.id,
-              localEntity: 'orders'
-            }).then((result) => {
-              if (result.invoiceId && newOrder?.id) {
-                supabaseAdmin.from('orders').update({
-                  metadata: {
-                    checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: session.customer_email },
-                    holded: {
-                      contact_id: result.contactId,
-                      invoice_id: result.invoiceId,
-                      sync_event_id: result.syncEventId
-                    }
-                  }
-                }).eq('id', newOrder.id).then(() => {});
+              if (!existingCase) {
+                await supabaseAdmin.from('cases').insert({
+                  quote_id: quoteId,
+                  client_id: quote.client_id,
+                  category: 'presupuesto',
+                  service: quote.title ?? 'servicio',
+                  state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
+                  docs_checklist: Array.isArray(quote.docs_checklist) ? quote.docs_checklist : []
+                });
               }
-            }).catch((err) => console.error('[webhook] holded sync failed:', err));
+            }
+
+            const clientEmail =
+              session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+
+            if (clientEmail) {
+              let clientName = clientEmail.split('@')[0];
+              if (quote.client_id) {
+                const info = await getClientEmail(quote.client_id);
+                if (info) clientName = info.name;
+              }
+
+              const tpl = paymentConfirmed(clientName, amountEur, quote.title ?? 'Servicio contratado');
+              await sendEmail({
+                to: clientEmail,
+                eventType: 'payment.confirmed',
+                ...tpl,
+                metadata: { quote_id: quoteId, session_id: session.id }
+              });
+
+              // Holded sync (non-blocking — errors don't affect main flow)
+              syncOrderToHolded({
+                clientName,
+                clientEmail,
+                description: quote.title ?? 'Servicio EXPERT',
+                amountEur,
+                orderId: newOrder?.id,
+                localEntity: 'orders'
+              }).then((result) => {
+                if (result.invoiceId && newOrder?.id) {
+                  supabaseAdmin.from('orders').update({
+                    metadata: {
+                      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: session.customer_email },
+                      holded: {
+                        contact_id: result.contactId,
+                        invoice_id: result.invoiceId,
+                        sync_event_id: result.syncEventId
+                      }
+                    }
+                  }).eq('id', newOrder.id).then(() => {});
+                }
+              }).catch((err) => console.error('[webhook] holded sync failed:', err));
+            }
           }
         }
       }

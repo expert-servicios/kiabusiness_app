@@ -5,9 +5,9 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await adminSupabase
       .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', sessionData.session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !profile?.stripe_customer_id) {

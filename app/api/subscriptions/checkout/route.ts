@@ -16,9 +16,9 @@ const VALID_PLAN_IDS = [
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const { data: profile } = await adminSupabase
       .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', sessionData.session.user.id)
+      .eq('id', user.id)
       .single();
 
     const stripe = getStripeClient();
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: profile?.stripe_customer_id ?? undefined,
-      customer_email: profile?.stripe_customer_id ? undefined : sessionData.session.user.email,
-      client_reference_id: sessionData.session.user.id,
-      metadata: { user_id: sessionData.session.user.id },
+      customer_email: profile?.stripe_customer_id ? undefined : user.email,
+      client_reference_id: user.id,
+      metadata: { user_id: user.id },
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/gracias/pago?type=subscription`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/suscripciones`

@@ -7,22 +7,28 @@ import { subscriptionInvite } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 
+const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
+  STRIPE_PLAN_MONTHLY_99:  process.env.STRIPE_PLAN_MONTHLY_99,
+  STRIPE_PLAN_MONTHLY_199: process.env.STRIPE_PLAN_MONTHLY_199,
+  STRIPE_PLAN_MONTHLY_349: process.env.STRIPE_PLAN_MONTHLY_349
+};
+
 const schema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
   planName: z.string().min(2),
   amountEur: z.number().positive(),
-  stripePriceEnvKey: z.string().min(1, 'Clave de precio Stripe requerida')
+  stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199', 'STRIPE_PLAN_MONTHLY_349'])
 });
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
   const supabase = createServerSupabaseClient(request);
-  const { data: sessionData, error } = await supabase.auth.getSession();
-  if (error || !sessionData.session?.user) return null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
 
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
-    .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
-  return profile?.role === 'admin' ? sessionData.session.user.id : null;
+    .from('profiles').select('role').eq('id', user.id).single();
+  return profile?.role === 'admin' ? user.id : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -40,10 +46,10 @@ export async function POST(request: NextRequest) {
 
     const { clientEmail, planName, amountEur, stripePriceEnvKey } = parsed.data;
 
-    // Resolve Stripe price ID from env key
-    const priceId = process.env[stripePriceEnvKey];
+    // Resolve Stripe price ID from allowlist only
+    const priceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
     if (!priceId) {
-      return NextResponse.json({ error: `Precio Stripe no configurado: ${stripePriceEnvKey}` }, { status: 500 });
+      return NextResponse.json({ error: 'Precio Stripe no configurado para el plan seleccionado' }, { status: 500 });
     }
 
     const adminSupabase = getSupabaseAdmin();

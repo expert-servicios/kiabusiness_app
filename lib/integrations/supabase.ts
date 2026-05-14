@@ -1,6 +1,6 @@
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 function getSupabaseUrl() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,15 +35,18 @@ export function createBrowserSupabaseClient() {
 }
 
 export function createServerSupabaseClient(request: NextRequest) {
-  return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+  // response is used only to propagate refreshed session cookies back to the browser
+  const response = NextResponse.next({ request: { headers: request.headers } });
+  const client = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
-      getAll: () =>
-        request.cookies.getAll().map((cookie) => ({
-          name: cookie.name,
-          value: cookie.value
-        }))
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookiesToSet) =>
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        )
     }
   });
+  return client;
 }
 
 export async function getFirstAdminProfileId() {

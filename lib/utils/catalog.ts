@@ -47,7 +47,9 @@ export type Service = {
   description: string;
   price?: string;
   duration?: string;
+  stripePriceId?: string;
   includes: string[];
+  requiredDocs?: string[];
   faqs: { q: string; a: string }[];
 };
 
@@ -298,6 +300,44 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Qué familiares puedo reagrupar?', a: 'Cónyuge o pareja de hecho, hijos menores de 18 años (o mayores dependientes), y padres mayores dependientes económicamente.' }
+    ]
+  },
+  {
+    slug: 'permiso-residencia-inicial',
+    categoria: 'extranjeria-nacionalidad',
+    name: 'Permiso Inicial de Residencia',
+    shortDescription: 'Obtención del primer permiso de residencia legal en España para ciudadanos extracomunitarios.',
+    description:
+      'El permiso inicial de residencia es el primer paso para regularizar tu situación en España de forma legal. Gestionamos el expediente completo: evaluamos tu situación personal, determinamos la vía más adecuada (arraigo laboral, circunstancias excepcionales, reagrupación, trabajo…), preparamos toda la documentación y la presentamos ante la Oficina de Extranjería. Te acompañamos en cada fase hasta recibir la resolución favorable y recoger tu TIE.',
+    price: '490 € + IVA',
+    duration: '2–4 meses',
+    stripePriceId: 'price_1TX3epLeYwwgvux4mspOiVLg',
+    includes: [
+      'Evaluación gratuita de la vía más adecuada a tu situación',
+      'Revisión y guía de aportación de documentación',
+      'Cumplimentación del formulario EX-01 o EX-02 según proceda',
+      'Presentación telemática o presencial ante la Oficina de Extranjería',
+      'Seguimiento activo del expediente y atención a requerimientos',
+      'Notificación de resolución y pasos para recoger el TIE'
+    ],
+    requiredDocs: [
+      'Pasaporte en vigor (con copia de todas las páginas)',
+      'Formulario de solicitud (EX-01 o EX-02) cumplimentado',
+      'Fotografía reciente en color tamaño carné',
+      'Justificante de pago de la tasa (Modelo 790 código 052)',
+      'Certificado de empadronamiento (mínimo 3 años continuados si aplica arraigo)',
+      'Contrato de trabajo o oferta laboral firmada (si aplica)',
+      'Medios económicos suficientes (nóminas, extractos bancarios o similar)',
+      'Seguro médico privado sin copago y sin carencia (si no cotiza a SS)',
+      'Antecedentes penales del país de origen apostillados y traducidos',
+      'Certificado de antecedentes penales de España'
+    ],
+    faqs: [
+      { q: '¿Cuánto tarda el permiso inicial de residencia?', a: 'El plazo legal de resolución es de 3 meses desde la presentación. En la práctica, en la mayoría de oficinas de extranjería el tiempo oscila entre 2 y 4 meses, aunque puede alargarse en provincias con mayor carga de trabajo.' },
+      { q: '¿Qué pasa si no resuelven en el plazo legal?', a: 'Si la Administración no resuelve en 3 meses, opera el silencio administrativo negativo. Sin embargo, esto abre la vía de recurso. Te orientamos sobre cómo actuar en ese caso.' },
+      { q: '¿Puedo trabajar mientras tramito el permiso inicial?', a: 'Depende de la vía. Con el arraigo laboral, al presentar la solicitud se puede solicitar un permiso provisional de trabajo. En otras vías no está permitido trabajar durante la tramitación.' },
+      { q: '¿Qué es el TIE?', a: 'La Tarjeta de Identidad de Extranjero (TIE) es el documento físico que acredita tu permiso de residencia. Se solicita en comisaría una vez recibida la resolución favorable y se entrega en un plazo aproximado de 30–45 días.' },
+      { q: '¿Necesito venir en persona a vuestras oficinas?', a: 'No. Toda la gestión se realiza de forma online. Tú nos envías la documentación escaneada y nosotros preparamos y presentamos el expediente. Solo necesitarás acudir presencialmente a la Oficina de Extranjería si es obligatorio para tu vía concreta.' }
     ]
   },
 

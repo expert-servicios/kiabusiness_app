@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   handleWhatsAppWebhook,
@@ -22,7 +23,23 @@ export async function GET(request: NextRequest) {
 // POST: Incoming WhatsApp messages from Meta Cloud
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    const rawBody = await request.text();
+    const appSecret = process.env.META_WHATSAPP_APP_SECRET;
+    const signature = request.headers.get('x-hub-signature-256') ?? '';
+
+    if (!appSecret) {
+      console.error('META_WHATSAPP_APP_SECRET not configured');
+      return NextResponse.json({ error: 'Configuración incompleta' }, { status: 500 });
+    }
+
+    const expected = 'sha256=' + createHmac('sha256', appSecret).update(rawBody).digest('hex');
+    const sigBuffer = Buffer.from(signature.padEnd(expected.length));
+    const expBuffer = Buffer.from(expected);
+    if (sigBuffer.length !== expBuffer.length || !timingSafeEqual(sigBuffer, expBuffer)) {
+      return NextResponse.json({ error: 'Firma inválida' }, { status: 403 });
+    }
+
+    const payload = JSON.parse(rawBody);
     const message = await handleWhatsAppWebhook(payload);
 
     if (message) {

@@ -5,14 +5,14 @@ type SupabaseAdminClient = ReturnType<typeof getSupabaseAdmin>;
 
 export async function requireAdminClient(request: NextRequest): Promise<SupabaseAdminClient | null> {
   const supabase = createServerSupabaseClient(request);
-  const { data: sessionData, error } = await supabase.auth.getSession();
-  if (error || !sessionData.session?.user) return null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
 
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
     .from('profiles')
     .select('role')
-    .eq('id', sessionData.session.user.id)
+    .eq('id', user.id)
     .single();
 
   return profile?.role === 'admin' ? admin : null;

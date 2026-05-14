@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeClient } from '@/lib/integrations/stripe';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Require authenticated session
+    const supabase = createServerSupabaseClient(request);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
     const stripe = getStripeClient();
     const { id } = await params;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
@@ -11,13 +18,23 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const supabaseAdmin = getSupabaseAdmin();
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
-      .select('amount_eur,title,description,status')
+      .select('amount_eur,title,description,status,client_id')
       .eq('id', id)
       .single();
 
     if (quoteError || !quote) {
       console.error('Quote lookup failed:', quoteError);
       return NextResponse.json({ error: 'Presupuesto no encontrado' }, { status: 404 });
+    }
+
+    // Only the quote owner can pay it
+    if (quote.client_id !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    // Reject already paid or expired quotes
+    if (quote.status === 'paid' || quote.status === 'expired') {
+      return NextResponse.json({ error: 'Este presupuesto no admite pago en su estado actual' }, { status: 400 });
     }
 
     const amountEur = Number(quote.amount_eur);

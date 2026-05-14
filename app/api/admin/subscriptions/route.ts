@@ -4,14 +4,14 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session?.user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase
-      .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
+      .from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }

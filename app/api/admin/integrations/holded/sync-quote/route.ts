@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await syncQuoteToHolded({
-      quoteId: quote.id,
+      orderId: quote.id,
       clientName,
       clientEmail,
       clientPhone,

@@ -4,6 +4,19 @@ import { fileURLToPath } from 'node:url';
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 
+const SECURITY_HEADERS = [
+  // Prevent page from being embedded in iframes (clickjacking protection)
+  { key: 'X-Frame-Options', value: 'DENY' },
+  // Prevent MIME type sniffing
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  // Limit referrer info sent to external sites
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  // Force HTTPS for 2 years (only effective in production over HTTPS)
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  // Disable browser features not used by this app
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' }
+];
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -13,6 +26,14 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: rootDir
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: SECURITY_HEADERS
+      }
+    ];
   },
   async redirects() {
     return [

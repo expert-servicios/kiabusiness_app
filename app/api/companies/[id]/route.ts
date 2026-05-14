@@ -27,8 +27,8 @@ export async function PATCH(
   try {
     const { id } = await params;
     const supabase = createServerSupabaseClient(request);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
     const body = await request.json();
     const parse = updateSchema.safeParse(body);
@@ -43,13 +43,13 @@ export async function PATCH(
       .from('profile_companies')
       .select('role')
       .eq('company_id', id)
-      .eq('profile_id', session.user.id)
+      .eq('profile_id', user.id)
       .single();
 
     const { data: adminProfile } = await admin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (membership?.role !== 'owner' && adminProfile?.role !== 'admin') {

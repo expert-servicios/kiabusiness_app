@@ -3,11 +3,11 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
-  const { data: sessionData, error } = await supabase.auth.getSession();
-  if (error || !sessionData.session?.user) return null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
-    .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
+    .from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return null;
   return admin;
 }

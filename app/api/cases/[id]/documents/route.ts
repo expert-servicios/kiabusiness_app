@@ -5,8 +5,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session?.user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
@@ -31,12 +31,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { id: caseId } = await params;
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session?.user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const userId = sessionData.session.user.id;
+    const userId = user.id;
 
     // Verify the case belongs to this user (or user is admin)
     const adminSupabase = getSupabaseAdmin();

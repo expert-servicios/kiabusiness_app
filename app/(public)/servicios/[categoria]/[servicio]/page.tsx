@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Check, Clock, MessageCircle } from 'lucide-react';
+import { Check, Clock, FileText, MessageCircle } from 'lucide-react';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
 import type { CategorySlug } from '@/lib/utils/catalog';
+import { ServiceCheckoutButton } from './ServiceCheckoutButton';
 
 export function generateStaticParams() {
   const params: { categoria: string; servicio: string }[] = [];
@@ -74,12 +75,16 @@ export default async function ServicioDetallePage({
           </div>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/solicitar-presupuesto"
-              className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-            >
-              Contratar / Solicitar presupuesto
-            </Link>
+            {service.stripePriceId ? (
+              <ServiceCheckoutButton priceId={service.stripePriceId} label="Contratar ahora — pago seguro" />
+            ) : (
+              <Link
+                href="/solicitar-presupuesto"
+                className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+              >
+                Contratar / Solicitar presupuesto
+              </Link>
+            )}
             <a
               href="https://wa.me/34696550480"
               className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
@@ -113,6 +118,21 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
+            {service.requiredDocs && service.requiredDocs.length > 0 && (
+              <div className="mt-10">
+                <h2 className="font-serif text-2xl font-bold">Documentación necesaria</h2>
+                <p className="mt-2 text-sm text-[#23364D]">Prepara los siguientes documentos antes de iniciar el trámite:</p>
+                <ul className="mt-5 space-y-3">
+                  {service.requiredDocs.map((doc) => (
+                    <li key={doc} className="flex items-start gap-3">
+                      <FileText className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" strokeWidth={2} />
+                      <span className="text-sm leading-6 text-[#23364D]">{doc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {service.faqs.length > 0 && (
               <div className="mt-12">
                 <h2 className="font-serif text-2xl font-bold">Preguntas frecuentes</h2>
@@ -134,20 +154,36 @@ export default async function ServicioDetallePage({
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Siguiente paso</p>
               <h3 className="mt-3 font-serif text-xl font-bold">¿Listo para empezar?</h3>
               <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">
-                Cuéntanos tu caso y te orientamos sin compromiso. Gestión 100% online.
+                {service.stripePriceId
+                  ? 'Contrata online de forma segura. Pago único, gestión 100% online.'
+                  : 'Cuéntanos tu caso y te orientamos sin compromiso. Gestión 100% online.'}
               </p>
-              <Link
-                href="/solicitar-presupuesto"
-                className="mt-5 block w-full bg-[#D4A017] px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-              >
-                Solicitar presupuesto
-              </Link>
-              <a
-                href="https://wa.me/34696550480"
-                className="mt-3 block w-full border border-[#D4A017]/50 px-4 py-3 text-center text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]"
-              >
-                Escribir por WhatsApp
-              </a>
+              {service.stripePriceId ? (
+                <div className="mt-5">
+                  <ServiceCheckoutButton priceId={service.stripePriceId} />
+                  <Link
+                    href="/solicitar-presupuesto"
+                    className="mt-3 block w-full border border-[#D4A017]/50 px-4 py-3 text-center text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+                  >
+                    Tengo dudas, prefiero hablar
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/solicitar-presupuesto"
+                    className="mt-5 block w-full bg-[#D4A017] px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                  >
+                    Solicitar presupuesto
+                  </Link>
+                  <a
+                    href="https://wa.me/34696550480"
+                    className="mt-3 block w-full border border-[#D4A017]/50 px-4 py-3 text-center text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+                  >
+                    Escribir por WhatsApp
+                  </a>
+                </>
+              )}
             </div>
 
             {relatedServices.length > 0 && (

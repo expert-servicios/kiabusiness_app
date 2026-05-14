@@ -26,9 +26,9 @@ type CompanyMembershipRow = {
 
 async function getUser(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.user) return null;
-  return session.user;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return user;
 }
 
 // GET /api/companies — list user's companies

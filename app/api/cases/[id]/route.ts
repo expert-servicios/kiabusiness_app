@@ -109,15 +109,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const sessionSupabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await sessionSupabase.auth.getSession();
+    const { data: { user }, error: authError } = await sessionSupabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const adminSupabase = getSupabaseAdmin();
     const { data: profile, error: profileError } = await adminSupabase
-      .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
+      .from('profiles').select('role').eq('id', user.id).single();
 
     if (profileError || profile?.role !== 'admin') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
@@ -147,7 +147,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Build update payload
-    const updatePayload: Record<string, unknown> = {};
+    const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (state) updatePayload.state = state;
     if (state === 'finalizado' || state === 'entregado') updatePayload.closed_at = new Date().toISOString();
     if (admin_note !== undefined) updatePayload.admin_note = admin_note;
@@ -166,7 +166,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     await adminSupabase.from('audit_logs').insert({
-      actor_id: sessionData.session.user.id,
+      actor_id: user.id,
       action: 'case.updated',
       entity: 'cases',
       entity_id: id,

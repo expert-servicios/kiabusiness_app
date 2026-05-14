@@ -18,9 +18,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const paramsData = await params;
     const sessionSupabase = createServerSupabaseClient(request);
-    const { data: sessionData, error: sessionError } = await sessionSupabase.auth.getSession();
+    const { data: { user }, error: authError } = await sessionSupabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data: profile, error: profileError } = await adminSupabase
       .from('profiles')
       .select('role')
-      .eq('id', sessionData.session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || profile?.role !== 'admin') {

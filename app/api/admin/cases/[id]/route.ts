@@ -8,14 +8,14 @@ export async function GET(
   try {
     const { id } = await params;
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.user) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const admin = getSupabaseAdmin();
     const { data: profile } = await admin
-      .from('profiles').select('role').eq('id', sessionData.session.user.id).single();
+      .from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }

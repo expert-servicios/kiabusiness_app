@@ -156,23 +156,93 @@ export async function draftAdminReply(params: {
   }
 }
 
-/**
- * Summarize the history of a case for admin review.
- * TODO: fetch case + messages + documents before calling, pass as context.
- */
 export async function summarizeCaseHistory(caseId: string): Promise<CaseSummary> {
-  console.log('[AI stub] summarizeCaseHistory — implement context fetch first', { caseId });
-  return { summary: '', keyDates: [], pendingActions: [] };
+  const client = getClient();
+  if (!client) return { summary: '', keyDates: [], pendingActions: [] };
+
+  const supabase = getSupabaseAdmin();
+  const [caseResult, messagesResult, documentsResult] = await Promise.all([
+    supabase.from('cases').select('category,service,state,opened_at,closed_at,admin_note').eq('id', caseId).single(),
+    supabase.from('messages').select('body,sender_role,created_at').eq('case_id', caseId).order('created_at').limit(50),
+    supabase.from('documents').select('original_name,state,created_at').eq('case_id', caseId).order('created_at')
+  ]);
+
+  const caseData = caseResult.data;
+  if (!caseData) return { summary: '', keyDates: [], pendingActions: [] };
+
+  const context = [
+    `Expediente: ${caseData.service} (${caseData.category}) — Estado: ${caseData.state}`,
+    `Abierto: ${caseData.opened_at ?? 'desconocido'}`,
+    caseData.admin_note ? `Nota admin: ${caseData.admin_note}` : '',
+    '',
+    'Mensajes:',
+    ...(messagesResult.data ?? []).map((m) => `[${m.sender_role} ${m.created_at}] ${m.body}`),
+    '',
+    'Documentos:',
+    ...(documentsResult.data ?? []).map((d) => `- ${d.original_name} (${d.state}) — ${d.created_at}`)
+  ].filter(Boolean).join('\n');
+
+  const t0 = Date.now();
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: `Resume este expediente de asesoría en español. Devuelve JSON con "summary" (texto breve), "keyDates" (array de strings), "pendingActions" (array de acciones pendientes). Contexto:\n${context}`
+      }]
+    });
+
+    const text = message.content[0].type === 'text' ? message.content[0].text : '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const result: CaseSummary = jsonMatch
+      ? JSON.parse(jsonMatch[0])
+      : { summary: '', keyDates: [], pendingActions: [] };
+
+    await logAiEvent({ eventType: 'summarizeCaseHistory', input: { caseId }, output: result, latencyMs: Date.now() - t0 });
+    return result;
+  } catch (err) {
+    await logAiEvent({ eventType: 'summarizeCaseHistory', input: { caseId }, error: String(err), latencyMs: Date.now() - t0 });
+    return { summary: '', keyDates: [], pendingActions: [] };
+  }
 }
 
-/**
- * Detect which required documents are missing for a given case and service type.
- * TODO: fetch uploaded docs and compare against a known checklist.
- */
 export async function detectMissingDocuments(
   caseId: string,
   serviceType: string
 ): Promise<MissingDocumentsResult> {
-  console.log('[AI stub] detectMissingDocuments — implement checklist first', { caseId, serviceType });
-  return { missing: [], present: [] };
+  const client = getClient();
+  if (!client) return { missing: [], present: [] };
+
+  const supabase = getSupabaseAdmin();
+  const { data: docs } = await supabase
+    .from('documents')
+    .select('original_name,state')
+    .eq('case_id', caseId);
+
+  const uploaded = (docs ?? []).map((d) => d.original_name).filter(Boolean);
+
+  const t0 = Date.now();
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 384,
+      messages: [{
+        role: 'user',
+        content: `Para un expediente de "${serviceType}" en España, determina qué documentos pueden faltar. Documentos ya subidos: ${uploaded.length ? uploaded.join(', ') : 'ninguno'}. Devuelve JSON con "missing" (array de documentos que probablemente faltan) y "present" (array de los ya subidos que reconoces). Sé conciso.`
+      }]
+    });
+
+    const text = message.content[0].type === 'text' ? message.content[0].text : '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const result: MissingDocumentsResult = jsonMatch
+      ? JSON.parse(jsonMatch[0])
+      : { missing: [], present: uploaded };
+
+    await logAiEvent({ eventType: 'detectMissingDocuments', input: { caseId, serviceType, uploaded }, output: result, latencyMs: Date.now() - t0 });
+    return result;
+  } catch (err) {
+    await logAiEvent({ eventType: 'detectMissingDocuments', input: { caseId, serviceType }, error: String(err), latencyMs: Date.now() - t0 });
+    return { missing: [], present: uploaded };
+  }
 }

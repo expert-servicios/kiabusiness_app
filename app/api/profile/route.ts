@@ -13,22 +13,22 @@ const profileUpdateSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error } = await supabase.auth.getSession();
-    if (error || !sessionData.session?.user) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { data: profile, error: fetchError } = await getSupabaseAdmin()
       .from('profiles')
       .select('id,role,full_name,phone,whatsapp_number,whatsapp_consent,country,active_company_id,created_at')
-      .eq('id', sessionData.session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (fetchError || !profile) {
       return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json({ profile: { ...profile, email: sessionData.session.user.email } });
+    return NextResponse.json({ profile: { ...profile, email: user.email } });
   } catch (error) {
     console.error('Profile GET error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient(request);
-    const { data: sessionData, error } = await supabase.auth.getSession();
-    if (error || !sessionData.session?.user) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     const { data: profile, error: updateError } = await getSupabaseAdmin()
       .from('profiles')
       .update(updates)
-      .eq('id', sessionData.session.user.id)
+      .eq('id', user.id)
       .select('id,full_name,phone,whatsapp_number,whatsapp_consent')
       .single();
 

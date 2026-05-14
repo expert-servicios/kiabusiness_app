@@ -534,6 +534,293 @@ Más allá del precio de la suscripción, hay que valorar el tiempo dedicado a c
 
 Si tienes dudas, podemos hacer una valoración gratuita de tu situación y recomendarte la herramienta más adecuada.
     `
+  },
+  {
+    slug: 'permiso-residencia-inicial-guia-2025',
+    category: 'Extranjería',
+    title: 'Permiso inicial de residencia en España: guía completa 2025',
+    excerpt:
+      'Todo lo que necesitas saber para obtener tu primer permiso de residencia en España: vías disponibles, requisitos, plazos y errores más comunes que debes evitar.',
+    date: '14 may 2026',
+    readTime: '9 min',
+    body: `
+## ¿Qué es el permiso inicial de residencia?
+
+El permiso inicial de residencia —también llamado autorización de residencia temporal— es el documento que permite a un ciudadano extracomunitario vivir legalmente en España durante un período determinado. Es el punto de partida de cualquier trayectoria migratoria regular en nuestro país.
+
+Sin este permiso, la estancia en España más allá de 90 días (para quienes lo necesiten) es irregular y puede acarrear sanciones, expulsión y prohibición de entrada.
+
+## Vías para obtener el primer permiso de residencia
+
+Existen varias vías según tu situación personal:
+
+### 1. Arraigo social
+Requiere **3 años de estancia continuada** en España, aunque sea en situación irregular, y un contrato de trabajo o medios económicos propios. Es una de las vías más utilizadas.
+
+### 2. Arraigo laboral
+Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
+
+### 3. Arraigo familiar
+Para personas que tienen un vínculo familiar de primer grado (hijo/a español/a o padre/madre de menor español/a). No requiere tiempo mínimo de estancia.
+
+### 4. Circunstancias excepcionales
+Incluye casos de protección internacional, colaboración con autoridades, trata de seres humanos y violencia de género.
+
+### 5. Residencia por reagrupación familiar
+Cuando un familiar con residencia legal en España solicita traerte.
+
+### 6. Visado de larga duración
+Tramitado en el consulado español de tu país de origen antes de viajar. Incluye el visado de trabajo, el visado de estudiante o el visado de nómada digital.
+
+## Requisitos generales para el arraigo social (la vía más común)
+
+- **Estancia continuada en España de al menos 3 años** (acreditada mediante empadronamiento, contrato de arrendamiento, facturas, etc.)
+- **Ausencia de antecedentes penales** en España y en el país de origen (últimos 5 años)
+- **Contrato de trabajo** de al menos 30 horas semanales, **o** medios económicos propios equivalentes al 100 % del IPREM mensual
+- **No estar en situación de prohibición de entrada** en España o en la UE
+- **Formulario EX-01** cumplimentado y firmado
+
+## Documentos necesarios
+
+1. Pasaporte en vigor (todas las páginas fotocopiadas)
+2. Formulario EX-01 (solicitud)
+3. Fotografía reciente en color tamaño carné
+4. Justificante de pago de la tasa modelo 790 código 052
+5. Certificado de empadronamiento (con historial de 3 años o más)
+6. Contrato de trabajo firmado por empresa y trabajador
+7. Antecedentes penales del país de origen (apostillados y traducidos oficialmente)
+8. Certificado de antecedentes penales de España (solicitado en la Policía o por internet)
+
+## Plazos y proceso
+
+| Fase | Plazo aproximado |
+|---|---|
+| Preparación de documentación | 2–4 semanas |
+| Presentación en Extranjería | 1 día |
+| Resolución administrativa | 3 meses (plazo legal) |
+| Recogida del TIE en comisaría | 30–45 días tras resolución |
+
+El **plazo legal de resolución es de 3 meses**. Si la Administración no resuelve en ese tiempo, opera el silencio administrativo negativo, aunque esto no significa que la solicitud esté denegada: sigue tramitándose.
+
+## Errores más comunes que retrasan o frustran el expediente
+
+1. **Pasaporte caducado o próximo a caducar**: debe tener validez mínima igual al permiso solicitado (generalmente 1 año).
+2. **Antecedentes del país de origen sin apostillar o sin traducción jurada**: son documentos extranjeros que necesitan apostilla del Convenio de La Haya y traducción oficial al español.
+3. **Empadronamiento que no refleja continuidad**: una baja en el padrón (aunque sea temporal) puede romper el cómputo de los 3 años.
+4. **Contrato de trabajo que no cumple las horas mínimas**: contratos a tiempo parcial con pocas horas pueden no ser suficientes.
+5. **Presentar la solicitud en la oficina incorrecta**: debes solicitar en la Oficina de Extranjería de la provincia donde estás empadronado.
+
+## ¿Puedo trabajar mientras tramito el permiso?
+
+Con el **arraigo social**: no, salvo autorización expresa provisional.
+Con el **arraigo laboral**: sí, porque se pide autorización de trabajo simultánea.
+Con visado de trabajo: sí, desde el momento en que la empresa obtiene la autorización previa de trabajo.
+
+## ¿Qué pasa después? La tarjeta TIE
+
+Una vez resuelta favorablemente la solicitud, tienes **30 días hábiles** para solicitar la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía de tu localidad. Para ello necesitarás:
+
+- Resolución favorable de Extranjería
+- Pasaporte original
+- Fotografía en color
+- Pago de la tasa (modelo 790 código 012)
+- Cita previa (a través de la web de la Policía Nacional)
+
+En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación hasta que tienes el TIE en la mano.
+    `
+  },
+  {
+    slug: 'documentos-permiso-residencia-espana',
+    category: 'Extranjería',
+    title: 'Lista completa de documentos para el permiso de residencia en España (2025)',
+    excerpt:
+      'Qué documentos necesitas exactamente, cómo obtenerlos, cómo apostillarlos y traducirlos, y qué errores de documentación son los más frecuentes en Extranjería.',
+    date: '14 may 2026',
+    readTime: '7 min',
+    body: `
+## La documentación lo es todo en Extranjería
+
+En los trámites de extranjería, presentar una documentación incompleta o incorrecta es la causa número uno de retrasos y denegaciones. La Oficina de Extranjería no subsana de oficio los defectos: simplemente deniega o emite un requerimiento de mejora que reinicia los plazos.
+
+Esta guía recoge los documentos más habituales, cómo obtenerlos correctamente y los errores que debes evitar.
+
+## Documentos de identidad
+
+### Pasaporte
+- Debe estar **en vigor** durante toda la tramitación y, idealmente, hasta que caduque el permiso que solicitas.
+- Fotocopia de **todas las páginas** (incluidas las en blanco).
+- Si el pasaporte caduca durante el proceso, renuévalo antes de presentar la solicitud.
+
+### NIE (si ya lo tienes)
+- Si tienes un NIE previo (aunque sea de otro trámite), inclúyelo. Facilita la identificación en los sistemas de la Administración.
+
+## Formulario de solicitud
+
+Dependiendo del trámite:
+- **EX-01**: autorización de residencia temporal (arraigo social, familiar, laboral, circunstancias excepcionales).
+- **EX-02**: autorización de residencia temporal por reagrupación familiar.
+
+Descárgalos siempre de la web oficial del Ministerio de Inclusión, Seguridad Social y Migraciones, ya que los modelos se actualizan periódicamente.
+
+## Fotografía
+
+- Reciente (máximo 6 meses).
+- Fondo blanco uniforme.
+- Tamaño carné (32×26 mm o 35×45 mm según la oficina — consulta en la tuya).
+- En color, con buena iluminación y sin gafas oscuras ni cubrecabezas (salvo por motivos religiosos).
+
+## Tasa administrativa (Modelo 790 código 052)
+
+- Se abona en cualquier entidad bancaria colaboradora o por internet.
+- El importe varía según el tipo de autorización.
+- **No pierdas el justificante**: es imprescindible presentarlo junto con la solicitud.
+
+## Certificado de empadronamiento
+
+- Solicítalo en tu Ayuntamiento o Junta de Distrito, en persona o por internet.
+- Para el arraigo social debe reflejar **al menos 3 años continuados** de residencia en España.
+- Pide el **certificado de empadronamiento con historial** (no solo el volante de residencia actual), para que refleje la antigüedad.
+- Atención: si te diste de baja en el padrón aunque sea brevemente, eso puede interrumpir el cómputo.
+
+## Antecedentes penales del país de origen
+
+Este es el documento que más problemas genera. Repasa bien estos puntos:
+
+### ¿Quién lo expide?
+El organismo varía por país. Algunos ejemplos:
+- **Colombia**: Policía Nacional (certificado judicial).
+- **Marruecos**: Casier Judiciaire (casier judiciaire nacional).
+- **Ecuador**: Ministerio del Interior (DINAPEN para menores).
+- **China**: Oficina de Seguridad Pública local.
+
+### Apostilla del Convenio de La Haya
+El documento original debe llevar la **apostilla** que certifica su autenticidad ante organismos extranjeros. La apostilla la expide el organismo oficial del país emisor.
+
+Excepción: si tu país **no es parte del Convenio de La Haya**, necesitas legalización consular (más compleja).
+
+### Traducción jurada al español
+Una vez apostillado, el documento debe ser traducido por un **traductor jurado** reconocido por el Ministerio de Asuntos Exteriores de España.
+
+### Vigencia
+Los certificados de antecedentes penales tienen generalmente una validez de **3 meses** desde su expedición. Solicítalo cuando tengas el resto de la documentación lista para no quedarte sin tiempo.
+
+## Antecedentes penales de España
+
+- Se obtienen en cualquier comisaría de Policía Nacional o por internet en la sede electrónica del Ministerio de Justicia.
+- Gratuito si se solicita online con certificado digital o Cl@ve.
+- Vigencia: **3 meses**.
+
+## Documentos laborales
+
+Si tu solicitud incluye un contrato de trabajo:
+- Contrato firmado por **empresa y trabajador**, indicando categoría, jornada y salario.
+- Vida laboral del trabajador (informe de la TGSS).
+- Alta en la Seguridad Social o informe de situación laboral.
+- En algunos casos, última nómina o informe de IRPF del empleador.
+
+## Medios económicos
+
+Si no presentas contrato de trabajo (o como complemento):
+- **Extractos bancarios** de los últimos 3–6 meses mostrando saldo suficiente.
+- Referencia: el 100 % del IPREM mensual (aprox. 600 €/mes en 2025) como mínimo.
+- Pueden valer también rentas, alquileres, inversiones, pensiones, etc., con la documentación que las acredite.
+
+## Resumen rápido: checklist de documentos
+
+| Documento | Dónde obtenerlo | Vigencia |
+|---|---|---|
+| Pasaporte | Consulado / embajada de tu país | Según fecha de caducidad |
+| Formulario EX-01 / EX-02 | Web del Ministerio | Sin caducidad |
+| Fotografía carné | Estudio fotográfico | — |
+| Tasa modelo 790-052 | Banco / internet | — |
+| Empadronamiento con historial | Ayuntamiento | 3 meses |
+| Antecedentes penales España | Ministerio de Justicia / Policía | 3 meses |
+| Antecedentes penales país origen | Organismo del país + apostilla + traducción | 3 meses |
+| Contrato de trabajo | Empresa | — |
+
+## ¿Y si me piden documentación adicional?
+
+La Oficina de Extranjería puede emitir un **requerimiento de subsanación** pidiendo documentos adicionales. Tienes generalmente **10 días hábiles** para aportarlos. No responder en plazo equivale a desistimiento del expediente.
+
+En EXPERT revisamos toda la documentación antes de presentar para minimizar al máximo estos requerimientos.
+    `
+  },
+  {
+    slug: 'renovacion-permiso-residencia-espana',
+    category: 'Extranjería',
+    title: 'Renovación del permiso de residencia en España: cuándo, cómo y qué necesitas',
+    excerpt:
+      'Plazos para renovar antes de que caduque, documentación necesaria, qué ocurre si no renuevas a tiempo y cómo pasar de residencia temporal a larga duración.',
+    date: '14 may 2026',
+    readTime: '7 min',
+    body: `
+## ¿Cuándo debo renovar mi permiso de residencia?
+
+La renovación del permiso de residencia debe solicitarse dentro de los **60 días anteriores a la caducidad** del permiso actual, o hasta los **90 días posteriores** a dicha caducidad (aunque este último período implica consecuencias).
+
+| Momento de solicitud | Situación |
+|---|---|
+| Dentro de los 60 días previos a la caducidad | Óptimo — sin consecuencias |
+| El mismo día de caducidad | Válido |
+| Hasta 90 días después de la caducidad | Válido, pero puede conllevar sanción leve |
+| Más de 90 días después de la caducidad | Situación irregular — posible expediente sancionador |
+
+**Recomendación práctica**: inicia el proceso de reunión de documentación **3–4 meses antes** de la caducidad para evitar imprevistos.
+
+## ¿Qué pasa si el permiso caduca mientras espero la resolución?
+
+Si presentaste la solicitud en plazo y la Administración no ha resuelto cuando caduca tu permiso actual, tu situación sigue siendo **regular** gracias a la llamada **"prórroga de la autorización"** prevista en la normativa. El resguardo de presentación de la solicitud acredita que estás en proceso de renovación.
+
+## Tipos de renovación
+
+### Renovación de residencia temporal (arraigo o trabajo)
+Se renueva por períodos de **2 años**. A partir de la segunda renovación (5 años de residencia legal continuada), puedes solicitar la **residencia de larga duración**.
+
+### Residencia de larga duración (comunitaria o no)
+Tras 5 años de residencia legal y continuada en España, puedes acceder a la **autorización de residencia de larga duración**, que:
+- Se concede por **tiempo indefinido**.
+- Permite trabajar por cuenta propia o ajena sin necesidad de autorización laboral específica.
+- Es renovable cada 5 años pero sin riesgo de denegación si se mantienen los requisitos.
+
+## Requisitos para la renovación
+
+Los requisitos varían según el tipo de permiso, pero los más habituales son:
+
+- **Pasaporte en vigor** con copia de todas las páginas
+- **Empadronamiento actual** en la provincia de la Oficina de Extranjería competente
+- **Vida laboral** (informe de la TGSS) o justificación de medios económicos
+- **Nóminas de los últimos meses** o declaración de IRPF
+- **Contrato de trabajo en vigor** o alta como autónomo
+- **Ausencia de antecedentes penales** nuevos (no siempre se pide certificado fresco, pero sí si hay dudas)
+- **Tasa modelo 790 código 052** abonada
+
+## ¿Puedo renovar si he estado en el paro?
+
+Sí. Haber percibido prestación por desempleo se considera una situación de cotización a efectos de renovación. Lo importante es acreditar una **actividad económica legal** durante el período de vigencia del permiso anterior, aunque haya habido períodos de desempleo.
+
+## ¿Qué pasa si no renuevo a tiempo?
+
+- **Multa económica** por estancia irregular (entre 501 € y 10.000 € según la gravedad).
+- En casos graves, posible **expulsión** con período de prohibición de entrada.
+- Pérdida de la continuidad de la residencia legal, lo que puede retrasar la obtención de la residencia de larga duración o la nacionalidad.
+
+## De la residencia temporal a la larga duración
+
+Para acceder a la **residencia de larga duración** necesitas:
+
+1. **5 años de residencia legal y continuada** en España (los períodos de prórroga administrativa cuentan).
+2. No tener **antecedentes penales** en España ni en el país de origen.
+3. Acreditar **medios económicos suficientes**: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por cada familiar a cargo.
+4. Disponer de **seguro médico** si no cotizas a la Seguridad Social.
+
+La residencia de larga duración abre también la puerta a acumular tiempo para solicitar la **nacionalidad española por residencia** (10 años como regla general, 2 años para nacionales de países iberoamericanos o con tratados especiales).
+
+## Consejo EXPERT
+
+Lleva un control activo de las fechas de caducidad de tu permiso. Una renovación presentada con antelación y bien documentada se resuelve sin sobresaltos. Una renovación urgente o tardía genera estrés, posibles sanciones y, en el peor caso, irregularidad sobrevenida.
+
+Si tienes dudas sobre tu situación concreta, contáctanos: revisamos tu caso y te decimos exactamente qué necesitas y cuándo actuar.
+    `
   }
 ];
 
