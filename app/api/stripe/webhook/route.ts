@@ -8,6 +8,7 @@ import {
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
   paymentConfirmed,
+  servicePaymentConfirmed,
   subscriptionCreated,
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
@@ -171,6 +172,38 @@ export async function POST(req: NextRequest) {
     }
 
     const productType = session.metadata?.product_type;
+    if (session.mode === 'payment' && productType === 'service') {
+      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+      const customerName =
+        (session.customer_details as { name?: string } | null)?.name ??
+        customerEmail?.split('@')[0] ??
+        'Cliente';
+      const serviceName = session.metadata?.service_name ?? 'Servicio EXPERT';
+      const amountEur = Number(session.amount_total ?? 0) / 100;
+
+      if (customerEmail) {
+        const tpl = servicePaymentConfirmed(customerName, amountEur, serviceName);
+        await sendEmail({
+          to: customerEmail,
+          eventType: 'service.payment.confirmed',
+          ...tpl,
+          metadata: {
+            session_id: session.id,
+            service_slug: session.metadata?.service_slug ?? null
+          }
+        });
+
+        syncOrderToHolded({
+          clientName: customerName,
+          clientEmail: customerEmail,
+          description: serviceName,
+          amountEur,
+          orderId: session.id,
+          localEntity: 'stripe_checkout_sessions'
+        }).catch((err) => console.error('[webhook] holded sync (service) failed:', err));
+      }
+    }
+
     if (productType === 'holded' || productType === 'holded_formacion') {
       const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
       const customerName =

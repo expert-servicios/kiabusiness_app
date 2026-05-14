@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
-import { articles } from '@/lib/utils/blog';
+import { blogArticles } from '@/lib/utils/blog';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 
 export const metadata: Metadata = {
@@ -44,7 +44,7 @@ export default function BlogPage() {
       {/* Articles */}
       <section className="mx-auto max-w-5xl px-6 py-12 md:py-16">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => {
+          {blogArticles.map((article) => {
             const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
             return (
               <article
@@ -57,6 +57,13 @@ export default function BlogPage() {
                   </span>
                   <h2 className="mt-3 font-serif text-lg font-bold leading-snug text-[#0D1B2A]">{article.title}</h2>
                   <p className="mt-3 flex-1 text-sm leading-6 text-[#23364D]">{article.excerpt}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {article.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="border border-[#D4A017]/20 px-2 py-1 text-[11px] text-[#6B7280]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                   <div className="mt-5 flex items-center justify-between text-xs text-[#9CA3AF]">
                     <span>{article.date}</span>
                     <span className="flex items-center gap-1">

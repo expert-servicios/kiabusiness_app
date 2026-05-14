@@ -157,6 +157,15 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     suggestedPrice: 500,
     mode: 'payment'
   },
+  {
+    id: 'nacionalidad-menor-nacido-espana',
+    label: 'Nacionalidad menor nacido en España',
+    category: 'servicio',
+    subcategory: 'Extranjería y Nacionalidad',
+    description: 'Solicitud de nacionalidad por residencia para menor nacido en España',
+    suggestedPrice: 302.5,
+    mode: 'payment'
+  },
 
   // ── Empresas y Autónomos ─────────────────────────────────────────────────────
   {

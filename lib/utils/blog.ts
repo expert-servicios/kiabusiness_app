@@ -5,10 +5,192 @@ export type Article = {
   excerpt: string;
   date: string;
   readTime: string;
+  tags: string[];
   body: string;
 };
 
 export const articles: Article[] = [
+  {
+    slug: 'nacionalidad-menor-nacido-espana-requisitos',
+    category: 'Extranjería',
+    title: 'Nacionalidad española para menor nacido en España: requisitos clave',
+    excerpt:
+      'Guía práctica para entender cuándo un menor nacido en España puede solicitar la nacionalidad española por residencia con plazo reducido de 1 año.',
+    date: '13 may 2026',
+    readTime: '7 min',
+    tags: ['nacionalidad española', 'menor nacido en España', 'residencia legal', 'extranjería'],
+    body: `
+## Por qué este trámite merece revisión previa
+
+Que un menor haya nacido en España no significa que obtenga la nacionalidad española automáticamente en todos los casos. Lo que sí puede ocurrir es que el plazo de residencia exigido para solicitar la nacionalidad por residencia se reduzca a **1 año**, siempre que se cumplan los requisitos legales.
+
+El punto central es distinguir entre nacimiento en España, inscripción en el Registro Civil y residencia legal del menor. Son piezas distintas del expediente y conviene revisarlas antes de presentar.
+
+## Requisitos principales
+
+Para preparar una solicitud sólida, normalmente revisamos:
+
+- Certificación literal de nacimiento española.
+- Pasaporte completo y en vigor del menor.
+- NIE/TIE o documento que acredite la residencia legal.
+- Fecha de concesión de la autorización de residencia.
+- Empadronamiento familiar actualizado.
+- Documentación de ambos progenitores o representantes legales.
+- Firma de los representantes legales del menor.
+
+La residencia debe ser **legal, continuada e inmediatamente anterior a la solicitud**. Este detalle es importante porque no basta con que los padres tengan residencia: hay que acreditar la situación del menor.
+
+## El plazo reducido de 1 año
+
+El Código Civil permite solicitar la nacionalidad por residencia con plazo reducido para las personas nacidas en territorio español. En menores, la solicitud se presenta por sus representantes legales, aportando la documentación digitalizada correspondiente.
+
+Presentar antes de cumplir el año de residencia legal puede provocar requerimientos, retrasos o incluso una denegación. Por eso conviene revisar la fecha de inicio real de residencia, no solo la fecha de emisión de la tarjeta.
+
+## Firma de los progenitores
+
+Cuando ambos progenitores ejercen la patria potestad, lo más recomendable es que firmen ambos. Si solo uno puede firmar, el caso debe revisarse con cuidado para acreditar representación suficiente o valorar si hace falta un trámite adicional.
+
+En menores de 14 años, si ambos representantes legales están de acuerdo, la práctica actual permite tramitar sin autorización previa del Encargado del Registro Civil en los supuestos ordinarios.
+
+## Checklist antes de empezar
+
+Antes de contratar o presentar, confirma estas preguntas:
+
+1. El menor nació en España.
+2. El nacimiento está inscrito en el Registro Civil español.
+3. El menor ya tiene residencia legal propia.
+4. Ha transcurrido al menos 1 año desde la concesión o inicio de esa residencia.
+5. Los dos progenitores pueden firmar o existe justificación suficiente.
+6. El pasaporte está en vigor.
+
+Si alguna respuesta no está clara, conviene revisar el expediente antes de pagar tasas o iniciar la solicitud.
+    `
+  },
+  {
+    slug: 'residencia-legal-menor-nacido-espana-nacionalidad',
+    category: 'Extranjería',
+    title: 'Residencia legal del menor: el punto que más retrasa la nacionalidad',
+    excerpt:
+      'Cómo comprobar la fecha de inicio de residencia legal del menor nacido en España antes de presentar la nacionalidad por residencia.',
+    date: '13 may 2026',
+    readTime: '6 min',
+    tags: ['residencia legal', 'TIE', 'NIE', 'nacionalidad por residencia'],
+    body: `
+## El nacimiento no sustituye a la residencia
+
+En expedientes de nacionalidad para menores nacidos en España, uno de los errores más habituales es pensar que el nacimiento en territorio español basta para presentar. En realidad, para la nacionalidad por residencia debe acreditarse un periodo de residencia legal.
+
+El plazo reducido puede ser de 1 año, pero ese año cuenta desde la residencia legal del menor, no desde el nacimiento ni necesariamente desde la residencia de sus padres.
+
+## Qué fechas hay que revisar
+
+Antes de presentar, conviene comprobar varias fechas:
+
+- Fecha de concesión de la autorización inicial.
+- Fecha de efectos de la resolución, si consta.
+- Fecha de expedición de la TIE.
+- Existencia de una tarjeta anterior.
+- Renovaciones o cambios de autorización.
+- Periodos sin cobertura documental.
+
+La fecha de la tarjeta no siempre es la fecha jurídicamente más útil. En muchos casos hay que revisar la resolución administrativa para entender desde cuándo existe autorización.
+
+## Protección temporal y otros supuestos
+
+Si el menor tiene documentación vinculada a protección temporal u otra autorización especial, el expediente debe analizarse caso por caso. Lo importante es acreditar que existe residencia legal suficiente y que no hay interrupciones relevantes antes de presentar.
+
+También hay que revisar si los datos personales coinciden entre documentos: nombres, apellidos, transliteraciones, fecha de nacimiento y país de nacionalidad.
+
+## Qué pasa si se presenta demasiado pronto
+
+Una presentación prematura puede generar:
+
+- Requerimiento de documentación adicional.
+- Paralización del expediente.
+- Necesidad de aportar resoluciones que no se habían previsto.
+- Mayor riesgo de denegación por falta de plazo.
+
+Por eso, cuando hay dudas, es preferible revisar antes que presentar a ciegas. Una semana de revisión suele ser más barata que varios meses de incertidumbre.
+
+## Recomendación práctica
+
+Guarda siempre copia de:
+
+1. Resolución inicial de concesión.
+2. TIE actual y anteriores.
+3. Pasaporte completo.
+4. Empadronamiento actualizado.
+5. Comunicaciones de Extranjería, si las hay.
+
+Con esa documentación se puede reconstruir la línea temporal del menor y decidir el momento correcto para presentar la solicitud.
+    `
+  },
+  {
+    slug: 'documentos-nacionalidad-menor-nacido-espana',
+    category: 'Extranjería',
+    title: 'Documentos para nacionalidad de menor nacido en España',
+    excerpt:
+      'Lista ordenada de documentos del menor y de los progenitores para preparar el expediente de nacionalidad española por residencia.',
+    date: '13 may 2026',
+    readTime: '6 min',
+    tags: ['documentación', 'pasaporte', 'empadronamiento', 'Registro Civil'],
+    body: `
+## Documentos del menor
+
+Para preparar el expediente de nacionalidad española por residencia de un menor nacido en España, normalmente se revisa la siguiente documentación:
+
+- Certificación literal de nacimiento española expedida por el Registro Civil.
+- Pasaporte completo y en vigor, con copia de todas las páginas.
+- NIE/TIE o documento acreditativo de residencia legal.
+- Tarjeta de residencia anterior, si existe.
+- Resolución inicial de concesión de residencia, si se conserva.
+- Certificado de empadronamiento familiar o colectivo actualizado.
+- Certificado de centro escolar o guardería, si procede.
+
+En menores muy pequeños, el certificado escolar puede no ser obligatorio, pero si el menor acude a guardería o centro infantil puede aportarse como documento complementario.
+
+## Documentos de los progenitores
+
+También se necesita revisar la documentación de quienes firman la solicitud como representantes legales:
+
+- Pasaporte completo y en vigor de ambos progenitores.
+- NIE/TIE de ambos progenitores por ambas caras.
+- Datos de contacto actualizados.
+- Domicilio actual.
+- Firma de ambos progenitores, salvo que exista causa justificada para otra forma de representación.
+
+Si hay separación, desacuerdo, patria potestad limitada o imposibilidad de firma, el caso debe estudiarse antes de presentar.
+
+## Errores documentales frecuentes
+
+Los problemas más habituales suelen ser:
+
+- Pasaporte caducado o incompleto.
+- Certificado literal de nacimiento antiguo o ilegible.
+- Nombres escritos de forma distinta entre documentos.
+- Falta de resolución de residencia.
+- Empadronamiento no actualizado.
+- Firma de un solo progenitor sin explicación suficiente.
+
+Estos errores no siempre impiden presentar, pero aumentan el riesgo de requerimientos.
+
+## Tasa administrativa
+
+La solicitud exige el pago de la tasa del Ministerio de Justicia mediante el modelo 790 código 026. El justificante debe estar correctamente vinculado al menor solicitante.
+
+En nuestro servicio, la tasa oficial se paga aparte de los honorarios profesionales. Antes de pagarla, conviene tener el expediente revisado para evitar pagar una tasa cuando todavía falta un requisito esencial.
+
+## Cómo organizar la documentación
+
+Una forma práctica de preparar el envío es separar los archivos en tres bloques:
+
+1. Documentos del menor.
+2. Documentos de los progenitores.
+3. Documentos de residencia y empadronamiento.
+
+Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un expediente ordenado no garantiza una resolución rápida, pero reduce bastante el riesgo de requerimientos evitables.
+    `
+  },
   {
     slug: 'modelo-151-beckham-guia',
     category: 'Fiscalidad',
@@ -17,6 +199,7 @@ export const articles: Article[] = [
       'Todo lo que necesitas saber sobre la tributación especial para impatriados: quién puede acogerse, cómo solicitarlo, plazos y diferencias con el IRPF ordinario.',
     date: '12 abr 2025',
     readTime: '8 min',
+    tags: ['Modelo 151', 'Régimen Beckham', 'IRPF', 'impatriados'],
     body: `
 ## ¿Qué es el Régimen Beckham?
 
@@ -75,6 +258,7 @@ En EXPERT te ayudamos a evaluar tu situación y a tramitar el Modelo 149 si deci
       'Explicamos los cambios normativos recientes en los permisos de arraigo social, los documentos que necesitas y los errores más comunes en la presentación.',
     date: '28 mar 2025',
     readTime: '6 min',
+    tags: ['arraigo social', 'residencia', 'extranjería', 'autorización de residencia'],
     body: `
 ## ¿Qué es el arraigo social?
 
@@ -124,6 +308,7 @@ En EXPERT te acompañamos durante todo el proceso, desde la evaluación previa h
       'Pasos para darte de alta como autónomo, cuota a pagar en 2025, tarifa plana, modelos trimestrales y las obligaciones que te esperan el primer año.',
     date: '15 mar 2025',
     readTime: '7 min',
+    tags: ['autónomos', 'alta autónomo', 'Hacienda', 'Seguridad Social'],
     body: `
 ## ¿Cuándo darse de alta como autónomo?
 
@@ -186,6 +371,7 @@ En EXPERT te asesoramos en el alta completa y te explicamos qué obligaciones te
       'Diferencias entre tributar como residente fiscal o como no residente en España, cómo evitar la doble imposición y qué documentos necesitas tener listos.',
     date: '1 mar 2025',
     readTime: '9 min',
+    tags: ['renta', 'expatriados', 'residencia fiscal', 'IRPF'],
     body: `
 ## Residencia fiscal: la clave de todo
 
@@ -239,6 +425,7 @@ En EXPERT gestionamos declaraciones de residentes y no residentes, incluyendo la
       'Analizamos los módulos clave de Holded (facturación, contabilidad, proyectos, CRM) y explicamos cuándo merece la pena migrar desde hojas de cálculo o programas clásicos.',
     date: '18 feb 2025',
     readTime: '5 min',
+    tags: ['Holded', 'contabilidad', 'pymes', 'facturación'],
     body: `
 ## ¿Qué es Holded?
 
@@ -288,6 +475,7 @@ Si estás planteándote migrar, contáctanos para una valoración gratuita de tu
       'El certificado digital es imprescindible para relacionarse con la AEAT, la Seguridad Social y otros organismos. Explicamos los tipos disponibles y cómo tramitarlo con Camerfirma.',
     date: '5 feb 2025',
     readTime: '4 min',
+    tags: ['certificado digital', 'empresas', 'trámites online', 'firma electrónica'],
     body: `
 ## ¿Para qué sirve el certificado digital?
 
@@ -339,6 +527,7 @@ Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
       'Guía práctica para entender qué información puede migrarse a Holded, qué requiere limpieza previa y cómo evitar errores que retrasen la puesta en marcha.',
     date: '2 may 2025',
     readTime: '6 min',
+    tags: ['Holded', 'migración', 'ERP', 'datos contables'],
     body: `
 ## ¿Qué se puede migrar a Holded?
 
@@ -382,6 +571,7 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
       'La Ley 11/2021 prohíbe el software de doble uso y exige sistemas de facturación certificados. Analizamos qué implica para autónomos, pymes y sus asesores.',
     date: '5 may 2026',
     readTime: '6 min',
+    tags: ['Ley Antifraude', 'software contable', 'facturación', 'VeriFactu'],
     body: `
 ## ¿Qué es la Ley Antifraude?
 
@@ -435,6 +625,7 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
       'El sistema VeriFactu será obligatorio para grandes empresas desde julio de 2025 y para pymes y autónomos desde julio de 2026. Explicamos cómo funciona y cómo prepararte.',
     date: '8 may 2026',
     readTime: '7 min',
+    tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
     body: `
 ## ¿Qué es VeriFactu?
 
@@ -496,6 +687,7 @@ En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de 
       'Comparamos Holded con las alternativas más habituales para autónomos (Excel, Quipu, Contasimple) y analizamos cuándo el salto tiene sentido económico.',
     date: '20 abr 2025',
     readTime: '5 min',
+    tags: ['Holded', 'autónomos', 'costes', 'automatización'],
     body: `
 ## El dilema del autónomo: ¿herramienta profesional o solución básica?
 
@@ -543,6 +735,7 @@ Si tienes dudas, podemos hacer una valoración gratuita de tu situación y recom
       'Todo lo que necesitas saber para obtener tu primer permiso de residencia en España: vías disponibles, requisitos, plazos y errores más comunes que debes evitar.',
     date: '14 may 2026',
     readTime: '9 min',
+    tags: ['permiso de residencia', 'extranjería', 'arraigo social', 'TIE', 'regularización'],
     body: `
 ## ¿Qué es el permiso inicial de residencia?
 
@@ -637,6 +830,7 @@ En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación
       'Qué documentos necesitas exactamente, cómo obtenerlos, cómo apostillarlos y traducirlos, y qué errores de documentación son los más frecuentes en Extranjería.',
     date: '14 may 2026',
     readTime: '7 min',
+    tags: ['documentación extranjería', 'antecedentes penales', 'apostilla', 'empadronamiento', 'EX-01'],
     body: `
 ## La documentación lo es todo en Extranjería
 
@@ -753,6 +947,7 @@ En EXPERT revisamos toda la documentación antes de presentar para minimizar al 
       'Plazos para renovar antes de que caduque, documentación necesaria, qué ocurre si no renuevas a tiempo y cómo pasar de residencia temporal a larga duración.',
     date: '14 may 2026',
     readTime: '7 min',
+    tags: ['renovación residencia', 'residencia larga duración', 'TIE', 'extranjería', 'prórroga'],
     body: `
 ## ¿Cuándo debo renovar mi permiso de residencia?
 
@@ -823,6 +1018,14 @@ Si tienes dudas sobre tu situación concreta, contáctanos: revisamos tu caso y 
     `
   }
 ];
+
+const docsRedirectSlugs = new Set([
+  'nacionalidad-menor-nacido-espana-requisitos',
+  'residencia-legal-menor-nacido-espana-nacionalidad',
+  'documentos-nacionalidad-menor-nacido-espana'
+]);
+
+export const blogArticles = articles.filter((article) => !docsRedirectSlugs.has(article.slug));
 
 export function getArticle(slug: string): Article | undefined {
   return articles.find((a) => a.slug === slug);

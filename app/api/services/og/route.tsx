@@ -1,4 +1,4 @@
-import { ImageResponse } from 'next/og';
+﻿import { ImageResponse } from 'next/og';
 import { categories, services } from '@/lib/utils/catalog';
 
 export const runtime = 'edge';
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const width = isHero ? 1600 : 1200;
   const height = isHero ? 900 : 1200;
   const titleSize = service.name.length > 62 ? (isHero ? 58 : 54) : isHero ? 68 : 64;
-  const summary = trimText(service.shortDescription, isHero ? 170 : 150);
+  const summary = trimText(service.metaDescription ?? service.shortDescription, isHero ? 170 : 150);
 
   return new ImageResponse(
     (
@@ -81,6 +81,11 @@ export async function GET(request: Request) {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {service.officialFee && (
+              <div style={{ borderTop: `1px solid ${colors.gold}`, paddingTop: 16, fontSize: 20, color: colors.ink }}>
+                {service.officialFee}
+              </div>
+            )}
             {service.price && (
               <div style={{ background: colors.blue, color: colors.cream, padding: '16px 18px', fontSize: 26, fontWeight: 700 }}>
                 {service.price}
