@@ -83,17 +83,20 @@ function getPrimaryAction(
 }
 
 export default async function DashboardPage() {
-  const [quotesData, casesData, subsData, companiesData] = await Promise.all([
+  const [quotesData, casesData, subsData, companiesData, profileData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
     fetchWithCookies('/api/cases'),
     fetchWithCookies('/api/subscriptions'),
-    fetchWithCookies('/api/companies')
+    fetchWithCookies('/api/companies'),
+    fetchWithCookies('/api/profile')
   ]);
 
   const quotes: QuoteItem[] = quotesData?.quotes ?? [];
   const cases: CaseItem[] = casesData?.cases ?? [];
   const subscriptions: SubItem[] = subsData?.subscriptions ?? [];
   const hasCompany = (companiesData?.companies?.length ?? 0) > 0;
+  const profile = profileData?.profile ?? null;
+  const firstName = profile?.full_name?.split(' ')[0] ?? null;
 
   const activeCases = cases.filter((c) => c.state !== 'finalizado');
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0);
@@ -107,7 +110,9 @@ export default async function DashboardPage() {
       <div className="border-b border-[#d8cbb5] bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-7">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-[#07111d] md:text-3xl">Mi panel</h1>
+            <h1 className="font-serif text-2xl font-bold text-[#07111d] md:text-3xl">
+              {firstName ? `Hola, ${firstName}` : 'Mi panel'}
+            </h1>
             <p className="mt-1 text-sm text-[#29384a]">Tu área privada de EXPERT</p>
           </div>
           <Link

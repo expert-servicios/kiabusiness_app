@@ -50,9 +50,22 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single();
 
+      // Extract first name from Google OAuth metadata if profile has none
+      const metaGivenName = user.user_metadata?.given_name as string | undefined;
+      const metaFullName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
+      const derivedFirstName = metaGivenName ?? metaFullName?.split(' ')[0];
+
+      if (profile && !profile.full_name && derivedFirstName) {
+        await admin
+          .from('profiles')
+          .update({ full_name: derivedFirstName })
+          .eq('id', user.id);
+      }
+
+      const displayName = profile?.full_name ?? derivedFirstName ?? user.email.split('@')[0];
+
       if (profile && !profile.welcome_email_sent) {
-        const name = profile.full_name ?? user.email.split('@')[0];
-        const tpl = welcomeEmail(name);
+        const tpl = welcomeEmail(displayName);
         await sendEmail({
           to: user.email,
           eventType: 'user.welcome',
