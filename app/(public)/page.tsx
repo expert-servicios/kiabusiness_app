@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
@@ -183,7 +184,15 @@ const trainingTopics: Array<IconItem & { title: string; text: string }> = [
   }
 ];
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string>>
+}) {
+  const params = await searchParams;
+  if (params.code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(params.code)}&next=/dashboard`);
+  }
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <Hero />
