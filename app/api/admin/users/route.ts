@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profiles, error } = await adminSupabase
       .from('profiles')
-      .select('id,full_name,phone,role,whatsapp_number,whatsapp_consent,created_at')
+      .select('id,full_name,phone,role,status,whatsapp_number,whatsapp_consent,created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -111,23 +111,63 @@ export async function PATCH(request: NextRequest) {
   try {
     const context = await getAdminContext(request);
     if (context.error) return context.error;
-    const { adminSupabase } = context;
+    const { adminSupabase, user } = context;
 
-    const { userId, role } = await request.json();
-    if (!userId || !['admin', 'client'].includes(role)) {
-      return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+    const body = await request.json();
+    const { userId, action } = body;
+
+    if (!userId || typeof userId !== 'string') {
+      return NextResponse.json({ error: 'userId requerido' }, { status: 400 });
     }
 
-    const { error } = await adminSupabase
-      .from('profiles')
-      .update({ role, updated_at: new Date().toISOString() })
-      .eq('id', userId);
-
-    if (error) {
-      return NextResponse.json({ error: 'Error al actualizar rol' }, { status: 500 });
+    // ── update_role ────────────────────────────────────────────────────────
+    if (action === 'update_role' || (!action && body.role)) {
+      const role = body.role;
+      if (!['admin', 'client'].includes(role)) {
+        return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
+      }
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (error) return NextResponse.json({ error: 'Error al actualizar rol' }, { status: 500 });
+      return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ ok: true });
+    // ── update_profile ─────────────────────────────────────────────────────
+    if (action === 'update_profile') {
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (body.full_name !== undefined) updates.full_name = body.full_name || null;
+      if (body.phone !== undefined) updates.phone = body.phone || null;
+      if (body.whatsapp_number !== undefined) updates.whatsapp_number = body.whatsapp_number || null;
+      if (Object.keys(updates).length === 1) {
+        return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
+      }
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      if (error) return NextResponse.json({ error: 'Error al actualizar perfil' }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── toggle_status ──────────────────────────────────────────────────────
+    if (action === 'toggle_status') {
+      if (userId === user.id) {
+        return NextResponse.json({ error: 'No puedes desactivar tu propia cuenta' }, { status: 400 });
+      }
+      const { data: profile } = await adminSupabase
+        .from('profiles').select('status').eq('id', userId).single();
+      const newStatus = profile?.status === 'inactive' ? 'active' : 'inactive';
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (error) return NextResponse.json({ error: 'Error al cambiar estado' }, { status: 500 });
+      return NextResponse.json({ ok: true, status: newStatus });
+    }
+
+    return NextResponse.json({ error: 'Acción no reconocida' }, { status: 400 });
   } catch (error) {
     console.error('Admin users PATCH error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
