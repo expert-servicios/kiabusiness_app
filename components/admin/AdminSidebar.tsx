@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import {
-  BarChart3, ChevronDown, ChevronRight, CreditCard, FileText,
+  BarChart3, Calendar, ChevronDown, ChevronRight, CreditCard, FileText,
   FolderOpen, LayoutDashboard, LogOut, Mail, Menu, Plug,
   Sparkles, UserPlus, Users, X, Zap, ShieldCheck
 } from 'lucide-react';
@@ -20,6 +20,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Onboarding', href: '/admin/onboarding' },
       { label: 'Usuarios', href: '/admin/usuarios' },
+      { label: 'Calendario Fiscal', href: '/admin/calendario-fiscal' },
     ]
   },
   {

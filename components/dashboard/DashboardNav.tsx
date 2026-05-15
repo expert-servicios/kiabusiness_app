@@ -22,6 +22,7 @@ const NAV_LINKS = [
   { href: '/dashboard', label: 'Panel' },
   { href: '/dashboard/expedientes', label: 'Expedientes' },
   { href: '/dashboard/presupuestos', label: 'Presupuestos' },
+  { href: '/dashboard/calendario-fiscal', label: 'Calendario Fiscal' },
   { href: '/dashboard/suscripciones', label: 'Suscripciones' },
   { href: '/dashboard/perfil', label: 'Mi perfil' }
 ];

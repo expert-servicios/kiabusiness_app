@@ -7,7 +7,27 @@
       "mcp__supabase__list_tables",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $env:NEXT_PUBLIC_APP_URL = \"http://localhost:3000\"; npm run dev 2>&1 | Select-Object -First 20)",
       "PowerShell(\\(Get-Content \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\lib\\\\utils\\\\blog.ts\" | Measure-Object -Line\\).Lines)",
-      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git show origin/main:app/\\(public\\)/servicios/[categoria]/[servicio]/page.tsx | head -60)"
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git show origin/main:app/\\(public\\)/servicios/[categoria]/[servicio]/page.tsx | head -60)",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $fullPath = \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\servicios\\\\[categoria]\\\\[servicio]\\\\page.tsx\"; $content = git show \"origin/main:app/\\(public\\)/servicios/[categoria]/[servicio]/page.tsx\"; [System.IO.File]::WriteAllText\\($fullPath, \\($content -join \"`n\"\\), [System.Text.Encoding]::UTF8\\))",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\servicios\\\\[categoria]\\\\[servicio]\\\\page.tsx\" | Measure-Object -Line\\).Lines)",
+      "mcp__claude_ai_Stripe__create_product",
+      "mcp__claude_ai_Stripe__create_price",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1778860966358.txt\" -Raw; $content.Substring\\(0, [Math]::Min\\(8000, $content.Length\\)\\))",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1778860966358.txt\" -Raw; $content.Substring\\(8000, [Math]::Min\\(8000, $content.Length - 8000\\)\\))",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1778860966358.txt\" -Raw; $content.Substring\\(16000, [Math]::Min\\(10000, $content.Length - 16000\\)\\))",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add app/auth/callback/route.ts app/\\(protected\\)/dashboard/page.tsx; git status --short)",
+      "PowerShell(Get-PSDrive C | Select-Object Used, Free | ForEach-Object { \"Used: $\\([math]::Round\\($_.Used/1GB,1\\)\\) GB | Free: $\\([math]::Round\\($_.Free/1GB,1\\)\\) GB\" })",
+      "PowerShell(Get-PSDrive C | Select-Object @{N='Free_GB';E={[math]::Round\\($_.Free/1GB,2\\)}})",
+      "PowerShell($d = Get-PSDrive C; Write-Output \"Free: $\\([math]::Round\\($d.Free/1MB,0\\)\\) MB\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\admin\\\\fiscal-calendar\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\auth\\\\google-calendar\\\\callback\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\fiscal-calendar\\\\sync-google\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\admin\\\\calendario-fiscal\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard\\\\calendario-fiscal\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\auth\\\\google-calendar\\\\status\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory"
     ]
   }
 }
