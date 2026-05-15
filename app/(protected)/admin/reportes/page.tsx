@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { BarChart3, TrendingUp, Mail, CreditCard, FileText, FolderOpen } from 'lucide-react';
+import { BarChart3, Mail, CreditCard, FileText, FolderOpen } from 'lucide-react';
 import { CASE_STATE_LABELS } from '@/lib/utils/case-states';
+import { HoldedCharts } from '@/components/admin/HoldedCharts';
 
 interface ReportData {
   totalRevenue: number;
@@ -19,25 +20,20 @@ const QUOTE_STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador', sent: 'Enviado', accepted: 'Aceptado', rejected: 'Rechazado', paid: 'Pagado'
 };
 
-const MONTH_LABELS: Record<string, string> = {
-  '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
-  '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic'
-};
 
-function formatMonth(ym: string) {
-  const [year, month] = ym.split('-');
-  return `${MONTH_LABELS[month] ?? month} ${year.slice(2)}`;
-}
-
-async function getReports(): Promise<ReportData | null> {
+async function fetchWithCookies(path: string) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/reports`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });
-  if (!response.ok) return null;
-  return response.json() as Promise<ReportData>;
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function getReports(): Promise<ReportData | null> {
+  return fetchWithCookies('/api/admin/reports');
 }
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -50,7 +46,10 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 }
 
 export default async function AdminReportesPage() {
-  const data = await getReports();
+  const [data, holdedData] = await Promise.all([
+    getReports(),
+    fetchWithCookies('/api/admin/holded-charts')
+  ]);
 
   if (!data) {
     return (
@@ -62,7 +61,6 @@ export default async function AdminReportesPage() {
     );
   }
 
-  const maxRevenue = Math.max(...data.revenueByMonth.map((r) => r.revenue), 1);
   const deliveryRate = data.emailStats.total > 0
     ? Math.round((data.emailStats.delivered / data.emailStats.total) * 100)
     : 0;
@@ -80,10 +78,30 @@ export default async function AdminReportesPage() {
           <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">Reportes</h1>
         </div>
 
+        {/* ── HOLDED ─────────────────────────────────────────────────────── */}
+        <div className="mb-8">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-px flex-1 bg-[#d8cbb5]" />
+            <span className="rounded-full border border-[#d8cbb5] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#29384a]">
+              Holded — Facturación
+            </span>
+            <span className="h-px flex-1 bg-[#d8cbb5]" />
+          </div>
+          <HoldedCharts data={holdedData ?? { configured: false, invoices: [] }} />
+        </div>
+
+        {/* ── SUPABASE ───────────────────────────────────────────────────── */}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="h-px flex-1 bg-[#d8cbb5]" />
+          <span className="rounded-full border border-[#d8cbb5] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#29384a]">
+            Operaciones internas
+          </span>
+          <span className="h-px flex-1 bg-[#d8cbb5]" />
+        </div>
+
         {/* KPI row */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Ingresos totales', value: `€${data.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`, icon: <TrendingUp className="h-5 w-5" />, color: 'text-[#1fae4b] bg-[#1fae4b]/10' },
             { label: 'Suscripciones activas', value: String(data.activeSubs), icon: <CreditCard className="h-5 w-5" />, color: 'text-[#c88b25] bg-[#c88b25]/10' },
             { label: 'Pagos con incidencia', value: String(data.paymentIssuesCount ?? 0), icon: <CreditCard className="h-5 w-5" />, color: 'text-red-600 bg-red-50' },
             { label: 'Mensajes sin responder', value: String(data.clientMessagesAwaitingResponse ?? 0), icon: <Mail className="h-5 w-5" />, color: 'text-amber-700 bg-amber-50' },
@@ -98,29 +116,6 @@ export default async function AdminReportesPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Revenue by month */}
-          <div className="rounded-3xl border border-[#d8cbb5] bg-white p-6">
-            <h2 className="mb-5 flex items-center gap-2 font-serif text-lg font-bold text-[#07111d]">
-              <TrendingUp className="h-4 w-4 text-[#d7a33a]" /> Ingresos por mes
-            </h2>
-            {data.revenueByMonth.length === 0 ? (
-              <p className="text-sm text-[#29384a]">Sin datos todavía.</p>
-            ) : (
-              <div className="space-y-3">
-                {data.revenueByMonth.map((r) => (
-                  <div key={r.month}>
-                    <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-[#29384a]">{formatMonth(r.month)}</span>
-                      <span className="font-semibold text-[#07111d]">
-                        €{r.revenue.toLocaleString('es-ES', { minimumFractionDigits: 0 })}
-                      </span>
-                    </div>
-                    <Bar value={r.revenue} max={maxRevenue} color="bg-[#d7a33a]" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Cases by state */}
           <div className="rounded-3xl border border-[#d8cbb5] bg-white p-6">

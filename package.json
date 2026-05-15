@@ -24,6 +24,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.53.0",
+    "recharts": "^3.8.1",
     "resend": "^6.12.2",
     "stripe": "^22.1.0",
     "tailwind-merge": "^3.5.0",
