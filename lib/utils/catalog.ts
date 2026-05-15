@@ -76,7 +76,8 @@ export const services: Service[] = [
     shortDescription: 'Preparación y presentación del IRPF con revisión fiscal completa.',
     description:
       'Gestionamos tu declaración de la renta de principio a fin: revisamos tu situación fiscal, identificamos deducciones aplicables, preparamos el borrador, lo validamos contigo y lo presentamos ante la AEAT. Servicio para residentes, trabajadores por cuenta ajena, autónomos y propietarios de inmuebles.',
-    price: 'Desde 90 €',
+    price: '150 € + IVA',
+    stripePriceId: 'price_1TXMmGLeYwwgvux4wIhcfhEF',
     duration: '3–5 días hábiles',
     includes: [
       'Revisión completa de datos fiscales',
@@ -195,6 +196,37 @@ export const services: Service[] = [
       { q: '¿Qué pasa si presento un modelo informativo fuera de plazo?', a: 'Existe un régimen sancionador por presentación extemporánea. Te avisamos con antelación para evitar recargos.' }
     ]
   },
+  {
+    slug: 'modelo-720',
+    categoria: 'declaraciones-impuestos',
+    name: 'Modelo 720 — Bienes en el Extranjero',
+    shortDescription: 'Declaración de bienes y derechos situados en el extranjero ante la AEAT.',
+    description:
+      'El Modelo 720 es una declaración informativa obligatoria para residentes fiscales en España que posean bienes o derechos en el extranjero por valor superior a 50.000 € en alguna de sus tres categorías: cuentas bancarias, valores e inmuebles. Analizamos tu obligación de declarar, preparamos el modelo y lo presentamos en plazo para evitar sanciones.',
+    price: '190 € + IVA',
+    stripePriceId: 'price_1TXMmVLeYwwgvux4e9hXI90o',
+    duration: '3–5 días hábiles',
+    includes: [
+      'Análisis de obligación de declarar',
+      'Revisión de bienes y derechos en el extranjero',
+      'Preparación del Modelo 720 / 721',
+      'Presentación telemática ante la AEAT',
+      'Justificante de presentación'
+    ],
+    requiredDocs: [
+      'DNI/NIE en vigor',
+      'Extractos bancarios de cuentas en el extranjero (saldo a 31/12)',
+      'Certificados de valores, fondos o seguros (valor a 31/12)',
+      'Escrituras o documentos de titularidad de inmuebles en el extranjero',
+      'Número de identificación fiscal extranjero (si aplica)'
+    ],
+    faqs: [
+      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Personas físicas y jurídicas residentes en España que tengan bienes o derechos en el extranjero cuyo valor supere los 50.000 € en alguna de las tres categorías (cuentas, valores o inmuebles).' },
+      { q: '¿Cuándo hay que presentarlo?', a: 'Entre el 1 de enero y el 31 de marzo del año siguiente al ejercicio que se declara.' },
+      { q: '¿Qué pasa si no lo presento?', a: 'Las sanciones por no presentar o presentar incorrectamente pueden ser muy elevadas. Es imprescindible declarar si se supera el umbral.' },
+      { q: '¿Tengo que presentarlo cada año?', a: 'Solo en el año en que se supera el umbral por primera vez, y posteriormente cuando alguna categoría experimente un incremento superior a 20.000 € respecto al último ejercicio declarado.' }
+    ]
+  },
 
   // ── Extranjería y Nacionalidad ─────────────────────────────────────────────
   {
@@ -204,7 +236,8 @@ export const services: Service[] = [
     shortDescription: 'Autorización de residencia por arraigo social en España.',
     description:
       'El arraigo social permite obtener un permiso de residencia temporal para personas que llevan al menos 3 años empadronadas en España, tienen vínculos familiares con residentes legales o disponen de una oferta de empleo. Preparamos toda la documentación y gestionamos el expediente.',
-    price: 'Consultar',
+    price: '490 € + IVA',
+    stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
     duration: 'Variable (3–6 meses según Delegación)',
     includes: [
       'Evaluación previa de elegibilidad',
@@ -225,7 +258,8 @@ export const services: Service[] = [
     shortDescription: 'Residencia por vínculos familiares con ciudadanos españoles o residentes.',
     description:
       'Si eres padre o madre de un menor español, o cónyuge/pareja de hecho de un ciudadano español o residente legal, puedes solicitar la autorización de residencia por arraigo familiar. Gestionamos el expediente desde la evaluación inicial hasta la resolución.',
-    price: 'Consultar',
+    price: '390 € + IVA',
+    stripePriceId: 'price_1TXMmTLeYwwgvux4OvsyKGL2',
     duration: 'Variable',
     includes: [
       'Evaluación de requisitos y vínculo familiar',
@@ -553,7 +587,8 @@ export const services: Service[] = [
     shortDescription: 'Tramitación del alta en el RETA y gestión de la actividad económica.',
     description:
       'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036/037) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
-    price: 'Desde 120 €',
+    price: '120 € + IVA',
+    stripePriceId: 'price_1TXMmKLeYwwgvux4oXpYh27g',
     duration: '1–3 días hábiles',
     includes: [
       'Modelo 036/037 — Alta en Hacienda',
@@ -574,7 +609,8 @@ export const services: Service[] = [
     shortDescription: 'Creación de una SL con capital mínimo, estatutos y alta fiscal.',
     description:
       'Acompañamos todo el proceso de constitución de una Sociedad Limitada: denominación social, redacción de estatutos, elevación a escritura pública, inscripción en el Registro Mercantil y alta fiscal en Hacienda. Incluye asesoramiento sobre estructura societaria y fiscal.',
-    price: 'Desde 490 €',
+    price: '490 € + IVA',
+    stripePriceId: 'price_1TXMmNLeYwwgvux4hIk84Aug',
     duration: '7–15 días hábiles',
     includes: [
       'Certificado de denominación social (BORME)',

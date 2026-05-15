@@ -12,6 +12,36 @@ const SERVICE_CHECKOUTS = {
     name: 'Permiso Inicial de Residencia',
     slug: 'permiso-residencia-inicial',
     category: 'extranjeria-nacionalidad'
+  },
+  price_1TXMmGLeYwwgvux4wIhcfhEF: {
+    name: 'Declaración de la Renta (IRPF)',
+    slug: 'irpf',
+    category: 'declaraciones-impuestos'
+  },
+  price_1TXMmKLeYwwgvux4oXpYh27g: {
+    name: 'Alta de Autónomo',
+    slug: 'alta-autonomo',
+    category: 'empresas-autonomos'
+  },
+  price_1TXMmNLeYwwgvux4hIk84Aug: {
+    name: 'Constitución de Sociedad Limitada',
+    slug: 'constitucion-sl',
+    category: 'empresas-autonomos'
+  },
+  price_1TXMmQLeYwwgvux4ivP7Uhn8: {
+    name: 'Arraigo Social',
+    slug: 'arraigo-social',
+    category: 'extranjeria-nacionalidad'
+  },
+  price_1TXMmTLeYwwgvux4OvsyKGL2: {
+    name: 'Arraigo Familiar',
+    slug: 'arraigo-familiar',
+    category: 'extranjeria-nacionalidad'
+  },
+  price_1TXMmVLeYwwgvux4e9hXI90o: {
+    name: 'Modelo 720 — Bienes en el Extranjero',
+    slug: 'modelo-720',
+    category: 'declaraciones-impuestos'
   }
 } as const;
 
