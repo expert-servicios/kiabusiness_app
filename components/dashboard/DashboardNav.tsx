@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ShieldCheck } from 'lucide-react';
 import { CompanySwitcher } from './CompanySwitcher';
 import { LogoutButton } from './LogoutButton';
 
@@ -53,9 +54,10 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
           {isAdmin && (
             <Link
               href="/admin"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#d7a33a]/80 transition hover:bg-[#d7a33a]/10 hover:text-[#d7a33a]"
+              className="ml-1 flex items-center gap-1.5 rounded-full border border-[#d7a33a]/40 bg-[#d7a33a]/10 px-3 py-1 text-xs font-bold text-[#d7a33a] transition hover:border-[#d7a33a]/70 hover:bg-[#d7a33a]/20"
             >
-              Admin ↗
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Admin
             </Link>
           )}
         </div>

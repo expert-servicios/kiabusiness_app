@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
-  AlertCircle, BarChart3, CheckCircle2,
-  CreditCard, FileText, FolderOpen, Mail, Users, UserPlus, Zap, Sparkles, PlugZap
+  AlertCircle, CheckCircle2,
+  CreditCard, FileText, FolderOpen, Users
 } from 'lucide-react';
 import { CASE_ACTION_GROUPS, countCaseStates } from '@/lib/utils/case-states';
 
@@ -256,177 +256,55 @@ export default async function AdminPage() {
 
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+          <Link
+            href="/admin/usuarios"
+            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
+          >
             <div className="flex items-center justify-between">
               <Users className="h-5 w-5 text-[#c88b25]" />
               <p className="font-serif text-3xl font-bold text-[#07111d]">{stats.totalUsers}</p>
             </div>
-            <p className="mt-3 text-xs font-semibold text-[#29384a]">Usuarios registrados</p>
-          </div>
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <FileText className="h-5 w-5 text-[#c88b25]" />
-              <p className="font-serif text-3xl font-bold text-[#07111d]">{stats.pendingQuotes}</p>
-            </div>
-            <p className="mt-3 text-xs font-semibold text-[#29384a]">Presupuestos activos</p>
-          </div>
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <FolderOpen className="h-5 w-5 text-[#c88b25]" />
-              <p className="font-serif text-3xl font-bold text-[#07111d]">{stats.activeCases}</p>
-            </div>
-            <p className="mt-3 text-xs font-semibold text-[#29384a]">Expedientes activos</p>
-          </div>
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <BarChart3 className="h-5 w-5 text-[#c88b25]" />
-              <p className="font-serif text-2xl font-bold text-[#07111d]">
-                {stats.totalRevenue > 0
-                  ? `€${stats.totalRevenue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`
-                  : '—'}
-              </p>
-            </div>
-            <p className="mt-3 text-xs font-semibold text-[#29384a]">Ingresos totales</p>
-          </div>
-        </div>
-
-        {/* Navigation tiles */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link
-            href="/admin/onboarding"
-            className="group rounded-2xl border-2 border-[#d7a33a] bg-[#d7a33a]/5 p-5 shadow-sm transition hover:bg-[#d7a33a]/10 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <UserPlus className="h-6 w-6 text-[#d7a33a]" />
-              <span className="rounded-full bg-[#d7a33a] px-2.5 py-0.5 text-xs font-bold text-[#07111d]">Nuevo</span>
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Onboarding de cliente</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Alta de cliente + presupuesto o suscripción + contrato por email</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Empezar →</p>
+            <p className="mt-3 text-xs font-semibold text-[#29384a]">Usuarios</p>
+            <p className="mt-1 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
           </Link>
           <Link
             href="/admin/presupuestos"
             className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <FileText className="h-6 w-6 text-[#d7a33a]" />
-              {stats.pendingQuotes > 0 && (
-                <span className="rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-bold text-[#c88b25]">
-                  {stats.pendingQuotes}
-                </span>
-              )}
+              <FileText className="h-5 w-5 text-[#c88b25]" />
+              <p className="font-serif text-3xl font-bold text-[#07111d]">{stats.pendingQuotes}</p>
             </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Presupuestos</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Revisar, preparar y enviar propuestas</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Gestionar →</p>
+            <p className="mt-3 text-xs font-semibold text-[#29384a]">Presupuestos activos</p>
+            <p className="mt-1 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
           </Link>
-
           <Link
             href="/admin/expedientes"
             className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <FolderOpen className="h-6 w-6 text-[#d7a33a]" />
-              {stats.activeCases > 0 && (
-                <span className="rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-bold text-[#c88b25]">
-                  {stats.activeCases}
-                </span>
-              )}
+              <FolderOpen className="h-5 w-5 text-[#c88b25]" />
+              <p className="font-serif text-3xl font-bold text-[#07111d]">{stats.activeCases}</p>
             </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Expedientes</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Gestionar casos, estados y documentos</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Gestionar →</p>
+            <p className="mt-3 text-xs font-semibold text-[#29384a]">Expedientes activos</p>
+            <p className="mt-1 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
           </Link>
-
-          <Link
-            href="/admin/usuarios"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <Users className="h-6 w-6 text-[#d7a33a]" />
-              <span className="rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-bold text-[#c88b25]">
-                {stats.totalUsers}
-              </span>
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Usuarios</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Gestionar registros, roles y accesos</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Gestionar →</p>
-          </Link>
-
           <Link
             href="/admin/suscripciones"
             className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <CreditCard className="h-6 w-6 text-[#d7a33a]" />
-              {(reports.activeSubs ?? 0) > 0 && (
-                <span className="rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-bold text-[#c88b25]">
-                  {reports.activeSubs}
-                </span>
-              )}
+              <CreditCard className="h-5 w-5 text-[#c88b25]" />
+              <p className="font-serif text-2xl font-bold text-[#07111d]">
+                {stats.totalRevenue > 0
+                  ? `€${stats.totalRevenue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`
+                  : `${reports.activeSubs ?? 0}`}
+              </p>
             </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Suscripciones</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Facturación recurrente y planes activos</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
-          </Link>
-
-          <Link
-            href="/admin/reportes"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <BarChart3 className="h-6 w-6 text-[#d7a33a]" />
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Reportes</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Estadísticas, ingresos y embudos</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
-          </Link>
-
-          <Link
-            href="/admin/emails"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <Mail className="h-6 w-6 text-[#d7a33a]" />
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Emails</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Historial de comunicaciones enviadas</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
-          </Link>
-
-          <Link
-            href="/admin/saas-leads"
-            className="group rounded-2xl border border-[#d7a33a]/30 bg-[#d7a33a]/5 p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <Zap className="h-6 w-6 text-[#d7a33a]" />
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Leads SaaS</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Asesorías interesadas en el piloto de plataforma</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver leads →</p>
-          </Link>
-
-          <Link
-            href="/admin/holded-demos"
-            className="group rounded-2xl border border-[#d7a33a]/30 bg-[#d7a33a]/5 p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <Sparkles className="h-6 w-6 text-[#d7a33a]" />
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Plan Gratuito Holded</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Solicitudes de demo + onboarding + formación gratuita</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Gestionar →</p>
-          </Link>
-          <Link
-            href="/admin/integraciones"
-            className="group rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm transition hover:border-[#d7a33a] hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <PlugZap className="h-6 w-6 text-[#d7a33a]" />
-            </div>
-            <h3 className="mt-4 font-serif text-base font-bold text-[#07111d]">Integraciones</h3>
-            <p className="mt-1 text-xs text-[#29384a]">Estado de sincronizaciones con Holded</p>
-            <p className="mt-3 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Revisar -&gt;</p>
+            <p className="mt-3 text-xs font-semibold text-[#29384a]">
+              {stats.totalRevenue > 0 ? 'Ingresos totales' : 'Suscripciones activas'}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-[#d7a33a] transition group-hover:translate-x-0.5">Ver →</p>
           </Link>
         </div>
 
