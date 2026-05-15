@@ -1,10 +1,13 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { ArrowLeft, FolderOpen, User, Download, FileText } from 'lucide-react';
+import { ArrowLeft, FolderOpen, User, Download, FileText, MessageSquare } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
 import { DocStateSelect } from '@/components/admin/DocStateSelect';
 import { CaseChecklistEditor } from '@/components/admin/CaseChecklistEditor';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
+import { AdminNoteEditor } from '@/components/admin/AdminNoteEditor';
+import { AiCaseActions } from '@/components/admin/AiCaseActions';
+import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 
 interface Document {
   id: string;
@@ -13,6 +16,14 @@ interface Document {
   created_at: string;
   file_path: string;
   downloadUrl: string | null;
+}
+
+interface Message {
+  id: string;
+  body: string;
+  sender_role: string;
+  created_at: string;
+  profiles: { full_name: string | null } | null;
 }
 
 interface CaseDetail {
@@ -28,15 +39,15 @@ interface CaseDetail {
   client: { email: string; full_name: string | null; phone: string | null };
 }
 
-async function getData(id: string) {
+async function fetchWithCookies<T>(path: string): Promise<T | null> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/cases/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });
   if (!res.ok) return null;
-  return res.json() as Promise<{ case: CaseDetail; documents: Document[] }>;
+  return res.json();
 }
 
 export default async function AdminCaseDetailPage({
@@ -45,7 +56,11 @@ export default async function AdminCaseDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params;
-  const data = await getData(id);
+
+  const [data, messagesData] = await Promise.all([
+    fetchWithCookies<{ case: CaseDetail; documents: Document[] }>(`/api/admin/cases/${id}`),
+    fetchWithCookies<{ messages: Message[] }>(`/api/cases/${id}/messages`)
+  ]);
 
   if (!data) {
     return (
@@ -61,24 +76,24 @@ export default async function AdminCaseDetailPage({
   }
 
   const { case: c, documents } = data;
+  const messages = messagesData?.messages ?? [];
   const pending = documents.filter((d) => d.state === 'pendiente').length;
+  const unreadMessages = messages.filter((m) => m.sender_role === 'client').length;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-10">
-      <div className="mx-auto max-w-4xl px-6">
+      <div className="mx-auto max-w-4xl space-y-4 px-6">
 
         <Link href="/admin/expedientes" className="inline-flex items-center gap-2 text-sm font-semibold text-[#29384a] hover:text-[#07111d]">
           <ArrowLeft className="h-4 w-4" /> Volver a expedientes
         </Link>
 
         {/* Case state card */}
-        <div className="mt-6">
-          <AdminCaseCard caseItem={c} />
-        </div>
+        <AdminCaseCard caseItem={c} />
 
         {/* Client info */}
-        <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-5">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+          <div className="mb-3 flex items-center gap-2">
             <User className="h-4 w-4 text-[#c88b25]" />
             <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Cliente</p>
           </div>
@@ -98,11 +113,17 @@ export default async function AdminCaseDetailPage({
           </div>
         </div>
 
-        <div className="mt-4">
-          <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
-        </div>
+        {/* Admin internal note */}
+        <AdminNoteEditor caseId={id} initialNote={c.admin_note} />
 
-        <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-5">
+        {/* AI actions */}
+        <AiCaseActions caseId={id} />
+
+        {/* Docs checklist */}
+        <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
+
+        {/* Holded sync */}
+        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Holded Projects</p>
@@ -118,8 +139,28 @@ export default async function AdminCaseDetailPage({
           </div>
         </div>
 
+        {/* Message thread */}
+        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-[#c88b25]" />
+            <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">
+              Mensajes con el cliente
+            </p>
+            {unreadMessages > 0 && (
+              <span className="ml-1 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
+                {unreadMessages} del cliente
+              </span>
+            )}
+          </div>
+          <CaseMessageThread
+            caseId={id}
+            initialMessages={messages}
+            currentRole="admin"
+          />
+        </div>
+
         {/* Documents */}
-        <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6">
+        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4 text-[#c88b25]" />

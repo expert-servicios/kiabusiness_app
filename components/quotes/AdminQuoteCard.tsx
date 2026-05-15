@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Pencil } from 'lucide-react';
+import Link from 'next/link';
+import { CheckCircle2, Pencil, ExternalLink } from 'lucide-react';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 
 interface Quote {
@@ -79,14 +80,22 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
           <span className="inline-flex items-center gap-2 rounded-full bg-[#d7a33a]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#061321]">
             {quote.client_id ? 'Cliente registrado' : 'Lead anónimo'}
           </span>
+          <Link
+            href={`/admin/presupuestos/${quote.id}`}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#d8cbb5] px-4 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#07111d]"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Ver detalle
+          </Link>
         </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="space-y-4 text-sm text-[#29384a]">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Importe (€)</label>
+            <label htmlFor={`amount-${quote.id}`} className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Importe (€)</label>
             <input
+              id={`amount-${quote.id}`}
               type="number"
               step="0.01"
               min="0"
@@ -97,8 +106,9 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Estado</label>
+            <label htmlFor={`status-${quote.id}`} className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Estado</label>
             <select
+              id={`status-${quote.id}`}
               value={status}
               onChange={(event) => setStatus(event.target.value as QuoteStatus)}
               className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-4 py-3 text-[#07111d] outline-none focus:border-[#c88b25]"
@@ -114,8 +124,9 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
 
         <div className="space-y-4 text-sm text-[#29384a]">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Vence el</label>
+            <label htmlFor={`expires-${quote.id}`} className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Vence el</label>
             <input
+              id={`expires-${quote.id}`}
               type="datetime-local"
               value={expiresAt}
               onChange={(event) => setExpiresAt(event.target.value)}
