@@ -2,10 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import Script from 'next/script';
-import { CalendarClock, MessageCircle } from 'lucide-react';
 import { type ReactNode } from 'react';
-import { Header } from '@/components/site/header';
-import { Footer } from '@/components/site/footer';
 
 const GTM_ID = 'GTM-MKZ522HP';
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -88,30 +85,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             strategy="afterInteractive"
           />
         ) : null}
-        <Header />
         {children}
-        <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
-        <Footer />
-        {/* Floating action buttons */}
-        <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
-          <a
-            href="https://calendly.com/soy-kseniailicheva/reunion-informativa"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Reservar llamada gratuita 15 min"
-            title="Llamada gratuita 15 min"
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D4A017] text-[#0D1B2A] shadow-[0_16px_35px_rgba(0,0,0,0.25)] transition hover:scale-105 hover:bg-[#F2C14E] focus:outline-none focus:ring-4 focus:ring-[#D4A017]/30"
-          >
-            <CalendarClock className="h-6 w-6" aria-hidden="true" />
-          </a>
-          <a
-            href="https://wa.me/34696550480"
-            aria-label="Abrir WhatsApp"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_16px_35px_rgba(0,0,0,0.25)] transition hover:scale-105 hover:bg-[#1ebe5d] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30"
-          >
-            <MessageCircle className="h-7 w-7" aria-hidden="true" />
-          </a>
-        </div>
       </body>
     </html>
   );
