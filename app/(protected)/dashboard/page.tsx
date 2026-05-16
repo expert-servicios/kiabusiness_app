@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
   AlertCircle, ArrowRight, Building2, CheckCircle2,
-  ChevronRight, Clock, FileText, FolderOpen, Plus, Zap
+  ChevronRight, Clock, FileText, FolderOpen, MessageCircle, Plus, Zap
 } from 'lucide-react';
 
 async function fetchWithCookies(path: string) {
@@ -47,7 +47,7 @@ const STATE_CONFIG: Record<string, { color: string; bg: string; icon: string; ne
   }
 };
 
-interface CaseItem { id: string; service: string; state: string; opened_at: string }
+interface CaseItem { id: string; service: string; state: string; opened_at: string; unread_count: number }
 interface QuoteItem { id: string; status: string; amount_eur: number; service?: string }
 interface SubItem { status: string }
 
@@ -101,6 +101,7 @@ export default async function DashboardPage() {
   const activeCases = cases.filter((c) => c.state !== 'finalizado');
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0);
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
+  const totalUnread = cases.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
 
   const primaryAction = getPrimaryAction(cases, quotes, hasCompany);
 
@@ -158,6 +159,22 @@ export default async function DashboardPage() {
               <p className="text-sm font-semibold text-green-800">Todo al día — no tienes acciones pendientes</p>
             </div>
           )
+        )}
+
+        {/* ── UNREAD MESSAGES BANNER ── */}
+        {totalUnread > 0 && (
+          <Link
+            href="/dashboard/expedientes"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 transition hover:border-blue-300 hover:shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <MessageCircle className="h-5 w-5 shrink-0 text-blue-600" />
+              <p className="text-sm font-semibold text-blue-800">
+                Tienes {totalUnread} mensaje{totalUnread !== 1 ? 's' : ''} sin leer de tu asesor
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-blue-500" />
+          </Link>
         )}
 
         {/* ── KPIs ── */}
@@ -228,7 +245,15 @@ export default async function DashboardPage() {
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[#07111d]">{c.service}</p>
-                        <p className="mt-0.5 text-xs text-[#29384a]">{cfg.nextAction}</p>
+                        <p className="mt-0.5 text-xs text-[#29384a]">
+                          {cfg.nextAction}
+                          {c.unread_count > 0 && (
+                            <span className="ml-2 inline-flex items-center gap-0.5 font-semibold text-blue-600">
+                              <MessageCircle className="h-3 w-3" />
+                              {c.unread_count} nuevo{c.unread_count !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
                         <span className={`hidden rounded-full border px-2.5 py-0.5 text-xs font-semibold sm:inline-flex ${cfg.bg} ${cfg.color}`}>

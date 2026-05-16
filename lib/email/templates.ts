@@ -850,6 +850,38 @@ export function presupuestoAvanzadoAdmin(data: {
   };
 }
 
+// ── New message: admin → client notification ─────────────────────────────────
+export function caseNewMessageFromAdvisor(clientName: string, service: string, preview: string, caseId: string) {
+  return {
+    subject: `Nuevo mensaje de tu asesor — ${service}`,
+    html: base('Nuevo mensaje en tu expediente', `
+      ${heading('Tu asesor te ha escrito')}
+      ${para(`Hola <strong>${escapeHtml(clientName)}</strong>,`)}
+      ${para(`Tu gestor de EXPERT ha enviado un mensaje en tu expediente de <strong>${escapeHtml(service)}</strong>.`)}
+      <div style="margin:20px 0;padding:16px 20px;background:#f8f4eb;border-left:3px solid #c88b25;border-radius:0 8px 8px 0;">
+        <p style="margin:0;font-size:13px;color:#29384a;font-style:italic;">"${escapeHtml(preview.slice(0, 200))}${preview.length > 200 ? '…' : ''}"</p>
+      </div>
+      ${btn('Ver mensaje completo', `${BRAND.appUrl}/dashboard/expedientes/${caseId}`)}
+      ${para('<small style="color:#8899aa;">Puedes responder directamente desde tu panel privado.</small>')}
+    `)
+  };
+}
+
+// ── New message: client → admin notification ─────────────────────────────────
+export function caseNewMessageFromClient(clientName: string, service: string, preview: string, caseId: string) {
+  return {
+    subject: `Mensaje de cliente — ${clientName} (${service})`,
+    html: base('Mensaje de cliente', `
+      ${heading('El cliente ha enviado un mensaje')}
+      ${para(`<strong>${escapeHtml(clientName)}</strong> ha escrito en su expediente de <strong>${escapeHtml(service)}</strong>:`)}
+      <div style="margin:20px 0;padding:16px 20px;background:#f8f4eb;border-left:3px solid #c88b25;border-radius:0 8px 8px 0;">
+        <p style="margin:0;font-size:13px;color:#29384a;font-style:italic;">"${escapeHtml(preview.slice(0, 300))}${preview.length > 300 ? '…' : ''}"</p>
+      </div>
+      ${btn('Ver expediente', `${BRAND.appUrl}/admin/expedientes/${caseId}`)}
+    `)
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',

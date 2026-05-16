@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ArrowLeft, FolderOpen, ChevronRight } from 'lucide-react';
+import { ArrowLeft, FolderOpen, ChevronRight, MessageCircle } from 'lucide-react';
 
 interface Case {
   id: string;
@@ -9,6 +9,7 @@ interface Case {
   state: string;
   opened_at: string;
   closed_at: string | null;
+  unread_count: number;
 }
 
 const STATE_LABELS: Record<string, string> = {
@@ -75,13 +76,24 @@ export default async function ClientCasesPage() {
                       <Link key={c.id} href={`/dashboard/expedientes/${c.id}`}
                         className="group flex items-center justify-between rounded-2xl border border-[#d8cbb5] bg-[#f8f4eb] p-5 transition hover:border-[#c88b25] hover:shadow-sm">
                         <div className="flex items-center gap-4">
-                          <div className="rounded-xl bg-[#c88b25]/10 p-3 text-[#c88b25]">
+                          <div className="relative rounded-xl bg-[#c88b25]/10 p-3 text-[#c88b25]">
                             <FolderOpen className="h-5 w-5" />
+                            {c.unread_count > 0 && (
+                              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                {c.unread_count > 9 ? '9+' : c.unread_count}
+                              </span>
+                            )}
                           </div>
                           <div>
                             <p className="font-semibold text-[#07111d]">{c.service}</p>
                             <p className="mt-1 text-xs text-[#29384a]">
                               Abierto el {new Date(c.opened_at).toLocaleDateString('es-ES')}
+                              {c.unread_count > 0 && (
+                                <span className="ml-2 inline-flex items-center gap-1 font-semibold text-red-600">
+                                  <MessageCircle className="h-3 w-3" />
+                                  {c.unread_count} nuevo{c.unread_count !== 1 ? 's' : ''}
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>

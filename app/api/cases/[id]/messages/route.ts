@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
+import { sendEmail } from '@/lib/email/send';
+import { caseNewMessageFromAdvisor, caseNewMessageFromClient } from '@/lib/email/templates';
 
 const messageSchema = z.object({
   body: z.string().min(1).max(2000),
@@ -73,13 +75,60 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { data: message, error: insertError } = await adminSupabase
       .from('messages')
-      .insert({ case_id: caseId, sender_id: userId, sender_role: senderRole, body: parseResult.data.body })
+      .insert({
+        case_id: caseId,
+        sender_id: userId,
+        sender_role: senderRole,
+        body: parseResult.data.body,
+        read_by_admin: senderRole === 'admin',
+        read_by_client: senderRole === 'client'
+      })
       .select('id,body,sender_role,created_at,sender_id')
       .single();
 
     if (insertError || !message) {
       return NextResponse.json({ error: 'Error al enviar mensaje' }, { status: 500 });
     }
+
+    // Email notification to the other party (fire-and-forget)
+    void (async () => {
+      try {
+        if (senderRole === 'admin') {
+          // Notify client
+          const { data: authUser } = await adminSupabase.auth.admin.getUserById(caseData.client_id);
+          const clientEmail = authUser?.user?.email;
+          const { data: clientProfile } = await adminSupabase
+            .from('profiles').select('full_name').eq('id', caseData.client_id).single();
+          const clientName = clientProfile?.full_name ?? clientEmail?.split('@')[0] ?? 'Cliente';
+          const { data: caseInfo } = await adminSupabase
+            .from('cases').select('service').eq('id', caseId).single();
+          if (clientEmail && caseInfo) {
+            await sendEmail({
+              to: clientEmail,
+              eventType: 'case.message.from_advisor',
+              ...caseNewMessageFromAdvisor(clientName, caseInfo.service, parseResult.data.body, caseId)
+            });
+          }
+        } else {
+          // Notify admin
+          const adminEmail = process.env.ADMIN_EMAILS ?? 'soy@expertconsulting.es';
+          const { data: senderProfile } = await adminSupabase
+            .from('profiles').select('full_name').eq('id', userId).single();
+          const clientName = senderProfile?.full_name ?? 'Cliente';
+          const { data: caseInfo } = await adminSupabase
+            .from('cases').select('service').eq('id', caseId).single();
+          if (caseInfo) {
+            await sendEmail({
+              to: adminEmail,
+              eventType: 'case.message.from_client',
+              ...caseNewMessageFromClient(clientName, caseInfo.service, parseResult.data.body, caseId)
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error('[messages] email notification failed:', emailErr);
+      }
+    })();
 
     // Send via WhatsApp if requested (admin only, client must have phone)
     let whatsappResult: { sent: boolean; error?: string } = { sent: false };

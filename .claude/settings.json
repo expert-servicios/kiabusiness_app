@@ -64,7 +64,9 @@
       "PowerShell($r = Invoke-WebRequest -Uri \"https://kseniailicheva.com/.well-known/microsoft-identity-association.json\" -UseBasicParsing -TimeoutSec 15; Write-Output \"Status: $\\($r.StatusCode\\)\"; Write-Output \"Content-Type: $\\($r.Headers['Content-Type']\\)\"; Write-Output \"Body: $\\($r.Content\\)\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\well-known\\\\microsoft-identity-association\")",
       "PowerShell($env:TMP = \"C:\\\\Temp\"; $env:TEMP = \"C:\\\\Temp\"; cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add -A; git commit -m \"fix: serve Azure domain verification via rewrite + clean API route\"; git push origin main 2>&1)",
-      "PowerShell(Start-Sleep -Seconds 25; try { $r = Invoke-WebRequest -Uri \"https://kseniailicheva.com/.well-known/microsoft-identity-association.json\" -UseBasicParsing -TimeoutSec 15; Write-Output \"Status: $\\($r.StatusCode\\)\"; Write-Output \"Body: $\\($r.Content\\)\" } catch { Write-Output \"Error: $_\" })"
+      "PowerShell(Start-Sleep -Seconds 25; try { $r = Invoke-WebRequest -Uri \"https://kseniailicheva.com/.well-known/microsoft-identity-association.json\" -UseBasicParsing -TimeoutSec 15; Write-Output \"Status: $\\($r.StatusCode\\)\"; Write-Output \"Body: $\\($r.Content\\)\" } catch { Write-Output \"Error: $_\" })",
+      "PowerShell(git -C \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\" log --oneline -15)",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\lib\\\\email\\\\templates.ts\" | Measure-Object -Line\\).Lines)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory"

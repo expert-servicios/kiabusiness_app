@@ -30,6 +30,11 @@ export function CaseMessageThread({ caseId, initialMessages, currentRole, client
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [initialMessages]);
 
+  // Mark all messages as read when the thread is opened
+  useEffect(() => {
+    fetch(`/api/cases/${caseId}/messages/read`, { method: 'PATCH' }).catch(() => {});
+  }, [caseId]);
+
   const handleSend = async () => {
     const trimmed = body.trim();
     if (!trimmed) return;
