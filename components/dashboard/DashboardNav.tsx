@@ -68,6 +68,15 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
         <div className="ml-auto flex items-center gap-2">
           <CompanySwitcher companies={companies} activeCompanyId={activeCompanyId} />
           <NotificationBell />
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1 rounded-full border border-[#d7a33a]/40 bg-[#d7a33a]/10 px-2.5 py-1 text-xs font-bold text-[#d7a33a] transition hover:bg-[#d7a33a]/20 lg:hidden"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+          )}
           <span className="hidden max-w-[120px] truncate text-xs text-white/40 md:block" title={userEmail}>
             {displayName}
           </span>

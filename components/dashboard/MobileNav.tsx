@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, Calendar, FileText, User } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, Calendar, FileText, User, ShieldCheck } from 'lucide-react';
 
 const NAV = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard, exact: true },
@@ -12,7 +12,7 @@ const NAV = [
   { href: '/dashboard/perfil', label: 'Perfil', icon: User, exact: false },
 ];
 
-export function MobileNav() {
+export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -33,6 +33,15 @@ export function MobileNav() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-[#d7a33a]/70 transition hover:text-[#d7a33a]"
+          >
+            <ShieldCheck className="h-5 w-5" />
+            Admin
+          </Link>
+        )}
       </div>
       {/* Safe area for iPhone home indicator */}
       <div className="h-safe-area-inset-bottom bg-[#07111d]" />

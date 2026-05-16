@@ -40,7 +40,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="pb-20 lg:pb-0">
         {children}
       </div>
-      <MobileNav />
+      <MobileNav isAdmin={profile?.role === 'admin'} />
     </>
   );
 }
