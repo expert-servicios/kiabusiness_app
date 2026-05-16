@@ -882,6 +882,81 @@ export function caseNewMessageFromClient(clientName: string, service: string, pr
   };
 }
 
+// ── Cita: solicitud recibida (cliente) ──────────────────────────────────────
+export function citaRequested(name: string, service: string, preferredDate: string, preferredTime: string) {
+  return {
+    subject: `Solicitud de cita recibida — EXPERT`,
+    html: base('Solicitud de cita recibida', `
+      ${heading('¡Solicitud recibida!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para('Hemos recibido tu solicitud de cita. La revisaremos y te confirmaremos el día y la hora lo antes posible, normalmente en menos de 24 horas hábiles.')}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Fecha preferida', escapeHtml(preferredDate)),
+        detail('Franja horaria', escapeHtml(preferredTime))
+      )}
+      ${para('Si necesitas cambiar algo o tienes alguna urgencia, responde a este email directamente.')}
+      ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
+    `)
+  };
+}
+
+// ── Cita: confirmación (cliente) ─────────────────────────────────────────────
+export function citaConfirmed(
+  name: string,
+  service: string,
+  confirmedDate: string,
+  confirmedTime: string,
+  meetingUrl?: string | null
+) {
+  return {
+    subject: `Tu cita está confirmada — ${confirmedDate}`,
+    html: base('Cita confirmada', `
+      ${heading('Tu cita está confirmada')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu cita para <strong>${escapeHtml(service)}</strong> ha sido confirmada. Aquí tienes los detalles:`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Fecha', escapeHtml(confirmedDate)),
+        detail('Hora', escapeHtml(confirmedTime)),
+        ...(meetingUrl ? [detail('Enlace de reunión', `<a href="${meetingUrl}" style="color:#c88b25;">${meetingUrl}</a>`)] : [])
+      )}
+      ${meetingUrl ? btn('Unirme a la reunión', meetingUrl) : ''}
+      ${para('Si necesitas cancelar o reagendar, responde a este email con al menos 24 horas de antelación.')}
+    `)
+  };
+}
+
+// ── Cita: notificación al admin ──────────────────────────────────────────────
+export function citaRequestAdmin(params: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  service: string;
+  preferredDate: string;
+  preferredTime: string;
+  notes?: string | null;
+  appointmentId: string;
+}) {
+  return {
+    subject: `Nueva solicitud de cita — ${params.name}`,
+    html: base('Nueva solicitud de cita', `
+      ${heading('Nueva solicitud de cita')}
+      ${para('Se ha recibido una nueva solicitud de cita desde el sitio web:')}
+      ${table(
+        detail('Nombre', escapeHtml(params.name)),
+        detail('Email', params.email),
+        ...(params.phone ? [detail('Teléfono', params.phone)] : []),
+        detail('Servicio', escapeHtml(params.service)),
+        detail('Fecha preferida', escapeHtml(params.preferredDate)),
+        detail('Franja', escapeHtml(params.preferredTime)),
+        ...(params.notes ? [detail('Notas', escapeHtml(params.notes))] : [])
+      )}
+      ${btn('Gestionar cita', `${BRAND.appUrl}/admin/citas`)}
+    `)
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',

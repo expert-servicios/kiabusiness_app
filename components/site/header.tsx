@@ -11,7 +11,8 @@ const navLinks = [
   { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Docs', href: '/docs' },
   { label: 'Blog', href: '/blog' },
-  { label: 'Contacto', href: '/contacto' }
+  { label: 'Contacto', href: '/contacto' },
+  { label: 'Reservar cita', href: '/cita' }
 ] as const;
 
 const planesLinks = [
@@ -145,7 +146,9 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="transition hover:text-[#D4A017]"
+              className={link.href === '/cita'
+                ? 'rounded-md border border-[#D4A017]/50 px-3 py-1.5 text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10'
+                : 'transition hover:text-[#D4A017]'}
             >
               {link.label}
             </Link>
