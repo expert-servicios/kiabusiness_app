@@ -24,7 +24,13 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\fiscal-calendar\\\\sync-google\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\admin\\\\calendario-fiscal\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard\\\\calendario-fiscal\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\auth\\\\google-calendar\\\\status\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\auth\\\\google-calendar\\\\status\")",
+      "PowerShell(npm cache clean --force 2>&1 | Select-Object -Last 2; $d = Get-PSDrive C; Write-Output \"Free: $\\([math]::Round\\($d.Free/1MB,0\\)\\) MB\")",
+      "PowerShell([System.IO.FileAttributes]1049651)",
+      "mcp__github__push_files",
+      "PowerShell($d = Get-PSDrive C; Write-Output \"Free: $\\([math]::Round\\($d.Free/1GB,2\\)\\) GB\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\cron\\\\fiscal-reminders\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\notifications\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory"

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { CompanySwitcher } from './CompanySwitcher';
 import { LogoutButton } from './LogoutButton';
+import { NotificationBell } from './NotificationBell';
 
 interface Company {
   id: string;
@@ -64,8 +65,9 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
         </div>
 
         {/* Right side */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           <CompanySwitcher companies={companies} activeCompanyId={activeCompanyId} />
+          <NotificationBell />
           <span className="hidden max-w-[120px] truncate text-xs text-white/40 md:block" title={userEmail}>
             {displayName}
           </span>
