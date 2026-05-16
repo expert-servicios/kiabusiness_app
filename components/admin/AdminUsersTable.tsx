@@ -5,8 +5,9 @@ import Link from 'next/link';
 import {
   Search, Download, Plus, ChevronUp, ChevronDown, ChevronsUpDown,
   MoreHorizontal, Pencil, Building2, UserX, UserCheck, Trash2,
-  FileText, FolderOpen, X, Check, AlertCircle, Loader2, ShieldCheck, User
+  FileText, FolderOpen, X, Check, AlertCircle, Loader2, ShieldCheck, User, MessageSquare
 } from 'lucide-react';
+import { WaTemplateModal } from './WaTemplateModal';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ export interface AdminUser {
 
 type SortKey = 'full_name' | 'email' | 'created_at' | 'totalCases' | 'totalQuotes' | 'role';
 type SortDir = 'asc' | 'desc';
-type Modal = null | 'invite' | 'edit' | 'companies' | 'delete';
+type Modal = null | 'invite' | 'edit' | 'companies' | 'delete' | 'whatsapp';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -489,6 +490,15 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: AdminUser[] })
                               <User className="h-3.5 w-3.5" /> Quitar admin
                             </button>
                           )}
+                          {(u.phone || u.whatsapp_number) && (
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedUser(u); setModal('whatsapp'); setOpenMenu(null); }}
+                              className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-[#07111d] hover:bg-[#f8f4eb]"
+                            >
+                              <MessageSquare className="h-3.5 w-3.5 text-[#25D366]" /> Enviar WhatsApp
+                            </button>
+                          )}
                           <Link href={`/admin/presupuestos?client=${u.id}`} onClick={() => setOpenMenu(null)} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-[#07111d] hover:bg-[#f8f4eb]">
                             <FileText className="h-3.5 w-3.5 text-[#c88b25]" /> Ver presupuestos
                           </Link>
@@ -653,6 +663,15 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: AdminUser[] })
             </div>
           </div>
         </ModalShell>
+      )}
+
+      {/* WhatsApp template modal */}
+      {modal === 'whatsapp' && selectedUser && (
+        <WaTemplateModal
+          defaultPhone={(selectedUser.whatsapp_number ?? selectedUser.phone ?? '').replace(/\D/g, '')}
+          onClose={closeModal}
+          onSent={() => { closeModal(); showToast('Mensaje enviado por WhatsApp', true); }}
+        />
       )}
 
       {/* Toast */}

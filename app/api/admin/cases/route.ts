@@ -11,10 +11,17 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-    const { data: cases, error } = await admin
+    const { searchParams } = new URL(request.url);
+    const clientIdFilter = searchParams.get('clientId');
+
+    let query = admin
       .from('cases')
       .select('id,category,service,state,opened_at,closed_at,client_id,admin_note,docs_checklist')
       .order('opened_at', { ascending: false });
+
+    if (clientIdFilter) query = query.eq('client_id', clientIdFilter);
+
+    const { data: cases, error } = await query;
 
     if (error) return NextResponse.json({ error: 'Error al obtener expedientes' }, { status: 500 });
 

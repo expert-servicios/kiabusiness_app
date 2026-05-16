@@ -52,15 +52,16 @@ export async function POST(request: NextRequest) {
       const aiResult = await generateAiResponse({ clientId, from, msgBody, admin });
 
       if (aiResult.reply) {
-        const sent = await sendWhatsAppMessage({ to: from, body: aiResult.reply, clientId });
+        const sent = await sendWhatsAppMessage({ to: from, body: aiResult.reply });
         if (sent.success) {
-          await admin.from('whatsapp_conversations').insert({
-            client_id: clientId ?? null,
-            phone_number: from,
+          await logWhatsAppConversation({
+            clientId,
+            phoneNumber: from,
             direction: 'outbound',
             body: aiResult.reply,
-            ai_responded: true,
-            needs_review: false,
+            whatsappMessageId: sent.messageId,
+            aiResponded: true,
+            needsReview: false,
           });
         }
       } else {
@@ -70,9 +71,7 @@ export async function POST(request: NextRequest) {
           .update({ needs_review: true })
           .eq('phone_number', from)
           .eq('direction', 'inbound')
-          .is('read_at', null)
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .is('read_at', null);
       }
     }
 

@@ -61,11 +61,12 @@ export const WA_TEMPLATES: WaTemplate[] = [
 
 interface Props {
   defaultPhone?: string;
+  embedded?: boolean; // when true, renders without its own modal wrapper (parent owns the shell)
   onClose: () => void;
   onSent: (phone: string, previewText: string) => void;
 }
 
-export function WaTemplateModal({ defaultPhone, onClose, onSent }: Props) {
+export function WaTemplateModal({ defaultPhone, embedded, onClose, onSent }: Props) {
   const [step, setStep] = useState<'pick' | 'fill'>('pick');
   const [selected, setSelected] = useState<WaTemplate | null>(null);
   const [phone, setPhone] = useState(defaultPhone ?? '');
@@ -100,12 +101,8 @@ export function WaTemplateModal({ defaultPhone, onClose, onSent }: Props) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-t-3xl bg-white sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+  const inner = (
+    <>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
           <div>
@@ -194,6 +191,15 @@ export function WaTemplateModal({ defaultPhone, onClose, onSent }: Props) {
             </button>
           </div>
         )}
+    </>
+  );
+
+  if (embedded) return inner;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-3xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        {inner}
       </div>
     </div>
   );

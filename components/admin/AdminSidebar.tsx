@@ -18,8 +18,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Clientes',
     icon: Users,
     items: [
-      { label: 'Onboarding', href: '/admin/onboarding' },
+      { label: 'Clientes', href: '/admin/clientes' },
       { label: 'Usuarios', href: '/admin/usuarios' },
+      { label: 'Onboarding', href: '/admin/onboarding' },
       { label: 'Calendario Fiscal', href: '/admin/calendario-fiscal' },
     ]
   },
