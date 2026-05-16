@@ -35,6 +35,14 @@ const nextConfig: NextConfig = {
       }
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/microsoft-identity-association.json',
+        destination: '/api/well-known/microsoft-identity-association',
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: '/planes/basico', destination: '/planes/avanzado', permanent: true },
