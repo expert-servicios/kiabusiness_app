@@ -1,6 +1,6 @@
 const BRAND = {
-  from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <soy@kseniailicheva.com>',
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com'
+  from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <soy@expertconsulting.es>',
+  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es'
 };
 
 function base(title: string, body: string): string {
@@ -20,7 +20,7 @@ function base(title: string, body: string): string {
   </td></tr>
   <tr><td style="background:#f8f4eb;padding:24px 40px;border-top:1px solid #d8cbb5;text-align:center;">
     <p style="margin:0;font-size:12px;color:#29384a;">EXPERT ESTUDIOS PROFESIONALES, SLU &nbsp;·&nbsp; C/ Pintor Agrassot, 19 &nbsp;·&nbsp; 03110 Mutxamel (Alicante)</p>
-    <p style="margin:6px 0 0;font-size:12px;"><a href="mailto:soy@kseniailicheva.com" style="color:#c88b25;text-decoration:none;">soy@kseniailicheva.com</a></p>
+    <p style="margin:6px 0 0;font-size:12px;"><a href="mailto:soy@expertconsulting.es" style="color:#c88b25;text-decoration:none;">soy@expertconsulting.es</a></p>
   </td></tr>
 </table>
 </td></tr>
@@ -803,9 +803,9 @@ export function presupuestoAvanzadoRequested(name: string, companyName: string) 
         'Revisamos tu solicitud y los servicios que necesitas.',
         'Preparamos una propuesta personalizada con el coste mensual estimado.',
         'Te la enviamos por email — sin compromiso, sin letra pequeña.',
-        'Si tienes dudas urgentes, escríbenos a soy@kseniailicheva.com'
+        'Si tienes dudas urgentes, escríbenos a soy@expertconsulting.es'
       ])}
-      ${para('<small style="color:#8899aa;">Si no recibes respuesta en 24 horas hábiles, revisa la carpeta de spam o escríbenos directamente a <a href="mailto:soy@kseniailicheva.com" style="color:#c88b25;">soy@kseniailicheva.com</a></small>')}
+      ${para('<small style="color:#8899aa;">Si no recibes respuesta en 24 horas hábiles, revisa la carpeta de spam o escríbenos directamente a <a href="mailto:soy@expertconsulting.es" style="color:#c88b25;">soy@expertconsulting.es</a></small>')}
       ${btn('Ver todos los planes', `${BRAND.appUrl}/planes`)}
     `)
   };

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: 'Política de privacidad de EXPERT ESTUDIOS PROFESIONALES, SLU — cómo recogemos, usamos y protegemos tus datos personales.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/privacidad',
+    url: 'https://expertconsulting.es/privacidad',
     title: 'Política de Privacidad | EXPERT',
     description: 'Política de privacidad de EXPERT ESTUDIOS PROFESIONALES, SLU.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
@@ -33,7 +33,7 @@ export default function PrivacidadPage() {
               <p><strong>Razón social:</strong> EXPERT ESTUDIOS PROFESIONALES, SLU</p>
               <p><strong>CIF:</strong> B44991776</p>
               <p><strong>Domicilio:</strong> C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España</p>
-              <p><strong>Correo electrónico:</strong> <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a></p>
+              <p><strong>Correo electrónico:</strong> <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a></p>
             </div>
           </section>
 
@@ -90,7 +90,7 @@ export default function PrivacidadPage() {
 
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">3.3 Almacenamiento de los datos de Google</h3>
-                <p>Los datos obtenidos mediante Google Sign-In se almacenan en <strong>Supabase</strong> (base de datos PostgreSQL alojada en servidores dentro de la Unión Europea). Solo se conservan mientras la cuenta esté activa. El usuario puede solicitar la eliminación de su cuenta y todos sus datos en cualquier momento escribiendo a <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a>.</p>
+                <p>Los datos obtenidos mediante Google Sign-In se almacenan en <strong>Supabase</strong> (base de datos PostgreSQL alojada en servidores dentro de la Unión Europea). Solo se conservan mientras la cuenta esté activa. El usuario puede solicitar la eliminación de su cuenta y todos sus datos en cualquier momento escribiendo a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a>.</p>
               </div>
 
               <div>
@@ -173,7 +173,7 @@ export default function PrivacidadPage() {
                 <li><strong>Oposición:</strong> oponerte al tratamiento basado en interés legítimo.</li>
                 <li><strong>Retirar el consentimiento</strong> en cualquier momento, sin que afecte a la licitud del tratamiento previo.</li>
               </ul>
-              <p className="mt-2">Para ejercitar cualquiera de estos derechos, escribe a <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a> indicando el derecho que deseas ejercitar y adjuntando una copia de tu DNI o documento identificativo equivalente. Responderemos en el plazo máximo de 30 días.</p>
+              <p className="mt-2">Para ejercitar cualquiera de estos derechos, escribe a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> indicando el derecho que deseas ejercitar y adjuntando una copia de tu DNI o documento identificativo equivalente. Responderemos en el plazo máximo de 30 días.</p>
               <p>Si consideras que el tratamiento de tus datos no es conforme a la normativa, puedes presentar una reclamación ante la <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Agencia Española de Protección de Datos (AEPD)</a>.</p>
             </div>
           </section>
@@ -187,7 +187,7 @@ export default function PrivacidadPage() {
           {/* 10 */}
           <section>
             <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">10. Contacto</h2>
-            <p className="mt-4 text-sm leading-7">Para cualquier consulta sobre esta política de privacidad o sobre el tratamiento de tus datos personales, puedes contactar con nosotros en <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a> o en nuestra dirección postal: C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España.</p>
+            <p className="mt-4 text-sm leading-7">Para cualquier consulta sobre esta política de privacidad o sobre el tratamiento de tus datos personales, puedes contactar con nosotros en <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o en nuestra dirección postal: C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España.</p>
           </section>
 
         </div>

@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   description:
     'Guías detalladas sobre extranjería, nacionalidad, fiscalidad, empresas, trámites administrativos y Holded. Busca por tema, categoría o tag.',
   alternates: {
-    canonical: 'https://kseniailicheva.com/docs'
+    canonical: 'https://expertconsulting.es/docs'
   },
   openGraph: {
     title: 'Base de conocimientos | EXPERT',
     description:
       'Guías detalladas sobre trámites en España: extranjería, nacionalidad, fiscalidad, empresas y gestión administrativa.',
-    url: 'https://kseniailicheva.com/docs',
+    url: 'https://expertconsulting.es/docs',
     type: 'website'
   }
 };

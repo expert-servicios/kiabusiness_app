@@ -28,8 +28,8 @@ export async function generateMetadata({
   if (!service) return {};
   const title = service.metaTitle ?? `${service.name} | EXPERT`;
   const description = service.metaDescription ?? service.shortDescription;
-  const canonicalUrl = `https://kseniailicheva.com/servicios/${categoria}/${servicio}`;
-  const shareImageUrl = `https://kseniailicheva.com/api/services/og?slug=${encodeURIComponent(servicio)}&variant=square`;
+  const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
+  const shareImageUrl = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(servicio)}&variant=square`;
 
   return {
     title,
@@ -74,7 +74,7 @@ export default async function ServicioDetallePage({
   const relatedDocs = getDocsForService(service.slug);
   const compactWithDocs = relatedDocs.length > 0;
   const heroImage = `/api/services/og?slug=${encodeURIComponent(service.slug)}&variant=hero`;
-  const canonicalUrl = `https://kseniailicheva.com/servicios/${categoria}/${servicio}`;
+  const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const offerPrice = service.stripePriceId
     ? service.price?.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(',', '.')
     : undefined;

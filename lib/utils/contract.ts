@@ -16,9 +16,9 @@ const EXPERT = {
   name: 'EXPERT ESTUDIOS PROFESIONALES, SLU',
   cif: 'B44991776',
   address: 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España',
-  email: 'soy@kseniailicheva.com',
+  email: 'info@expertconsulting.es',
   phone: '+34 696 55 04 80',
-  web: 'https://kseniailicheva.com',
+  web: 'https://expertconsulting.es',
   rep: 'Ksenia Ilicheva',
   registro: 'Registro Mercantil de Alicante — Tomo 4562, Folio 146, Hoja A-184902',
 };

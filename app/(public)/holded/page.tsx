@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     'Migramos tu contabilidad a Holded con estructura clara. Pack Starter, migración completa y migración con inventario. Somos Holded Solution Partner certificados.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/holded',
+    url: 'https://expertconsulting.es/holded',
     title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
     description:
       'Migramos tu contabilidad a Holded con estructura clara. Somos Holded Solution Partner certificados.',

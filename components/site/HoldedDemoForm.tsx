@@ -114,8 +114,8 @@ export function HoldedDemoForm() {
       {status === 'error' && (
         <p className="mt-3 text-sm text-red-600">
           Error al enviar. Escríbenos a{' '}
-          <a href="mailto:soy@kseniailicheva.com" className="underline">
-            soy@kseniailicheva.com
+          <a href="mailto:info@expertconsulting.es" className="underline">
+            info@expertconsulting.es
           </a>
         </p>
       )}

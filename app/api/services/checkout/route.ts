@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
     const serviceUrl = `${appUrl}/servicios/${service.category}/${service.slug}`;
 
     const session = await stripe.checkout.sessions.create({

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     'Términos y condiciones de uso de los servicios de EXPERT — asesoría fiscal, legal y administrativa en España.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/terminos',
+    url: 'https://expertconsulting.es/terminos',
     title: 'Términos y Condiciones | EXPERT',
     description: 'Términos y condiciones de uso de los servicios de EXPERT.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
@@ -32,13 +32,13 @@ export default function TerminosPage() {
           <Section title="1. Identificación del prestador">
             <p>
               En cumplimiento de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y del Comercio
-              Electrónico (LSSI-CE), se informa de que el titular del sitio web <strong>kseniailicheva.com</strong> es:
+              Electrónico (LSSI-CE), se informa de que el titular del sitio web <strong>expertconsulting.es</strong> es:
             </p>
             <ul>
               <li><strong>Titular:</strong> EXPERT ESTUDIOS PROFESIONALES, SLU</li>
               <li><strong>CIF:</strong> B44991776</li>
               <li><strong>Domicilio:</strong> C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España</li>
-              <li><strong>Email de contacto:</strong> soy@kseniailicheva.com</li>
+              <li><strong>Email de contacto:</strong> info@expertconsulting.es</li>
               <li><strong>Teléfono:</strong> +34 696 55 04 80</li>
               <li><strong>Ámbito geográfico:</strong> España</li>
             </ul>
@@ -46,7 +46,7 @@ export default function TerminosPage() {
 
           <Section title="2. Objeto y aceptación">
             <p>
-              Las presentes condiciones regulan el acceso y uso del sitio web <strong>kseniailicheva.com</strong> (en adelante,
+              Las presentes condiciones regulan el acceso y uso del sitio web <strong>expertconsulting.es</strong> (en adelante,
               &quot;el Sitio&quot;) y la contratación de los servicios ofrecidos a través del mismo, incluyendo la plataforma de cliente
               EXPERT.
             </p>
@@ -126,8 +126,8 @@ export default function TerminosPage() {
             </p>
             <p>
               Para ejercer el derecho de desistimiento, el cliente debe comunicarlo por escrito a{' '}
-              <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] hover:text-[#F2C14E]">
-                soy@kseniailicheva.com
+              <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] hover:text-[#F2C14E]">
+                info@expertconsulting.es
               </a>{' '}
               dentro del plazo indicado.
             </p>
@@ -200,15 +200,15 @@ export default function TerminosPage() {
             <ul>
               <li>
                 Email:{' '}
-                <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] hover:text-[#F2C14E]">
-                  soy@kseniailicheva.com
+                <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] hover:text-[#F2C14E]">
+                  info@expertconsulting.es
                 </a>
               </li>
               <li>Teléfono: +34 696 55 04 80</li>
               <li>
                 Formulario de contacto:{' '}
                 <Link href="/contacto" className="text-[#D4A017] hover:text-[#F2C14E]">
-                  kseniailicheva.com/contacto
+                  expertconsulting.es/contacto
                 </Link>
               </li>
             </ul>

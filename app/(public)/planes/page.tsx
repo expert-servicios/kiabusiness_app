@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     'Gestión contable integral en España con Holded. Plan Avanzado desde 99 €/mes, Plan Colaborativo desde 199 €/mes. También presupuesto personalizado con gestión laboral. Sin permanencia.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/planes',
+    url: 'https://expertconsulting.es/planes',
     title: 'Planes de gestión contable con Holded | EXPERT',
     description:
       'Gestión contable integral en España con Holded. Desde 99 €/mes. Sin permanencia.',

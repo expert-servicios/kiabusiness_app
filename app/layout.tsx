@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://kseniailicheva.com'),
+  metadataBase: new URL('https://expertconsulting.es'),
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'EXPERT | Asesoría fiscal, legal y administrativa',
     description:
       'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
-    url: 'https://kseniailicheva.com'
+    url: 'https://expertconsulting.es'
   },
   twitter: {
     card: 'summary_large_image',

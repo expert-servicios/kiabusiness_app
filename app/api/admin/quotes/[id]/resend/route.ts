@@ -56,7 +56,7 @@ export async function POST(
 
     // Create a new Stripe checkout session
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
     const expiresAt = quote.expires_at ?? new Date(Date.now() + 14 * 86_400_000).toISOString();
 
     const session = await stripe.checkout.sessions.create({

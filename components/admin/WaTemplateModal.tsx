@@ -48,7 +48,7 @@ export const WA_TEMPLATES: WaTemplate[] = [
       { key: 'nombre', placeholder: 'Nombre del cliente' },
       { key: 'estado', placeholder: 'Ej: en tramitación' },
     ],
-    preview: ([n, e]) => `Hola ${n || '[nombre]'}, su expediente ha pasado al estado "${e || '[estado]'}". Acceda a su portal para más detalles: kseniailicheva.com/dashboard`,
+    preview: ([n, e]) => `Hola ${n || '[nombre]'}, su expediente ha pasado al estado "${e || '[estado]'}". Acceda a su portal para más detalles: expertconsulting.es/dashboard`,
   },
   {
     name: 'expert_seguimiento',
@@ -122,7 +122,7 @@ export function WaTemplateModal({ defaultPhone, onClose, onSent }: Props) {
                 ← Cambiar
               </button>
             )}
-            <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] hover:bg-[#f0e9d8]">
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] hover:bg-[#f0e9d8]">
               <X className="h-4 w-4" />
             </button>
           </div>

@@ -21,7 +21,7 @@ export async function generateMetadata({
 
   const title = doc.seoTitle ?? `${doc.title} | EXPERT Docs`;
   const description = doc.seoDescription ?? doc.excerpt;
-  const canonicalUrl = `https://kseniailicheva.com/docs/${slug}`;
+  const canonicalUrl = `https://expertconsulting.es/docs/${slug}`;
 
   return {
     title,
@@ -61,7 +61,7 @@ export default async function DocDetailPage({
     .slice(0, 3);
 
   const sections = getSections(doc.body);
-  const canonicalUrl = `https://kseniailicheva.com/docs/${doc.slug}`;
+  const canonicalUrl = `https://expertconsulting.es/docs/${doc.slug}`;
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     'Solicita un presupuesto personalizado para servicios de asesoría fiscal, extranjería, empresas y autónomos. Respuesta en menos de 24 horas hábiles.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/solicitar-presupuesto',
+    url: 'https://expertconsulting.es/solicitar-presupuesto',
     title: 'Solicitar presupuesto | EXPERT',
     description:
       'Solicita un presupuesto personalizado para servicios de asesoría fiscal, extranjería, empresas y autónomos. Respuesta en menos de 24 horas hábiles.',

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'Plataforma en desarrollo para asesorías, gestorías y despachos que quieren centralizar clientes, expedientes, documentos, pagos y comunicaciones.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/para-asesorias',
+    url: 'https://expertconsulting.es/para-asesorias',
     title: 'Sistema digital para asesorías | EXPERT',
     description:
       'Plataforma en desarrollo para asesorías, gestorías y despachos. Centraliza clientes, expedientes, documentos y pagos.',

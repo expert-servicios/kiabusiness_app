@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     const clientName = clientProfile?.full_name ?? clientEmail.split('@')[0];
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
 
     // Create Stripe subscription checkout session
     const stripe = getStripeClient();

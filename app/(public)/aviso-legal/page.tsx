@@ -3,12 +3,12 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Aviso Legal | EXPERT ESTUDIOS PROFESIONALES, SLU',
-  description: 'Aviso legal del sitio web kseniailicheva.com — EXPERT ESTUDIOS PROFESIONALES, SLU. Información exigida por la LSSI-CE.',
+  description: 'Aviso legal del sitio web expertconsulting.es — EXPERT ESTUDIOS PROFESIONALES, SLU. Información exigida por la LSSI-CE.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/aviso-legal',
+    url: 'https://expertconsulting.es/aviso-legal',
     title: 'Aviso Legal | EXPERT ESTUDIOS PROFESIONALES',
-    description: 'Aviso legal del sitio web kseniailicheva.com — EXPERT ESTUDIOS PROFESIONALES, SLU.',
+    description: 'Aviso legal del sitio web expertconsulting.es — EXPERT ESTUDIOS PROFESIONALES, SLU.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES'
   }
@@ -45,9 +45,9 @@ export default function AvisoLegalPage() {
                 ['Denominación social', 'EXPERT ESTUDIOS PROFESIONALES, SLU'],
                 ['CIF', 'B44991776'],
                 ['Domicilio social', 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España'],
-                ['Correo electrónico', 'soy@kseniailicheva.com'],
+                ['Correo electrónico', 'info@expertconsulting.es'],
                 ['Teléfono / WhatsApp Business', '+34 696 55 04 80'],
-                ['Sitio web', 'https://kseniailicheva.com'],
+                ['Sitio web', 'https://expertconsulting.es'],
                 ['Registro Mercantil', 'Registro Mercantil de Alicante — Tomo 4562, Folio 146, Hoja A-184902'],
                 ['IRUE', '1000176714766'],
                 ['Representante legal', 'Ksenia Ilicheva'],
@@ -62,7 +62,7 @@ export default function AvisoLegalPage() {
 
           <Section title="2. Objeto del sitio web">
             <p>
-              El sitio web <strong>kseniailicheva.com</strong> es la plataforma digital de EXPERT ESTUDIOS PROFESIONALES, SLU, a través de la cual se ofrece información sobre servicios de asesoría fiscal, legal y administrativa, se posibilita la solicitud de presupuestos y la contratación de servicios profesionales, y se facilita el acceso al área privada de cliente.
+              El sitio web <strong>expertconsulting.es</strong> es la plataforma digital de EXPERT ESTUDIOS PROFESIONALES, SLU, a través de la cual se ofrece información sobre servicios de asesoría fiscal, legal y administrativa, se posibilita la solicitud de presupuestos y la contratación de servicios profesionales, y se facilita el acceso al área privada de cliente.
             </p>
             <p>
               El acceso y uso del sitio web implica la aceptación de las condiciones establecidas en el presente Aviso Legal, así como en la <Link href="/privacidad" className="text-[#D4A017] underline underline-offset-4">Política de Privacidad</Link>, la <Link href="/cookies" className="text-[#D4A017] underline underline-offset-4">Política de Cookies</Link> y los <Link href="/terminos" className="text-[#D4A017] underline underline-offset-4">Términos y Condiciones</Link>.
@@ -123,13 +123,13 @@ export default function AvisoLegalPage() {
               <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">
                 ec.europa.eu/consumers/odr
               </a>
-              . Nuestro correo electrónico de contacto a estos efectos es <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a>.
+              . Nuestro correo electrónico de contacto a estos efectos es <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a>.
             </p>
           </Section>
 
           <Section title="8. Contacto">
             <p>
-              Para cualquier consulta relacionada con el presente Aviso Legal, puedes contactar con nosotros en <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a> o en nuestra dirección postal: C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España.
+              Para cualquier consulta relacionada con el presente Aviso Legal, puedes contactar con nosotros en <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o en nuestra dirección postal: C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España.
             </p>
           </Section>
 

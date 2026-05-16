@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const stripe = getStripeClient();
     const { id } = await params;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
 
     const supabaseAdmin = getSupabaseAdmin();
     const { data: quote, error: quoteError } = await supabaseAdmin

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
 
     const isFormacion = priceId === FORMACION_PRICE_ID;
     const productType = isFormacion ? 'holded_formacion' : 'holded';

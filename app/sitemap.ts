@@ -3,7 +3,7 @@ import { categories, services } from '@/lib/utils/catalog';
 import { blogArticles } from '@/lib/utils/blog';
 import { docs } from '@/lib/utils/docs';
 
-const BASE = 'https://kseniailicheva.com';
+const BASE = 'https://expertconsulting.es';
 
 const MONTHS: Record<string, string> = {
   ene: '01', feb: '02', mar: '03', abr: '04', may: '05', jun: '06',

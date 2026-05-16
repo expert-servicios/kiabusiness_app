@@ -3,10 +3,10 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Política de Cookies | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Política de cookies del sitio kseniailicheva.com — qué cookies usamos, para qué y cómo gestionarlas.',
+  description: 'Política de cookies del sitio expertconsulting.es — qué cookies usamos, para qué y cómo gestionarlas.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/cookies',
+    url: 'https://expertconsulting.es/cookies',
     title: 'Política de Cookies | EXPERT',
     description: 'Política de cookies de EXPERT ESTUDIOS PROFESIONALES, SLU.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
@@ -108,7 +108,7 @@ export default function CookiesPage() {
               Las cookies son pequeños archivos de texto que un sitio web envía al navegador del usuario cuando este lo visita. Permiten que el sitio recuerde información sobre la visita (preferencias de idioma, sesión iniciada, etc.) para facilitar la navegación en visitas posteriores y hacer el sitio más útil.
             </p>
             <p>
-              Esta política se aplica al sitio web <strong>kseniailicheva.com</strong>, titularidad de <strong>EXPERT ESTUDIOS PROFESIONALES, SLU</strong> (CIF B44991776), C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), en cumplimiento del artículo 22.2 de la <strong>Ley 34/2002 (LSSI-CE)</strong> y el <strong>Reglamento (UE) 2016/679 (RGPD)</strong>.
+              Esta política se aplica al sitio web <strong>expertconsulting.es</strong>, titularidad de <strong>EXPERT ESTUDIOS PROFESIONALES, SLU</strong> (CIF B44991776), C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), en cumplimiento del artículo 22.2 de la <strong>Ley 34/2002 (LSSI-CE)</strong> y el <strong>Reglamento (UE) 2016/679 (RGPD)</strong>.
             </p>
           </Section>
 
@@ -195,7 +195,7 @@ export default function CookiesPage() {
 
           <Section title="8. Contacto">
             <p>
-              Si tienes dudas sobre el uso de cookies en este sitio, puedes contactar con nosotros en <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a>.
+              Si tienes dudas sobre el uso de cookies en este sitio, puedes contactar con nosotros en <a href="mailto:soy@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">soy@expertconsulting.es</a>.
             </p>
           </Section>
 

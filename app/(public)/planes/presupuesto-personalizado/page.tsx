@@ -203,8 +203,8 @@ export default function PresupuestoPersonalizadoPage() {
           </p>
           <p className="mt-3 text-sm text-[#23364D]">
             Si necesitas hablar antes, escríbenos directamente a{' '}
-            <a href="mailto:soy@kseniailicheva.com" className="font-semibold text-[#D4A017]">
-              soy@kseniailicheva.com
+            <a href="mailto:info@expertconsulting.es" className="font-semibold text-[#D4A017]">
+              info@expertconsulting.es
             </a>
           </p>
           <div className="mt-8 flex flex-col items-center gap-3">

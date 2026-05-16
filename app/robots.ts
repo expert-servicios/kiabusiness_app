@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/dashboard/', '/admin/', '/auth/', '/api/']
       }
     ],
-    sitemap: 'https://kseniailicheva.com/sitemap.xml'
+    sitemap: 'https://expertconsulting.es/sitemap.xml'
   };
 }

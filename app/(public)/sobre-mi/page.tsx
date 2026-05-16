@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     'Ksenia Ilicheva, asesora fiscal, legal y administrativa en España. Más de 20 años de experiencia, colaboradora social de la AEAT, Red PAE y Holded Solution Partner.',
   openGraph: {
     type: 'profile',
-    url: 'https://kseniailicheva.com/sobre-mi',
+    url: 'https://expertconsulting.es/sobre-mi',
     title: 'Ksenia Ilicheva — Asesora Fiscal y Legal | EXPERT',
     description:
       'Más de 20 años de experiencia en asesoría fiscal, legal y administrativa en España. Colaboradora social AEAT, Holded Solution Partner.',

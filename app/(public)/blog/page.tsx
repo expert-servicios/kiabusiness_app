@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos para residentes, expatriados y empresas.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/blog',
+    url: 'https://expertconsulting.es/blog',
     title: 'Blog | EXPERT — Fiscalidad, Extranjería y Gestión Administrativa',
     description:
       'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos.',

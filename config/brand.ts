@@ -140,7 +140,7 @@ export const footerLinks = {
   ],
   contact: [
     { label: 'WhatsApp', href: '/contacto' },
-    { label: 'Email', href: 'mailto:soy@kseniailicheva.com' }
+    { label: 'Email', href: 'mailto:info@expertconsulting.es' }
   ]
 } as const;
 

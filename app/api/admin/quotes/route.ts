@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Generate Stripe checkout session
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kseniailicheva.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

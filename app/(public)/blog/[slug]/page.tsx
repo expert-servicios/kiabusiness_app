@@ -22,7 +22,7 @@ export async function generateMetadata({
       title: doc.seoTitle ?? `${doc.title} | EXPERT Docs`,
       description: doc.seoDescription ?? doc.excerpt,
       alternates: {
-        canonical: `https://kseniailicheva.com/docs/${doc.slug}`
+        canonical: `https://expertconsulting.es/docs/${doc.slug}`
       }
     };
   }
@@ -30,7 +30,7 @@ export async function generateMetadata({
   const article = getArticle(slug);
   if (!article) return {};
   const title = `${article.title} | EXPERT Blog`;
-  const canonicalUrl = `https://kseniailicheva.com/blog/${slug}`;
+  const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
 
   return {
     title,

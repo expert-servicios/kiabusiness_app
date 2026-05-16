@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com',
+    url: 'https://expertconsulting.es',
     title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
     description:
       'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',

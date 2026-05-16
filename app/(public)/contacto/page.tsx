@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles. Email, WhatsApp y formulario de contacto.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/contacto',
+    url: 'https://expertconsulting.es/contacto',
     title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
     description: 'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
@@ -27,8 +27,8 @@ const contactItems = [
   {
     Icon: Mail,
     label: 'Email',
-    value: 'soy@kseniailicheva.com',
-    href: 'mailto:soy@kseniailicheva.com',
+    value: 'soy@expertconsulting.es',
+    href: 'mailto:soy@expertconsulting.es',
     note: 'Respondemos en menos de 24 h hábiles'
   },
   {

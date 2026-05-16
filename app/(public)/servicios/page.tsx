@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/servicios',
+    url: 'https://expertconsulting.es/servicios',
     title: 'Servicios | EXPERT — Asesoría Fiscal, Legal y Administrativa',
     description:
       'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.',

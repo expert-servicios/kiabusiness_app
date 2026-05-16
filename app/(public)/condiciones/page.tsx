@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Condiciones generales de contratación de los servicios de EXPERT ESTUDIOS PROFESIONALES, SLU. Asesoría fiscal, legal y administrativa en España.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/condiciones',
+    url: 'https://expertconsulting.es/condiciones',
     title: 'Condiciones de Contratación | EXPERT',
     description: 'Condiciones generales de contratación de EXPERT ESTUDIOS PROFESIONALES, SLU.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
@@ -45,7 +45,7 @@ export default function CondicionesPage() {
                 ['Prestador', 'EXPERT ESTUDIOS PROFESIONALES, SLU'],
                 ['CIF', 'B44991776'],
                 ['Domicilio', 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España'],
-                ['Email', 'soy@kseniailicheva.com'],
+                ['Email', 'soy@expertconsulting.es'],
                 ['Teléfono', '+34 696 55 04 80'],
               ].map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-1 border-b border-[#f0e8d8] px-5 py-3 last:border-b-0 sm:flex-row sm:gap-4">
@@ -59,7 +59,7 @@ export default function CondicionesPage() {
 
           <Section title="2. Ámbito de aplicación y aceptación">
             <p>
-              Estas Condiciones se aplican a toda contratación de servicios profesionales realizada a través del sitio web <strong>kseniailicheva.com</strong> y su plataforma privada de cliente, con independencia del canal por el que se formalice el presupuesto (web, email o WhatsApp).
+              Estas Condiciones se aplican a toda contratación de servicios profesionales realizada a través del sitio web <strong>expertconsulting.es</strong> y su plataforma privada de cliente, con independencia del canal por el que se formalice el presupuesto (web, email o WhatsApp).
             </p>
             <p>
               La contratación de cualquier servicio implica la aceptación plena, expresa e inequívoca de las presentes Condiciones, que complementan los <Link href="/terminos" className="text-[#D4A017] underline underline-offset-4">Términos y Condiciones de uso</Link> del sitio.
@@ -130,7 +130,7 @@ export default function CondicionesPage() {
               <strong>Excepción importante:</strong> Si el cliente ha solicitado expresamente el inicio de la prestación del servicio antes de que expire el plazo de desistimiento y el servicio ha comenzado a ejecutarse, perderá el derecho de desistimiento de forma proporcional al servicio ya prestado (art. 107.2 TRLGDCU). En caso de ejecución completa, perderá el derecho íntegramente.
             </p>
             <p>
-              Para ejercer el desistimiento, el cliente debe comunicarlo mediante escrito dirigido a <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a> dentro del plazo indicado, indicando el servicio contratado y su voluntad de desistir. EXPERT confirmará la recepción y tramitará la devolución en un plazo máximo de <strong>14 días</strong>.
+              Para ejercer el desistimiento, el cliente debe comunicarlo mediante escrito dirigido a <a href="mailto:soy@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">soy@expertconsulting.es</a> dentro del plazo indicado, indicando el servicio contratado y su voluntad de desistir. EXPERT confirmará la recepción y tramitará la devolución en un plazo máximo de <strong>14 días</strong>.
             </p>
             <p>
               El derecho de desistimiento no aplica a servicios de empresa a empresa (B2B) ni a encargos donde el cliente haya renunciado expresamente a él por escrito.
@@ -139,7 +139,7 @@ export default function CondicionesPage() {
 
           <Section title="8. Cancelación de suscripciones">
             <p>
-              Los planes de suscripción mensual (Plan Avanzado, Plan Colaborativo, Plan Delegado) pueden cancelarse en cualquier momento con un preaviso mínimo de <strong>30 días naturales</strong> comunicado por escrito a <a href="mailto:soy@kseniailicheva.com" className="text-[#D4A017] underline underline-offset-4">soy@kseniailicheva.com</a> o a través del panel de cliente.
+              Los planes de suscripción mensual (Plan Avanzado, Plan Colaborativo, Plan Delegado) pueden cancelarse en cualquier momento con un preaviso mínimo de <strong>30 días naturales</strong> comunicado por escrito a <a href="mailto:soy@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">soy@expertconsulting.es</a> o a través del panel de cliente.
             </p>
             <p>
               La cancelación surte efecto al final del período de facturación en curso. No se realizan devoluciones por períodos ya facturados y en curso, salvo que la cancelación sea motivada por un incumplimiento imputable a EXPERT.

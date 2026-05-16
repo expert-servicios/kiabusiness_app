@@ -23,7 +23,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${category.name} | EXPERT`,
       description: category.description,
-      url: `https://kseniailicheva.com/servicios/${categoria}`
+      url: `https://expertconsulting.es/servicios/${categoria}`
     }
   };
 }

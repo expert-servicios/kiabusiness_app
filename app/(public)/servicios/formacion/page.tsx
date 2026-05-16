@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     'Formación personalizada 1:1 sobre tu PC, con tu certificado digital y tu acceso real a la AEAT, Seguridad Social, Holded y otras administraciones. 180 € + IVA por sesión de 2 horas.',
   openGraph: {
     type: 'website',
-    url: 'https://kseniailicheva.com/servicios/formacion',
+    url: 'https://expertconsulting.es/servicios/formacion',
     title: 'Formación práctica con tus datos reales | EXPERT',
     description:
       'Sesiones 1:1 sobre tu propio PC: AEAT, Seguridad Social, Holded, alta de autónomo, constitución de empresa y más. 180 € + IVA / 2 h.',
