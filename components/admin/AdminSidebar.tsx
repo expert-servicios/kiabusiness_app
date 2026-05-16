@@ -29,6 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Expedientes', href: '/admin/expedientes' },
       { label: 'Presupuestos', href: '/admin/presupuestos' },
+      { label: 'WhatsApp', href: '/admin/whatsapp' },
     ]
   },
   {
