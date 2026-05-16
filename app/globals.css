@@ -46,6 +46,15 @@ canvas {
   background-color: #0d1b2a;
 }
 
+/* WhatsApp inbox — safe area + auto-grow textarea */
+.wa-reply-bar {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.wa-textarea {
+  min-height: 44px;
+  max-height: 120px;
+}
+
 .gtm-noscript {
   display: none;
   visibility: hidden;
