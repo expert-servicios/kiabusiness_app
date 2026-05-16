@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
 
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
 
-    const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, una gestoría española.
-Ayudas al asesor humano a redactar mensajes para enviar a clientes por WhatsApp.
-Escribe siempre en español, tono profesional pero cercano. Máximo 3 párrafos cortos.
-No uses markdown, emojis excesivos ni listas con guiones. Firma como "Asesoría EXPERT" al final si es apropiado.
+    const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
+Ayudas al asesor humano a redactar mensajes profesionales para enviar a clientes.
+Escribe en español, tono cercano y profesional. Usa algún emoji ocasional (✅ 📋 👋 😊 💼) para humanizar.
+Máximo 3 párrafos cortos. No uses markdown ni listas con guiones. Firma como "Asesoría EXPERT 💼" si es apropiado.
+Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial y puede implementarlo y dar soporte.
 
 CONTEXTO DEL CLIENTE:
 ${clientContext}${intentText}

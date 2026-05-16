@@ -4,10 +4,126 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft,
   RefreshCw, Plus, Paperclip, Sparkles, X, FileText, Image as ImageIcon,
-  FolderOpen, ChevronDown
+  FolderOpen, ChevronDown, Smile, UserPlus, Search
 } from 'lucide-react';
 import Link from 'next/link';
 import { WaTemplateModal } from './WaTemplateModal';
+
+// ── Emoji picker ──────────────────────────────────────────────
+const EMOJIS = [
+  '😊','👋','🙏','😄','👍','✅','❤️','🌟','💪','🎉',
+  '👏','🤝','✨','📋','📄','📅','💼','🏢','💡','📞',
+  '📱','💬','🔔','📌','⚠️','❌','🔍','💳','🚀','🌿',
+  '😅','🤔','😍','🙌','💯','⭐','🏆','📊','📈','🔑',
+];
+
+function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
+  return (
+    <div className="absolute bottom-full mb-2 left-0 z-50 rounded-2xl border border-[#d8cbb5] bg-white p-2 shadow-xl">
+      <div className="grid grid-cols-10 gap-0.5">
+        {EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => { onSelect(emoji); onClose(); }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-lg transition hover:bg-[#f0e9d8] active:scale-95"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Link unknown contact ──────────────────────────────────────
+function LinkClientModal({ phone, onLinked, onClose }: {
+  phone: string;
+  onLinked: (client: { id: string; full_name: string | null; email: string }) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<{ id: string; full_name: string | null; email: string; phone: string | null }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [linking, setLinking] = useState(false);
+
+  useEffect(() => {
+    if (query.length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/whatsapp/link-client?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setResults(data.clients ?? []);
+      } finally { setLoading(false); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const link = async (clientId: string) => {
+    setLinking(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp/link-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, clientId, savePhone: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.client) onLinked(data.client);
+    } finally { setLinking(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-semibold text-[#07111d]">Vincular cliente</p>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-1 hover:bg-[#f0e9d8]">
+            <X className="h-4 w-4 text-[#29384a]" />
+          </button>
+        </div>
+        <p className="mb-3 text-xs text-[#29384a]">
+          Número: <strong>{phone}</strong> · Busca el cliente para vincularlo
+        </p>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nombre, email o teléfono…"
+            className="w-full rounded-xl border border-[#d8cbb5] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#25D366]"
+          />
+        </div>
+        <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
+          {loading && <p className="py-3 text-center text-xs text-[#29384a]">Buscando…</p>}
+          {!loading && query.length >= 2 && results.length === 0 && (
+            <p className="py-3 text-center text-xs text-[#29384a]">Sin resultados</p>
+          )}
+          {results.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              disabled={linking}
+              onClick={() => link(c.id)}
+              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9] disabled:opacity-50"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-xs font-bold text-[#1a9e4a]">
+                {(c.full_name ?? c.email)[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[#07111d]">{c.full_name ?? '—'}</p>
+                <p className="truncate text-xs text-[#29384a]">{c.email}</p>
+                {c.phone && <p className="text-[10px] text-[#9ca3af]">{c.phone}</p>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface WaCase { id: string; service: string; state: string }
 
@@ -299,6 +415,8 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [aiLoading, setAiLoading] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ url: string; waType: string; filename: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showLinkClient, setShowLinkClient] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -466,6 +584,24 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend();
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const el = textareaRef.current;
+    if (!el) { setReply((r) => r + emoji); return; }
+    const start = el.selectionStart ?? reply.length;
+    const end   = el.selectionEnd   ?? reply.length;
+    const next  = reply.slice(0, start) + emoji + reply.slice(end);
+    setReply(next);
+    setTimeout(() => { el.focus(); el.setSelectionRange(start + emoji.length, start + emoji.length); }, 0);
+  };
+
+  const handleClientLinked = (client: { id: string; full_name: string | null; email: string }) => {
+    if (!selected) return;
+    setConversations((prev) => prev.map((c) =>
+      c.phone !== selected ? c : { ...c, clientId: client.id, clientName: client.full_name, clientEmail: client.email }
+    ));
+    setShowLinkClient(false);
   };
 
   const handleNewConvSent = useCallback((phone: string, previewText: string) => {
@@ -639,6 +775,16 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                   <AlertTriangle className="h-3 w-3" /> REVISAR
                 </span>
               )}
+              {/* Vincular cliente desconocido */}
+              {!activeConv.clientId && (
+                <button
+                  type="button"
+                  onClick={() => setShowLinkClient(true)}
+                  className="flex items-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/80 transition hover:bg-white/20"
+                >
+                  <UserPlus className="h-3 w-3" /> Vincular cliente
+                </button>
+              )}
               {activeConv.clientId && (
                 <CaseAssign
                   clientId={activeConv.clientId}
@@ -721,7 +867,10 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           )}
 
           {/* Reply box */}
-          <div className="flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2">
+          <div className="relative flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2">
+            {showEmoji && (
+              <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
+            )}
             {/* Attach */}
             <input
               ref={fileInputRef}
@@ -739,6 +888,16 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
               title="Adjuntar archivo"
             >
               {uploading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
+            </button>
+
+            {/* Emoji */}
+            <button
+              type="button"
+              onClick={() => setShowEmoji((v) => !v)}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#29384a]'}`}
+              title="Emojis"
+            >
+              <Smile className="h-5 w-5" />
             </button>
 
             {/* AI compose */}
@@ -788,6 +947,13 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       </div>
       {showNewModal && (
         <NewConvModal onClose={() => setShowNewModal(false)} onSent={handleNewConvSent} />
+      )}
+      {showLinkClient && activeConv && (
+        <LinkClientModal
+          phone={activeConv.phone}
+          onLinked={handleClientLinked}
+          onClose={() => setShowLinkClient(false)}
+        />
       )}
     </>
   );
