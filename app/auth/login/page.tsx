@@ -15,7 +15,7 @@ function getSupabaseClient() {
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState<'magic' | 'google' | null>(null);
+  const [loading, setLoading] = useState<'magic' | 'google' | 'microsoft' | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,6 +35,23 @@ export default function LoginPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al enviar el enlace.');
     } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleMicrosoft = async () => {
+    setError('');
+    setLoading('microsoft');
+    const supabase = getSupabaseClient();
+    if (!supabase) { setError('Error de configuración. Inténtalo de nuevo.'); setLoading(null); return; }
+    try {
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` }
+      });
+      if (err) throw err;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión con Microsoft.');
       setLoading(null);
     }
   };
@@ -170,6 +187,26 @@ export default function LoginPage() {
                   </svg>
                 )}
                 Acceder con Google
+              </button>
+
+              {/* Microsoft button */}
+              <button
+                type="button"
+                onClick={handleMicrosoft}
+                disabled={!!loading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading === 'microsoft' ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#F25022" d="M1 1h10.5v10.5H1z" />
+                    <path fill="#7FBA00" d="M12.5 1H23v10.5H12.5z" />
+                    <path fill="#00A4EF" d="M1 12.5h10.5V23H1z" />
+                    <path fill="#FFB900" d="M12.5 12.5H23V23H12.5z" />
+                  </svg>
+                )}
+                Acceder con Microsoft
               </button>
             </div>
           )}
