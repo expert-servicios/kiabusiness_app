@@ -1,8 +1,9 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import Script from 'next/script';
 import { type ReactNode } from 'react';
+import { PwaRegister } from '@/components/PwaRegister';
 
 const GTM_ID = 'GTM-MKZ522HP';
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -19,8 +20,21 @@ const playfair = Playfair_Display({
   display: 'swap'
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#07111d',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://kseniailicheva.com'),
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'EXPERT',
+  },
   title: 'EXPERT | Asesoría fiscal, legal y administrativa',
   description:
     'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
@@ -85,6 +99,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             strategy="afterInteractive"
           />
         ) : null}
+        <PwaRegister />
         {children}
       </body>
     </html>

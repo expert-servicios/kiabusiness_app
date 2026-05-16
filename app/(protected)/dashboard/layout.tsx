@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
+import { MobileNav } from '@/components/dashboard/MobileNav';
 
 async function fetchJson(path: string, cookieHeader: string) {
   try {
@@ -36,7 +37,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         userEmail={profile?.email ?? ''}
         isAdmin={profile?.role === 'admin'}
       />
-      {children}
+      <div className="pb-20 lg:pb-0">
+        {children}
+      </div>
+      <MobileNav />
     </>
   );
 }
