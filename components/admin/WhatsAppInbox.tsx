@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft, RefreshCw, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { WaTemplateModal } from './WaTemplateModal';
 
 interface WaMessage {
   id: string;
@@ -51,6 +52,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -148,6 +150,50 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
   const totalReview = conversations.filter((c) => c.needsReview).length;
 
+  const handleTemplateSent = useCallback((phone: string, previewText: string) => {
+    const normalized = phone.replace(/\D/g, '');
+    setConversations((prev) => {
+      const exists = prev.find((c) => c.phone === normalized);
+      if (exists) {
+        return prev.map((c) => c.phone !== normalized ? c : {
+          ...c,
+          messages: [...c.messages, {
+            id: crypto.randomUUID(),
+            direction: 'outbound' as const,
+            body: previewText,
+            created_at: new Date().toISOString(),
+            needs_review: false,
+            ai_responded: false,
+            read_at: null,
+          }],
+          lastAt: new Date().toISOString(),
+        });
+      }
+      return [{
+        phone: normalized,
+        clientId: null,
+        clientName: null,
+        clientEmail: null,
+        messages: [{
+          id: crypto.randomUUID(),
+          direction: 'outbound' as const,
+          body: previewText,
+          created_at: new Date().toISOString(),
+          needs_review: false,
+          ai_responded: false,
+          read_at: null,
+        }],
+        unread: 0,
+        needsReview: false,
+        lastAt: new Date().toISOString(),
+      }, ...prev];
+    });
+    setSelected(normalized);
+    setShowTemplateModal(false);
+    // Refresh after a moment to get real data
+    setTimeout(loadConversations, 3000);
+  }, [loadConversations]);
+
   // ── Contact list panel ──────────────────────────────────────
   const ContactList = (
     <aside className={`flex flex-col bg-white
@@ -164,15 +210,25 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             {conversations.length} conversaciones
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
-          title="Actualizar"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowTemplateModal(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#25D366] text-white transition hover:bg-[#1da851]"
+            title="Nueva conversación"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
+            title="Actualizar"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Conversation list */}
@@ -349,10 +405,18 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   );
 
   return (
-    // h-dvh minus the admin mobile topbar (3rem ≈ 48px); on desktop h-screen fills alongside sidebar
-    <div className="flex h-[calc(100dvh-3rem)] overflow-hidden lg:h-screen">
-      {ContactList}
-      {ThreadPanel}
-    </div>
+    <>
+      {/* h-dvh minus the admin mobile topbar (3rem ≈ 48px); on desktop h-screen fills alongside sidebar */}
+      <div className="flex h-[calc(100dvh-3rem)] overflow-hidden lg:h-screen">
+        {ContactList}
+        {ThreadPanel}
+      </div>
+      {showTemplateModal && (
+        <WaTemplateModal
+          onClose={() => setShowTemplateModal(false)}
+          onSent={handleTemplateSent}
+        />
+      )}
+    </>
   );
 }
