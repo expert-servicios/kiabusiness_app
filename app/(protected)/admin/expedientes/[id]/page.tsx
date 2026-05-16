@@ -156,6 +156,7 @@ export default async function AdminCaseDetailPage({
             caseId={id}
             initialMessages={messages}
             currentRole="admin"
+            clientPhone={c.client.phone}
           />
         </div>
 

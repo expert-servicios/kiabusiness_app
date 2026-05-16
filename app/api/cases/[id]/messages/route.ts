@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
 
-const messageSchema = z.object({ body: z.string().min(1).max(2000) });
+const messageSchema = z.object({
+  body: z.string().min(1).max(2000),
+  sendWhatsApp: z.boolean().optional().default(false),
+});
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -77,7 +81,40 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Error al enviar mensaje' }, { status: 500 });
     }
 
-    return NextResponse.json({ message }, { status: 201 });
+    // Send via WhatsApp if requested (admin only, client must have phone)
+    let whatsappResult: { sent: boolean; error?: string } = { sent: false };
+    if (senderRole === 'admin' && parseResult.data.sendWhatsApp) {
+      const { data: clientProfile } = await adminSupabase
+        .from('profiles')
+        .select('phone, full_name')
+        .eq('id', caseData.client_id)
+        .single();
+
+      if (clientProfile?.phone) {
+        const result = await sendWhatsAppMessage({
+          to: clientProfile.phone,
+          body: parseResult.data.body,
+          clientId: caseData.client_id,
+        });
+
+        if (result.success) {
+          await logWhatsAppConversation({
+            clientId: caseData.client_id,
+            phoneNumber: clientProfile.phone,
+            direction: 'outbound',
+            body: parseResult.data.body,
+            whatsappMessageId: result.messageId,
+          });
+          whatsappResult = { sent: true };
+        } else {
+          whatsappResult = { sent: false, error: result.error };
+        }
+      } else {
+        whatsappResult = { sent: false, error: 'El cliente no tiene teléfono registrado' };
+      }
+    }
+
+    return NextResponse.json({ message, whatsapp: whatsappResult }, { status: 201 });
   } catch (error) {
     console.error('Message POST error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

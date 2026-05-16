@@ -19,30 +19,76 @@ export interface LogConversationParams {
   whatsappMessageId?: string;
 }
 
-/**
- * Send a WhatsApp message via Meta Cloud API.
- * TODO: replace stub with real Meta Graph API call using WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID.
- */
 export async function sendWhatsAppMessage(
   message: WhatsAppOutbound
-): Promise<{ success: boolean; messageId?: string }> {
-  console.log('[WhatsApp stub] sendWhatsAppMessage', message);
-  return { success: true };
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneNumberId) {
+    console.error('[WhatsApp] Missing META_WHATSAPP_ACCESS_TOKEN or META_WHATSAPP_PHONE_NUMBER_ID');
+    return { success: false, error: 'WhatsApp not configured' };
+  }
+
+  // Normalize phone: digits only, add country code if missing
+  const to = message.to.replace(/\D/g, '');
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to,
+          type: 'text',
+          text: { preview_url: false, body: message.body },
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('[WhatsApp] API error:', data);
+      return { success: false, error: data?.error?.message ?? 'API error' };
+    }
+
+    const messageId: string = data?.messages?.[0]?.id;
+    return { success: true, messageId };
+  } catch (err) {
+    console.error('[WhatsApp] fetch error:', err);
+    return { success: false, error: 'Network error' };
+  }
 }
 
-/**
- * Parse an inbound Meta Cloud webhook payload into a normalized message.
- * TODO: extract entry[0].changes[0].value.messages[0] per Meta Webhooks spec.
- */
 export async function handleWhatsAppWebhook(payload: unknown): Promise<WhatsAppInbound | null> {
-  console.log('[WhatsApp stub] handleWhatsAppWebhook', payload);
-  return null;
+  try {
+    const p = payload as Record<string, unknown>;
+    const entry = (p?.entry as unknown[])?.[0] as Record<string, unknown>;
+    const change = (entry?.changes as unknown[])?.[0] as Record<string, unknown>;
+    const value = change?.value as Record<string, unknown>;
+    const messages = value?.messages as Record<string, unknown>[] | undefined;
+    const msg = messages?.[0];
+
+    if (!msg || msg.type !== 'text') return null;
+
+    return {
+      from: msg.from as string,
+      body: (msg.text as Record<string, string>)?.body ?? '',
+      messageId: msg.id as string,
+      timestamp: msg.timestamp as string,
+    };
+  } catch {
+    return null;
+  }
 }
 
-/**
- * Match a WhatsApp `from` number to a client profile id.
- * Normalizes both sides to digits only before comparing.
- */
 export function mapWhatsAppMessageToClient(
   from: string,
   profiles: { id: string; phone: string | null }[]
@@ -52,9 +98,6 @@ export function mapWhatsAppMessageToClient(
   return match?.id ?? null;
 }
 
-/**
- * Persist a WhatsApp conversation record in whatsapp_conversations.
- */
 export async function logWhatsAppConversation(params: LogConversationParams): Promise<void> {
   try {
     const { getSupabaseAdmin } = await import('./supabase');

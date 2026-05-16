@@ -12,15 +12,18 @@ interface Message {
   profiles: { full_name: string | null } | null;
 }
 
-export function CaseMessageThread({ caseId, initialMessages, currentRole }: {
+export function CaseMessageThread({ caseId, initialMessages, currentRole, clientPhone }: {
   caseId: string;
   initialMessages: Message[];
   currentRole: 'admin' | 'client';
+  clientPhone?: string | null;
 }) {
   const router = useRouter();
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [whatsappInfo, setWhatsappInfo] = useState<string | null>(null);
+  const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,14 +35,24 @@ export function CaseMessageThread({ caseId, initialMessages, currentRole }: {
     if (!trimmed) return;
     setSending(true);
     setError(null);
+    setWhatsappInfo(null);
     try {
       const response = await fetch(`/api/cases/${caseId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: trimmed })
+        body: JSON.stringify({ body: trimmed, sendWhatsApp }),
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error ?? 'No se pudo enviar'); return; }
+
+      if (sendWhatsApp && data.whatsapp) {
+        if (data.whatsapp.sent) {
+          setWhatsappInfo('Mensaje enviado también por WhatsApp.');
+        } else {
+          setWhatsappInfo(`WhatsApp no enviado: ${data.whatsapp.error ?? 'error desconocido'}`);
+        }
+      }
+
       setBody('');
       router.refresh();
     } catch {
@@ -52,6 +65,8 @@ export function CaseMessageThread({ caseId, initialMessages, currentRole }: {
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend();
   };
+
+  const canSendWhatsApp = currentRole === 'admin' && !!clientPhone;
 
   return (
     <div>
@@ -97,7 +112,28 @@ export function CaseMessageThread({ caseId, initialMessages, currentRole }: {
           {sending ? '...' : 'Enviar'}
         </button>
       </div>
+
+      {canSendWhatsApp && (
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-[#29384a]">
+          <input
+            type="checkbox"
+            checked={sendWhatsApp}
+            onChange={(e) => setSendWhatsApp(e.target.checked)}
+            className="h-3.5 w-3.5 accent-[#25D366]"
+          />
+          <span>Enviar también por WhatsApp ({clientPhone})</span>
+        </label>
+      )}
+      {!canSendWhatsApp && currentRole === 'admin' && (
+        <p className="mt-2 text-xs text-[#29384a]/60">El cliente no tiene teléfono registrado — no se puede enviar por WhatsApp.</p>
+      )}
+
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+      {whatsappInfo ? (
+        <p className={`mt-2 text-xs font-medium ${whatsappInfo.startsWith('Mensaje enviado') ? 'text-[#25D366]' : 'text-amber-600'}`}>
+          {whatsappInfo}
+        </p>
+      ) : null}
     </div>
   );
 }
