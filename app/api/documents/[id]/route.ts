@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const supabase = createServerSupabaseClient(request);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    const admin = getSupabaseAdmin();
+    const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
+    const isAdmin = profile?.role === 'admin';
+
+    const { data: doc, error: docError } = await admin
+      .from('documents')
+      .select('id, file_path, client_id')
+      .eq('id', id)
+      .single();
+
+    if (docError || !doc) {
+      return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 });
+    }
+
+    if (!isAdmin && doc.client_id !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    if (doc.file_path) {
+      await admin.storage.from('client-documents').remove([doc.file_path]);
+    }
+
+    await admin.from('documents').delete().eq('id', id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Document DELETE error:', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
+
 const docUpdateSchema = z.object({
   state: z.enum(['pendiente', 'revisado', 'rechazado'])
 });

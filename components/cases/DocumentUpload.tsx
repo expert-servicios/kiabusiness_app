@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Download, Trash2 } from 'lucide-react';
 
 interface Document {
   id: string;
@@ -23,6 +23,8 @@ export function DocumentUpload({ caseId, initialDocuments }: { caseId: string; i
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,6 +51,41 @@ export function DocumentUpload({ caseId, initialDocuments }: { caseId: string; i
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleDownload = async (docId: string, name: string) => {
+    setDownloadingId(docId);
+    try {
+      const res = await fetch(`/api/documents/${docId}/download`);
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Error al descargar'); return; }
+      const a = document.createElement('a');
+      a.href = data.url;
+      a.download = name;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+    } catch {
+      setError('Error de conexión al descargar.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleDelete = async (docId: string, name: string) => {
+    if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return;
+    setDeletingId(docId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Error al eliminar'); return; }
+      router.refresh();
+    } catch {
+      setError('Error de conexión al eliminar.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -83,16 +120,38 @@ export function DocumentUpload({ caseId, initialDocuments }: { caseId: string; i
         <div className="space-y-2">
           {initialDocuments.map((doc) => {
             const cfg = DOC_STATE_LABELS[doc.state] ?? DOC_STATE_LABELS.pendiente;
+            const isDeleting = deletingId === doc.id;
+            const isDownloading = downloadingId === doc.id;
             return (
               <div key={doc.id} className="flex items-center justify-between rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3">
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <FileText className="h-4 w-4 flex-shrink-0 text-[#c88b25]" />
-                  <div>
-                    <p className="text-sm font-medium text-[#07111d]">{doc.original_name}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#07111d]">{doc.original_name}</p>
                     <p className="text-xs text-[#29384a]">{new Date(doc.created_at).toLocaleDateString('es-ES')}</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${cfg.color}`}>{cfg.label}</span>
+                <div className="ml-3 flex shrink-0 items-center gap-2">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${cfg.color}`}>{cfg.label}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(doc.id, doc.original_name)}
+                    disabled={isDownloading}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#e8dfc8] hover:text-[#07111d] disabled:opacity-40"
+                    title="Descargar"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(doc.id, doc.original_name)}
+                    disabled={isDeleting}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-red-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             );
           })}
