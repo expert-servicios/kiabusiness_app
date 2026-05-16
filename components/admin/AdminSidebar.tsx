@@ -205,7 +205,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   return (
     <>
       {/* ── MOBILE topbar ── */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-white/8 bg-[#07111d] px-4 py-3 lg:hidden">
+      <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/8 bg-[#07111d] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-[#D4A017]" />
           <span className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Admin</span>
@@ -224,17 +224,9 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
         </button>
       </div>
 
-      {/* ── MOBILE overlay ── */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* ── MOBILE drawer ── */}
+      {/* ── MOBILE drawer — full screen ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#07111d] transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-0 z-50 bg-[#07111d] transition-transform duration-300 lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

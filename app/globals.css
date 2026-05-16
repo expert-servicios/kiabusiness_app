@@ -54,6 +54,9 @@ canvas {
   min-height: 44px;
   max-height: 120px;
 }
+.wa-safe-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+}
 
 .gtm-noscript {
   display: none;

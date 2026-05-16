@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 
 async function fetchJson(path: string, cookieHeader: string) {
   try {
@@ -47,9 +48,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         userEmail={profile?.email ?? ''}
         urgentCount={urgentCount}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pb-20 lg:pb-0">
         {children}
       </div>
+      <AdminMobileNav urgentCount={urgentCount} />
     </div>
   );
 }
