@@ -12,19 +12,19 @@
   "lang": "es",
   "icons": [
     {
-      "src": "/logos/EXPERT_logo/expert-favicon.png",
+      "src": "/logos/EXPERT_logo/expert-isotipo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logos/EXPERT_logo/expert-favicon.png",
+      "src": "/logos/EXPERT_logo/expert-isotipo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logos/EXPERT_logo/expert-favicon.png",
+      "src": "/logos/EXPERT_logo/Icono dorado EXPERT.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

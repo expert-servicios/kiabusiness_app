@@ -5,6 +5,7 @@ import {
   FileText, FolderOpen, Mail, MessageCircle,
   TrendingUp, UserCheck, Users, Zap
 } from 'lucide-react';
+import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
 import { CASE_ACTION_GROUPS, countCaseStates } from '@/lib/utils/case-states';
 import {
   RevenueChart,
@@ -166,6 +167,9 @@ export default async function AdminPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
+
+        {/* ── PWA INSTALL CTA ── */}
+        <InstallPwaPrompt variant="inline" />
 
         {/* ── ALERTA DE ACCIONES URGENTES ── */}
         {urgentCount > 0 && (

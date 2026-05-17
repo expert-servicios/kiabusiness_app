@@ -72,7 +72,9 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\admin\\\\citas\")",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\" -Recurse -Directory | Select-Object -ExpandProperty FullName | Where-Object { $_ -match 'whatsapp|admin' })",
       "PowerShell(if \\(-not \\(Test-Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\"\\)\\) { New-Item -ItemType File \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\" | Out-Null; Write-Host \"created\" } else { Write-Host \"exists\" })",
-      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\push\\\\subscribe\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\push\\\\subscribe\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logos\\\\EXPERT_logo\\\\expert-isotipo.png\" \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\icon.png\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logos\\\\EXPERT_logo\\\\expert-isotipo.png\" \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\apple-icon.png\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",

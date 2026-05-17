@@ -212,7 +212,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   return (
     <>
       {/* ── MOBILE topbar ── */}
-      <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/8 bg-[#07111d] px-4 py-3 lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/8 bg-[#07111d] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-[#D4A017]" />
           <span className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Admin</span>

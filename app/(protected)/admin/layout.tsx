@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         userEmail={profile?.email ?? ''}
         urgentCount={urgentCount}
       />
-      <div className="flex min-w-0 flex-1 flex-col pb-20 lg:pb-0">
+      <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
         {children}
       </div>
       <AdminMobileNav urgentCount={urgentCount} />

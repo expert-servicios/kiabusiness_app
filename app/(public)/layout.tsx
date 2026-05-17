@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { CalendarClock, MessageCircle } from 'lucide-react';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
+import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       {children}
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <Footer />
+      <InstallPwaPrompt variant="banner" />
       {/* Floating action buttons */}
       <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
         <a

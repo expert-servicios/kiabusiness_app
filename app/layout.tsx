@@ -54,16 +54,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '192x192' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '512x512' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
+      { url: '/logos/EXPERT_logo/expert-isotipo.png', type: 'image/png', sizes: 'any' },
     ],
-    shortcut: [{ url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }],
-    apple: [
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '180x180' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '1024x1024' }
-    ]
+    shortcut: '/logos/EXPERT_logo/expert-isotipo.png',
+    apple: '/logos/EXPERT_logo/expert-isotipo.png',
   }
 };
 
