@@ -9,6 +9,30 @@ export interface WhatsAppOutbound {
   caption?: string;
 }
 
+export interface WaInteractiveButton {
+  id: string;
+  title: string; // max 20 chars
+}
+
+export interface WaInteractiveListRow {
+  id: string;
+  title: string;        // max 24 chars
+  description?: string; // max 72 chars
+}
+
+export interface WaInteractiveListSection {
+  title: string;
+  rows: WaInteractiveListRow[];
+}
+
+export interface WaInteractiveOutbound {
+  to: string;
+  body: string;
+  footer?: string;
+  buttons?: WaInteractiveButton[];
+  list?: { buttonText: string; sections: WaInteractiveListSection[] };
+}
+
 export interface WhatsAppInbound {
   from: string;
   body: string;
@@ -100,6 +124,75 @@ export async function sendWhatsAppMessage(message: WhatsAppOutbound): Promise<Wa
   }
 }
 
+export async function sendWhatsAppInteractive(params: WaInteractiveOutbound): Promise<WaSendResult> {
+  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) {
+    return { success: false, error: 'WhatsApp no configurado' };
+  }
+
+  let to = params.to.replace(/\D/g, '');
+  if (to.length === 9 && (to.startsWith('6') || to.startsWith('7'))) to = '34' + to;
+
+  let interactive: Record<string, unknown>;
+
+  if (params.buttons?.length) {
+    interactive = {
+      type: 'button',
+      body: { text: params.body },
+      ...(params.footer ? { footer: { text: params.footer } } : {}),
+      action: {
+        buttons: params.buttons.slice(0, 3).map((b) => ({
+          type: 'reply',
+          reply: { id: b.id.slice(0, 256), title: b.title.slice(0, 20) },
+        })),
+      },
+    };
+  } else if (params.list) {
+    interactive = {
+      type: 'list',
+      body: { text: params.body },
+      ...(params.footer ? { footer: { text: params.footer } } : {}),
+      action: {
+        button: params.list.buttonText.slice(0, 20),
+        sections: params.list.sections.map((s) => ({
+          title: s.title.slice(0, 24),
+          rows: s.rows.map((r) => ({
+            id: r.id,
+            title: r.title.slice(0, 24),
+            ...(r.description ? { description: r.description.slice(0, 72) } : {}),
+          })),
+        })),
+      },
+    };
+  } else {
+    return { success: false, error: 'Se requieren buttons o list' };
+  }
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to,
+        type: 'interactive',
+        interactive,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('[WhatsApp interactive] API error:', JSON.stringify(data));
+      return { success: false, error: data?.error?.message ?? 'Error de API Meta', detail: data?.error };
+    }
+    return { success: true, messageId: data?.messages?.[0]?.id ?? '' };
+  } catch (err) {
+    console.error('[WhatsApp interactive] fetch error:', err);
+    return { success: false, error: 'Error de red al contactar Meta API' };
+  }
+}
+
 export async function handleWhatsAppWebhook(payload: unknown): Promise<WhatsAppInbound | null> {
   try {
     const p = payload as Record<string, unknown>;
@@ -120,6 +213,20 @@ export async function handleWhatsAppWebhook(payload: unknown): Promise<WhatsAppI
 
     if (type === 'text') {
       return { ...base, body: (msg.text as Record<string, string>)?.body ?? '' };
+    }
+
+    // Interactive replies (button_reply or list_reply from user clicking a button)
+    if (type === 'interactive') {
+      const interactive = msg.interactive as Record<string, unknown>;
+      const interactiveType = interactive?.type as string;
+      if (interactiveType === 'button_reply') {
+        const reply = interactive.button_reply as { id: string; title: string };
+        return { ...base, body: reply?.title ?? '' };
+      }
+      if (interactiveType === 'list_reply') {
+        const reply = interactive.list_reply as { id: string; title: string; description?: string };
+        return { ...base, body: reply?.title ?? '' };
+      }
     }
 
     // Media messages (image, document, audio, video)
