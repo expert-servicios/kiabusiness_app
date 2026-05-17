@@ -17,13 +17,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
 
-    const [profileRes, casesRes, subsRes, quotesRes, waRes, companiesRes] = await Promise.all([
-      admin.from('profiles').select('id,full_name,email,phone,whatsapp_number,role,status,created_at').eq('id', id).single(),
+    const [profileRes, authRes, casesRes, subsRes, quotesRes, waRes, companiesRes] = await Promise.all([
+      admin.from('profiles').select('id,full_name,phone,whatsapp_number,role,status,created_at').eq('id', id).single(),
+      admin.auth.admin.getUserById(id),
       admin.from('cases').select('id,service,category,state,opened_at,closed_at,admin_note').eq('client_id', id).order('opened_at', { ascending: false }),
-      admin.from('subscriptions').select('id,plan,status,current_period_end,stripe_subscription_id').eq('user_id', id).order('created_at', { ascending: false }),
-      admin.from('quotes').select('id,service,status,amount_eur,created_at').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
+      admin.from('subscriptions').select('id,plan_name,status,current_period_end,stripe_subscription_id').eq('client_id', id).order('created_at', { ascending: false }),
+      admin.from('quotes').select('id,title,status,amount_eur,created_at').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
       admin.from('whatsapp_conversations').select('id,direction,body,created_at,needs_review,ai_responded,media_type').eq('client_id', id).order('created_at', { ascending: false }).limit(8),
-      admin.from('companies').select('id,name,nif,address').eq('user_id', id).limit(3),
+      admin.from('profile_companies').select('company:companies(id,razon_social,cif_nif,direccion)').eq('profile_id', id).limit(3),
     ]);
 
     if (profileRes.error || !profileRes.data) {
@@ -31,12 +32,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({
-      profile:   profileRes.data,
+      profile:   { ...profileRes.data, email: authRes.data.user?.email ?? '' },
       cases:     casesRes.data    ?? [],
-      subs:      subsRes.data     ?? [],
-      quotes:    quotesRes.data   ?? [],
+      subs:      (subsRes.data ?? []).map((sub) => ({ ...sub, plan: sub.plan_name })),
+      quotes:    (quotesRes.data ?? []).map((quote) => ({ ...quote, service: quote.title })),
       messages:  waRes.data       ?? [],
-      companies: companiesRes.data ?? [],
+      companies: (companiesRes.data ?? []).flatMap((row) => {
+        const company = Array.isArray(row.company) ? row.company[0] : row.company;
+        return company ? [{
+          id: company.id,
+          name: company.razon_social,
+          nif: company.cif_nif,
+          address: company.direccion
+        }] : [];
+      }),
     });
   } catch (err) {
     console.error('[admin/clientes/[id]]', err);
@@ -62,7 +71,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Sin campos a actualizar' }, { status: 400 });
     }
 
-    const { data, error } = await admin.from('profiles').update(update).eq('id', id).select('id,full_name,email,phone,whatsapp_number,status').single();
+    const { data, error } = await admin.from('profiles').update(update).eq('id', id).select('id,full_name,phone,whatsapp_number,status').single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({ profile: data });

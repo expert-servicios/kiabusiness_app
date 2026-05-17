@@ -13,13 +13,103 @@ import {
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
 
-function getPlanName(priceId: string): string {
+type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
+
+function getPlanName(priceId: string, fallback?: string | null): string {
+  if (fallback) return fallback;
+
   const map: Record<string, string> = {
     [process.env.STRIPE_PLAN_MONTHLY_99 ?? '']: 'Plan Avanzado',
     [process.env.STRIPE_PLAN_MONTHLY_199 ?? '']: 'Plan Colaborativo',
     [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Presupuesto Personalizado'
   };
   return map[priceId] ?? 'Suscripción';
+}
+
+function getStripeCustomerId(customer: Stripe.Subscription['customer']): string | null {
+  return typeof customer === 'string' ? customer : customer?.id ?? null;
+}
+
+function getAllowedSubscriptionStatus(status: Stripe.Subscription.Status) {
+  const allowed = ['active', 'canceled', 'past_due', 'unpaid', 'trialing'] as const;
+  return allowed.includes(status as (typeof allowed)[number]) ? status : null;
+}
+
+async function upsertSubscriptionFromStripe(
+  supabaseAdmin: SupabaseAdmin,
+  sub: Stripe.Subscription,
+  userIdHint?: string | null
+): Promise<{ clientId: string; planName: string; periodEnd: string | null } | null> {
+  const customerId = getStripeCustomerId(sub.customer);
+  const priceId = sub.items.data[0]?.price.id ?? '';
+  const status = getAllowedSubscriptionStatus(sub.status);
+
+  if (!customerId || !priceId || !status) {
+    console.warn('[webhook] subscription skipped: unsupported or incomplete data', {
+      subscription: sub.id,
+      status: sub.status,
+      hasCustomer: Boolean(customerId),
+      hasPrice: Boolean(priceId)
+    });
+    return null;
+  }
+
+  let clientId = userIdHint ?? sub.metadata?.user_id ?? null;
+  if (!clientId) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
+      .maybeSingle();
+    clientId = profile?.id ?? null;
+  }
+
+  if (!clientId) {
+    console.error('[webhook] subscription has no resolvable EXPERT user', {
+      subscription: sub.id,
+      customer: customerId
+    });
+    return null;
+  }
+
+  const firstItem = sub.items.data[0];
+  const periodStart = firstItem?.current_period_start
+    ? new Date(firstItem.current_period_start * 1000).toISOString()
+    : null;
+  const periodEnd = firstItem?.current_period_end
+    ? new Date(firstItem.current_period_end * 1000).toISOString()
+    : null;
+  const planName = getPlanName(priceId, sub.metadata?.plan_name);
+
+  const { error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .update({ stripe_customer_id: customerId })
+    .eq('id', clientId);
+  if (profileError) {
+    console.error('[webhook] profile stripe_customer_id update failed:', profileError);
+  }
+
+  const { error: subscriptionError } = await supabaseAdmin.from('subscriptions').upsert(
+    {
+      client_id: clientId,
+      stripe_subscription_id: sub.id,
+      stripe_customer_id: customerId,
+      stripe_price_id: priceId,
+      plan_name: planName,
+      status,
+      current_period_start: periodStart,
+      current_period_end: periodEnd,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: 'stripe_subscription_id' }
+  );
+
+  if (subscriptionError) {
+    console.error('[webhook] subscription upsert failed:', subscriptionError);
+    return null;
+  }
+
+  return { clientId, planName, periodEnd };
 }
 
 async function getClientEmail(userId: string): Promise<{ email: string; name: string } | null> {
@@ -255,8 +345,15 @@ export async function POST(req: NextRequest) {
 
     if (session.mode === 'subscription') {
       const userId = session.client_reference_id ?? session.metadata?.user_id;
-      const customerId = session.customer as string;
-      if (userId && customerId) {
+      const subscriptionId =
+        typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await upsertSubscriptionFromStripe(supabaseAdmin, subscription, userId);
+      } else if (userId && session.customer) {
+        const customerId =
+          typeof session.customer === 'string' ? session.customer : session.customer.id;
         await supabaseAdmin
           .from('profiles')
           .update({ stripe_customer_id: customerId })
@@ -267,48 +364,17 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'customer.subscription.created') {
     const sub = event.data.object as Stripe.Subscription;
-    const customerId = sub.customer as string;
-    const priceId = sub.items.data[0]?.price.id ?? '';
-    const planName = getPlanName(priceId);
+    const subscriptionRecord = await upsertSubscriptionFromStripe(supabaseAdmin, sub);
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('stripe_customer_id', customerId)
-      .maybeSingle();
-
-    if (profile?.id) {
-      const firstItem = sub.items.data[0];
-      const periodStart = firstItem?.current_period_start
-        ? new Date(firstItem.current_period_start * 1000).toISOString()
-        : null;
-      const periodEnd = firstItem?.current_period_end
-        ? new Date(firstItem.current_period_end * 1000).toISOString()
-        : null;
-
-      await supabaseAdmin.from('subscriptions').upsert(
-        {
-          client_id: profile.id,
-          stripe_subscription_id: sub.id,
-          stripe_customer_id: customerId,
-          stripe_price_id: priceId,
-          plan_name: planName,
-          status: sub.status,
-          current_period_start: periodStart,
-          current_period_end: periodEnd,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'stripe_subscription_id' }
-      );
-
-      const clientInfo = await getClientEmail(profile.id);
+    if (subscriptionRecord) {
+      const clientInfo = await getClientEmail(subscriptionRecord.clientId);
       if (clientInfo) {
-        const tpl = subscriptionCreated(clientInfo.name, planName, periodEnd);
+        const tpl = subscriptionCreated(clientInfo.name, subscriptionRecord.planName, subscriptionRecord.periodEnd);
         await sendEmail({
           to: clientInfo.email,
           eventType: 'subscription.created',
           ...tpl,
-          metadata: { subscription_id: sub.id, plan: planName }
+          metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName }
         });
 
         const monthlyAmount = sub.items.data[0]?.price.unit_amount
@@ -317,7 +383,7 @@ export async function POST(req: NextRequest) {
         syncSubscriptionToHolded({
           clientName: clientInfo.name,
           clientEmail: clientInfo.email,
-          planName,
+          planName: subscriptionRecord.planName,
           amountEur: monthlyAmount,
           subscriptionId: sub.id,
           localEntity: 'stripe_subscriptions'
@@ -340,35 +406,25 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'customer.subscription.updated') {
     const sub = event.data.object as Stripe.Subscription;
-    const firstItem = sub.items.data[0];
     const prevAttributes = event.data.previous_attributes as Record<string, unknown> | undefined;
     const prevStatus = prevAttributes?.status as string | undefined;
 
-    await supabaseAdmin
-      .from('subscriptions')
-      .update({
-        status: sub.status,
-        current_period_start: firstItem?.current_period_start
-          ? new Date(firstItem.current_period_start * 1000).toISOString()
-          : null,
-        current_period_end: firstItem?.current_period_end
-          ? new Date(firstItem.current_period_end * 1000).toISOString()
-          : null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', sub.id);
+    const subscriptionRecord = await upsertSubscriptionFromStripe(supabaseAdmin, sub);
 
     if (sub.status === 'past_due' && prevStatus !== 'past_due') {
       const { data: dbSub } = await supabaseAdmin
         .from('subscriptions')
         .select('client_id,plan_name')
         .eq('stripe_subscription_id', sub.id)
-        .single();
+        .maybeSingle();
 
-      if (dbSub?.client_id) {
-        const clientInfo = await getClientEmail(dbSub.client_id);
+      const clientId = subscriptionRecord?.clientId ?? dbSub?.client_id;
+      const planName = subscriptionRecord?.planName ?? dbSub?.plan_name ?? 'SuscripciÃ³n';
+
+      if (clientId) {
+        const clientInfo = await getClientEmail(clientId);
         if (clientInfo) {
-          const tpl = subscriptionPaymentFailed(clientInfo.name, dbSub.plan_name);
+          const tpl = subscriptionPaymentFailed(clientInfo.name, planName);
           await sendEmail({
             to: clientInfo.email,
             eventType: 'subscription.payment_failed',

@@ -79,6 +79,9 @@ export async function POST(request: NextRequest) {
       customer_email: clientEmail,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { user_id: clientId, plan_name: planName, product_type: 'suscripcion' },
+      subscription_data: {
+        metadata: { user_id: clientId, plan_name: planName, price_id: priceId }
+      },
       success_url: `${appUrl}/dashboard/suscripciones?activada=ok`,
       cancel_url: `${appUrl}/dashboard?suscripcion=cancelada`
     });

@@ -18,13 +18,17 @@ export async function GET(request: NextRequest) {
     // Fetch all client profiles
     const { data: profiles, error: profErr } = await admin
       .from('profiles')
-      .select('id,full_name,email,phone,whatsapp_number,role,status,created_at')
+      .select('id,full_name,phone,whatsapp_number,role,status,created_at')
       .eq('role', 'client')
       .order('created_at', { ascending: false });
 
     if (profErr) return NextResponse.json({ error: profErr.message }, { status: 500 });
 
     const clientIds = (profiles ?? []).map((p) => p.id);
+    const authUsers = await admin.auth.admin.listUsers({ perPage: 1000 });
+    const emailById = new Map(
+      (authUsers.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
+    );
 
     // Parallel: cases count, subscriptions, last WA message
     const [casesRes, subsRes, waRes] = await Promise.all([
@@ -37,8 +41,8 @@ export async function GET(request: NextRequest) {
       clientIds.length
         ? admin
             .from('subscriptions')
-            .select('user_id,plan,status')
-            .in('user_id', clientIds)
+            .select('client_id,plan_name,status')
+            .in('client_id', clientIds)
             .eq('status', 'active')
         : Promise.resolve({ data: [] }),
       clientIds.length
@@ -66,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     const subByClient = new Map<string, string>(); // user_id → plan
-    for (const s of subsData) subByClient.set(s.user_id as string, s.plan as string);
+    for (const s of subsData) subByClient.set(s.client_id as string, s.plan_name as string);
 
     const lastWaByClient = new Map<string, string>(); // user_id → created_at
     for (const w of waData) {
@@ -77,7 +81,7 @@ export async function GET(request: NextRequest) {
     const clients = (profiles ?? []).map((p) => ({
       id:           p.id,
       full_name:    p.full_name,
-      email:        p.email,
+      email:        emailById.get(p.id) ?? '',
       phone:        p.phone,
       whatsapp_number: p.whatsapp_number,
       status:       p.status ?? 'active',

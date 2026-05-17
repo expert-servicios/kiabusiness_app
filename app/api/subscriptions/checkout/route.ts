@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
       customer_email: profile?.stripe_customer_id ? undefined : user.email,
       client_reference_id: user.id,
       metadata: { user_id: user.id },
+      subscription_data: {
+        metadata: { user_id: user.id, price_id: priceId }
+      },
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/gracias/pago?type=subscription`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/suscripciones`

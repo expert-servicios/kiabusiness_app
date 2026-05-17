@@ -29,12 +29,22 @@ const PLAN_LABEL: Record<string, string> = {
   gratuito:     'Gratuito',
   avanzado:     'Avanzado',
   colaborativo: 'Colaborativo',
+  'Plan Avanzado': 'Avanzado',
+  'Plan Colaborativo': 'Colaborativo',
+  'Plan Presupuesto Personalizado': 'Personalizado',
+  'Plan Delegado': 'Delegado',
+  'Plan Premium': 'Premium',
 };
 
 const PLAN_CLS: Record<string, string> = {
   gratuito:     'bg-gray-100 text-gray-600',
   avanzado:     'bg-blue-100 text-blue-700',
   colaborativo: 'bg-[#d7a33a]/15 text-[#c88b25]',
+  'Plan Avanzado': 'bg-blue-100 text-blue-700',
+  'Plan Colaborativo': 'bg-[#d7a33a]/15 text-[#c88b25]',
+  'Plan Presupuesto Personalizado': 'bg-purple-100 text-purple-700',
+  'Plan Delegado': 'bg-purple-100 text-purple-700',
+  'Plan Premium': 'bg-purple-100 text-purple-700',
 };
 
 function fmt(d: string | null) {
@@ -189,8 +199,9 @@ export default function AdminClientesPage() {
           >
             <option value="all">Todos los planes</option>
             <option value="gratuito">Gratuito</option>
-            <option value="avanzado">Avanzado</option>
-            <option value="colaborativo">Colaborativo</option>
+            <option value="Plan Avanzado">Avanzado</option>
+            <option value="Plan Colaborativo">Colaborativo</option>
+            <option value="Plan Presupuesto Personalizado">Personalizado</option>
             <option value="none">Sin suscripción</option>
           </select>
           <select
