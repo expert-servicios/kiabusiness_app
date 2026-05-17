@@ -1,12 +1,6 @@
 import webpush from 'web-push';
 import { getSupabaseAdmin } from './supabase';
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
-
 export interface PushPayload {
   title: string;
   body:  string;
@@ -14,8 +8,21 @@ export interface PushPayload {
   tag?:  string;
 }
 
+let vapidReady = false;
+function ensureVapid(): boolean {
+  if (vapidReady) return true;
+  const subject    = process.env.VAPID_SUBJECT;
+  const publicKey  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!subject || !publicKey || !privateKey) return false;
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  vapidReady = true;
+  return true;
+}
+
 // Send push to all admin users
 export async function notifyAdmins(payload: PushPayload): Promise<void> {
+  if (!ensureVapid()) return; // env vars not set — skip silently
   const admin = getSupabaseAdmin();
 
   // Get all admin user IDs
