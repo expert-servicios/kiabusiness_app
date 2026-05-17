@@ -5,6 +5,7 @@ import {
   sendWhatsAppMessage,
   sendWhatsAppInteractive,
 } from '@/lib/integrations/whatsapp';
+import { generateWabaAiText, type WabaAiMessage } from '@/lib/integrations/waba-ai';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
 
@@ -180,9 +181,6 @@ function detectLanguageInstruction(text: string): string {
 }
 
 async function generateAiResponse({ clientId, msgBody, admin, conversationHistory }: AiContext): Promise<AiResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { reply: null };
-
   let clientContext = '';
   const languageInstruction = detectLanguageInstruction(msgBody);
 
@@ -284,30 +282,15 @@ CONTEXTO DEL CLIENTE:
 ${clientContext}`;
 
   // Build messages array with conversation history
-  const messages: { role: 'user' | 'assistant'; content: string }[] = conversationHistory.map((h) => ({
+  const messages: WabaAiMessage[] = conversationHistory.map((h) => ({
     role: h.direction === 'inbound' ? 'user' : 'assistant',
     content: h.body,
   }));
   messages.push({ role: 'user', content: msgBody });
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        system: systemPrompt,
-        messages,
-      }),
-    });
-
-    const data = await res.json();
-    const text: string = data?.content?.[0]?.text?.trim() ?? '';
+    const ai = await generateWabaAiText({ systemPrompt, messages, maxTokens: 500 });
+    const text = ai?.text.trim() ?? '';
 
     if (!text || text.includes('[NEEDS_REVIEW]')) return { reply: null };
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { z } from 'zod';
 
 async function requireAdmin(request: NextRequest) {
@@ -33,8 +34,9 @@ export async function POST(request: NextRequest) {
     const admin = await requireAdmin(request);
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: 'IA no configurada' }, { status: 503 });
+    if (getConfiguredWabaAiProviders().length === 0) {
+      return NextResponse.json({ error: 'IA no configurada' }, { status: 503 });
+    }
 
     const body = await request.json();
     const parsed = schema.safeParse(body);
@@ -94,23 +96,12 @@ ${clientContext}${intentText}
 CONVERSACIÓN RECIENTE:
 ${historyText || 'Sin historial previo.'}`;
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 350,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: 'Redacta el siguiente mensaje para este cliente.' }],
-      }),
+    const ai = await generateWabaAiText({
+      systemPrompt,
+      messages: [{ role: 'user', content: 'Redacta el siguiente mensaje para este cliente.' }],
+      maxTokens: 350,
     });
-
-    const data = await res.json();
-    const draft: string = data?.content?.[0]?.text ?? '';
+    const draft = ai?.text ?? '';
 
     if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
 
