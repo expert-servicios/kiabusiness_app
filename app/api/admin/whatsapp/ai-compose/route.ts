@@ -18,6 +18,16 @@ const schema = z.object({
   intent:    z.string().max(500).optional(), // admin hint: "ask for DNI", "confirm appointment", etc.
 });
 
+function detectLanguageInstruction(text: string): string {
+  if (/[А-Яа-яЁё]/.test(text)) {
+    return 'ruso. Redacta en ruso natural usando alfabeto cirilico.';
+  }
+  if (/[À-ÿ¿¡]/.test(text) || /\b(hola|buenos|buenas|declaracion|declaración|renta|autonomo|autónomo|empresa)\b/i.test(text)) {
+    return 'espanol.';
+  }
+  return 'el mismo idioma del ultimo mensaje del cliente.';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdmin(request);
@@ -54,6 +64,8 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
+    const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
+    const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
 
     const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.
@@ -68,7 +80,9 @@ PÁGINAS CLAVE (incluye el enlace completo cuando sea relevante para el mensaje)
 • Formación Holded → https://expertconsulting.es/servicios/formacion
 
 ACTITUD:
-- Escribe en español, tono cercano y profesional.
+- Idioma obligatorio: ${languageInstruction}
+- Si el cliente escribió en ruso/cirílico, redacta toda la respuesta en ruso/cirílico.
+- Tono cercano y profesional.
 - Usa emojis ocasionales (✅ 📋 👋 😊 💼 📅 🚀) para humanizar.
 - Si el contexto lo permite, termina con una CTA suave: reservar cita, ver planes, pedir presupuesto o ver Holded.
 - Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial, ofrece demo gratuita y enlaza la página.

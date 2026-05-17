@@ -248,14 +248,16 @@ export async function handleWhatsAppWebhook(payload: unknown): Promise<WhatsAppI
 
 export function mapWhatsAppMessageToClient(
   from: string,
-  profiles: { id: string; phone: string | null }[]
+  profiles: { id: string; phone: string | null; whatsapp_number?: string | null }[]
 ): string | null {
   const normalized = from.replace(/\D/g, '');
   // Match by last 9 digits (Spain) or full number
   const match = profiles.find((p) => {
-    if (!p.phone) return false;
-    const pn = p.phone.replace(/\D/g, '');
-    return pn === normalized || pn.slice(-9) === normalized.slice(-9);
+    const numbers = [p.phone, p.whatsapp_number].filter(Boolean) as string[];
+    return numbers.some((number) => {
+      const pn = number.replace(/\D/g, '');
+      return pn === normalized || pn.slice(-9) === normalized.slice(-9);
+    });
   });
   return match?.id ?? null;
 }

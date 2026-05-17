@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   // Profiles
   const clientIds = [...new Set(msgs.filter((m) => m.client_id).map((m) => m.client_id as string))];
   const { data: profiles } = clientIds.length
-    ? await admin.from('profiles').select('id,full_name,email,phone').in('id', clientIds)
+    ? await admin.from('profiles').select('id,full_name,email,phone,whatsapp_number').in('id', clientIds)
     : { data: [] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await admin
     .from('profiles')
     .select('id')
-    .filter('phone', 'ilike', `%${normalized.slice(-9)}%`)
+    .or(`phone.ilike.%${normalized.slice(-9)}%,whatsapp_number.ilike.%${normalized.slice(-9)}%`)
     .maybeSingle();
 
   const result = await sendWhatsAppMessage({

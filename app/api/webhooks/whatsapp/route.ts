@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profiles } = await admin
       .from('profiles')
-      .select('id, phone, full_name')
-      .not('phone', 'is', null);
+      .select('id, phone, whatsapp_number, full_name')
+      .or('phone.not.is.null,whatsapp_number.not.is.null');
 
     for (const msg of messages) {
       const msgType = msg.type as string;
@@ -169,11 +169,22 @@ interface AiResult {
   interactive?: { body: string; buttons: string[] };
 }
 
+function detectLanguageInstruction(text: string): string {
+  if (/[А-Яа-яЁё]/.test(text)) {
+    return 'ruso. Responde en ruso natural usando alfabeto cirilico. No respondas en espanol salvo que el cliente lo pida.';
+  }
+  if (/[À-ÿ¿¡]/.test(text) || /\b(hola|buenos|buenas|declaracion|declaración|renta|autonomo|autónomo|empresa)\b/i.test(text)) {
+    return 'espanol. Responde en espanol.';
+  }
+  return 'el mismo idioma del ultimo mensaje del cliente. Si hay duda, usa espanol solo si el cliente uso espanol.';
+}
+
 async function generateAiResponse({ clientId, msgBody, admin, conversationHistory }: AiContext): Promise<AiResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { reply: null };
 
   let clientContext = '';
+  const languageInstruction = detectLanguageInstruction(msgBody);
 
   if (clientId) {
     const [{ data: profile }, { data: cases }, { data: obligations }] = await Promise.all([
@@ -259,12 +270,15 @@ ACTITUD PROACTIVA:
 - Varía la CTA: reservar cita, pedir presupuesto, ver planes, ver Holded...
 - Si preguntan por Holded → menciona "Partner Oficial" y ofrece demo gratuita
 - Adapta el tono: cercano pero profesional
+- WhatsApp no sustituye el portal: orienta, recoge el mínimo contexto necesario y lleva al cliente a cita, presupuesto o panel seguro
 
 REGLAS GENERALES:
-- Responde siempre en el idioma del cliente (español u otro)
+- Idioma obligatorio para esta respuesta: ${languageInstruction}
+- Si el cliente escribe en ruso/cirílico, toda la respuesta debe estar en ruso/cirílico, incluida la CTA y la firma
 - Emojis con moderación: ✅ 👋 📋 📅 💼 🚀 😊
 - Si requiere decisión profesional compleja o documentación específica → responde EXACTAMENTE: [NEEDS_REVIEW]
 - Nunca inventes plazos, precios exactos ni documentos
+- No hagas listas largas para una primera consulta. Máximo 2 preguntas de aclaración antes de enlazar a cita o presupuesto
 
 CONTEXTO DEL CLIENTE:
 ${clientContext}`;
