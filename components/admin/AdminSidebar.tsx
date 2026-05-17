@@ -9,6 +9,7 @@ import {
   FolderOpen, LayoutDashboard, LogOut, Mail, Menu, Plug,
   Sparkles, UserPlus, Users, X, Zap, ShieldCheck
 } from 'lucide-react';
+import { PushSubscribeButton } from './PushSubscribeButton';
 
 interface NavItem { label: string; href: string; badge?: number }
 interface NavGroup { label: string; icon: React.ElementType; items: NavItem[] }
@@ -181,6 +182,9 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
           <p className="truncate text-xs font-semibold text-white/80">{displayName}</p>
           <p className="truncate text-[10px] text-white/40">{userEmail}</p>
         </div>
+
+        {/* Push notifications toggle */}
+        <PushSubscribeButton />
 
         {/* Switch to client view */}
         <Link

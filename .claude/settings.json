@@ -70,10 +70,13 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\cita\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\gracias\\\\cita\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\admin\\\\citas\")",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\" -Recurse -Directory | Select-Object -ExpandProperty FullName | Where-Object { $_ -match 'whatsapp|admin' })"
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\" -Recurse -Directory | Select-Object -ExpandProperty FullName | Where-Object { $_ -match 'whatsapp|admin' })",
+      "PowerShell(if \\(-not \\(Test-Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\"\\)\\) { New-Item -ItemType File \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\" | Out-Null; Write-Host \"created\" } else { Write-Host \"exists\" })",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\push\\\\subscribe\")"
     ],
     "additionalDirectories": [
-      "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory"
+      "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
+      "c:\\Users\\info\\OneDrive\\Documentos\\EXPERT\\Nueva Pagina web\\ksenia_expert\\app\\(protected)\\admin\\clientes"
     ]
   }
 }

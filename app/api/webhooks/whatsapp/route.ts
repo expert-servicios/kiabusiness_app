@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logWhatsAppConversation, mapWhatsAppMessageToClient, sendWhatsAppMessage } from '@/lib/integrations/whatsapp';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 // Meta webhook verification
 export async function GET(request: NextRequest) {
@@ -47,6 +48,15 @@ export async function POST(request: NextRequest) {
         body: msgBody,
         whatsappMessageId: messageId,
       });
+
+      // Push notification to admins
+      const senderName = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
+      notifyAdmins({
+        title: `WhatsApp de ${senderName}`,
+        body:  msgBody.length > 100 ? msgBody.slice(0, 97) + '…' : msgBody,
+        url:   '/admin/whatsapp',
+        tag:   `wa-${from}`,
+      }).catch(() => {}); // non-blocking, never breaks the webhook
 
       // Try AI response
       const aiResult = await generateAiResponse({ clientId, from, msgBody, admin });
