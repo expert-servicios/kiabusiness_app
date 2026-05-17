@@ -74,7 +74,16 @@
       "PowerShell(if \\(-not \\(Test-Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\"\\)\\) { New-Item -ItemType File \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\sw.js\" | Out-Null; Write-Host \"created\" } else { Write-Host \"exists\" })",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\push\\\\subscribe\")",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logos\\\\EXPERT_logo\\\\expert-isotipo.png\" \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\icon.png\")",
-      "PowerShell(Copy-Item \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logos\\\\EXPERT_logo\\\\expert-isotipo.png\" \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\apple-icon.png\")"
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logos\\\\EXPERT_logo\\\\expert-isotipo.png\" \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\apple-icon.png\")",
+      "Read(//c/Users/info/.claude/**)",
+      "PowerShell(if \\(Test-Path \"$env:APPDATA\\\\Claude\\\\claude_desktop_config.json\"\\) { Get-Content \"$env:APPDATA\\\\Claude\\\\claude_desktop_config.json\" } elseif \\(Test-Path \"$env:APPDATA\\\\Code\\\\User\\\\globalStorage\\\\anthropic.claude-vscode\\\\claude_config.json\"\\) { Get-Content \"$env:APPDATA\\\\Code\\\\User\\\\globalStorage\\\\anthropic.claude-vscode\\\\claude_config.json\" } else { Write-Host \"No desktop config found\" })",
+      "mcp__github__get_file_contents",
+      "mcp__github__create_issue",
+      "PowerShell(claude mcp list 2>&1)",
+      "PowerShell(claude mcp get github 2>&1)",
+      "PowerShell($cfg = Get-Content \"$env:USERPROFILE\\\\.claude.json\" | ConvertFrom-Json; if ($cfg.mcpServers) { $cfg.mcpServers.PSObject.Properties.Name })",
+      "mcp__github__list_issues",
+      "mcp__github__search_repositories"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
