@@ -5,6 +5,7 @@ import {
   sendWhatsAppMessage,
   sendWhatsAppInteractive,
 } from '@/lib/integrations/whatsapp';
+import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, type WabaAiMessage } from '@/lib/integrations/waba-ai';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
@@ -183,6 +184,9 @@ function detectLanguageInstruction(text: string): string {
 async function generateAiResponse({ clientId, msgBody, admin, conversationHistory }: AiContext): Promise<AiResult> {
   let clientContext = '';
   const languageInstruction = detectLanguageInstruction(msgBody);
+  const officialSourceContext = await buildOfficialSourceContext(
+    [...conversationHistory.slice(-3).map((h) => `${h.direction}: ${h.body}`), `inbound: ${msgBody}`].join('\n')
+  );
 
   if (clientId) {
     const [{ data: profile }, { data: cases }, { data: obligations }] = await Promise.all([
@@ -274,9 +278,13 @@ REGLAS GENERALES:
 - Idioma obligatorio para esta respuesta: ${languageInstruction}
 - Si el cliente escribe en ruso/cirílico, toda la respuesta debe estar en ruso/cirílico, incluida la CTA y la firma
 - Emojis con moderación: ✅ 👋 📋 📅 💼 🚀 😊
+- Si hay fuentes oficiales disponibles, usalas para orientar y comparte 1 o 2 enlaces oficiales utiles
+- No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES
 - Si requiere decisión profesional compleja o documentación específica → responde EXACTAMENTE: [NEEDS_REVIEW]
 - Nunca inventes plazos, precios exactos ni documentos
 - No hagas listas largas para una primera consulta. Máximo 2 preguntas de aclaración antes de enlazar a cita o presupuesto
+
+${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
 CONTEXTO DEL CLIENTE:
 ${clientContext}`;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { z } from 'zod';
 
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
     const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
+    const officialSourceContext = await buildOfficialSourceContext(`${historyText}\n${intent ?? ''}`);
 
     const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.
@@ -89,6 +91,10 @@ ACTITUD:
 - Si el contexto lo permite, termina con una CTA suave: reservar cita, ver planes, pedir presupuesto o ver Holded.
 - Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial, ofrece demo gratuita y enlaza la página.
 - Máximo 3 párrafos cortos. No uses markdown ni listas con guiones. Firma como "Asesoría EXPERT 💼" si es apropiado.
+- Si hay fuentes oficiales disponibles, usalas como apoyo y comparte 1 o 2 enlaces oficiales utiles.
+- No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
+
+${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
 CONTEXTO DEL CLIENTE:
 ${clientContext}${intentText}
