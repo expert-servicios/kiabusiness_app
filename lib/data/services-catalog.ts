@@ -29,6 +29,7 @@ export const SERVICES_CATALOG: CatalogSection[] = [
       { id: 'iva',            title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
       { id: 'sociedades',     title: 'Impuesto Sociedades',  description: 'Mod. 200 · cuentas anuales incluidas' },
     ],
+    // imageUrl pending: iva, sociedades
   },
   {
     id: 'extranjeria',
