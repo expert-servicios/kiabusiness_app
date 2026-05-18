@@ -2,6 +2,7 @@ export interface CatalogService {
   id: string;
   title: string;        // max 24 chars (WhatsApp list row limit)
   description: string;  // max 72 chars
+  imageUrl?: string;    // public HTTPS URL for web + future WhatsApp per-service cards
 }
 
 export interface CatalogSection {
@@ -21,9 +22,12 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     cardBody: '📋 Gestionamos tu fiscalidad: IRPF, IVA, Sociedades y más. ¿Qué necesitas?',
     imageUrl: 'https://expertconsulting.es/catalog/fiscal.png',
     services: [
-      { id: 'irpf',       title: 'Declaración IRPF',    description: 'Renta anual · personas físicas residentes' },
-      { id: 'iva',        title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
-      { id: 'sociedades', title: 'Impuesto Sociedades',  description: 'Mod. 200 · cuentas anuales incluidas' },
+      { id: 'irpf',           title: 'Declaración Renta',    description: 'IRPF anual · revisión y presentación online',         imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/irpf.png' },
+      { id: 'modelo151',      title: 'Modelo 151',           description: 'Desplazados · Ley Beckham · fiscalidad internacional', imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/modelo151.png' },
+      { id: 'no-residentes',  title: 'No Residentes',        description: 'IRNR · impuestos y rentas para no residentes',         imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/no-residentes.png' },
+      { id: 'regularizacion', title: 'Regularización Fiscal',description: 'Requerimientos · revisión y respuesta a Hacienda',     imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/regularizacion.png' },
+      { id: 'iva',            title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
+      { id: 'sociedades',     title: 'Impuesto Sociedades',  description: 'Mod. 200 · cuentas anuales incluidas' },
     ],
   },
   {
@@ -33,9 +37,11 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     cardBody: '🌍 Tramitamos tu situación en España: NIE, residencia, arraigo y más. ¿Cuál necesitas?',
     imageUrl: 'https://expertconsulting.es/catalog/extranjeria.png',
     services: [
-      { id: 'nie',        title: 'NIE / TIE',            description: 'Solicitud y renovación · con cita previa' },
-      { id: 'residencia', title: 'Permiso residencia',   description: 'Inicial, renovación y modificación' },
-      { id: 'arraigo',    title: 'Arraigo social/lab.',  description: 'Regularización · preparamos la documentación' },
+      { id: 'residencia',            title: 'Residencia y Renovación',  description: 'Permisos de residencia · renovación y seguimiento',      imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/residencia.png' },
+      { id: 'nacionalidad',          title: 'Nacionalidad Española',    description: 'Expediente completo · revisión y seguimiento profesional', imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/nacionalidad-espanola.png' },
+      { id: 'nacionalidad-menores',  title: 'Nacionalidad Menores',     description: 'Menores nacidos en España · gestión documental',          imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/nacionalidad-menores.png' },
+      { id: 'nie',                   title: 'NIE / TIE',                description: 'Solicitud y renovación · con cita previa' },
+      { id: 'arraigo',               title: 'Arraigo social/lab.',      description: 'Regularización · preparamos la documentación' },
     ],
   },
   {
