@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
 
     const sent = await sendWhatsAppInteractive({
       to: phone,
+      header: { type: 'text', text: 'EXPERT Asesoría 💼' },
       body: catalogBody.slice(0, 1024),
       footer: CATALOG_FOOTER,
       list: { buttonText: 'Ver servicios', sections },

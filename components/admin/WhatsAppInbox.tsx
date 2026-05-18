@@ -411,6 +411,7 @@ function CatalogModal({ phone, onClose, onSent }: {
   onClose: () => void;
   onSent: (preview: string) => void;
 }) {
+  const [mode, setMode] = useState<'list' | 'cards'>('list');
   const [selected, setSelected] = useState<Set<string>>(
     new Set(SERVICES_CATALOG.map((s) => s.id))
   );
@@ -432,8 +433,11 @@ function CatalogModal({ phone, onClose, onSent }: {
     if (selected.size === 0) return;
     setSending(true);
     setError(null);
+    const endpoint = mode === 'cards'
+      ? '/api/admin/whatsapp/catalog-cards'
+      : '/api/admin/whatsapp/catalog';
     try {
-      const res = await fetch('/api/admin/whatsapp/catalog', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, sectionIds: [...selected] }),
@@ -442,9 +446,9 @@ function CatalogModal({ phone, onClose, onSent }: {
       if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
       const names = SERVICES_CATALOG
         .filter((s) => selected.has(s.id))
-        .map((s) => s.title)
+        .map((s) => `${s.emoji} ${s.title}`)
         .join(', ');
-      onSent(`[Catálogo] ${names}`);
+      onSent(mode === 'cards' ? `[Tarjetas] ${names}` : `[Catálogo] ${names}`);
       onClose();
     } catch {
       setError('Error de conexión');
@@ -471,8 +475,31 @@ function CatalogModal({ phone, onClose, onSent }: {
           </button>
         </div>
 
+        {/* Mode toggle */}
+        <div className="flex gap-1 px-4 pt-3">
+          {(['list', 'cards'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                mode === m
+                  ? 'bg-[#25D366] text-white'
+                  : 'bg-[#f0e9d8] text-[#29384a] hover:bg-[#e8deca]'
+              }`}
+            >
+              {m === 'list' ? '📋 Lista interactiva' : '🖼️ Tarjetas visuales'}
+            </button>
+          ))}
+        </div>
+        {mode === 'cards' && (
+          <p className="px-4 pt-1.5 text-[10px] text-[#29384a]">
+            Envía una tarjeta con imagen + botones por cada sección. Las imágenes deben estar en /public/catalog/.
+          </p>
+        )}
+
         {/* Sections */}
-        <div className="max-h-72 overflow-y-auto px-4 py-3 space-y-2">
+        <div className="max-h-64 overflow-y-auto px-4 py-3 space-y-2">
           {SERVICES_CATALOG.map((section: CatalogSection) => {
             const on = selected.has(section.id);
             return (
@@ -492,7 +519,7 @@ function CatalogModal({ phone, onClose, onSent }: {
                   {on && <Check className="h-3 w-3 text-white" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#07111d]">{section.title}</p>
+                  <p className="text-sm font-semibold text-[#07111d]">{section.emoji} {section.title}</p>
                   <p className="mt-0.5 text-xs text-[#29384a]">
                     {section.services.map((s) => s.title).join(' · ')}
                   </p>
@@ -504,9 +531,9 @@ function CatalogModal({ phone, onClose, onSent }: {
 
         {/* Footer */}
         <div className="border-t border-[#f0e9d8] px-4 py-3 space-y-2">
-          {totalRows > 10 && (
+          {mode === 'list' && totalRows > 10 && (
             <p className="text-[10px] text-amber-600">
-              WhatsApp permite máx. 10 servicios. Se enviarán los primeros 10.
+              WhatsApp permite máx. 10 servicios en lista. Se enviarán los primeros 10.
             </p>
           )}
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -517,7 +544,7 @@ function CatalogModal({ phone, onClose, onSent }: {
             className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
           >
             <BookMarked className="h-4 w-4" />
-            {sending ? 'Enviando…' : 'Enviar catálogo por WhatsApp'}
+            {sending ? 'Enviando…' : mode === 'cards' ? 'Enviar tarjetas visuales' : 'Enviar catálogo lista'}
           </button>
         </div>
       </div>

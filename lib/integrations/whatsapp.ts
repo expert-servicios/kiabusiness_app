@@ -25,10 +25,15 @@ export interface WaInteractiveListSection {
   rows: WaInteractiveListRow[];
 }
 
+export type WaHeader =
+  | { type: 'text'; text: string }
+  | { type: 'image'; imageUrl: string };
+
 export interface WaInteractiveOutbound {
   to: string;
   body: string;
   footer?: string;
+  header?: WaHeader;
   buttons?: WaInteractiveButton[];
   list?: { buttonText: string; sections: WaInteractiveListSection[] };
 }
@@ -136,9 +141,18 @@ export async function sendWhatsAppInteractive(params: WaInteractiveOutbound): Pr
 
   let interactive: Record<string, unknown>;
 
+  function buildHeaderPayload(h?: WaHeader, forList = false): Record<string, unknown> | undefined {
+    if (!h) return undefined;
+    if (h.type === 'text') return { type: 'text', text: h.text.slice(0, 60) };
+    if (!forList && h.type === 'image') return { type: 'image', image: { link: h.imageUrl } };
+    return undefined;
+  }
+
   if (params.buttons?.length) {
+    const header = buildHeaderPayload(params.header);
     interactive = {
       type: 'button',
+      ...(header ? { header } : {}),
       body: { text: params.body },
       ...(params.footer ? { footer: { text: params.footer } } : {}),
       action: {
@@ -149,8 +163,10 @@ export async function sendWhatsAppInteractive(params: WaInteractiveOutbound): Pr
       },
     };
   } else if (params.list) {
+    const header = buildHeaderPayload(params.header, true);
     interactive = {
       type: 'list',
+      ...(header ? { header } : {}),
       body: { text: params.body },
       ...(params.footer ? { footer: { text: params.footer } } : {}),
       action: {
@@ -189,6 +205,45 @@ export async function sendWhatsAppInteractive(params: WaInteractiveOutbound): Pr
     return { success: true, messageId: data?.messages?.[0]?.id ?? '' };
   } catch (err) {
     console.error('[WhatsApp interactive] fetch error:', err);
+    return { success: false, error: 'Error de red al contactar Meta API' };
+  }
+}
+
+export async function sendWhatsAppImageMessage(params: {
+  to: string;
+  imageUrl: string;
+  caption?: string;
+}): Promise<WaSendResult> {
+  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) return { success: false, error: 'WhatsApp no configurado' };
+
+  let to = params.to.replace(/\D/g, '');
+  if (to.length === 9 && (to.startsWith('6') || to.startsWith('7'))) to = '34' + to;
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to,
+        type: 'image',
+        image: {
+          link: params.imageUrl,
+          ...(params.caption ? { caption: params.caption.slice(0, 1024) } : {}),
+        },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('[WhatsApp image] API error:', JSON.stringify(data));
+      return { success: false, error: data?.error?.message ?? 'Error API Meta' };
+    }
+    return { success: true, messageId: data?.messages?.[0]?.id ?? '' };
+  } catch (err) {
+    console.error('[WhatsApp image] fetch error:', err);
     return { success: false, error: 'Error de red al contactar Meta API' };
   }
 }

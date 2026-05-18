@@ -7,6 +7,9 @@ export interface CatalogService {
 export interface CatalogSection {
   id: string;
   title: string;        // max 24 chars
+  emoji: string;
+  cardBody: string;     // description shown in card-mode button message
+  imageUrl?: string;    // public HTTPS URL — set once images are uploaded to /public/catalog/
   services: CatalogService[];
 }
 
@@ -14,6 +17,9 @@ export const SERVICES_CATALOG: CatalogSection[] = [
   {
     id: 'fiscal',
     title: 'Asesoría fiscal',
+    emoji: '🧾',
+    cardBody: '📋 Gestionamos tu fiscalidad: IRPF, IVA, Sociedades y más. ¿Qué necesitas?',
+    imageUrl: 'https://expertconsulting.es/catalog/fiscal.jpg',
     services: [
       { id: 'irpf',       title: 'Declaración IRPF',    description: 'Renta anual · personas físicas residentes' },
       { id: 'iva',        title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
@@ -23,6 +29,9 @@ export const SERVICES_CATALOG: CatalogSection[] = [
   {
     id: 'extranjeria',
     title: 'Extranjería',
+    emoji: '🌍',
+    cardBody: '🌍 Tramitamos tu situación en España: NIE, residencia, arraigo y más. ¿Cuál necesitas?',
+    imageUrl: 'https://expertconsulting.es/catalog/extranjeria.jpg',
     services: [
       { id: 'nie',        title: 'NIE / TIE',            description: 'Solicitud y renovación · con cita previa' },
       { id: 'residencia', title: 'Permiso residencia',   description: 'Inicial, renovación y modificación' },
@@ -32,6 +41,9 @@ export const SERVICES_CATALOG: CatalogSection[] = [
   {
     id: 'empresa',
     title: 'Empresa y Laboral',
+    emoji: '💼',
+    cardBody: '💼 Te ayudamos a crear o gestionar tu empresa o actividad. ¿Qué buscas?',
+    imageUrl: 'https://expertconsulting.es/catalog/empresa.jpg',
     services: [
       { id: 'sl',         title: 'Constitución SL',      description: 'Alta sociedad limitada, notaría y registro' },
       { id: 'autonomo',   title: 'Alta autónomo',        description: 'RETA, IAE e inicio de actividad' },
@@ -41,6 +53,9 @@ export const SERVICES_CATALOG: CatalogSection[] = [
   {
     id: 'holded',
     title: 'Holded ERP',
+    emoji: '🚀',
+    cardBody: '🚀 Somos Partner Oficial Holded. Implantamos, formamos y damos soporte. ¿Por dónde empezamos?',
+    imageUrl: 'https://expertconsulting.es/catalog/holded.jpg',
     services: [
       { id: 'holded-impl', title: 'Impl. Holded ERP',   description: 'Config. + integración · demo gratuita' },
       { id: 'holded-form', title: 'Formación Holded',   description: 'Sesiones personalizadas online u on-site' },
