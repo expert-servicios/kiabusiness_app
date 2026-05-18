@@ -51,9 +51,11 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     cardBody: '💼 Te ayudamos a crear o gestionar tu empresa o actividad. ¿Qué buscas?',
     imageUrl: 'https://expertconsulting.es/catalog/empresa.png',
     services: [
-      { id: 'sl',         title: 'Constitución SL',      description: 'Alta sociedad limitada, notaría y registro' },
-      { id: 'autonomo',   title: 'Alta autónomo',        description: 'RETA, IAE e inicio de actividad' },
-      { id: 'nominas',    title: 'Nóminas y contratos',  description: 'Gestión mensual · altas/bajas Seg. Social' },
+      { id: 'autonomo',       title: 'Alta de Autónomo',        description: 'Hacienda · Seguridad Social · inicio de actividad', imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/autonomo.png' },
+      { id: 'sl',             title: 'Constitución SL',         description: 'Sociedad · estatutos · puesta en marcha online',   imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/sl.png' },
+      { id: 'gestion-fiscal', title: 'Gestión Fiscal Trimest.', description: 'IVA · IRPF · presentación trimestral profesional', imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/gestion-fiscal.png' },
+      { id: 'contabilidad',   title: 'Gestión Contable',        description: 'Facturación · conciliación · informes mensuales',  imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/contabilidad.png' },
+      { id: 'nominas',        title: 'Nóminas y contratos',     description: 'Gestión mensual · altas/bajas Seg. Social' },
     ],
   },
   {
