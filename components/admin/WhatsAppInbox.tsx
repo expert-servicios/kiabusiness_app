@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft,
   RefreshCw, Plus, Paperclip, Sparkles, X, FileText, Image as ImageIcon,
-  FolderOpen, ChevronDown, Smile, UserPlus, Search
+  FolderOpen, ChevronDown, Smile, UserPlus, Search, BookMarked, Check
 } from 'lucide-react';
+import { SERVICES_CATALOG, type CatalogSection } from '@/lib/data/services-catalog';
 import Link from 'next/link';
 import { WaTemplateModal } from './WaTemplateModal';
 
@@ -404,6 +405,126 @@ function CaseAssign({
   );
 }
 
+// ── Service catalog modal ─────────────────────────────────────
+function CatalogModal({ phone, onClose, onSent }: {
+  phone: string;
+  onClose: () => void;
+  onSent: (preview: string) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(
+    new Set(SERVICES_CATALOG.map((s) => s.id))
+  );
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const totalRows = SERVICES_CATALOG
+    .filter((s) => selected.has(s.id))
+    .reduce((n, s) => n + s.services.length, 0);
+
+  const send = async () => {
+    if (selected.size === 0) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/whatsapp/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, sectionIds: [...selected] }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
+      const names = SERVICES_CATALOG
+        .filter((s) => selected.has(s.id))
+        .map((s) => s.title)
+        .join(', ');
+      onSent(`[Catálogo] ${names}`);
+      onClose();
+    } catch {
+      setError('Error de conexión');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-t-3xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
+          <div>
+            <p className="font-semibold text-[#07111d]">Catálogo de servicios</p>
+            <p className="text-xs text-[#29384a]">
+              {selected.size > 0
+                ? `${selected.size} sección${selected.size > 1 ? 'es' : ''} · ${Math.min(totalRows, 10)} servicios`
+                : 'Selecciona al menos una sección'}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[#f0e9d8]">
+            <X className="h-4 w-4 text-[#29384a]" />
+          </button>
+        </div>
+
+        {/* Sections */}
+        <div className="max-h-72 overflow-y-auto px-4 py-3 space-y-2">
+          {SERVICES_CATALOG.map((section: CatalogSection) => {
+            const on = selected.has(section.id);
+            return (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => toggle(section.id)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${
+                  on
+                    ? 'border-[#25D366] bg-[#f0fff5]'
+                    : 'border-[#d8cbb5] bg-white hover:border-[#25D366]/50 hover:bg-[#f9fff9]'
+                }`}
+              >
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                  on ? 'border-[#25D366] bg-[#25D366]' : 'border-[#d8cbb5]'
+                }`}>
+                  {on && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#07111d]">{section.title}</p>
+                  <p className="mt-0.5 text-xs text-[#29384a]">
+                    {section.services.map((s) => s.title).join(' · ')}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-[#f0e9d8] px-4 py-3 space-y-2">
+          {totalRows > 10 && (
+            <p className="text-[10px] text-amber-600">
+              WhatsApp permite máx. 10 servicios. Se enviarán los primeros 10.
+            </p>
+          )}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <button
+            type="button"
+            onClick={send}
+            disabled={sending || selected.size === 0}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
+          >
+            <BookMarked className="h-4 w-4" />
+            {sending ? 'Enviando…' : 'Enviar catálogo por WhatsApp'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WhatsAppInbox({ initialConversations }: { initialConversations: Conversation[] }) {
   const [conversations, setConversations] = useState(initialConversations);
   const [selected, setSelected] = useState<string | null>(null);
@@ -417,6 +538,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLinkClient, setShowLinkClient] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -496,6 +618,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   // AI compose
   const handleAiCompose = async () => {
     if (!activeConv) return;
+    const hasText = Boolean(reply.trim());
     setAiLoading(true);
     setError(null);
     try {
@@ -507,6 +630,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           phone: activeConv.phone,
           history: activeConv.messages.slice(-10).map((m) => ({ direction: m.direction, body: m.body })),
           intent: reply.trim() || undefined,
+          mode: hasText ? 'edit' : 'compose',
         }),
       });
       const data = await res.json();
@@ -905,13 +1029,29 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
               <Smile className="h-5 w-5" />
             </button>
 
-            {/* AI compose */}
+            {/* Catalog */}
+            <button
+              type="button"
+              onClick={() => setShowCatalog(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
+              title="Enviar catálogo de servicios"
+              aria-label="Enviar catálogo de servicios"
+            >
+              <BookMarked className="h-4 w-4" />
+            </button>
+
+            {/* AI compose / edit+translate */}
             <button
               type="button"
               onClick={handleAiCompose}
               disabled={aiLoading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40"
-              title={reply.trim() ? 'Mejorar borrador con IA' : 'Generar respuesta con IA'}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 ${
+                reply.trim()
+                  ? 'bg-[#d7a33a]/15 text-[#c88b25] hover:bg-[#d7a33a]/25'
+                  : 'text-[#29384a] hover:bg-[#d8cbb5]/50'
+              }`}
+              title={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
+              aria-label={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
             >
               {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             </button>
@@ -958,6 +1098,32 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           phone={activeConv.phone}
           onLinked={handleClientLinked}
           onClose={() => setShowLinkClient(false)}
+        />
+      )}
+      {showCatalog && activeConv && (
+        <CatalogModal
+          phone={activeConv.phone}
+          onClose={() => setShowCatalog(false)}
+          onSent={(preview) => {
+            const newMsg: WaMessage = {
+              id: crypto.randomUUID(),
+              direction: 'outbound',
+              body: preview,
+              created_at: new Date().toISOString(),
+              needs_review: false,
+              ai_responded: false,
+              read_at: null,
+              media_url: null,
+              media_type: null,
+              case_id: null,
+              case: null,
+            };
+            setConversations((prev) => prev.map((c) =>
+              c.phone !== activeConv.phone ? c : {
+                ...c, messages: [...c.messages, newMsg], lastAt: newMsg.created_at,
+              }
+            ));
+          }}
         />
       )}
     </>

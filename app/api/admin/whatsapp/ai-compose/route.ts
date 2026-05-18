@@ -17,7 +17,8 @@ const schema = z.object({
   clientId:  z.string().uuid().optional(),
   phone:     z.string().min(1),
   history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(20),
-  intent:    z.string().max(500).optional(), // admin hint: "ask for DNI", "confirm appointment", etc.
+  intent:    z.string().max(2000).optional(),
+  mode:      z.enum(['compose', 'edit']).default('compose'),
 });
 
 function detectLanguageInstruction(text: string): string {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
-    const { clientId, history, intent } = parsed.data;
+    const { clientId, history, intent, mode } = parsed.data;
 
     let clientContext = 'No hay datos del cliente registrado con este número.';
 
@@ -66,9 +67,40 @@ export async function POST(request: NextRequest) {
       .map((m) => `${m.direction === 'inbound' ? 'Cliente' : 'EXPERT'}: ${m.body}`)
       .join('\n');
 
-    const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
     const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
+
+    // ── EDIT mode: improve + translate admin's draft ─────────────
+    if (mode === 'edit' && intent?.trim()) {
+      const editPrompt = `Eres un editor de mensajes de WhatsApp profesional para EXPERT Asesoría (gestoría española).
+
+El asesor ha escrito este borrador en español:
+---
+${intent.trim()}
+---
+
+Tu tarea (sigue este orden exacto):
+1. Corrige errores ortográficos y gramaticales.
+2. Mejora la claridad y el tono: cercano, profesional, breve.
+3. Traduce el mensaje COMPLETO al idioma del cliente: ${languageInstruction}
+4. Si el borrador incluye enlaces, mantenlos tal cual.
+5. Devuelve ÚNICAMENTE el mensaje final listo para enviar. Sin explicaciones, sin prefijos, sin comillas.
+
+CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
+${historyText || 'Sin historial previo.'}`;
+
+      const ai = await generateWabaAiText({
+        systemPrompt: editPrompt,
+        messages: [{ role: 'user', content: 'Edita y traduce el borrador.' }],
+        maxTokens: 500,
+      });
+      const draft = ai?.text?.trim() ?? '';
+      if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
+      return NextResponse.json({ draft });
+    }
+
+    // ── COMPOSE mode: generate fresh response ────────────────────
+    const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const officialSourceContext = await buildOfficialSourceContext(`${historyText}\n${intent ?? ''}`);
 
     const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
