@@ -14,7 +14,7 @@ async function requireAdmin(request: NextRequest) {
 }
 
 const schema = z.object({
-  clientId:  z.string().uuid().optional(),
+  clientId:  z.string().uuid().nullish(),
   phone:     z.string().min(1),
   history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(20),
   intent:    z.string().max(2000).optional(),

@@ -4,6 +4,14 @@ import { sendWhatsAppInteractive, logWhatsAppConversation, mapWhatsAppMessageToC
 import { SERVICES_CATALOG, CATALOG_BODY_DEFAULT, CATALOG_FOOTER } from '@/lib/data/services-catalog';
 import { z } from 'zod';
 
+function detectCatalogBody(recentInbound: string[]): string {
+  const text = recentInbound.join(' ');
+  if (/[А-Яа-яЁё]/.test(text)) {
+    return 'Привет 👋 Ниже список наших услуг EXPERT Asesoría. Нажмите кнопку, чтобы выбрать нужную.';
+  }
+  return CATALOG_BODY_DEFAULT;
+}
+
 const schema = z.object({
   phone:      z.string().min(1),
   sectionIds: z.array(z.string()).min(1).max(4),
@@ -25,6 +33,20 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
     const { phone, sectionIds, bodyText } = parsed.data;
+
+    // Detect client language from recent inbound messages
+    let catalogBody = bodyText?.trim() || CATALOG_BODY_DEFAULT;
+    if (!bodyText?.trim()) {
+      const { data: recentMsgs } = await admin
+        .from('whatsapp_conversations')
+        .select('body')
+        .eq('phone_number', phone)
+        .eq('direction', 'inbound')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      const inboundTexts = (recentMsgs ?? []).map((m: { body: string }) => m.body);
+      catalogBody = detectCatalogBody(inboundTexts);
+    }
 
     // Build list sections respecting WhatsApp 10-row limit
     let totalRows = 0;
@@ -49,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     const sent = await sendWhatsAppInteractive({
       to: phone,
-      body: (bodyText?.trim() || CATALOG_BODY_DEFAULT).slice(0, 1024),
+      body: catalogBody.slice(0, 1024),
       footer: CATALOG_FOOTER,
       list: { buttonText: 'Ver servicios', sections },
     });
