@@ -23,7 +23,6 @@ function translateCardBody(sectionId: string, cardBody: string, lang: 'ru' | 'es
   const map: Record<string, string> = {
     'declaraciones-impuestos':    '🧾 Налоговые декларации: НДФЛ, НДС, Модель 151, нерезиденты и другое. Что вас интересует?',
     'extranjeria-nacionalidad':   '🌍 Оформим ваш статус в Испании: вид на жительство, гражданство, аррайго и другое. Что нужно?',
-    'empresas-autonomos':         '💼 Поможем открыть или вести бизнес или работать самозанятым. Что ищете?',
     'trafico-capitania-maritima': '🚗 Переоформление авто, постановка на учёт, дубликаты и суда. Какой трámite нужен?',
     'notaria-propiedades':        '🏠 Купля-продажа, наследство, дарение и ипотека. Чем можем помочь?',
     'gestiones-especializadas':   '🔐 Мы авторизованный партнёр Camerfirma. Для физического лица или компании?',
