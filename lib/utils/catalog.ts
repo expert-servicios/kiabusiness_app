@@ -27,7 +27,7 @@ export const categories = [
   {
     slug: 'gestiones-especializadas',
     name: 'Gestiones Especializadas',
-    description: 'Trámites estratégicos con enfoque legal-administrativo de alta complejidad.'
+    description: 'Certificados digitales Camerfirma para personas físicas y entidades. Punto de Registro Autorizado.'
   },
   {
     slug: 'formacion',
@@ -846,85 +846,159 @@ export const services: Service[] = [
 
   // ── Gestiones Especializadas ───────────────────────────────────────────────
   {
-    slug: 'certificado-digital',
+    slug: 'certificado-digital-persona-fisica',
     categoria: 'gestiones-especializadas',
-    name: 'Certificado Digital — Camerfirma',
-    shortDescription: 'Obtención y renovación de certificados digitales reconocidos para empresas y personas.',
+    name: 'Certificado Digital Persona Física — Camerfirma',
+    shortDescription: 'Obtén tu certificado digital cualificado Camerfirma. Válido ante AEAT, Seguridad Social y todos los organismos públicos.',
     description:
-      'Como punto de registro autorizado de Camerfirma, tramitamos la obtención y renovación de certificados digitales cualificados para personas físicas, representantes de personas jurídicas y sellos de empresa. Imprescindibles para relacionarse con la AEAT, Seguridad Social y otros organismos.',
-    price: 'Consultar',
-    duration: 'Inmediato (presencialmente)',
-    includes: [
-      'Verificación de identidad presencial o videoconferencia',
-      'Emisión del certificado en formato software o tarjeta',
-      'Instalación y guía de uso',
-      'Soporte ante incidencias de uso'
+      'Somos Punto de Registro Autorizado de Camerfirma. Tramitamos la obtención o renovación de tu certificado digital cualificado de persona física, imprescindible para firmar documentos electrónicamente y relacionarte con la AEAT, Seguridad Social, Notarías y cualquier organismo público o privado. El proceso es inmediato: verificación de identidad presencial o por videoconferencia, emisión y instalación en el mismo acto.',
+    price: '90 €',
+    duration: 'Inmediato (presencial o videoconferencia)',
+    stripePriceId: 'price_1NUpXWLeYwwgvux4QhANaiJf',
+    checkoutLabel: 'Solicitar certificado digital',
+    metaTitle: 'Certificado Digital Persona Física Camerfirma · 90 € | EXPERT Asesoría',
+    metaDescription: 'Obtén tu certificado digital Camerfirma para persona física desde 90 €. Tramitación inmediata presencial o por videoconferencia. Punto de Registro Autorizado.',
+    keyPoints: [
+      { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
+      { title: 'Inmediato', text: 'Emisión en el mismo acto, presencialmente o por videoconferencia sin desplazamiento.' },
+      { title: 'Vigencia 2–3 años', text: 'Certificado con larga validez. Te avisamos cuando se aproxime la renovación.' },
+      { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
+    audience: [
+      'Personas físicas que gestionan trámites con la AEAT o la Seguridad Social',
+      'Autónomos que necesitan firmar electrónicamente',
+      'Particulares que realizan trámites online frecuentes con organismos públicos',
+      'Ciudadanos que quieren evitar desplazamientos a oficinas presenciales',
+    ],
+    requirements: [
+      'DNI o NIE en vigor',
+      'Correo electrónico activo',
+      'Ordenador con Windows o macOS para la instalación',
+    ],
+    includes: [
+      'Verificación de identidad presencial o por videoconferencia',
+      'Emisión del certificado digital cualificado Camerfirma',
+      'Instalación y configuración en tu equipo',
+      'Prueba de funcionamiento antes de finalizar',
+      'Soporte técnico ante incidencias durante 30 días',
+    ],
+    documents: [
+      {
+        title: 'Documentación necesaria',
+        items: [
+          'DNI o NIE original en vigor',
+          'Email activo al que tengas acceso durante la sesión',
+        ],
+      },
+    ],
+    process: [
+      { title: 'Solicita y paga online', text: 'Completa el formulario y realiza el pago. Recibirás confirmación inmediata.' },
+      { title: 'Confirmamos la cita', text: 'Te contactamos en menos de 24 h para fijar la cita presencial o por videoconferencia.' },
+      { title: 'Verificación de identidad', text: 'Verificamos tu DNI/NIE. El proceso dura menos de 15 minutos.' },
+      { title: 'Emisión e instalación', text: 'El certificado se genera en el momento y te ayudamos a instalarlo y probarlo.' },
+    ],
+    notIncluded: [
+      'Renovación al vencer el certificado (se tramita aparte, mismo precio)',
+      'Soporte técnico general del equipo o sistema operativo',
+    ],
+    reviewBeforeHiring: [
+      'Asegúrate de tener el DNI/NIE vigente antes de la cita',
+      'El certificado se instala en el equipo que uses en la sesión — lleva el que uses habitualmente',
+    ],
+    finalCta: {
+      title: '¿Listo para tener tu certificado digital hoy?',
+      text: 'Solicítalo ahora y te llamamos para fijar la cita. En menos de 24 horas tienes tu certificado instalado y funcionando.',
+    },
     faqs: [
-      { q: '¿Qué diferencia hay entre el certificado de persona física y el de representante?', a: 'El de persona física identifica al individuo. El de representante de persona jurídica permite actuar en nombre de la empresa.' },
-      { q: '¿Cuánto dura un certificado Camerfirma?', a: 'Generalmente 2 o 3 años, según el tipo de certificado.' }
-    ]
+      { q: '¿Qué diferencia hay entre el certificado de persona física y el de entidad?', a: 'El de persona física te identifica a ti como individuo. El de entidad identifica a tu empresa o sociedad y permite actuar en su nombre.' },
+      { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Ofrecemos ambas modalidades. Por videoconferencia solo necesitas DNI/NIE y conexión a internet.' },
+      { q: '¿Cuánto dura el certificado Camerfirma?', a: 'Entre 2 y 3 años según el tipo. Te avisamos con tiempo para renovarlo sin interrupciones.' },
+      { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es una Autoridad de Certificación reconocida y su certificado es válido en AEAT, Seguridad Social, DGT, Notarías y cualquier organismo público o privado.' },
+      { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 €.' },
+    ],
   },
   {
-    slug: 'migracion-holded',
+    slug: 'certificado-digital-entidad',
     categoria: 'gestiones-especializadas',
-    name: 'Migración a Holded',
-    shortDescription: 'Migración contable y configuración de Holded para tu empresa.',
+    name: 'Certificado Digital de Entidad — Camerfirma',
+    shortDescription: 'Certificado digital cualificado para tu empresa, asociación o entidad. Actúa digitalmente en nombre de tu organización.',
     description:
-      'Como Holded Solution Partner, realizamos la migración de tu contabilidad y facturación a Holded: importación de datos históricos, configuración de plan de cuentas, integración bancaria, personalización de facturas y formación inicial para tu equipo.',
-    price: 'Desde 490 €',
-    duration: '1–3 semanas',
-    includes: [
-      'Análisis del sistema actual',
-      'Importación de clientes, proveedores y productos',
-      'Configuración del plan de cuentas',
-      'Integración de cuentas bancarias',
-      'Personalización de plantillas de factura',
-      'Formación inicial (2 horas incluidas)'
+      'Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad (persona jurídica) para que tu empresa, asociación o cualquier organización pueda firmar documentos electrónicamente y relacionarse de forma segura con la AEAT, Seguridad Social, Registros y cualquier organismo público o privado. El proceso incluye la verificación del representante legal y la emisión e instalación en 24–48 horas.',
+    price: '150 €',
+    duration: '24–48 h desde la verificación',
+    stripePriceId: 'price_1NTp8WLeYwwgvux4RmwY4Hso',
+    checkoutLabel: 'Solicitar certificado de entidad',
+    metaTitle: 'Certificado Digital de Entidad Camerfirma · 150 € | EXPERT Asesoría',
+    metaDescription: 'Certificado digital Camerfirma para empresas y entidades desde 150 €. Tramitación en 24–48 h. Punto de Registro Autorizado. Válido ante AEAT, SS y todos los organismos.',
+    keyPoints: [
+      { title: 'Para cualquier entidad', text: 'Válido para SL, SA, asociaciones, fundaciones, comunidades de propietarios y cualquier persona jurídica.' },
+      { title: 'Firma en nombre de la empresa', text: 'Permite actuar y firmar electrónicamente en nombre de tu organización ante cualquier organismo.' },
+      { title: 'Tramitación ágil', text: 'Emisión en 24–48 h desde la verificación del representante legal.' },
+      { title: 'Instalación incluida', text: 'Configuramos el certificado en el equipo del representante y verificamos su correcto funcionamiento.' },
     ],
-    faqs: [
-      { q: '¿Pierdo datos al migrar a Holded?', a: 'No. Hacemos una migración ordenada por fases para que tengas continuidad total de datos históricos.' },
-      { q: '¿Qué pasa si ya uso otro software de contabilidad?', a: 'Migramos desde ContaPlus, Sage, Excel u otros. Analizamos el caso antes de empezar.' }
-    ]
-  },
-  {
-    slug: 'representacion-fiscal',
-    categoria: 'gestiones-especializadas',
-    name: 'Representación Fiscal',
-    shortDescription: 'Representante fiscal en España para no residentes con obligaciones tributarias.',
-    description:
-      'Los no residentes con bienes o intereses económicos en España pueden estar obligados a designar un representante fiscal. Actuamos como representante fiscal ante la AEAT, gestionando notificaciones, obligaciones declarativas y comunicaciones oficiales.',
-    price: 'Desde 120 € / año',
-    duration: 'Servicio anual recurrente',
-    includes: [
-      'Designación como representante fiscal ante la AEAT',
-      'Recepción de notificaciones de Hacienda',
-      'Gestión de comunicaciones y requerimientos',
-      'Informe periódico al cliente no residente'
+    audience: [
+      'Sociedades limitadas (SL) y anónimas (SA)',
+      'Asociaciones, fundaciones y ONG',
+      'Comunidades de propietarios',
+      'Cualquier persona jurídica con obligaciones digitales ante organismos públicos',
     ],
-    faqs: [
-      { q: '¿Cuándo es obligatorio el representante fiscal?', a: 'Para no residentes fuera de la UE/EEE con propiedades o rentas en España, y en algunos casos para no residentes de la UE.' }
-    ]
-  },
-  {
-    slug: 'apostilla-legalizacion',
-    categoria: 'gestiones-especializadas',
-    name: 'Apostilla y Legalización',
-    shortDescription: 'Apostilla de documentos españoles y legalización de documentos extranjeros.',
-    description:
-      'Tramitamos la apostilla de la Haya para documentos españoles destinados al extranjero, y la legalización de documentos extranjeros para su uso en España. También gestionamos traducciones juradas cuando son necesarias.',
-    price: 'Desde 60 €',
-    duration: '3–10 días hábiles',
-    includes: [
-      'Verificación del tipo de documento y país de destino/origen',
-      'Tramitación de la apostilla ante el organismo competente',
-      'Coordinar traducción jurada si es necesaria',
-      'Entrega del documento completo'
+    requirements: [
+      'CIF de la entidad',
+      'DNI o NIE en vigor del representante legal',
+      'Escrituras de constitución o poderes de representación',
+      'Email corporativo activo',
+      'Ordenador con Windows o macOS para la instalación',
     ],
+    includes: [
+      'Verificación documental de la entidad y del representante legal',
+      'Emisión del certificado digital de entidad Camerfirma',
+      'Instalación y configuración en el equipo del representante',
+      'Prueba de funcionamiento antes de finalizar',
+      'Soporte técnico ante incidencias durante 30 días',
+    ],
+    documents: [
+      {
+        title: 'Documentación de la entidad',
+        items: [
+          'CIF de la entidad',
+          'Escrituras de constitución o estatutos vigentes',
+          'Poderes de representación si el solicitante no es administrador único',
+        ],
+      },
+      {
+        title: 'Documentación del representante',
+        items: [
+          'DNI o NIE original en vigor del representante legal',
+          'Email corporativo activo durante el proceso',
+        ],
+      },
+    ],
+    process: [
+      { title: 'Solicita y paga online', text: 'Completa el formulario con los datos de la entidad y realiza el pago. Recibirás confirmación inmediata.' },
+      { title: 'Envío de documentación', text: 'Nos envías las escrituras y el DNI/NIE del representante para la verificación previa.' },
+      { title: 'Verificación del representante', text: 'Verificamos la identidad del representante legal presencialmente o por videoconferencia.' },
+      { title: 'Emisión e instalación', text: 'Emitimos el certificado en 24–48 h y te ayudamos a instalarlo y probarlo.' },
+    ],
+    notIncluded: [
+      'Renovación al vencer (se tramita aparte, mismo precio)',
+      'Gestión de obligaciones tributarias o contables de la entidad',
+      'Soporte técnico general del equipo o sistema operativo',
+    ],
+    reviewBeforeHiring: [
+      'El solicitante debe ser el representante legal o tener poderes suficientes',
+      'Ten preparadas las escrituras actualizadas antes de iniciar el proceso',
+    ],
+    finalCta: {
+      title: '¿Tu empresa necesita certificado digital?',
+      text: 'Solicítalo ahora. En 24–48 horas tu entidad puede firmar electrónicamente y operar con cualquier organismo sin desplazamientos.',
+    },
     faqs: [
-      { q: '¿Qué es la apostilla?', a: 'Es una certificación que autentica la firma de un funcionario público en un documento para que tenga validez en otro país firmante del Convenio de La Haya.' },
-      { q: '¿Todos los países aceptan la apostilla?', a: 'Solo los países que han firmado el Convenio de La Haya (actualmente más de 120 países). Para el resto, es necesaria la legalización diplomática.' }
-    ]
+      { q: '¿Quién puede solicitar el certificado de entidad?', a: 'El representante legal de la entidad (administrador, presidente, apoderado con poderes suficientes).' },
+      { q: '¿Qué diferencia hay con el certificado de persona física?', a: 'El de entidad identifica a la organización y permite actuar en su nombre. El de persona física solo identifica al individuo.' },
+      { q: '¿Cuánto tiempo tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante.' },
+      { q: '¿Cuánto dura el certificado?', a: 'Entre 2 y 3 años. Te avisamos con antelación para renovarlo sin interrupciones.' },
+      { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es reconocida por AEAT, Seguridad Social, Registros Mercantiles, Notarías y cualquier organismo público o privado.' },
+    ],
   },
 
   // ── Formación ──────────────────────────────────────────────────────────────
