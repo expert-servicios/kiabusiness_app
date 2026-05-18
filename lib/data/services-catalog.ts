@@ -65,9 +65,11 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     cardBody: '🚀 Somos Partner Oficial Holded. Implantamos, formamos y damos soporte. ¿Por dónde empezamos?',
     imageUrl: 'https://expertconsulting.es/catalog/holded.png',
     services: [
-      { id: 'holded-impl', title: 'Impl. Holded ERP',   description: 'Config. + integración · demo gratuita' },
-      { id: 'holded-form', title: 'Formación Holded',   description: 'Sesiones personalizadas online u on-site' },
-      { id: 'holded-sop',  title: 'Soporte Holded',     description: 'Asistencia continua y optimización' },
+      { id: 'holded-migracion', title: 'Migración a Holded',    description: 'Datos · configuración · traspaso profesional guiado', imageUrl: 'https://expertconsulting.es/catalog/servicios/digital/migracion.png' },
+      { id: 'holded-config',    title: 'Configuración Holded',  description: 'Cuenta · facturación · ajustes y parametrización',    imageUrl: 'https://expertconsulting.es/catalog/servicios/digital/configuracion.png' },
+      { id: 'holded-form',      title: 'Formación Holded',      description: 'Sesiones guiadas · procesos · control y soporte',     imageUrl: 'https://expertconsulting.es/catalog/servicios/digital/formacion.png' },
+      { id: 'holded-digital',   title: 'Digitalización',        description: 'Automatización · procesos online · escalabilidad',    imageUrl: 'https://expertconsulting.es/catalog/servicios/digital/digitalizacion.png' },
+      { id: 'holded-sop',       title: 'Soporte Holded',        description: 'Asistencia continua y optimización' },
     ],
   },
 ];
