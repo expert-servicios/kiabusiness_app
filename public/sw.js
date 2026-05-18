@@ -4,8 +4,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'EXPERT', {
       body:     data.body ?? '',
-      icon:     '/logos/EXPERT_logo/expert-favicon.png',
-      badge:    '/logos/EXPERT_logo/expert-favicon.png',
+      icon:     '/branding/expert-app.png',
+      badge:    '/branding/expert-app.png',
       tag:      data.tag ?? 'expert-push',
       renotify: true,
       data:     { url: data.url ?? '/admin/whatsapp' },

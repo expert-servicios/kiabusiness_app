@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/send';
 import { quoteReceivedClient, quoteReceivedAdmin } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 const quoteRequestSchema = z.object({
   hp_url: z.string().optional(),
@@ -126,6 +127,13 @@ export async function POST(request: NextRequest) {
         metadata: { quote_id: quote.id, lead_id: lead.id }
       });
     }
+
+    notifyAdmins({
+      title: `💼 Nuevo presupuesto: ${validated.name}`,
+      body: serviceList.length > 80 ? serviceList.slice(0, 77) + '…' : serviceList,
+      url: '/admin/quotes',
+      tag: `quote-${quote.id}`,
+    }).catch(() => {});
 
     return NextResponse.json(
       { success: true, message: 'Presupuesto creado correctamente', quoteId: quote.id },

@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/send';
 import { citaRequested, citaRequestAdmin } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 const SERVICES = [
   'Consulta fiscal',
@@ -116,6 +117,13 @@ export async function POST(request: NextRequest) {
         metadata: { appointment_id: appt.id }
       })
     ]);
+
+    notifyAdmins({
+      title: `📅 Nueva cita: ${d.name}`,
+      body: `${d.service} · ${preferredDateFormatted} ${d.preferred_time}`,
+      url: '/admin/citas',
+      tag: `cita-${appt.id}`,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, id: appt.id });
   } catch (err) {

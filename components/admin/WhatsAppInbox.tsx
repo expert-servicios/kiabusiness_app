@@ -19,8 +19,8 @@ const EMOJIS = [
 
 function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
   return (
-    <div className="absolute bottom-full mb-2 left-0 z-50 rounded-2xl border border-[#d8cbb5] bg-white p-2 shadow-xl">
-      <div className="grid grid-cols-10 gap-0.5">
+    <div className="absolute bottom-full mb-2 left-0 right-0 z-50 rounded-2xl border border-[#d8cbb5] bg-white p-2 shadow-xl sm:right-auto sm:w-[300px]">
+      <div className="grid grid-cols-8 gap-0.5 sm:grid-cols-10">
         {EMOJIS.map((emoji) => (
           <button
             key={emoji}
@@ -748,11 +748,11 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       ) : (
         <>
           {/* Thread header */}
-          <div className="flex items-center gap-2 border-b border-black/10 bg-[#075e54] px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-black/10 bg-[#075e54] px-3 py-2.5 sm:px-4">
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 lg:hidden"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 lg:hidden"
               aria-label="Volver"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -763,26 +763,31 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                 {activeConv.clientName ?? activeConv.phone}
               </p>
               <p className="truncate text-xs text-white/70">
-                {activeConv.phone}
+                {activeConv.clientName ? activeConv.phone : null}
                 {activeConv.clientId && (
-                  <> · <Link href={`/admin/clientes/${activeConv.clientId}`} className="underline">Ver ficha</Link></>
+                  <> · <Link href={`/admin/clientes/${activeConv.clientId}`} className="underline">ficha</Link></>
                 )}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            {/* Actions — collapsed on very small screens */}
+            <div className="flex shrink-0 items-center gap-1">
               {activeConv.needsReview && (
-                <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-1 text-[10px] font-bold text-red-200">
+                <span className="hidden items-center gap-1 rounded-full bg-red-500/20 px-2 py-1 text-[10px] font-bold text-red-200 sm:flex">
                   <AlertTriangle className="h-3 w-3" /> REVISAR
                 </span>
               )}
-              {/* Vincular cliente desconocido */}
+              {activeConv.needsReview && (
+                <span title="Necesita revisión"><AlertTriangle className="h-4 w-4 text-red-300 sm:hidden" /></span>
+              )}
               {!activeConv.clientId && (
                 <button
                   type="button"
                   onClick={() => setShowLinkClient(true)}
-                  className="flex items-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/80 transition hover:bg-white/20"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white/80 transition hover:bg-white/20 sm:h-auto sm:w-auto sm:gap-1 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[10px] sm:font-bold"
+                  title="Vincular cliente"
                 >
-                  <UserPlus className="h-3 w-3" /> Vincular cliente
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Vincular</span>
                 </button>
               )}
               {activeConv.clientId && (
@@ -820,7 +825,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                     </div>
                   )}
                   <div className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`relative max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+                    <div className={`relative max-w-[88%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
                       isOut
                         ? 'rounded-tr-sm bg-[#dcf8c6] text-[#07111d]'
                         : msg.needs_review
@@ -867,7 +872,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           )}
 
           {/* Reply box */}
-          <div className="relative flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2">
+          <div className="relative flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2 pb-[max(8px,env(safe-area-inset-bottom))]">
             {showEmoji && (
               <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
             )}
@@ -941,7 +946,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-3rem)] overflow-hidden lg:h-screen">
+      <div className="flex h-[calc(100dvh-133px)] overflow-hidden lg:h-screen">
         {ContactList}
         {ThreadPanel}
       </div>

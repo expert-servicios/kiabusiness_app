@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/email/send';
 import { contactAutoReply, contactMessage } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -55,6 +56,13 @@ export async function POST(request: NextRequest) {
         ...contactAutoReply(nombre, asunto)
       })
     ]);
+
+    notifyAdmins({
+      title: `✉️ Contacto: ${nombre}`,
+      body: asunto ? `${asunto} — ${mensaje.slice(0, 60)}` : mensaje.slice(0, 80),
+      url: '/admin',
+      tag: `contact-${email}`,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (error) {
