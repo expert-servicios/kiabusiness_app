@@ -1,11 +1,12 @@
 ﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { AlertCircle, BookOpen, Check, Clock, FileText, ListChecks, MessageCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, BookOpen, Check, Clock, FileText, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
 import { ServiceBuyButton } from '@/components/services/ServiceBuyButton';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
+import { getArticlesForService } from '@/lib/utils/blog';
 
 export function generateStaticParams() {
   const params: { categoria: string; servicio: string }[] = [];
@@ -72,6 +73,7 @@ export default async function ServicioDetallePage({
   const category = getCategory(categoria);
   const relatedServices = getServicesByCategory(categoria as CategorySlug).filter((s) => s.slug !== servicio).slice(0, 3);
   const relatedDocs = getDocsForService(service.slug);
+  const relatedArticles = getArticlesForService(service.slug);
   const compactWithDocs = relatedDocs.length > 0;
   const heroImage = `/api/services/og?slug=${encodeURIComponent(service.slug)}&variant=hero`;
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
@@ -294,6 +296,31 @@ export default async function ServicioDetallePage({
                     >
                       <p className="font-semibold text-[#0D1B2A]">{doc.title}</p>
                       <p className="mt-1 text-sm leading-6 text-[#23364D]">{doc.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {relatedArticles.length > 0 && (
+              <div className="mt-12 border border-[#D4A017]/25 bg-white p-6">
+                <div className="flex items-center gap-3">
+                  <Newspaper className="h-5 w-5 text-[#D4A017]" />
+                  <h2 className="font-serif text-2xl font-bold">Artículos relacionados</h2>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-[#23364D]">
+                  Lecturas útiles para entender mejor este trámite antes de contratarlo.
+                </p>
+                <div className="mt-5 grid gap-3">
+                  {relatedArticles.map((art) => (
+                    <Link
+                      key={art.slug}
+                      href={`/blog/${art.slug}`}
+                      className="border border-[#D4A017]/20 bg-[#F8F6F1] p-4 transition hover:border-[#D4A017]"
+                    >
+                      <p className="font-semibold text-[#0D1B2A]">{art.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-[#23364D]">{art.excerpt}</p>
+                      <p className="mt-2 text-xs text-[#9CA3AF]">{art.readTime} de lectura · {art.date}</p>
                     </Link>
                   ))}
                 </div>

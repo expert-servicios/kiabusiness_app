@@ -6,6 +6,7 @@ export type Article = {
   date: string;
   readTime: string;
   tags: string[];
+  relatedServiceSlugs?: string[];
   body: string;
 };
 
@@ -200,6 +201,7 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
     date: '12 abr 2025',
     readTime: '8 min',
     tags: ['Modelo 151', 'Régimen Beckham', 'IRPF', 'impatriados'],
+    relatedServiceSlugs: ['modelo-151'],
     body: `
 ## ¿Qué es el Régimen Beckham?
 
@@ -259,6 +261,7 @@ En EXPERT te ayudamos a evaluar tu situación y a tramitar el Modelo 149 si deci
     date: '28 mar 2025',
     readTime: '6 min',
     tags: ['arraigo social', 'residencia', 'extranjería', 'autorización de residencia'],
+    relatedServiceSlugs: ['arraigo-social'],
     body: `
 ## ¿Qué es el arraigo social?
 
@@ -309,6 +312,7 @@ En EXPERT te acompañamos durante todo el proceso, desde la evaluación previa h
     date: '15 mar 2025',
     readTime: '7 min',
     tags: ['autónomos', 'alta autónomo', 'Hacienda', 'Seguridad Social'],
+    relatedServiceSlugs: ['alta-autonomo'],
     body: `
 ## ¿Cuándo darse de alta como autónomo?
 
@@ -372,6 +376,7 @@ En EXPERT te asesoramos en el alta completa y te explicamos qué obligaciones te
     date: '1 mar 2025',
     readTime: '9 min',
     tags: ['renta', 'expatriados', 'residencia fiscal', 'IRPF'],
+    relatedServiceSlugs: ['irpf', 'no-residentes'],
     body: `
 ## Residencia fiscal: la clave de todo
 
@@ -426,6 +431,7 @@ En EXPERT gestionamos declaraciones de residentes y no residentes, incluyendo la
     date: '18 feb 2025',
     readTime: '5 min',
     tags: ['Holded', 'contabilidad', 'pymes', 'facturación'],
+    relatedServiceSlugs: ['formacion-holded', 'contabilidad-mensual'],
     body: `
 ## ¿Qué es Holded?
 
@@ -476,6 +482,7 @@ Si estás planteándote migrar, contáctanos para una valoración gratuita de tu
     date: '5 feb 2025',
     readTime: '4 min',
     tags: ['certificado digital', 'empresas', 'trámites online', 'firma electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
     body: `
 ## ¿Para qué sirve el certificado digital?
 
@@ -528,6 +535,7 @@ Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
     date: '2 may 2025',
     readTime: '6 min',
     tags: ['Holded', 'migración', 'ERP', 'datos contables'],
+    relatedServiceSlugs: ['formacion-holded'],
     body: `
 ## ¿Qué se puede migrar a Holded?
 
@@ -572,6 +580,7 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
     date: '5 may 2026',
     readTime: '6 min',
     tags: ['Ley Antifraude', 'software contable', 'facturación', 'VeriFactu'],
+    relatedServiceSlugs: ['contabilidad-mensual', 'formacion-holded'],
     body: `
 ## ¿Qué es la Ley Antifraude?
 
@@ -626,6 +635,7 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
     date: '8 may 2026',
     readTime: '7 min',
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
+    relatedServiceSlugs: ['contabilidad-mensual', 'formacion-holded'],
     body: `
 ## ¿Qué es VeriFactu?
 
@@ -688,6 +698,7 @@ En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de 
     date: '20 abr 2025',
     readTime: '5 min',
     tags: ['Holded', 'autónomos', 'costes', 'automatización'],
+    relatedServiceSlugs: ['formacion-holded', 'contabilidad-mensual'],
     body: `
 ## El dilema del autónomo: ¿herramienta profesional o solución básica?
 
@@ -736,6 +747,7 @@ Si tienes dudas, podemos hacer una valoración gratuita de tu situación y recom
     date: '14 may 2026',
     readTime: '9 min',
     tags: ['permiso de residencia', 'extranjería', 'arraigo social', 'TIE', 'regularización'],
+    relatedServiceSlugs: ['permiso-residencia-inicial'],
     body: `
 ## ¿Qué es el permiso inicial de residencia?
 
@@ -831,6 +843,7 @@ En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación
     date: '14 may 2026',
     readTime: '7 min',
     tags: ['documentación extranjería', 'antecedentes penales', 'apostilla', 'empadronamiento', 'EX-01'],
+    relatedServiceSlugs: ['permiso-residencia-inicial'],
     body: `
 ## La documentación lo es todo en Extranjería
 
@@ -948,6 +961,7 @@ En EXPERT revisamos toda la documentación antes de presentar para minimizar al 
     date: '14 may 2026',
     readTime: '7 min',
     tags: ['renovación residencia', 'residencia larga duración', 'TIE', 'extranjería', 'prórroga'],
+    relatedServiceSlugs: ['renovacion-residencia'],
     body: `
 ## ¿Cuándo debo renovar mi permiso de residencia?
 
@@ -1016,6 +1030,1050 @@ Lleva un control activo de las fechas de caducidad de tu permiso. Una renovació
 
 Si tienes dudas sobre tu situación concreta, contáctanos: revisamos tu caso y te decimos exactamente qué necesitas y cuándo actuar.
     `
+  },
+
+  // ── Fiscal ─────────────────────────────────────────────────────────────────
+  {
+    slug: 'regularizacion-fiscal-requerimientos-hacienda',
+    category: 'Fiscalidad',
+    title: 'Requerimientos de Hacienda: qué hacer cuando recibes una carta de la AEAT',
+    excerpt: 'Cómo actuar ante una notificación de la Agencia Tributaria, qué plazos tienes para responder y cuándo conviene revisar tu situación fiscal antes de contestar.',
+    date: '18 may 2026',
+    readTime: '6 min',
+    tags: ['Hacienda', 'requerimiento AEAT', 'regularización fiscal', 'notificación tributaria'],
+    relatedServiceSlugs: ['regularizacion'],
+    body: `
+## ¿Qué es un requerimiento de Hacienda?
+
+Un requerimiento de la Agencia Tributaria es una notificación oficial en la que la AEAT solicita información, documentación o explicaciones sobre tu situación fiscal. No equivale a una sanción, pero ignorarlo o responder incorrectamente puede derivar en una.
+
+## Tipos de comunicaciones más habituales
+
+- **Requerimiento de información**: la AEAT pide que aportes documentos o datos concretos.
+- **Propuesta de liquidación**: Hacienda ha detectado diferencias en tu declaración y propone un ajuste.
+- **Inicio de procedimiento de comprobación limitada**: revisión de aspectos concretos de tu situación fiscal.
+- **Inicio de inspección**: revisión más amplia y formal de tu situación tributaria.
+
+## Plazos para responder
+
+Los requerimientos indican un plazo concreto para contestar, generalmente **10 o 15 días hábiles** desde la notificación. Ese plazo puede ser prorrogado si se solicita dentro de la mitad del plazo concedido.
+
+No responder en plazo supone automáticamente una **infracción tributaria**, incluso si tu situación fiscal es correcta.
+
+## Qué hacer al recibir un requerimiento
+
+1. **No ignorar ni aplazar**: la fecha de notificación empieza a correr desde que la AEAT lo pone en la dirección electrónica habilitada o desde que lo recoges.
+2. **Leer con atención qué pide exactamente**: el requerimiento especifica qué documentos o información necesita.
+3. **Revisar la declaración o situación fiscal antes de contestar**: a veces el error es de la AEAT, otras veces hay algo que corregir.
+4. **Preparar la respuesta con toda la documentación**: una respuesta incompleta puede generar un nuevo requerimiento.
+5. **Responder dentro del plazo**: si necesitas más tiempo, solicita prórroga antes de que venza la mitad del plazo original.
+
+## ¿Qué pasa si ignoro el requerimiento?
+
+Ignorar un requerimiento puede conllevar:
+
+- **Multa fija** de entre 150 € y 300 € por la primera notificación, que puede aumentar en las siguientes.
+- En procedimientos de comprobación, la AEAT puede continuar el expediente sin tu participación y dictar una liquidación provisional desfavorable.
+
+## Cuándo conviene revisar la situación antes de contestar
+
+Si el requerimiento hace referencia a rentas, deducciones o situaciones que no tenías claras, puede ser conveniente revisar la situación fiscal completa antes de responder. Una respuesta bien fundamentada puede evitar una liquidación o reducir significativamente la deuda.
+
+En EXPERT analizamos el requerimiento, revisamos tu situación y preparamos la respuesta para minimizar el impacto fiscal.
+    `
+  },
+  {
+    slug: 'modelo-720-bienes-extranjero-guia',
+    category: 'Fiscalidad',
+    title: 'Modelo 720: qué es, quién debe presentarlo y cómo evitar sanciones',
+    excerpt: 'Guía práctica sobre la declaración de bienes en el extranjero: umbrales de 50.000 €, qué categorías incluye, plazos y consecuencias de no presentarlo.',
+    date: '18 may 2026',
+    readTime: '7 min',
+    tags: ['Modelo 720', 'bienes extranjero', 'cuentas bancarias extranjero', 'AEAT', 'residentes fiscales'],
+    relatedServiceSlugs: ['modelo-720'],
+    body: `
+## ¿Qué es el Modelo 720?
+
+El Modelo 720 es una **declaración informativa** obligatoria para las personas físicas y jurídicas residentes fiscales en España que posean bienes o derechos situados en el extranjero cuyo valor supere los **50.000 €** en alguna de sus tres categorías.
+
+Es una declaración de **información**, no implica pagar impuestos directamente. Su objetivo es que Hacienda conozca el patrimonio en el extranjero de los residentes en España.
+
+## Las tres categorías de bienes
+
+El umbral de 50.000 € se aplica **por separado** a cada una de estas tres categorías:
+
+1. **Cuentas bancarias** abiertas en entidades financieras en el extranjero (saldo a 31 de diciembre y saldo medio del último trimestre).
+2. **Valores, derechos, seguros y rentas** depositados o gestionados en el extranjero: acciones, fondos de inversión, planes de pensiones, seguros de vida...
+3. **Bienes inmuebles** situados fuera de España y derechos sobre ellos.
+
+Si en una categoría el valor conjunto supera los 50.000 €, hay obligación de declarar **todos los bienes de esa categoría**, no solo el exceso.
+
+## Plazos de presentación
+
+La declaración se presenta entre el **1 de enero y el 31 de marzo** del año siguiente al ejercicio que se declara. No hay posibilidad de presentación extemporánea con reducción de sanciones: el plazo es estricto.
+
+## ¿Hay que presentarlo todos los años?
+
+No necesariamente. Solo hay obligación de presentar el Modelo 720:
+
+- El año en que se supera el umbral de 50.000 € **por primera vez**.
+- En años posteriores, **solo si alguna categoría experimenta un incremento de más de 20.000 €** respecto al último ejercicio declarado.
+
+Esto significa que si ya lo presentaste y los saldos no han variado significativamente, puede que no tengas que volver a presentarlo.
+
+## Sanciones por no presentar o presentar incorrectamente
+
+Las sanciones por incumplimiento pueden ser muy elevadas. Tras una sentencia del Tribunal de Justicia de la UE de 2022 que declaró desproporcionadas las multas originales, el régimen sancionador fue modificado, pero siguen existiendo sanciones formales importantes.
+
+## Documentos necesarios para preparar el modelo
+
+- Extractos bancarios de cuentas en el extranjero (saldo a 31/12 y saldo medio del último trimestre).
+- Certificados de valores, fondos o seguros en el extranjero (valor a 31/12).
+- Escrituras o documentos de titularidad de inmuebles en el extranjero.
+- Número de identificación fiscal extranjero (si aplica).
+
+## También existe el Modelo 721
+
+Para **criptomonedas** depositadas en exchanges o custodiadas en el extranjero, existe el **Modelo 721**, de nueva creación y con características similares al 720.
+    `
+  },
+
+  // ── Extranjería ─────────────────────────────────────────────────────────────
+  {
+    slug: 'arraigo-familiar-guia',
+    category: 'Extranjería',
+    title: 'Arraigo familiar: cómo regularizarse en España por vínculos de familia',
+    excerpt: 'Quién puede solicitar el arraigo familiar, qué documentos acreditan el vínculo y cómo es el proceso para obtener la autorización de residencia.',
+    date: '18 may 2026',
+    readTime: '6 min',
+    tags: ['arraigo familiar', 'residencia', 'vínculo familiar', 'extranjería', 'menor español'],
+    relatedServiceSlugs: ['arraigo-familiar'],
+    body: `
+## ¿Qué es el arraigo familiar?
+
+El arraigo familiar es una **autorización de residencia temporal** para personas extracomunitarias que tienen vínculos familiares directos con ciudadanos españoles o con residentes legales en España. A diferencia del arraigo social, **no requiere acreditar un período mínimo de permanencia** en España.
+
+## ¿Quién puede solicitarlo?
+
+Pueden solicitarlo:
+
+- **Ascendientes de menor español**: padres o madres de hijos con nacionalidad española.
+- **Progenitores de menor con residencia legal**: en algunos supuestos específicos.
+- **Cónyuge o pareja de hecho** de ciudadano español o de residente legal con tarjeta de larga duración, siempre que la unión sea real, vigente y no fraudulenta.
+
+## ¿Cómo se acredita el vínculo familiar?
+
+La documentación varía según el tipo de vínculo:
+
+**Para ascendientes de menor español:**
+- Certificado de nacimiento del menor que acredite la filiación.
+- DNI o pasaporte del menor.
+- Documento que acredite la nacionalidad española del hijo.
+
+**Para cónyuge o pareja:**
+- Libro de familia o certificado de matrimonio.
+- Certificado de empadronamiento conjunto (prueba de convivencia real).
+- Documentación del cónyuge/pareja que acredite su situación regular en España.
+
+## Documentación general del solicitante
+
+Además del vínculo familiar, se necesita:
+
+- Pasaporte en vigor.
+- Ausencia de antecedentes penales en España y en el país de origen (apostillados + traducción jurada).
+- Fotografía y tasa correspondiente.
+
+## Diferencias con el arraigo social
+
+| Aspecto | Arraigo social | Arraigo familiar |
+|---|---|---|
+| Tiempo de permanencia exigido | 3 años | No requerido |
+| Vínculo necesario | Oferta trabajo, informe o familia | Vínculo familiar directo |
+| Autorización laboral | Incluida con contrato de trabajo | Incluida |
+
+## Resultado y renovación
+
+La autorización inicial tiene vigencia de **2 años** (mayor que el arraigo social). Puede renovarse si se mantiene el vínculo familiar. Tras 5 años de residencia legal continuada, se puede solicitar la residencia de larga duración.
+    `
+  },
+  {
+    slug: 'nacionalidad-espanola-por-residencia',
+    category: 'Extranjería',
+    title: 'Nacionalidad española por residencia: plazos, exámenes y proceso',
+    excerpt: 'Cómo obtener la nacionalidad española por residencia: cuántos años se necesitan, los exámenes CCSE y DELE, documentación y tiempos reales de resolución.',
+    date: '18 may 2026',
+    readTime: '8 min',
+    tags: ['nacionalidad española', 'residencia', 'CCSE', 'DELE', 'Ministerio de Justicia'],
+    relatedServiceSlugs: ['nacionalidad-espanola'],
+    body: `
+## ¿Qué es la nacionalidad española por residencia?
+
+La nacionalidad española por residencia es la vía más común para obtener la nacionalidad cuando no se tiene por nacimiento ni por origen familiar. Requiere haber residido legalmente en España durante un período determinado y cumplir otros requisitos.
+
+## Plazos de residencia según el caso
+
+El plazo general es de **10 años**, pero existen reducciones importantes:
+
+| Colectivo | Años de residencia |
+|---|---|
+| Regla general | 10 años |
+| Refugiados reconocidos | 5 años |
+| Nacionales de países iberoamericanos, Filipinas, Guinea Ecuatorial, Portugal, Andorra, Sefardíes | 2 años |
+| Nacido en España | 1 año |
+| Casado/a con español/a (sin requisito de tiempo mínimo casado) | 1 año |
+| Viudo/a de español/a | 1 año |
+
+## Los exámenes: CCSE y DELE
+
+Todos los solicitantes que no sean hispanohablantes nativos o no tengan titulación académica española deben superar:
+
+- **CCSE** (Conocimientos Constitucionales y Socioculturales de España): prueba sobre la Constitución, instituciones, cultura y sociedad española. Se realiza en el Instituto Cervantes.
+- **DELE A2**: certificado de español como lengua extranjera de nivel A2, también del Instituto Cervantes.
+
+Los hispanohablantes (nacionales de países con español como lengua oficial) quedan exentos del DELE. Los menores de edad tienen condiciones especiales.
+
+## Documentación necesaria
+
+- Pasaporte en vigor y fotocopia.
+- Certificado de empadronamiento.
+- Certificado de antecedentes penales de España.
+- Certificado de antecedentes penales del país de origen (apostillado y traducido).
+- Certificado de residencia legal en España (historial de autorizaciones).
+- Certificados CCSE y DELE (si aplica).
+- Tasa modelo 790 código 026.
+- Documentación adicional según el supuesto (libro de familia, certificado de matrimonio, etc.).
+
+## Proceso de tramitación
+
+1. Reunión de toda la documentación.
+2. Presentación de la solicitud (telemática o presencial en el Registro Civil o ante Notario, según el expediente).
+3. Espera a la resolución del Ministerio de Justicia.
+4. Si se aprueba: jura o promesa ante el Encargado del Registro Civil.
+5. Inscripción en el Registro Civil e inicio de trámites del DNI y pasaporte español.
+
+## Plazos de resolución
+
+El procedimiento tiene un plazo legal de **1 año** desde la presentación. En la práctica, los tiempos varían entre 6 meses y 3 años según el volumen de expedientes y la correctitud de la documentación. Los expedientes completos y bien preparados se resuelven antes.
+
+## Doble nacionalidad
+
+España permite mantener la doble nacionalidad con los países iberoamericanos, Filipinas, Guinea Ecuatorial, Portugal, Andorra y Sefardíes. Con el resto de países, en principio se exige renunciar a la nacionalidad anterior, aunque algunos países no reconocen esa renuncia.
+    `
+  },
+  {
+    slug: 'reagrupacion-familiar-espana',
+    category: 'Extranjería',
+    title: 'Reagrupación familiar en España: requisitos y cómo traer a tu familia',
+    excerpt: 'Qué familiares puedes reagrupar, qué condiciones debes cumplir como reagrupante y cómo funciona el proceso para traer a tu cónyuge e hijos a España.',
+    date: '18 may 2026',
+    readTime: '7 min',
+    tags: ['reagrupación familiar', 'cónyuge', 'hijos menores', 'residente legal', 'extranjería'],
+    relatedServiceSlugs: ['reagrupacion-familiar'],
+    body: `
+## ¿Qué es la reagrupación familiar?
+
+La reagrupación familiar es el procedimiento que permite a un ciudadano extracomunitario con **residencia legal en España** traer a vivir con él a determinados familiares que se encuentran en el extranjero.
+
+Es un derecho reconocido por la legislación española de extranjería, pero su concesión está condicionada al cumplimiento de ciertos requisitos por parte del reagrupante.
+
+## ¿A quién puedes reagrupar?
+
+Pueden ser reagrupados:
+
+- **Cónyuge** o pareja de hecho registrada (sin estar separado de hecho o de derecho).
+- **Hijos menores de 18 años** o mayores dependientes por razón de discapacidad.
+- **Ascendientes** (padres) del reagrupante o de su cónyuge, si son mayores de 65 años y dependen económicamente del reagrupante (con requisitos adicionales).
+- En algunos casos, **menores en régimen de tutela o acogimiento**.
+
+## Requisitos del reagrupante
+
+Para poder reagrupar, el residente en España debe:
+
+1. Tener autorización de residencia en vigor **mínimo de 1 año** y haber solicitado la renovación.
+2. Disponer de **vivienda adecuada** para el número de familiares a reagrupar (acreditada mediante contrato de arrendamiento o escritura de propiedad).
+3. Contar con **medios económicos suficientes**: al menos el 150 % del IPREM mensual (aprox. 900 €/mes en 2025) para el reagrupante solo, más el 50 % por cada familiar adicional.
+
+## Proceso de tramitación
+
+1. **El reagrupante presenta la solicitud** en la Oficina de Extranjería española (no el familiar que va a venir).
+2. Si se aprueba, se emite una **autorización de residencia temporal por reagrupación familiar**.
+3. Con esa autorización, el familiar puede solicitar el **visado de reagrupación familiar** en el consulado español del país donde se encuentre.
+4. Una vez en España con el visado, el familiar tramita la **tarjeta TIE**.
+
+## Documentación del reagrupante
+
+- Autorización de residencia en vigor.
+- Pasaporte y NIE/TIE.
+- Contrato de arrendamiento o escritura de vivienda (informe de adecuación de la vivienda en algunas provincias).
+- Nóminas o documentación de medios económicos de los últimos 6 meses.
+- Certificado de empadronamiento.
+
+## Documentación del familiar a reagrupar
+
+- Pasaporte en vigor.
+- Certificado de antecedentes penales del país de origen (apostillado + traducción jurada).
+- Documentación del vínculo familiar (libro de familia, certificado de matrimonio, acta de nacimiento...) apostillada y traducida.
+
+## Plazos
+
+La solicitud se resuelve en un plazo legal de **3 meses**. La práctica varía por oficina. Una vez concedida, el familiar tiene 2 meses para solicitar el visado en el consulado.
+    `
+  },
+  {
+    slug: 'permiso-residencia-inversores',
+    category: 'Extranjería',
+    title: 'Permiso de residencia para inversores en España: Golden Visa y alternativas',
+    excerpt: 'Opciones para obtener residencia en España a través de la inversión: Golden Visa, visado de no lucrativa y otros permisos. Requisitos, plazos y proceso.',
+    date: '18 may 2026',
+    readTime: '7 min',
+    tags: ['Golden Visa', 'inversores', 'residencia inversión', 'visado inversor', 'extranjería'],
+    relatedServiceSlugs: ['inversores'],
+    body: `
+## Residencia en España para inversores
+
+España ofrece varias vías para que ciudadanos extracomunitarios obtengan residencia a través de la inversión económica o la disponibilidad de medios suficientes. Las más relevantes son la **Golden Visa** y el **visado de residencia no lucrativa**.
+
+## Golden Visa (Visado de Inversor)
+
+Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia a través de una inversión significativa en España:
+
+| Tipo de inversión | Mínimo |
+|---|---|
+| Inmuebles en España | 500.000 € |
+| Deuda pública española | 2.000.000 € |
+| Acciones de sociedades españolas | 1.000.000 € |
+| Depósitos en entidades financieras españolas | 1.000.000 € |
+| Inversión en proyectos empresariales de interés general | Sin mínimo fijo |
+
+### Ventajas de la Golden Visa
+- No requiere residencia efectiva en España (basta con 1 visita al año).
+- Incluye a cónyuge e hijos menores.
+- Renovable cada 2 años (primera vez) y cada 5 años (posteriores).
+- Permite acceso al espacio Schengen.
+
+## Visado de Residencia No Lucrativa
+
+Para personas que no necesitan trabajar en España y disponen de medios económicos suficientes para sostenerse y a su familia sin ejercer actividad laboral.
+
+**Requisitos principales:**
+- Medios económicos mínimos: al menos el 400 % del IPREM mensual (aprox. 2.400 €/mes en 2025) para el solicitante, más el 100 % por cada familiar adicional.
+- Seguro médico privado sin copago ni carencia en España.
+- Ausencia de antecedentes penales.
+- No haber trabajado en España en los últimos años.
+
+## Permiso de inversor por tramitación inicial y renovación
+
+Para inversiones de menor cuantía o situaciones específicas, existen permisos de residencia vinculados a inversión que no alcanzan los umbrales de la Golden Visa pero que pueden tramitarse como autorización de residencia por circunstancias excepcionales o por cuenta propia empresarial.
+
+En EXPERT analizamos cada caso para determinar la vía más adecuada según el perfil y la inversión del cliente. El precio del servicio de tramitación inicial y renovación es de **250 €/persona**.
+
+## Documentación general
+
+- Pasaporte en vigor.
+- Acreditación de la inversión (escritura de compraventa, certificado bancario, etc.).
+- Certificado de antecedentes penales.
+- Seguro médico privado.
+- Formulario de solicitud correspondiente.
+
+## Plazos
+
+La Golden Visa se tramita ante la Unidad de Grandes Empresas (UGE-CE), con resolución en unos **20 días hábiles**. El visado no lucrativo se tramita en el consulado español del país de residencia del solicitante.
+    `
+  },
+
+  // ── Empresas ────────────────────────────────────────────────────────────────
+  {
+    slug: 'constitucion-sociedad-limitada-espana',
+    category: 'Empresas',
+    title: 'Cómo constituir una SL en España: pasos, costes y plazos reales',
+    excerpt: 'Guía práctica para crear una Sociedad Limitada en España: capital mínimo, estatutos, escritura notarial, inscripción y alta fiscal.',
+    date: '18 may 2026',
+    readTime: '7 min',
+    tags: ['SL', 'Sociedad Limitada', 'constitución empresa', 'notaría', 'Registro Mercantil'],
+    relatedServiceSlugs: ['constitucion-sl'],
+    body: `
+## ¿Qué es una Sociedad Limitada?
+
+La Sociedad Limitada (SL) es la forma jurídica más habitual para pequeñas y medianas empresas en España. Sus características principales:
+
+- **Responsabilidad limitada**: los socios solo responden con el capital aportado, no con su patrimonio personal.
+- **Capital mínimo**: desde 1 euro (aunque la práctica habitual es 3.000 € para una empresa operativa).
+- **Socios**: mínimo 1, máximo ilimitado.
+- **Gestión**: administrada por uno o varios administradores (pueden ser socios o no).
+
+## Pasos para constituir una SL
+
+### 1. Certificación negativa de denominación social
+Antes de la escritura, hay que reservar el nombre de la empresa en el **Registro Mercantil Central**. El certificado acredita que la denominación no está ya en uso y tiene una validez de 6 meses.
+
+### 2. Apertura de cuenta bancaria y depósito del capital
+El capital social inicial (mínimo 1 €, habitualmente 3.000 €) debe depositarse en una cuenta bancaria a nombre de la sociedad en constitución. El banco emite un certificado de depósito.
+
+### 3. Escritura pública de constitución
+La escritura incluye los **estatutos sociales** (objeto social, capital, gobierno de la sociedad, derechos de socios, etc.) y se firma ante notario. Es el acto que da vida jurídica a la sociedad.
+
+### 4. Liquidación del Impuesto de Transmisiones Patrimoniales (TPO)
+Las constituciones de sociedades están sujetas a la modalidad de Operaciones Societarias del ITP, aunque actualmente están **exentas** (hay que presentar el modelo aunque la cuota sea cero).
+
+### 5. Inscripción en el Registro Mercantil
+La escritura se inscribe en el Registro Mercantil de la provincia del domicilio social. Desde la inscripción, la sociedad tiene personalidad jurídica plena.
+
+### 6. Alta fiscal en Hacienda (Modelo 036)
+Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal en la AEAT.
+
+## Costes aproximados
+
+| Concepto | Coste aproximado |
+|---|---|
+| Certificación denominación | ~15 € |
+| Notaría (escritura) | ~300–500 € |
+| Registro Mercantil | ~150–250 € |
+| Gestoría/asesoría | ~490 € + IVA |
+| **Total aproximado** | **1.000–1.300 €** |
+
+## Plazos
+
+El proceso completo, desde la reserva de denominación hasta la obtención del CIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
+
+## ¿SL o autónomo?
+
+La elección entre SL y autónomo depende del nivel de ingresos, la actividad y la estructura prevista:
+
+- **Autónomo**: más sencillo, menos costes de mantenimiento, ideal para ingresos por debajo de 40.000–50.000 €/año.
+- **SL**: mejor cuando los ingresos son elevados (tipo IS del 25 % frente al IRPF progresivo), cuando hay varios socios o cuando interesa separar el patrimonio personal del profesional.
+    `
+  },
+  {
+    slug: 'impuestos-trimestrales-autonomos',
+    category: 'Empresas',
+    title: 'Impuestos trimestrales del autónomo: modelos, plazos y cómo prepararlos',
+    excerpt: 'Guía sobre los modelos tributarios trimestrales del autónomo: Modelo 303 (IVA), Modelo 130 (IRPF), 111 y 115. Plazos y errores frecuentes.',
+    date: '18 may 2026',
+    readTime: '6 min',
+    tags: ['impuestos trimestrales', 'Modelo 303', 'Modelo 130', 'autónomos', 'IVA'],
+    relatedServiceSlugs: ['impuestos-trimestrales'],
+    body: `
+## Cuáles son los impuestos trimestrales del autónomo
+
+Los autónomos y las sociedades tienen obligación de presentar declaraciones trimestrales de varios impuestos. Los más habituales son:
+
+### Modelo 303 — IVA trimestral
+Liquida la diferencia entre el IVA repercutido (cobrado a clientes) y el IVA soportado (pagado a proveedores).
+
+- Si el IVA cobrado supera al pagado → hay que ingresar la diferencia.
+- Si el IVA pagado supera al cobrado → resultado negativo, compensable en trimestres siguientes o devuelto al final del año.
+
+### Modelo 130 — Pago fraccionado del IRPF
+Adelanto trimestral del IRPF del autónomo. Se calcula aplicando el **20 % sobre el beneficio neto** del trimestre (ingresos menos gastos), restando los pagos fraccionados anteriores del año.
+
+### Modelo 111 — Retenciones de trabajadores
+Si el autónomo tiene empleados, ingresa las retenciones de IRPF practicadas sobre sus nóminas.
+
+### Modelo 115 — Retenciones de alquileres
+Si el autónomo paga un alquiler de local u oficina, retiene e ingresa el 19 % de la renta.
+
+## Plazos trimestrales
+
+| Trimestre | Período cubierto | Plazo de presentación |
+|---|---|---|
+| 1T | Enero–Marzo | 1–20 de abril |
+| 2T | Abril–Junio | 1–20 de julio |
+| 3T | Julio–Septiembre | 1–20 de octubre |
+| 4T | Octubre–Diciembre | 1–30 de enero (siguiente año) |
+
+## Resúmenes anuales
+
+Además de los modelos trimestrales, hay que presentar:
+
+- **Modelo 390**: resumen anual de IVA (enero).
+- **Modelo 190**: resumen anual de retenciones de trabajo (enero).
+- **Modelo 180**: resumen anual de retenciones de alquileres (enero).
+
+## Errores frecuentes
+
+1. **No conservar las facturas de gastos**: sin factura, el gasto no es deducible a efectos de IVA ni de IRPF.
+2. **Presentar fuera de plazo**: genera recargos automáticos del 1 % al 15 % según el retraso.
+3. **No incluir todos los ingresos**: incluso las facturas no cobradas deben declararse en el trimestre de emisión (criterio de devengo).
+4. **Deducir gastos no afectos a la actividad**: solo son deducibles los gastos relacionados directamente con la actividad.
+    `
+  },
+  {
+    slug: 'baja-autonomo-y-cese-actividad',
+    category: 'Empresas',
+    title: 'Cómo darse de baja como autónomo: pasos, plazos y prestación por cese',
+    excerpt: 'Todo sobre la baja de autónomo: qué trámites hay que hacer en Hacienda y la Seguridad Social, cuándo solicitarla y cómo acceder a la prestación por cese de actividad.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['baja autónomo', 'cese actividad', 'RETA', 'Hacienda', 'prestación'],
+    relatedServiceSlugs: ['baja-cese-actividad'],
+    body: `
+## ¿Cuándo conviene darse de baja como autónomo?
+
+Debes darte de baja cuando **cesas de forma definitiva en el ejercicio de la actividad económica**. Seguir dado de alta y pagando la cuota cuando no hay actividad real es un gasto innecesario. La baja puede hacerse cualquier día del mes, pero solo tiene efecto económico desde el primer día del mes siguiente si se solicita después del primer día del mes.
+
+**Recomendación práctica**: si vas a cesar la actividad a final de mes, tramita la baja el último día del mes para no pagar la cuota del mes siguiente.
+
+## Trámites necesarios
+
+### Baja en Hacienda (Modelo 036 o 037)
+Se presenta la baja censal ante la AEAT, indicando la fecha de cese de la actividad. Esto cancela las obligaciones de presentación de modelos trimestrales a partir de esa fecha.
+
+### Baja en la Seguridad Social (RETA)
+La baja en el RETA debe presentarse en los **3 días naturales siguientes al cese**. Si se presenta fuera de plazo, la baja tiene efecto desde el día de la presentación, no desde el cese.
+
+### Última declaración de IVA e IRPF
+Hay que presentar los modelos correspondientes al período en que se ha estado activo, aunque sea un período inferior al trimestre.
+
+## Prestación por cese de actividad
+
+Los autónomos que cesen en su actividad pueden acceder a la **prestación por cese de actividad** (equivalente al desempleo de los trabajadores por cuenta ajena), siempre que:
+
+- Hayan cotizado al menos **12 meses** continuados por cese de actividad.
+- El cese sea **involuntario** (no mera voluntad del autónomo sin causa): pérdida superior al 75 % de los ingresos, deudas por ejecución judicial, discapacidad sobrevenida, etc.
+- Estén al corriente de pago con la Seguridad Social.
+- Estén en situación legal de desempleo y disponibles para buscar trabajo o reemprender.
+
+La prestación se solicita ante la Mutua o el SEPE en el plazo de **15 días hábiles** desde el cese.
+
+## Disolución de una Sociedad Limitada
+
+Si la actividad se ejercía a través de una SL, el proceso es más complejo e incluye:
+
+1. **Acuerdo de disolución** en Junta General.
+2. **Nombramiento de liquidadores**.
+3. **Liquidación de activos y pasivos**.
+4. **Escritura de disolución y extinción** ante notario.
+5. **Inscripción en el Registro Mercantil**.
+6. **Baja fiscal** de la sociedad ante la AEAT.
+
+Es importante completar todas las obligaciones fiscales pendientes antes de disolver la sociedad.
+    `
+  },
+
+  // ── Tráfico ────────────────────────────────────────────────────────────────
+  {
+    slug: 'transferencia-vehiculo-dgt',
+    category: 'Trámites',
+    title: 'Cómo hacer la transferencia de un vehículo en la DGT: pasos e impuestos',
+    excerpt: 'Guía sobre el cambio de titular de un vehículo: qué documentos necesitas, cómo liquidar el ITP y cuánto tiempo tarda la transferencia en la DGT.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['transferencia vehículo', 'DGT', 'ITP', 'compraventa coche', 'cambio titular'],
+    relatedServiceSlugs: ['transferencia-vehiculo'],
+    body: `
+## ¿Qué es la transferencia de vehículo?
+
+La transferencia de vehículo es el trámite que cambia la titularidad de un vehículo de segunda mano en los registros de la DGT. Sin este trámite, el coche sigue figurando a nombre del vendedor aunque el comprador ya lo tenga.
+
+El plazo para realizar la transferencia es de **30 días desde la fecha de compraventa**.
+
+## Documentación necesaria
+
+- **Contrato de compraventa** firmado por ambas partes, con fecha, datos del vehículo y precio.
+- **Permiso de circulación** original del vehículo.
+- **Ficha técnica** (tarjeta de inspección técnica) en vigor.
+- **DNI o NIE** del comprador y del vendedor.
+- **Justificante del pago del ITP** (Impuesto de Transmisiones Patrimoniales).
+- **Informe de la ITV** (inspección técnica): debe estar en vigor para que se pueda transferir el vehículo.
+
+## El ITP: el impuesto que hay que pagar
+
+El comprador de un vehículo de segunda mano está obligado a liquidar el **Impuesto de Transmisiones Patrimoniales (ITP)** antes de tramitar la transferencia.
+
+El porcentaje varía según la comunidad autónoma (entre el 4 % y el 8 % del valor del vehículo). La base imponible es el precio de venta, aunque Hacienda puede comprobar que no está por debajo del valor de mercado.
+
+El ITP se liquida en la Consejería de Hacienda autonómica (o a través de su sede electrónica) antes de presentar la transferencia en la DGT.
+
+## Plazos de la transferencia
+
+Una vez liquidado el ITP, la transferencia se puede presentar:
+
+- **Telemáticamente** a través del portal de la DGT (con certificado digital).
+- **En oficinas de la DGT** con cita previa.
+- **A través de una gestoría** autorizada.
+
+El tiempo de resolución es generalmente de **1 a 5 días hábiles**.
+
+## ¿Puede el comprador circular antes de tramitar la transferencia?
+
+Sí, siempre que lleve el contrato de compraventa y el permiso de circulación a nombre del vendedor. Sin embargo, desde el punto de vista legal y de responsabilidad, es importante tramitar la transferencia lo antes posible.
+    `
+  },
+  {
+    slug: 'matriculacion-vehiculo-espana',
+    category: 'Trámites',
+    title: 'Matriculación de vehículos en España: impuestos y trámites',
+    excerpt: 'Qué trámites hay que hacer para matricular un vehículo nuevo o importado en España: IEDMT, documentación de la DGT y plazos.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['matriculación', 'DGT', 'IEDMT', 'vehículo importado', 'primera matrícula'],
+    relatedServiceSlugs: ['matriculacion'],
+    body: `
+## ¿Qué es la primera matriculación?
+
+La primera matriculación es el trámite que incorpora un vehículo nuevo o importado en el registro de la DGT y le asigna una matrícula española. Sin este trámite, el vehículo no puede circular legalmente por España.
+
+## Vehículos que requieren primera matriculación
+
+- Vehículos **nuevos** adquiridos en concesionario.
+- Vehículos **importados** de otro país (incluyendo otros países de la UE).
+- Vehículos que cambian de matrícula por cambio de domicilio entre ciertas autonomías (en algunos casos).
+
+## El IEDMT: Impuesto de Matriculación
+
+El **Impuesto Especial sobre Determinados Medios de Transporte (IEDMT)** es el impuesto que se paga en la primera matriculación. Su tipo depende de las **emisiones de CO₂ del vehículo**:
+
+| Emisiones CO₂ (g/km) | Tipo IEDMT |
+|---|---|
+| Hasta cierto umbral ecológico | 0 % (exento) |
+| Emisiones moderadas | 4,75 % |
+| Emisiones medias | 9,75 % |
+| Emisiones elevadas | 14,75 % |
+
+Los vehículos eléctricos y los de muy bajas emisiones suelen estar exentos.
+
+## Documentación necesaria
+
+- **Factura del vehículo** o declaración de importación (si viene del extranjero).
+- **Ficha técnica del vehículo** (homologación).
+- **DNI o NIE** del titular.
+- **Justificante del pago del IEDMT** (si no está exento).
+- **Seguro del vehículo** en vigor.
+- Formulario de solicitud de matrícula.
+
+## Vehículos importados de otro país de la UE
+
+Si el vehículo ya estaba matriculado en otro país de la UE, se necesita adicionalmente:
+
+- Documento de baja o exportación del país de origen.
+- Certificado de conformidad europeo (o informe de características de la ITV española).
+- Justificante del pago del IVA o prueba de que ya estaba en régimen de transmisión.
+
+## Plazos
+
+Desde la presentación de la documentación completa, la matrícula se resuelve habitualmente en **5 a 10 días hábiles**.
+    `
+  },
+  {
+    slug: 'duplicados-trafico-dgt',
+    category: 'Trámites',
+    title: 'Duplicado de documentos de tráfico: carnet, permiso de circulación y ficha técnica',
+    excerpt: 'Cómo obtener el duplicado del permiso de conducir, del permiso de circulación o de la ficha técnica por pérdida, robo o deterioro ante la DGT.',
+    date: '18 may 2026',
+    readTime: '4 min',
+    tags: ['duplicado carnet', 'permiso conducir', 'DGT', 'permiso circulación', 'ficha técnica'],
+    relatedServiceSlugs: ['duplicado-permiso'],
+    body: `
+## ¿Por qué necesito un duplicado?
+
+Los duplicados de documentos de tráfico son necesarios cuando el documento original se ha **perdido, robado o deteriorado** hasta el punto de no ser legible o utilizable. Circular sin el permiso de conducir (o sin el resguardo provisional) es una infracción.
+
+## Tipos de duplicados
+
+### Permiso de conducir
+Documento que acredita la autorización para conducir. En caso de pérdida o robo, hay que tramitar el duplicado en la DGT.
+
+### Permiso de circulación
+Documento específico de cada vehículo que certifica quién es su titular y algunos datos básicos.
+
+### Ficha técnica (tarjeta de inspección técnica)
+Documento que recoge las características técnicas del vehículo. Necesaria para pasar la ITV.
+
+## Documentación necesaria
+
+Para cualquiera de los duplicados se necesita habitualmente:
+
+- **DNI o NIE** en vigor del titular.
+- **Denuncia** ante la Policía o Guardia Civil en caso de robo (recomendable, aunque no siempre obligatoria).
+- **Fotografía** reciente (para el carnet de conducir).
+- **Tasa de la DGT** correspondiente al tipo de duplicado.
+- Formulario de solicitud de duplicado.
+
+## ¿Puedo conducir mientras espero el duplicado?
+
+Sí, pero necesitas llevar:
+
+- El **resguardo de solicitud del duplicado**, que la DGT emite en el momento de presentar la solicitud y sirve como documento provisional.
+- Si el duplicado está pedido pero aún no ha llegado, el resguardo es suficiente para circular legalmente durante su período de validez.
+
+## Plazos
+
+Los duplicados se tramitan generalmente en **2 a 5 días hábiles** desde la presentación de la solicitud. Con gestoría autorizada, el proceso puede ser más ágil al evitar citas previas en las oficinas de tráfico.
+    `
+  },
+  {
+    slug: 'tramites-embarcaciones-capitania-maritima',
+    category: 'Trámites',
+    title: 'Trámites de embarcaciones ante Capitanía Marítima: matrícula y transferencias',
+    excerpt: 'Cómo matricular una embarcación de recreo, cambiar de titular o tramitar la baja ante Capitanía Marítima. Documentos necesarios y proceso.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['embarcaciones', 'Capitanía Marítima', 'matrícula náutica', 'transferencia barco', 'abanderamiento'],
+    relatedServiceSlugs: ['tramites-embarcaciones'],
+    body: `
+## ¿Qué es Capitanía Marítima?
+
+La Capitanía Marítima es el organismo dependiente de la **Dirección General de la Marina Mercante** que gestiona los trámites relacionados con embarcaciones de recreo y profesionales en España. Cada puerto o zona costera tiene su Capitanía Marítima competente.
+
+## Matrícula de embarcaciones de recreo
+
+Para poner en circulación una embarcación nueva o importada en España hay que matricularla. Los documentos habituales incluyen:
+
+- Factura de compra o documento de importación.
+- Certificado de conformidad CE del fabricante.
+- DNI o CIF del propietario.
+- Pago de tasas de matriculación.
+- Seguro de la embarcación.
+
+Una vez matriculada, la embarcación recibe su **Lista** (clasificación según uso y características) y un número de matrícula.
+
+## Transferencia de embarcación
+
+Al comprar o vender una embarcación usada hay que tramitar el **cambio de titularidad** ante Capitanía Marítima del lugar donde esté matriculada la embarcación.
+
+Documentación necesaria:
+
+- Contrato de compraventa firmado.
+- Certificado de matrícula original.
+- DNI o CIF del comprador y del vendedor.
+- Justificante del pago del ITP (Impuesto de Transmisiones Patrimoniales).
+
+## Abanderamiento y despachos
+
+Las embarcaciones que van a navegar por aguas españolas o internacionales necesitan:
+
+- **Abanderamiento**: acreditar el pabellón (bandera) bajo la que navega la embarcación.
+- **Despacho de navegación**: autorización para cada salida a mar abierto, requerido para embarcaciones de cierto tamaño o recorrido.
+
+## Baja de embarcación
+
+La baja (cancelación de matrícula) se tramita ante Capitanía Marítima cuando la embarcación se destruye, exporta definitivamente o se convierte en desguace.
+
+## Titulaciones náuticas
+
+Capitanía Marítima también gestiona (junto con las Comunidades Autónomas) las titulaciones náuticas de recreo: Patrón de Embarcaciones de Recreo (PER), Patrón de Recreo (PR) y otros títulos. Aunque la gestión varía por comunidad, la validación oficial corresponde a la Marina Mercante.
+    `
+  },
+
+  // ── Notaría y Propiedades ──────────────────────────────────────────────────
+  {
+    slug: 'impuestos-compraventa-vivienda',
+    category: 'Fiscalidad',
+    title: 'Impuestos en la compraventa de vivienda: ITP, IVA y AJD',
+    excerpt: 'Qué impuestos paga el comprador y el vendedor en una compraventa inmobiliaria en España, según si la vivienda es nueva o de segunda mano.',
+    date: '18 may 2026',
+    readTime: '6 min',
+    tags: ['compraventa vivienda', 'ITP', 'IVA vivienda', 'AJD', 'impuestos inmobiliarios'],
+    relatedServiceSlugs: ['compraventa-inmueble'],
+    body: `
+## ¿Cuánto se paga de impuestos al comprar una vivienda?
+
+La fiscalidad de la compraventa depende principalmente de si la vivienda es **nueva** o de **segunda mano**. En ambos casos, los impuestos los paga el comprador, aunque también hay obligaciones para el vendedor.
+
+## Vivienda de segunda mano: ITP
+
+El comprador paga el **Impuesto de Transmisiones Patrimoniales (ITP)**, que corresponde a la Comunidad Autónoma donde está situado el inmueble.
+
+Los tipos generales en 2025 según comunidad autónoma:
+
+| Comunidad Autónoma | Tipo general |
+|---|---|
+| Madrid | 6 % |
+| Cataluña | 10 % |
+| Andalucía | 7 % |
+| Valencia | 10 % |
+| País Vasco | 4 % |
+| Otras | 6 %–10 % |
+
+La base imponible es el **precio de compraventa**, siempre que no sea inferior al valor de referencia del Catastro. Si el precio escriturado es inferior al valor de referencia, Hacienda tomará el valor de referencia como base.
+
+## Vivienda nueva: IVA + AJD
+
+Si compras una vivienda nueva directamente al promotor, pagas:
+
+- **IVA**: 10 % sobre el precio de venta (21 % para locales comerciales).
+- **Actos Jurídicos Documentados (AJD)**: entre el 0,5 % y el 1,5 % del valor escriturado, según la comunidad autónoma.
+
+En vivienda de protección oficial (VPO) el IVA puede ser del 4 %.
+
+## ¿Qué paga el vendedor?
+
+El vendedor de una vivienda debe:
+
+- Tributar la **ganancia patrimonial** en el IRPF: la diferencia entre el precio de venta y el precio de adquisición (ajustado por ciertos gastos y mejoras).
+- Pagar la **Plusvalía Municipal** (IIVTNU): impuesto municipal sobre el incremento del valor del terreno durante el tiempo que ha tenido el inmueble.
+
+## Gastos adicionales a los impuestos
+
+Además de los impuestos, el comprador paga:
+
+- **Notaría**: honorarios del notario por la escritura de compraventa.
+- **Registro de la Propiedad**: inscripción de la escritura.
+- **Gestoría**: si se contrata para gestionar los trámites.
+
+Estos gastos representan habitualmente entre el 1,5 % y el 2 % del precio de compra.
+    `
+  },
+  {
+    slug: 'como-gestionar-herencia-espana',
+    category: 'Trámites',
+    title: 'Cómo gestionar una herencia en España: pasos, plazos e impuestos',
+    excerpt: 'Qué hacer cuando se produce un fallecimiento: certificados necesarios, el Impuesto de Sucesiones, adjudicación de bienes y plazos que no puedes perder.',
+    date: '18 may 2026',
+    readTime: '7 min',
+    tags: ['herencia', 'Impuesto de Sucesiones', 'adjudicación bienes', 'certificado defunción', 'últimas voluntades'],
+    relatedServiceSlugs: ['herencia'],
+    body: `
+## Qué hacer tras un fallecimiento
+
+Cuando se produce un fallecimiento, hay una serie de trámites que los herederos deben gestionar. El plazo más importante es el del **Impuesto de Sucesiones**: 6 meses desde el fallecimiento (prorrogable otros 6).
+
+## Paso 1: Obtener el Certificado de Defunción
+
+Se solicita en el **Registro Civil** del lugar de fallecimiento. Es el primer documento necesario para iniciar cualquier trámite.
+
+## Paso 2: Certificado de Últimas Voluntades
+
+Acredita si el fallecido otorgó testamento y ante qué notario. Se solicita en el **Ministerio de Justicia** transcurridos 15 días hábiles desde el fallecimiento.
+
+- Si hay testamento: se solicita copia autorizada al notario que lo formalizó.
+- Si no hay testamento: hay que tramitar una **declaración de herederos ab intestato** (notarial o judicial según el caso).
+
+## Paso 3: Certificado de contratos de seguros de cobertura de fallecimiento
+
+También del Ministerio de Justicia. Informa si el fallecido tenía seguros de vida que puedan beneficiar a los herederos.
+
+## Paso 4: Inventario del caudal hereditario
+
+Lista de todos los bienes y deudas del fallecido: inmuebles, cuentas bancarias, vehículos, inversiones, préstamos, etc. Los bancos facilitan el saldo de las cuentas a solicitud de los herederos con el certificado de defunción.
+
+## Paso 5: Liquidación del Impuesto de Sucesiones y Donaciones (ISD)
+
+Este impuesto lo pagan los herederos en proporción a lo que reciben. Las condiciones varían mucho según la comunidad autónoma:
+
+- **Madrid y Andalucía**: bonificaciones muy elevadas para cónyuge e hijos (a veces el 99 %).
+- **Cataluña y otras**: tipos más elevados, especialmente para colaterales y extraños.
+
+El plazo es de **6 meses** desde el fallecimiento. Se puede prorrogar otros 6 meses con solicitud expresa y fundada.
+
+## Paso 6: Adjudicación notarial de la herencia
+
+Una vez liquidado el impuesto, se firma ante notario la **escritura de adjudicación de herencia**, donde se reparten los bienes entre los herederos.
+
+## Paso 7: Inscripción en registros
+
+Los inmuebles heredados deben inscribirse en el **Registro de la Propiedad** a nombre de los nuevos titulares. Los vehículos, en la DGT.
+
+## ¿Se puede renunciar a la herencia?
+
+Sí. La renuncia es pura y simple (no puede ser parcial). Se hace ante notario. Si se renuncia, los derechos pasan a los siguientes herederos en la línea sucesoria.
+    `
+  },
+  {
+    slug: 'donaciones-fiscalidad-espana',
+    category: 'Fiscalidad',
+    title: 'Fiscalidad de las donaciones en España: cuánto se paga y cómo optimizarlo',
+    excerpt: 'Cómo tributa una donación de inmuebles, dinero o bienes en España según la comunidad autónoma, el grado de parentesco y el tipo de bien donado.',
+    date: '18 may 2026',
+    readTime: '6 min',
+    tags: ['donaciones', 'Impuesto de Donaciones', 'fiscalidad inmobiliaria', 'reducciones donación'],
+    relatedServiceSlugs: ['donacion'],
+    body: `
+## ¿Qué es el Impuesto sobre Donaciones?
+
+Las donaciones de bienes o derechos entre personas vivas tributan en el **Impuesto sobre Sucesiones y Donaciones (ISD)**, modalidad donaciones. Lo paga el **donatario** (quien recibe la donación), no quien la hace.
+
+## ¿Qué se puede donar?
+
+- **Dinero en efectivo** o transferencia bancaria.
+- **Inmuebles**: viviendas, terrenos, locales.
+- **Acciones o participaciones** en sociedades.
+- **Cualquier otro bien o derecho** con valor económico.
+
+## Tipos y reducciones según parentesco y comunidad autónoma
+
+La tributación varía enormemente según:
+
+1. **El grado de parentesco**: las reducciones son mayores para cónyuge, hijos y descendientes.
+2. **La comunidad autónoma** donde tributa: en función del domicilio del donatario.
+
+| Comunidad Autónoma | Donación padres a hijos (aprox.) |
+|---|---|
+| Madrid | Bonificación del 99 % — casi sin impuesto |
+| Andalucía | Exención hasta 1.000.000 € para descendientes |
+| Cataluña | Reducción del 95 % para adquisición de vivienda habitual |
+| País Vasco | Exención amplia para cónyuge y descendientes |
+
+En las comunidades sin bonificaciones autonómicas, el tipo puede ser significativo.
+
+## Donación de inmuebles: puntos a tener en cuenta
+
+- El **notario** debe elevar a escritura pública la donación de inmuebles.
+- El donatario paga el **ISD** en la comunidad autónoma donde esté el inmueble.
+- El donante puede tener que tributar en el **IRPF** si existe ganancia patrimonial entre el valor de adquisición y el valor de donación.
+- También puede devengarse la **Plusvalía Municipal** a cargo del donante.
+
+## Donación de dinero
+
+La donación de dinero en efectivo debe declararse cuando supera ciertos importes. La escritura notarial no es obligatoria para dinero, pero sí recomendable para acreditar la fecha y el origen.
+
+## ¿Conviene hacer la donación o esperar a la herencia?
+
+En comunidades con fuerte bonificación del ISD (Madrid, Andalucía), tanto la donación como la herencia pueden resultar prácticamente sin coste fiscal. En otras comunidades, conviene comparar la tributación de ambas opciones antes de decidir.
+    `
+  },
+  {
+    slug: 'cancelacion-hipoteca-registro-propiedad',
+    category: 'Trámites',
+    title: 'Cancelación de hipoteca: por qué el banco no lo hace y cómo tramitarlo',
+    excerpt: 'Qué es la cancelación registral de la hipoteca, por qué no la tramita el banco automáticamente y qué pasos hay que seguir para eliminar la carga del Registro de la Propiedad.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['cancelación hipoteca', 'Registro de la Propiedad', 'deuda cero', 'escritura cancelación'],
+    relatedServiceSlugs: ['hipoteca-cancelacion'],
+    body: `
+## ¿Por qué el banco no cancela la hipoteca automáticamente?
+
+Una confusión muy habitual: cuando terminas de pagar el préstamo hipotecario, la **deuda queda saldada económicamente**, pero la hipoteca sigue inscrita como carga en el Registro de la Propiedad. El banco solo emite el certificado de deuda cero; la cancelación registral es obligación del deudor.
+
+Si no cancelas registralmente la hipoteca, la carga sigue figurando en la nota simple del inmueble, lo que puede:
+
+- Dificultar o impedir la **venta** del inmueble.
+- Complicar la obtención de una **nueva financiación**.
+- Generar confusión sobre el estado real del inmueble.
+
+## Pasos para cancelar registralmente la hipoteca
+
+### 1. Solicitar el certificado de deuda cero al banco
+El banco emite un documento oficial que acredita que el préstamo hipotecario ha sido totalmente satisfecho. Es el primer documento necesario.
+
+### 2. Firma notarial de la escritura de cancelación
+Con el certificado de deuda cero, se firma ante notario la **escritura de cancelación de hipoteca**. El banco debe colaborar apoderado o representado; en la práctica, muchos bancos delegan en una apoderada de la notaría.
+
+### 3. Liquidación del Impuesto de Actos Jurídicos Documentados (AJD)
+La escritura de cancelación está sujeta al AJD. Desde 2018, este impuesto lo paga el banco en las hipotecas nuevas, pero en cancelaciones de préstamos ya existentes la situación puede variar según el momento.
+
+La mayoría de cancelaciones están **exentas** de AJD, pero hay que presentar la autoliquidación con cuota cero.
+
+### 4. Inscripción en el Registro de la Propiedad
+La escritura se presenta en el Registro de la Propiedad. Una vez inscrita, la hipoteca desaparece de la nota simple del inmueble.
+
+## Plazo y coste
+
+El proceso completo dura habitualmente entre **2 y 4 semanas** desde que se obtiene el certificado de deuda cero.
+
+Los costes aproximados incluyen:
+
+- Honorarios notariales: ~150–300 € según el capital cancelado.
+- Registro de la Propiedad: ~50–150 €.
+- Gestión profesional: desde 150 € (todo incluido en nuestro servicio).
+
+## ¿Cuánto tiempo tengo para cancelar?
+
+No hay plazo legal para cancelar la hipoteca en el Registro. Puede hacerse en cualquier momento después de saldar la deuda. Pero conviene hacerlo cuanto antes para evitar problemas en futuras transacciones.
+    `
+  },
+
+  // ── Formación ──────────────────────────────────────────────────────────────
+  {
+    slug: 'formacion-fiscal-autonomos-pymes',
+    category: 'Formación',
+    title: 'Por qué la formación fiscal es clave para autónomos y pymes',
+    excerpt: 'Cómo la formación en fiscalidad y contabilidad puede reducir errores, evitar sanciones y mejorar la toma de decisiones en tu negocio.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['formación fiscal', 'IRPF', 'IVA', 'autónomos', 'contabilidad'],
+    relatedServiceSlugs: ['formacion-fiscal-contable'],
+    body: `
+## Por qué la formación fiscal no es solo para asesores
+
+Muchos autónomos y responsables de pymes delegan toda la gestión fiscal en su asesoría sin entender qué están firmando o cuándo están obligados a presentar qué modelo. Esto tiene un coste oculto: incapacidad para detectar errores, desconocimiento de deducciones aplicables y dependencia total del asesor para tomar decisiones.
+
+La formación fiscal no busca que gestiones tú mismo los impuestos: busca que **entiendas lo que se está gestionando en tu nombre**.
+
+## Qué aprenderás en una sesión de formación fiscal
+
+Las sesiones se adaptan al perfil del participante, pero los contenidos más habituales incluyen:
+
+### Para autónomos:
+- Qué es el IAE y cómo afecta a tu actividad.
+- Cómo funciona el IVA repercutido vs. soportado.
+- El Modelo 303: cuándo se presenta y cómo se calcula.
+- El Modelo 130: qué es el pago fraccionado del IRPF.
+- Qué gastos son deducibles y cuáles no.
+- Cómo preparar la declaración de la renta con actividad económica.
+
+### Para pymes y equipos de administración:
+- Impuesto de Sociedades: diferencias con el IRPF.
+- IVA: casuística de facturas con tipos distintos, operaciones intracomunitarias.
+- Modelos informativos anuales (190, 347, 390).
+- Plazos tributarios y consecuencias del incumplimiento.
+- Cierre contable-fiscal: diferencias temporarias y permanentes.
+
+## Cuándo tiene más sentido hacer formación
+
+- Cuando acabas de darte de alta como autónomo y no tienes experiencia previa.
+- Cuando tu equipo de administración ha cambiado y necesitas ponerles al día.
+- Cuando vas a migrar a un nuevo software y necesitas entender mejor los datos.
+- Cuando quieres validar que la gestión que llevas es correcta antes de una revisión de Hacienda.
+- Cuando detectas errores frecuentes en tu facturación o contabilidad y no entiendes el origen.
+
+## Formato de las sesiones
+
+Las sesiones son prácticas: trabajamos sobre casos reales o sobre tu propia situación. La formación online permite hacerla desde cualquier lugar. Cada bloque de 2 horas incluye material escrito y resolución de dudas en directo.
+    `
+  },
+  {
+    slug: 'formacion-laboral-rrhh-para-no-especialistas',
+    category: 'Formación',
+    title: 'Gestión laboral para no laboralistas: lo que todo gestor debe saber',
+    excerpt: 'Conceptos básicos de contratos, nóminas, altas y bajas en la Seguridad Social que cualquier responsable de negocio o administración debería dominar.',
+    date: '18 may 2026',
+    readTime: '5 min',
+    tags: ['formación laboral', 'RRHH', 'contratos', 'nóminas', 'Seguridad Social'],
+    relatedServiceSlugs: ['formacion-laboral-rrhh'],
+    body: `
+## El problema del desconocimiento laboral en pequeñas empresas
+
+En muchas pymes y despachos, la gestión laboral recae sobre una persona que no tiene formación específica en la materia: el gerente, el administrativo o incluso el propio autónomo. Este desconocimiento tiene consecuencias directas: errores en contratos, nóminas mal calculadas, sanciones de la Inspección de Trabajo o conflictos con los empleados que podrían haberse evitado.
+
+La formación laboral básica no convierte a nadie en laboralista, pero sí permite detectar errores, hacer las preguntas correctas y supervisar lo que la gestoría está gestionando.
+
+## Qué cubre la formación laboral básica
+
+### Contratos de trabajo
+- Tipos de contratos: indefinido, temporal, fijo-discontinuo, obra y servicio (ya sin vigencia), formativo.
+- Cuándo se puede contratar de forma temporal y cuándo no.
+- Período de prueba: duración máxima según convenio y categoría.
+- Obligaciones de registro y comunicación al SEPE.
+
+### Nóminas
+- Estructura de una nómina: salario base, complementos, percepciones extrasalariales.
+- Retenciones de IRPF: cómo se calculan y qué factores las determinan.
+- Cotizaciones a la Seguridad Social: cuotas empresa y trabajador.
+- Pagas extraordinarias: obligaciones legales y posibilidad de prorrateamiento.
+
+### Altas y bajas en la Seguridad Social
+- Cómo y cuándo comunicar el alta de un trabajador.
+- Tipos de baja: por finalización de contrato, despido, baja por enfermedad (IT), excedencia.
+- Finiquito: qué conceptos incluye y cómo se calcula.
+
+### Gestión de incidencias
+- Incapacidad Temporal (IT): qué partes son responsabilidad de la empresa.
+- Vacaciones: derechos del trabajador y obligaciones del empleador.
+- Horas extra: tipos, límites y cómo deben compensarse.
+
+## Para quién es esta formación
+
+- Gerentes de pequeñas empresas sin departamento de RRHH.
+- Administrativos que gestionan temas de personal.
+- Emprendedores que van a contratar su primer empleado.
+- Equipos de gestión que quieren entender y supervisar lo que hace la asesoría laboral.
+
+## Formato
+
+Bloques de 2 horas, online o presencial. Trabajamos con ejemplos reales adaptados al sector y al tamaño de tu empresa. Incluye material de referencia para consulta posterior.
+    `
   }
 ];
 
@@ -1029,4 +2087,8 @@ export const blogArticles = articles.filter((article) => !docsRedirectSlugs.has(
 
 export function getArticle(slug: string): Article | undefined {
   return articles.find((a) => a.slug === slug);
+}
+
+export function getArticlesForService(serviceSlug: string): Article[] {
+  return blogArticles.filter((a) => a.relatedServiceSlugs?.includes(serviceSlug));
 }

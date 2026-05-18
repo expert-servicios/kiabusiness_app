@@ -83,7 +83,15 @@
       "PowerShell(claude mcp get github 2>&1)",
       "PowerShell($cfg = Get-Content \"$env:USERPROFILE\\\\.claude.json\" | ConvertFrom-Json; if ($cfg.mcpServers) { $cfg.mcpServers.PSObject.Properties.Name })",
       "mcp__github__list_issues",
-      "mcp__github__search_repositories"
+      "mcp__github__search_repositories",
+      "PowerShell(cmd /c \"dir /a /b \"\"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\catalog\"\"\")",
+      "PowerShell(cmd /c \"dir /b \"\"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\catalog\\\\Servicios\\\\Fiscal\"\"\")",
+      "PowerShell(cmd /c \"dir /s /b \"\"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\catalog\\\\servicios\"\"\")",
+      "PowerShell(cmd /c \"dir /s /b \"\"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\catalog\\\\servicios\\\\fiscal\"\"\")",
+      "mcp__claude_ai_Stripe__search_stripe_resources",
+      "mcp__claude_ai_Stripe__list_prices",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\components\\\\services\" -Recurse | Select-Object FullName, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\components\\\\docs\" -Recurse | Select-Object FullName, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
