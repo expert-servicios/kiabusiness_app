@@ -11,22 +11,25 @@ import { z } from 'zod';
 
 const schema = z.object({
   phone:      z.string().min(1),
-  sectionIds: z.array(z.string()).min(1).max(4),
+  sectionIds: z.array(z.string()).min(1).max(7),
 });
 
 function detectCardLanguage(recentInbound: string[]): 'ru' | 'es' {
   return /[А-Яа-яЁё]/.test(recentInbound.join(' ')) ? 'ru' : 'es';
 }
 
-function translateCardBody(body: string, lang: 'ru' | 'es'): string {
-  if (lang !== 'ru') return body;
+function translateCardBody(sectionId: string, cardBody: string, lang: 'ru' | 'es'): string {
+  if (lang !== 'ru') return cardBody;
   const map: Record<string, string> = {
-    fiscal:     '🧾 Налоговый учёт: НДФЛ, НДС, налог на прибыль и другое. Что вас интересует?',
-    extranjeria:'🌍 Оформим ваш статус в Испании: NIE, вид на жительство, аррайго. Что нужно?',
-    empresa:    '💼 Поможем открыть или вести бизнес или работать самозанятым. Что ищете?',
-    holded:     '🚀 Мы официальный партнёр Holded. Внедрение, обучение, поддержка. С чего начнём?',
+    'declaraciones-impuestos':    '🧾 Налоговые декларации: НДФЛ, НДС, Модель 151, нерезиденты и другое. Что вас интересует?',
+    'extranjeria-nacionalidad':   '🌍 Оформим ваш статус в Испании: вид на жительство, гражданство, аррайго и другое. Что нужно?',
+    'empresas-autonomos':         '💼 Поможем открыть или вести бизнес или работать самозанятым. Что ищете?',
+    'trafico-capitania-maritima': '🚗 Переоформление авто, постановка на учёт, дубликаты и суда. Какой трámite нужен?',
+    'notaria-propiedades':        '🏠 Купля-продажа, наследство, дарение и ипотека. Чем можем помочь?',
+    'gestiones-especializadas':   '🔐 Мы авторизованный партнёр Camerfirma. Для физического лица или компании?',
+    'formacion':                  '🎓 Практическое обучение: налоги, трудовое право, РRHH и Holded. От 180 €/2 ч. Что интересует?',
   };
-  return map[body] ?? body;
+  return map[sectionId] ?? cardBody;
 }
 
 export async function POST(request: NextRequest) {
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Send button card with up to 3 service quick-replies
-      const cardBodyText = translateCardBody(section.id, lang);
+      const cardBodyText = translateCardBody(section.id, section.cardBody, lang);
       const buttons = section.services.slice(0, 3).map((s) => ({
         id:    `card_${s.id}`,
         title: s.title.slice(0, 20),
