@@ -19,17 +19,14 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     id: 'fiscal',
     title: 'Asesoría fiscal',
     emoji: '🧾',
-    cardBody: '📋 Gestionamos tu fiscalidad: IRPF, IVA, Sociedades y más. ¿Qué necesitas?',
+    cardBody: '📋 Gestionamos tu fiscalidad personal: Renta, Modelo 151, No Residentes y más. ¿Qué necesitas?',
     imageUrl: 'https://expertconsulting.es/catalog/fiscal.png',
     services: [
       { id: 'irpf',           title: 'Declaración Renta',    description: 'IRPF anual · revisión y presentación online',         imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/irpf.png' },
       { id: 'modelo151',      title: 'Modelo 151',           description: 'Desplazados · Ley Beckham · fiscalidad internacional', imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/modelo151.png' },
       { id: 'no-residentes',  title: 'No Residentes',        description: 'IRNR · impuestos y rentas para no residentes',         imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/no-residentes.png' },
       { id: 'regularizacion', title: 'Regularización Fiscal',description: 'Requerimientos · revisión y respuesta a Hacienda',     imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/regularizacion.png' },
-      { id: 'iva',            title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
-      { id: 'sociedades',     title: 'Impuesto Sociedades',  description: 'Mod. 200 · cuentas anuales incluidas' },
     ],
-    // imageUrl pending: iva, sociedades
   },
   {
     id: 'extranjeria',
@@ -52,11 +49,9 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     cardBody: '💼 Te ayudamos a crear o gestionar tu empresa o actividad. ¿Qué buscas?',
     imageUrl: 'https://expertconsulting.es/catalog/empresa.png',
     services: [
-      { id: 'autonomo',       title: 'Alta de Autónomo',        description: 'Hacienda · Seguridad Social · inicio de actividad', imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/autonomo.png' },
-      { id: 'sl',             title: 'Constitución SL',         description: 'Sociedad · estatutos · puesta en marcha online',   imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/sl.png' },
-      { id: 'gestion-fiscal', title: 'Gestión Fiscal Trimest.', description: 'IVA · IRPF · presentación trimestral profesional', imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/gestion-fiscal.png' },
-      { id: 'contabilidad',   title: 'Gestión Contable',        description: 'Facturación · conciliación · informes mensuales',  imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/contabilidad.png' },
-      { id: 'nominas',        title: 'Nóminas y contratos',     description: 'Gestión mensual · altas/bajas Seg. Social' },
+      { id: 'autonomo', title: 'Alta de Autónomo',  description: 'Hacienda · Seguridad Social · inicio de actividad', imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/autonomo.png' },
+      { id: 'sl',       title: 'Constitución SL',   description: 'Sociedad · estatutos · puesta en marcha online',   imageUrl: 'https://expertconsulting.es/catalog/servicios/empresas/sl.png' },
+      { id: 'nominas',  title: 'Nóminas y contratos',description: 'Gestión mensual · altas/bajas Seg. Social' },
     ],
   },
   {
