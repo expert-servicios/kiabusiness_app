@@ -19,7 +19,7 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Asesoría fiscal',
     emoji: '🧾',
     cardBody: '📋 Gestionamos tu fiscalidad: IRPF, IVA, Sociedades y más. ¿Qué necesitas?',
-    imageUrl: 'https://expertconsulting.es/catalog/fiscal.jpg',
+    imageUrl: 'https://expertconsulting.es/catalog/fiscal.png',
     services: [
       { id: 'irpf',       title: 'Declaración IRPF',    description: 'Renta anual · personas físicas residentes' },
       { id: 'iva',        title: 'IVA trimestral',       description: 'Mod. 303/390 · autónomos y empresas' },
@@ -31,7 +31,7 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Extranjería',
     emoji: '🌍',
     cardBody: '🌍 Tramitamos tu situación en España: NIE, residencia, arraigo y más. ¿Cuál necesitas?',
-    imageUrl: 'https://expertconsulting.es/catalog/extranjeria.jpg',
+    imageUrl: 'https://expertconsulting.es/catalog/extranjeria.png',
     services: [
       { id: 'nie',        title: 'NIE / TIE',            description: 'Solicitud y renovación · con cita previa' },
       { id: 'residencia', title: 'Permiso residencia',   description: 'Inicial, renovación y modificación' },
@@ -43,7 +43,7 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Empresa y Laboral',
     emoji: '💼',
     cardBody: '💼 Te ayudamos a crear o gestionar tu empresa o actividad. ¿Qué buscas?',
-    imageUrl: 'https://expertconsulting.es/catalog/empresa.jpg',
+    imageUrl: 'https://expertconsulting.es/catalog/empresa.png',
     services: [
       { id: 'sl',         title: 'Constitución SL',      description: 'Alta sociedad limitada, notaría y registro' },
       { id: 'autonomo',   title: 'Alta autónomo',        description: 'RETA, IAE e inicio de actividad' },
@@ -55,7 +55,7 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Holded ERP',
     emoji: '🚀',
     cardBody: '🚀 Somos Partner Oficial Holded. Implantamos, formamos y damos soporte. ¿Por dónde empezamos?',
-    imageUrl: 'https://expertconsulting.es/catalog/holded.jpg',
+    imageUrl: 'https://expertconsulting.es/catalog/holded.png',
     services: [
       { id: 'holded-impl', title: 'Impl. Holded ERP',   description: 'Config. + integración · demo gratuita' },
       { id: 'holded-form', title: 'Formación Holded',   description: 'Sesiones personalizadas online u on-site' },
