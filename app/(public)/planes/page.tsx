@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { FaqSection } from '@/components/site/FaqSection';
 import { RelatedArticles } from '@/components/site/RelatedArticles';
+import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded | EXPERT',
@@ -161,15 +162,15 @@ export default function PlanesPage() {
             colaboramos, o lo delegas todo.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a
-              href={CALENDLY_DEMO}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CalendlyButton
+              url={CALENDLY_DEMO}
+              title="Demo de Holded"
+              subtitle="30 minutos · Gratuita · Sin compromiso"
               className="inline-flex min-h-12 items-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <Calendar className="h-4 w-4" />
               Demo gratuita — 30 min
-            </a>
+            </CalendlyButton>
             <Link
               href="#planes"
               className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
@@ -447,14 +448,14 @@ export default function PlanesPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-[#9CA3AF]">
                 Te mostramos Holded en vivo adaptado a tu sector antes de tomar ninguna decisión.
               </p>
-              <a
-                href={CALENDLY_DEMO}
-                target="_blank"
-                rel="noopener noreferrer"
+              <CalendlyButton
+                url={CALENDLY_DEMO}
+                title="Demo de Holded"
+                subtitle="30 minutos · Gratuita · Sin compromiso"
                 className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] hover:text-[#F2C14E]"
               >
                 Reservar demo <ArrowRight className="h-4 w-4" />
-              </a>
+              </CalendlyButton>
             </div>
 
             <div className="flex flex-col border border-[#D4A017]/25 bg-[#23364D]/50 p-6">
@@ -465,14 +466,14 @@ export default function PlanesPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-[#9CA3AF]">
                 Sesiones de 2 horas para que uses Holded con seguridad desde el primer día.
               </p>
-              <a
-                href={CALENDLY_FORMACION}
-                target="_blank"
-                rel="noopener noreferrer"
+              <CalendlyButton
+                url={CALENDLY_FORMACION}
+                title="Formación en Holded"
+                subtitle="Sesión práctica de 2 horas"
                 className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] hover:text-[#F2C14E]"
               >
                 Ver formación <ArrowRight className="h-4 w-4" />
-              </a>
+              </CalendlyButton>
             </div>
 
             <div className="flex flex-col border border-[#D4A017] bg-[#D4A017]/8 p-6">

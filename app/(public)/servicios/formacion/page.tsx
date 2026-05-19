@@ -4,6 +4,7 @@ import { Clock, Monitor, ShieldCheck, ExternalLink, ChevronDown } from 'lucide-r
 import { Breadcrumb } from '@/components/site/Breadcrumb';
 import { FormacionBuyButton } from './FormacionBuyButton';
 import { FormacionFaqs } from './FormacionFaqs';
+import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 export const metadata: Metadata = {
   title: 'Formación práctica con tus datos reales | EXPERT',
@@ -154,14 +155,14 @@ export default function FormacionPage() {
             tu acceso a Holded y tus documentos reales. Al terminar sabes hacerlo tú solo.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CalendlyButton
+              url={CALENDLY_URL}
+              title="Consulta gratuita"
+              subtitle="15 minutos · Sin compromiso"
               className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               Consulta gratuita 15 min
-            </a>
+            </CalendlyButton>
           </div>
         </div>
       </section>
@@ -242,14 +243,14 @@ export default function FormacionPage() {
               Reserva una llamada gratuita de 15 minutos y te orientamos sin compromiso.
             </p>
           </div>
-          <a
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <CalendlyButton
+            url={CALENDLY_URL}
+            title="Consulta gratuita"
+            subtitle="15 minutos · Sin compromiso"
             className="inline-flex shrink-0 items-center gap-2 border border-[#D4A017] bg-white px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
           >
             Llamada gratuita 15 min →
-          </a>
+          </CalendlyButton>
         </div>
       </section>
 
@@ -305,14 +306,14 @@ export default function FormacionPage() {
               Ver PAE electrónico (CIRCE)
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CalendlyButton
+              url={CALENDLY_URL}
+              title="Consulta gratuita"
+              subtitle="15 minutos · Sin compromiso"
               className="inline-flex items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               Reservar sesión — 180 €
-            </a>
+            </CalendlyButton>
           </div>
         </div>
       </section>
@@ -361,14 +362,14 @@ export default function FormacionPage() {
             ¿No encuentras respuesta a tu pregunta?{' '}
             <span className="font-semibold text-[#0D1B2A]">Llámanos 15 minutos, es gratis.</span>
           </p>
-          <a
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <CalendlyButton
+            url={CALENDLY_URL}
+            title="Consulta gratuita"
+            subtitle="15 minutos · Sin compromiso"
             className="inline-flex shrink-0 items-center gap-2 bg-[#D4A017] px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
             Reservar llamada gratuita →
-          </a>
+          </CalendlyButton>
         </div>
       </section>
 
@@ -429,14 +430,14 @@ export default function FormacionPage() {
                   Reserva una demo con nosotros y te enseñamos Holded aplicado a tu tipo de negocio.
                 </p>
                 <div className="mt-4 flex flex-col gap-2">
-                  <a
-                    href={CALENDLY_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <CalendlyButton
+                    url={CALENDLY_URL}
+                    title="Consulta gratuita"
+                    subtitle="15 minutos · Sin compromiso"
                     className="inline-flex w-full items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
                   >
                     Solicitar demo gratuita
-                  </a>
+                  </CalendlyButton>
                   <Link
                     href="/holded"
                     className="text-center text-xs font-semibold text-[#9CA3AF] transition hover:text-[#D4A017]"
@@ -499,14 +500,14 @@ export default function FormacionPage() {
             Llámanos 15 minutos sin coste. Te decimos qué sesión necesitas y cómo preparar tu equipo.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CalendlyButton
+              url={CALENDLY_URL}
+              title="Consulta gratuita"
+              subtitle="15 minutos · Sin compromiso"
               className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               Llamada gratuita 15 min
-            </a>
+            </CalendlyButton>
             <Link
               href="/contacto"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"

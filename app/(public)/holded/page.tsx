@@ -3,11 +3,9 @@ import Link from 'next/link';
 import { ArrowRight, Check, FileText, MonitorCheck, Settings, Upload, Clock, Calendar, Gift, Zap } from 'lucide-react';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
+import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
-
-// Update this URL once you create the Calendly event
-const CALENDLY_DEMO_URL = process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? 'https://calendly.com/soy-kseniailicheva/30min';
 
 export const metadata: Metadata = {
   title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
@@ -151,15 +149,10 @@ export default async function HoldedPage() {
               conectada y preparada para crecer.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href={CALENDLY_DEMO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-              >
+              <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
                 <Calendar className="h-4 w-4" />
                 Demo gratuita — 30 min
-              </a>
+              </HoldedCalendlyButton>
               <Link
                 href="#precios"
                 className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
@@ -230,15 +223,10 @@ export default async function HoldedPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">
                 Te mostramos Holded adaptado a tu sector por videollamada. Sin compromiso y sin tarjeta de crédito.
               </p>
-              <a
-                href={CALENDLY_DEMO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
-              >
+              <HoldedCalendlyButton className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]">
                 <Calendar className="h-4 w-4" />
                 Reservar demostración
-              </a>
+              </HoldedCalendlyButton>
             </div>
 
             {/* Licencia con asistencia */}
@@ -407,14 +395,9 @@ export default async function HoldedPage() {
               <p className="mt-3 flex-1 text-sm leading-7 text-[#9CA3AF]">
                 30 minutos por videollamada. Te mostramos Holded en vivo adaptado a tu sector y resolvemos todas tus dudas antes de tomar ninguna decisión.
               </p>
-              <a
-                href={CALENDLY_DEMO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
-              >
+              <HoldedCalendlyButton className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]">
                 Reservar demo <ArrowRight className="h-4 w-4" />
-              </a>
+              </HoldedCalendlyButton>
             </div>
           </div>
         </div>
@@ -523,15 +506,10 @@ export default async function HoldedPage() {
             Si ya usas Holded o quieres migrar, empezamos con una revisión inicial para definir alcance, prioridades y formación. Sin compromiso.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href={CALENDLY_DEMO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-            >
+            <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
               <Calendar className="h-4 w-4" />
               Reservar demo gratuita
-            </a>
+            </HoldedCalendlyButton>
             <Link
               href="#precios"
               className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#0D1B2A]/25 px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]"

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
 import { ContactForm } from './ContactForm';
+import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 export const metadata: Metadata = {
   title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
@@ -115,11 +116,11 @@ export default function ContactoPage() {
               Escribir por WhatsApp
             </a>
 
-            <a
-              href={process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col border border-[#D4A017] bg-white p-5 transition hover:bg-[#D4A017]/5"
+            <CalendlyButton
+              url={process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa'}
+              title="Reunión informativa gratuita"
+              subtitle="15 minutos · Sin compromiso"
+              className="flex flex-col border border-[#D4A017] bg-white p-5 text-left transition hover:bg-[#D4A017]/5"
             >
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Gratis · 15 minutos</p>
               <p className="mt-1 font-serif text-base font-bold text-[#0D1B2A]">Llamada informativa</p>
@@ -129,7 +130,7 @@ export default function ContactoPage() {
               <span className="mt-3 text-sm font-bold text-[#D4A017]">
                 Reservar llamada →
               </span>
-            </a>
+            </CalendlyButton>
           </div>
         </div>
       </section>
