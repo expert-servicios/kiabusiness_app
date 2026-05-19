@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: 'Expert Estudios <notificaciones@expertestudiospro.com>',
+        from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
         to: email,
         subject,
         html,

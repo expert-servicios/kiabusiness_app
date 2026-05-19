@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const resend = getResendClient();
 
   await resend.emails.send({
-    from: 'EXPERT <notificaciones@expert.es>',
+    from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
     to: ['cliente@ejemplo.com'],
     subject: 'Valora tu servicio en EXPERT',
     html: '<p>Gracias por confiar en EXPERT. Comparte tu valoración con este enlace seguro.</p>'
