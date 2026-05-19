@@ -13,25 +13,40 @@ async function fetchCorreoData() {
   });
 
   if (!statusRes.ok) {
-    return { connected: false, ms365Email: null, initialMails: [] };
+    return {
+      ms365Connected: false, ms365Email: null,
+      gmailConnected: false, gmailEmail: null,
+      initialMails: [], initialProvider: 'ms365' as const,
+    };
   }
 
   const status = await statusRes.json();
-  if (!status.connected) {
-    return { connected: false, ms365Email: null, initialMails: [] };
+  const ms365Connected: boolean = status.ms365Connected ?? false;
+  const gmailConnected: boolean  = status.gmailConnected ?? false;
+
+  // Determine which provider to show first
+  const initialProvider: 'ms365' | 'gmail' = gmailConnected ? 'gmail' : 'ms365';
+  const activeProvider = initialProvider;
+
+  let initialMails: unknown[] = [];
+  if (ms365Connected || gmailConnected) {
+    const mailsRes = await fetch(
+      `${base}/api/admin/correo?action=list&provider=${activeProvider}`,
+      { headers, cache: 'no-store' }
+    );
+    if (mailsRes.ok) {
+      const data = await mailsRes.json();
+      initialMails = data.mails ?? [];
+    }
   }
 
-  const mailsRes = await fetch(`${base}/api/admin/correo?action=list`, {
-    headers,
-    cache: 'no-store',
-  });
-
-  const mailsData = mailsRes.ok ? await mailsRes.json() : {};
-
   return {
-    connected: true,
-    ms365Email: status.email ?? null,
-    initialMails: mailsData.mails ?? [],
+    ms365Connected,
+    ms365Email: status.ms365Email ?? null,
+    gmailConnected,
+    gmailEmail:  status.gmailEmail ?? null,
+    initialMails,
+    initialProvider,
   };
 }
 
@@ -41,14 +56,18 @@ export default async function AdminCorreoPage({
   searchParams: Promise<{ connected?: string; error?: string }>;
 }) {
   const params = await searchParams;
-  const { connected, ms365Email, initialMails } = await fetchCorreoData();
+  const data = await fetchCorreoData();
 
   return (
     <CorreoInbox
-      connected={connected}
-      ms365Email={ms365Email}
-      initialMails={initialMails}
+      ms365Connected={data.ms365Connected}
+      ms365Email={data.ms365Email}
+      gmailConnected={data.gmailConnected}
+      gmailEmail={data.gmailEmail}
+      initialMails={data.initialMails as Parameters<typeof CorreoInbox>[0]['initialMails']}
+      initialProvider={data.initialProvider}
       errorParam={params.error ?? null}
+      connectedParam={params.connected ?? null}
     />
   );
 }

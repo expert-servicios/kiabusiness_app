@@ -34,6 +34,8 @@ interface Case {
   client: { full_name: string | null; email: string };
 }
 
+type Provider = 'ms365' | 'gmail';
+
 const MONTH = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function fmtDate(str: string) {
   const d = new Date(str);
@@ -51,16 +53,30 @@ function initials(from: string) {
 }
 
 interface Props {
-  connected: boolean;
+  ms365Connected: boolean;
   ms365Email: string | null;
+  gmailConnected: boolean;
+  gmailEmail: string | null;
   initialMails: MailSummary[];
+  initialProvider: Provider;
   errorParam?: string | null;
+  connectedParam?: string | null;
 }
 
-export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }: Props) {
+export function CorreoInbox({
+  ms365Connected,
+  ms365Email,
+  gmailConnected,
+  gmailEmail,
+  initialMails,
+  initialProvider,
+  errorParam,
+  connectedParam,
+}: Props) {
+  const [provider, setProvider] = useState<Provider>(initialProvider);
   const [mails, setMails] = useState<MailSummary[]>(initialMails);
-  const [selected, setSelected] = useState<string | null>(null); // conversationId
-  const [selectedMailId, setSelectedMailId] = useState<string | null>(null); // last message id for reply
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedMailId, setSelectedMailId] = useState<string | null>(null);
   const [threadMessages, setThreadMessages] = useState<MailMessage[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [reply, setReply] = useState('');
@@ -74,13 +90,37 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
   const [linking, setLinking] = useState(false);
   const [searchInput, setSearchInput] = useState('');
 
+  const activeEmail = provider === 'gmail' ? gmailEmail : ms365Email;
+  const activeConnected = provider === 'gmail' ? gmailConnected : ms365Connected;
+  const bothConnected = ms365Connected && gmailConnected;
+  const anyConnected = ms365Connected || gmailConnected;
+
   const selectedSummary = mails.find((m) => m.conversationId === selected);
   const lastMsg = threadMessages.at(-1);
 
-  const loadThread = useCallback(async (conversationId: string) => {
+  const loadMails = useCallback(async (prov: Provider, q?: string) => {
+    const params = new URLSearchParams({ action: 'list', provider: prov });
+    if (q) params.set('q', q);
+    const res = await fetch(`/api/admin/correo?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      setMails(data.mails ?? []);
+    }
+  }, []);
+
+  // Reload mails when switching provider
+  useEffect(() => {
+    if (!activeConnected) { setMails([]); return; }
+    setSelected(null);
+    setThreadMessages([]);
+    loadMails(provider);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
+
+  const loadThread = useCallback(async (conversationId: string, prov: Provider) => {
     setLoadingThread(true);
     try {
-      const res = await fetch(`/api/admin/correo?action=conversation&conversationId=${encodeURIComponent(conversationId)}`);
+      const res = await fetch(`/api/admin/correo?action=conversation&conversationId=${encodeURIComponent(conversationId)}&provider=${prov}`);
       if (res.ok) {
         const data = await res.json();
         setThreadMessages(data.messages ?? []);
@@ -97,29 +137,19 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
     setSendError(null);
     setReply('');
     setMails((prev) => prev.map((m) => m.conversationId === conversationId ? { ...m, unread: false } : m));
-    loadThread(conversationId);
-  }, [loadThread]);
-
-  const loadMails = useCallback(async (q?: string) => {
-    const params = q ? `?action=list&q=${encodeURIComponent(q)}` : '?action=list';
-    const res = await fetch(`/api/admin/correo${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setMails(data.mails ?? []);
-    }
-  }, []);
+    loadThread(conversationId, provider);
+  }, [loadThread, provider]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadMails();
+    await loadMails(provider, searchInput.trim() || undefined);
     setRefreshing(false);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const q = searchInput.trim() || undefined;
     setRefreshing(true);
-    await loadMails(q);
+    await loadMails(provider, searchInput.trim() || undefined);
     setRefreshing(false);
   };
 
@@ -132,12 +162,13 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'reply',
-          messageId: selectedMailId,
-          comment: reply.trim(),
+          action:         'reply',
+          provider,
+          messageId:      selectedMailId,
+          comment:        reply.trim(),
           conversationId: selected,
-          subject: lastMsg?.subject,
-          clientEmail: lastMsg?.fromEmail,
+          subject:        lastMsg?.subject,
+          clientEmail:    lastMsg?.fromEmail,
         }),
       });
       if (!res.ok) {
@@ -145,18 +176,17 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         setSendError(d.error ?? 'Error al enviar');
         return;
       }
-      // Optimistic reply bubble
       setThreadMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         conversationId: selected,
-        subject: lastMsg?.subject ?? '',
-        from: ms365Email ?? 'admin',
-        fromEmail: ms365Email ?? '',
-        to: lastMsg?.fromEmail ?? '',
-        date: new Date().toISOString(),
-        body: reply.trim(),
-        bodyType: 'text' as const,
-        unread: false,
+        subject:   lastMsg?.subject ?? '',
+        from:      activeEmail ?? 'admin',
+        fromEmail: activeEmail ?? '',
+        to:        lastMsg?.fromEmail ?? '',
+        date:      new Date().toISOString(),
+        body:      reply.trim(),
+        bodyType:  'text' as const,
+        unread:    false,
       }]);
       setReply('');
     } catch {
@@ -185,11 +215,11 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'link',
+          action:         'link',
           conversationId: selected,
           caseId,
-          subject: selectedSummary.subject,
-          clientEmail: selectedSummary.fromEmail,
+          subject:        selectedSummary.subject,
+          clientEmail:    selectedSummary.fromEmail,
         }),
       });
       setLinkedCaseId(caseId);
@@ -204,15 +234,15 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
     c.client?.full_name?.toLowerCase().includes(caseSearch.toLowerCase())
   );
 
-  // ── Not connected ─────────────────────────────────────────────
-  if (!connected) {
+  // ── Not connected at all ───────────────────────────────────────
+  if (!anyConnected) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
         <div className="rounded-full bg-blue-50 p-5">
           <Mail className="h-10 w-10 text-blue-500" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#07111d]">Conecta tu correo Microsoft 365</h2>
+          <h2 className="text-lg font-bold text-[#07111d]">Conecta tu cuenta de correo</h2>
           <p className="mt-1 max-w-xs text-sm text-[#29384a]">
             Gestiona correos de clientes y asócialos a sus expedientes, todo sin salir del panel.
           </p>
@@ -221,16 +251,104 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
               {errorParam === 'oauth_denied' ? 'Acceso denegado.' : 'Error al conectar. Inténtalo de nuevo.'}
             </p>
           )}
+          {connectedParam && (
+            <p className="mt-2 text-xs text-green-700">Cuenta conectada correctamente.</p>
+          )}
         </div>
-        <a
-          href="/api/auth/ms365"
-          className="rounded-full bg-[#07111d] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1a2a3a]"
-        >
-          Conectar con Microsoft 365
-        </a>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <a
+            href="/api/auth/google-gmail"
+            className="inline-flex items-center gap-2 rounded-full border border-[#d8cbb5] bg-white px-5 py-2.5 text-sm font-bold text-[#07111d] transition hover:border-[#c88b25]"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Conectar Gmail
+          </a>
+          <a
+            href="/api/auth/ms365"
+            className="inline-flex items-center gap-2 rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1a2a3a]"
+          >
+            Conectar Microsoft 365
+          </a>
+        </div>
         <p className="text-xs text-[#29384a]/50">
-          Se solicitarán permisos de lectura y envío de correo únicamente.
+          Solo permisos de lectura y envío de correo.
         </p>
+      </div>
+    );
+  }
+
+  // ── Provider tabs (shown when both connected or to add second) ─
+  const ProviderBar = (
+    <div className="flex items-center gap-1 border-b border-[#d8cbb5] bg-white px-4 py-2">
+      {gmailConnected && (
+        <button
+          type="button"
+          onClick={() => setProvider('gmail')}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+            provider === 'gmail'
+              ? 'bg-[#07111d] text-white'
+              : 'text-[#29384a] hover:bg-[#f0e9d8]'
+          }`}
+        >
+          <svg className="h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill={provider === 'gmail' ? '#fff' : '#EA4335'} d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill={provider === 'gmail' ? '#ccc' : '#34A853'} d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill={provider === 'gmail' ? '#aaa' : '#FBBC05'} d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill={provider === 'gmail' ? '#aaa' : '#EA4335'} d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Gmail
+        </button>
+      )}
+      {ms365Connected && (
+        <button
+          type="button"
+          onClick={() => setProvider('ms365')}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+            provider === 'ms365'
+              ? 'bg-[#07111d] text-white'
+              : 'text-[#29384a] hover:bg-[#f0e9d8]'
+          }`}
+        >
+          <span className="text-[10px]">🏢</span> Outlook
+        </button>
+      )}
+      <div className="ml-auto flex gap-2">
+        {!gmailConnected && (
+          <a href="/api/auth/google-gmail" className="text-[10px] font-semibold text-[#c88b25] hover:underline">
+            + Gmail
+          </a>
+        )}
+        {!ms365Connected && (
+          <a href="/api/auth/ms365" className="text-[10px] font-semibold text-[#c88b25] hover:underline">
+            + Outlook
+          </a>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Selected provider not connected ───────────────────────────
+  if (!activeConnected) {
+    return (
+      <div className="flex flex-col h-full">
+        {bothConnected || true ? ProviderBar : null}
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+          <Mail className="h-10 w-10 text-[#d8cbb5]" />
+          <p className="text-sm text-[#29384a]">
+            {provider === 'gmail' ? 'Gmail no conectado.' : 'Microsoft 365 no conectado.'}
+          </p>
+          <a
+            href={provider === 'gmail' ? '/api/auth/google-gmail' : '/api/auth/ms365'}
+            className="rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1a2a3a]"
+          >
+            Conectar {provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}
+          </a>
+        </div>
       </div>
     );
   }
@@ -245,7 +363,7 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-serif text-base font-bold text-[#07111d]">Correo</h1>
-            <p className="max-w-[200px] truncate text-[10px] text-[#29384a]/60">{ms365Email}</p>
+            <p className="max-w-[200px] truncate text-[10px] text-[#29384a]/60">{activeEmail}</p>
           </div>
           <button
             type="button"
@@ -309,8 +427,8 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         <button
           type="button"
           onClick={async () => {
-            if (!confirm('¿Desconectar la cuenta de Microsoft 365?')) return;
-            await fetch('/api/admin/correo', { method: 'DELETE' });
+            if (!confirm(`¿Desconectar la cuenta de ${provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}?`)) return;
+            await fetch(`/api/admin/correo?provider=${provider}`, { method: 'DELETE' });
             location.reload();
           }}
           className="text-xs text-[#29384a]/50 transition hover:text-red-600"
@@ -334,7 +452,6 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
         </div>
       ) : (
         <>
-          {/* Thread header */}
           <div className="flex items-center gap-3 border-b border-[#d8cbb5] bg-white px-4 py-3">
             <button
               type="button"
@@ -369,17 +486,14 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto space-y-4 px-4 py-4">
             {loadingThread ? (
               <p className="pt-8 text-center text-sm text-[#29384a]/60">Cargando conversación...</p>
             ) : threadMessages.map((msg) => {
-              const isOwn = msg.fromEmail === ms365Email;
+              const isOwn = msg.fromEmail === activeEmail;
               return (
                 <div key={msg.id} className={`rounded-xl border p-4 ${
-                  isOwn
-                    ? 'border-[#D4A017]/20 bg-[#D4A017]/5'
-                    : 'border-[#d8cbb5] bg-white'
+                  isOwn ? 'border-[#D4A017]/20 bg-[#D4A017]/5' : 'border-[#d8cbb5] bg-white'
                 }`}>
                   <div className="mb-3 flex items-start justify-between gap-2">
                     <div>
@@ -401,7 +515,6 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
             })}
           </div>
 
-          {/* Reply box */}
           <div className="border-t border-[#d8cbb5] bg-white p-4 space-y-3">
             {sendError && <p className="text-xs text-red-600">{sendError}</p>}
             <textarea
@@ -430,12 +543,14 @@ export function CorreoInbox({ connected, ms365Email, initialMails, errorParam }:
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-3rem)] overflow-hidden lg:h-screen">
-        {MailList}
-        {ThreadPanel}
+      <div className="flex flex-col h-[calc(100dvh-3rem)] lg:h-screen overflow-hidden">
+        {ProviderBar}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {MailList}
+          {ThreadPanel}
+        </div>
       </div>
 
-      {/* Associate to case modal */}
       {showLinkModal && (
         <div
           className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"

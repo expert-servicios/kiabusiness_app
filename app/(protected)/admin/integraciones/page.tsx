@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ArrowLeft, CheckCircle2, Clock3, PlugZap, RefreshCw, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Mail, Calendar, PlugZap, RefreshCw, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
 
 interface SyncEvent {
   id: string;
@@ -80,6 +80,28 @@ async function getCookieHeader() {
   return cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
 }
 
+interface GoogleStatus {
+  gmailConnected: boolean;
+  gmailEmail: string | null;
+  calendarConnected: boolean;
+}
+
+async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
+  const base = process.env.NEXT_PUBLIC_APP_URL;
+  const headers = { cookie: cookieHeader };
+  const [gmailRes, correoRes] = await Promise.all([
+    fetch(`${base}/api/auth/google-gmail/status`, { headers, cache: 'no-store' }),
+    fetch(`${base}/api/admin/correo?action=status`, { headers, cache: 'no-store' }),
+  ]);
+  const gmailData  = gmailRes.ok  ? await gmailRes.json()  : {};
+  const correoData = correoRes.ok ? await correoRes.json() : {};
+  return {
+    gmailConnected:    gmailData.connected ?? correoData.gmailConnected ?? false,
+    gmailEmail:        gmailData.email     ?? correoData.gmailEmail     ?? null,
+    calendarConnected: false, // user-level tokens exist; admin uses client dashboard
+  };
+}
+
 async function getSyncEvents(cookieHeader: string): Promise<SyncEvent[]> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integration-sync-events?provider=holded`, {
     headers: { cookie: cookieHeader },
@@ -103,9 +125,10 @@ async function getHoldedStatus(cookieHeader: string): Promise<HoldedStatus | nul
 
 export default async function AdminIntegracionesPage() {
   const cookieHeader = await getCookieHeader();
-  const [events, holdedStatus] = await Promise.all([
+  const [events, holdedStatus, googleStatus] = await Promise.all([
     getSyncEvents(cookieHeader),
-    getHoldedStatus(cookieHeader)
+    getHoldedStatus(cookieHeader),
+    getGoogleStatus(cookieHeader),
   ]);
   const failedCount = events.filter((event) => event.status === 'failed').length;
   const pendingCount = events.filter((event) => event.status === 'pending').length;
@@ -211,6 +234,82 @@ export default async function AdminIntegracionesPage() {
               </span>
             </div>
           ) : null}
+        </section>
+
+        {/* ── Google integrations ── */}
+        <section className="mb-6 grid gap-4 sm:grid-cols-2">
+          {/* Gmail */}
+          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50">
+                  <Mail className="h-4 w-4 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Gmail</p>
+                  <p className="text-sm font-semibold text-[#07111d]">Bandeja de correo</p>
+                </div>
+              </div>
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                googleStatus.gmailConnected
+                  ? 'border-green-200 bg-green-50 text-green-800'
+                  : 'border-slate-200 bg-slate-50 text-slate-600'
+              }`}>
+                {googleStatus.gmailConnected
+                  ? <><CheckCircle2 className="h-3.5 w-3.5" /> Conectado</>
+                  : <><PlugZap className="h-3.5 w-3.5" /> No conectado</>}
+              </span>
+            </div>
+            {googleStatus.gmailEmail && (
+              <p className="mt-3 truncate text-xs text-[#29384a]/70">{googleStatus.gmailEmail}</p>
+            )}
+            <div className="mt-4">
+              {googleStatus.gmailConnected ? (
+                <Link
+                  href="/admin/correo"
+                  className="text-xs font-semibold text-[#c88b25] hover:text-[#d7a33a]"
+                >
+                  Ir a bandeja de correo →
+                </Link>
+              ) : (
+                <a
+                  href="/api/auth/google-gmail"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#07111d] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#1a2a3a]"
+                >
+                  Conectar Gmail
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Google Calendar */}
+          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+                  <Calendar className="h-4 w-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Google Calendar</p>
+                  <p className="text-sm font-semibold text-[#07111d]">Calendario fiscal clientes</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Activo
+              </span>
+            </div>
+            <p className="mt-3 text-xs text-[#29384a]/70">
+              Los clientes sincronizan sus obligaciones fiscales pendientes directamente en su Google Calendar personal.
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/admin/calendario-fiscal"
+                className="text-xs font-semibold text-[#c88b25] hover:text-[#d7a33a]"
+              >
+                Ver calendario fiscal →
+              </Link>
+            </div>
+          </div>
         </section>
 
         {events.length === 0 ? (
