@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { createServerClient } from '@supabase/ssr';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { MobileNav } from '@/components/dashboard/MobileNav';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 async function fetchJson(path: string, cookieHeader: string) {
   try {
@@ -20,22 +23,40 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
 
-  const [profileData, companiesData] = await Promise.all([
-    fetchJson('/api/profile', cookieHeader),
+  // Read session directly — avoids HTTP round-trip failures on cold starts
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: () => {}
+      }
+    }
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login');
+
+  const [profileRow, companiesData] = await Promise.all([
+    getSupabaseAdmin()
+      .from('profiles')
+      .select('id,role,full_name,active_company_id')
+      .eq('id', user.id)
+      .single()
+      .then((r) => r.data),
     fetchJson('/api/companies', cookieHeader)
   ]);
 
-  const profile = profileData?.profile ?? null;
   const companies = companiesData?.companies ?? [];
 
   return (
     <>
       <DashboardNav
         companies={companies}
-        activeCompanyId={profile?.active_company_id ?? null}
-        userName={profile?.full_name ?? null}
-        userEmail={profile?.email ?? ''}
-        isAdmin={profile?.role === 'admin'}
+        activeCompanyId={profileRow?.active_company_id ?? null}
+        userName={profileRow?.full_name ?? null}
+        userEmail={user.email ?? ''}
+        isAdmin={profileRow?.role === 'admin'}
       />
       <div className="pb-20 lg:pb-0">
         {children}
