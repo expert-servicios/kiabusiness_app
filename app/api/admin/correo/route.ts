@@ -91,8 +91,13 @@ export async function GET(request: NextRequest) {
 
     if (provider === 'gmail') {
       if (hasGmailSA()) {
-        const mails = await listGmailMailsSA({ query: q, maxResults: 25 });
-        return NextResponse.json({ mails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
+        try {
+          const mails = await listGmailMailsSA({ query: q, maxResults: 25 });
+          return NextResponse.json({ mails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
+        } catch (err) {
+          console.error('[Gmail SA list]', err);
+          return NextResponse.json({ mails: [], providerEmail: GMAIL_SA_IMPERSONATE_EMAIL, saError: true });
+        }
       }
       const gmailRow = await getGmailTokens(admin);
       if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
@@ -119,10 +124,15 @@ export async function GET(request: NextRequest) {
     const conversationId = searchParams.get('conversationId');
     if (!conversationId) return NextResponse.json({ error: 'conversationId requerido' }, { status: 400 });
 
-    let messages;
+    let messages: import('@/lib/integrations/gmail').GmailMessage[] | import('@/lib/integrations/microsoft365').MailMessage[] = [];
     if (provider === 'gmail') {
       if (hasGmailSA()) {
-        messages = await getGmailThreadSA(conversationId);
+        try {
+          messages = await getGmailThreadSA(conversationId);
+        } catch (err) {
+          console.error('[Gmail SA thread]', err);
+          messages = [];
+        }
       } else {
         const gmailRow = await getGmailTokens(admin);
         if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
@@ -187,12 +197,17 @@ export async function POST(request: NextRequest) {
 
     if (prov === 'gmail') {
       if (hasGmailSA()) {
-        await sendGmailReplySA({
-          threadId: conversationId ?? messageId,
-          to:       clientEmail ?? '',
-          subject:  subject ?? '',
-          body:     comment,
-        });
+        try {
+          await sendGmailReplySA({
+            threadId: conversationId ?? messageId,
+            to:       clientEmail ?? '',
+            subject:  subject ?? '',
+            body:     comment,
+          });
+        } catch (err) {
+          console.error('[Gmail SA reply]', err);
+          return NextResponse.json({ error: 'Error al enviar correo (SA)' }, { status: 500 });
+        }
       } else {
         const gmailRow = await getGmailTokens(admin);
         if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
