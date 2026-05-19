@@ -814,7 +814,7 @@ ACTITUD PROACTIVA:
 
 CONTACTO DIRECTO:
 - Email general: info@expertconsulting.es (compártelo si lo piden)
-- Para hablar con una persona / asesora: soy@kseniailicheva.com o cita gratuita en https://expertconsulting.es/cita
+- Para hablar con una persona / asesora: info@expertconsulting.es o cita gratuita en https://expertconsulting.es/cita
 - Si piden hablar con un humano, menciona ambas opciones (email + cita)
 
 FORMATO WHATSAPP — NEGRITA:
