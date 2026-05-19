@@ -6,14 +6,18 @@ import {
 } from 'lucide-react';
 
 async function fetchWithCookies(path: string) {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 const STATE_LABELS: Record<string, string> = {

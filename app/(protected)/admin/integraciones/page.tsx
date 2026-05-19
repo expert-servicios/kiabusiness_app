@@ -114,13 +114,16 @@ async function getSyncEvents(cookieHeader: string): Promise<SyncEvent[]> {
 }
 
 async function getHoldedStatus(cookieHeader: string): Promise<HoldedStatus | null> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integrations/holded/status`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integrations/holded/status`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export default async function AdminIntegracionesPage() {

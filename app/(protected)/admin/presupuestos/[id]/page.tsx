@@ -31,15 +31,19 @@ interface QuoteDetail {
 }
 
 async function fetchQuoteDetail(id: string): Promise<QuoteDetail | null> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/quotes/${id}`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.quote as QuoteDetail;
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/quotes/${id}`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.quote as QuoteDetail;
+  } catch {
+    return null;
+  }
 }
 
 export default async function AdminQuoteDetailPage({
