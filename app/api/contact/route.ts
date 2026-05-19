@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 
-    const adminEmail = process.env.ADMIN_EMAILS ?? 'soy@expertconsulting.es';
+    const adminEmail = process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es';
 
     await Promise.all([
       sendEmail({

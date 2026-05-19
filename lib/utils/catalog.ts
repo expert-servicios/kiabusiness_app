@@ -2,38 +2,45 @@ export const categories = [
   {
     slug: 'declaraciones-impuestos',
     name: 'Declaraciones e Impuestos',
-    description: 'Renta, IVA, Sociedades y planificación fiscal anual para personas físicas y empresas.'
+    description: 'Renta, IVA, Sociedades y planificación fiscal anual para personas físicas y empresas.',
+    imageUrl: '/catalog/fiscal.png'
   },
   {
     slug: 'extranjeria-nacionalidad',
     name: 'Extranjería y Nacionalidad',
-    description: 'Arraigo, permisos, renovaciones y expedientes de nacionalidad española.'
+    description: 'Arraigo, permisos, renovaciones y expedientes de nacionalidad española.',
+    imageUrl: '/catalog/extranjeria.png'
   },
   {
     slug: 'empresas-autonomos',
     name: 'Empresas y Autónomos',
-    description: 'Alta de actividad, asesoría contable y obligaciones recurrentes de negocio.'
+    description: 'Alta de actividad, asesoría contable y obligaciones recurrentes de negocio.',
+    imageUrl: '/catalog/empresa.png'
   },
   {
     slug: 'trafico-capitania-maritima',
     name: 'Tráfico y Capitanía Marítima',
-    description: 'Gestiones de tráfico, matriculaciones y trámites de embarcaciones.'
+    description: 'Gestiones de tráfico, matriculaciones y trámites de embarcaciones.',
+    imageUrl: '/catalog/trafico.png'
   },
   {
     slug: 'notaria-propiedades',
     name: 'Notaría y Propiedades',
-    description: 'Compraventas, escrituras, herencias y fiscalidad inmobiliaria.'
+    description: 'Compraventas, escrituras, herencias y fiscalidad inmobiliaria.',
+    imageUrl: '/catalog/notaria.png'
   },
   {
     slug: 'gestiones-especializadas',
     name: 'Gestiones Especializadas',
-    description: 'Certificados digitales Camerfirma para personas físicas y entidades. Punto de Registro Autorizado.'
+    description: 'Certificados digitales Camerfirma para personas físicas y entidades. Punto de Registro Autorizado.',
+    imageUrl: '/catalog/certificados.png'
   },
   {
     slug: 'formacion',
     name: 'Formación',
     description:
-      'Formación fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.'
+      'Formación fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.',
+    imageUrl: '/catalog/formacion.png'
   }
 ] as const;
 

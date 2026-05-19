@@ -6,7 +6,16 @@ import { Breadcrumb } from '@/components/site/Breadcrumb';
 export const metadata: Metadata = {
   title: 'Plan Avanzado — 99 €/mes | EXPERT',
   description:
-    'Plan Avanzado de asesoría fiscal y administrativa para autónomos y PYMEs. 99 €/mes. Impuestos trimestrales, contabilidad básica y soporte por email.'
+    'Plan Avanzado de asesoría fiscal y administrativa para autónomos y PYMEs. 99 €/mes. Impuestos trimestrales, contabilidad básica y soporte por email.',
+  alternates: { canonical: 'https://expertconsulting.es/planes/basico' },
+  openGraph: {
+    type: 'website',
+    url: 'https://expertconsulting.es/planes/basico',
+    title: 'Plan Avanzado — 99 €/mes | EXPERT',
+    description: 'Plan Avanzado de asesoría fiscal para autónomos y PYMEs. 99 €/mes.',
+    images: [{ url: 'https://expertconsulting.es/catalog/consultoria.png', width: 1200, height: 630, alt: 'Plan Avanzado — EXPERT' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['https://expertconsulting.es/catalog/consultoria.png'] }
 };
 
 const includes = [

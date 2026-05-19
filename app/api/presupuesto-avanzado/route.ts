@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send emails
-    const adminEmails = (process.env.ADMIN_EMAILS ?? 'soy@expertconsulting.es')
+    const adminEmails = (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
       .split(',').map((e) => e.trim()).filter(Boolean);
 
     await Promise.all([

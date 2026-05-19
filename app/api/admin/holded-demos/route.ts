@@ -4,9 +4,9 @@ import { sendEmail } from '@/lib/email/send';
 import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates';
 
 const CALENDLY_ONBOARDING =
-  process.env.CALENDLY_ONBOARDING_URL ?? 'https://calendly.com/soy-kseniailicheva/onboarding-holded';
+  process.env.NEXT_PUBLIC_CALENDLY_ONBOARDING_URL ?? 'https://calendly.com/soy-kseniailicheva/onboarding-holded';
 const CALENDLY_FORMACION =
-  process.env.CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+  process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
 
 const VALID_STATUSES = ['pending', 'demo_active', 'onboarding_done', 'training_done', 'converted', 'closed'] as const;
 type DemoStatus = typeof VALID_STATUSES[number];

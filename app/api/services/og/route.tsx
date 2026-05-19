@@ -110,7 +110,7 @@ export async function GET(request: Request) {
               <div style={{ width: 48, height: 48, background: colors.gold }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: 2 }}>EXPERT</div>
-                <div style={{ fontSize: 17, color: colors.gray }}>Ksenia Ilicheva</div>
+                <div style={{ fontSize: 17, color: colors.gray }}>expertconsulting.es</div>
               </div>
             </div>
             <div

@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'Formación práctica con tus datos reales | EXPERT',
   description:
     'Formación personalizada 1:1 sobre tu PC, con tu certificado digital y tu acceso real a la AEAT, Seguridad Social, Holded y otras administraciones. 180 € + IVA por sesión de 2 horas.',
+  alternates: { canonical: 'https://expertconsulting.es/servicios/formacion' },
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/servicios/formacion',
@@ -16,11 +17,18 @@ export const metadata: Metadata = {
     description:
       'Sesiones 1:1 sobre tu propio PC: AEAT, Seguridad Social, Holded, alta de autónomo, constitución de empresa y más. 180 € + IVA / 2 h.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
+    locale: 'es_ES',
+    images: [{ url: 'https://expertconsulting.es/catalog/servicios/digital/formacion.png', width: 1200, height: 630, alt: 'Formación práctica — EXPERT' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Formación práctica con tus datos reales | EXPERT',
+    description: 'Sesiones 1:1 sobre tu propio PC: AEAT, Seguridad Social, Holded, alta de autónomo y más. 180 € + IVA / 2 h.',
+    images: ['https://expertconsulting.es/catalog/servicios/digital/formacion.png']
   }
 };
 
-const CALENDLY_URL = 'https://calendly.com/soy-kseniailicheva/reunion-informativa';
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa';
 
 const areas = [
   {

@@ -17,13 +17,25 @@ export async function generateMetadata({
   const { categoria } = await params;
   const category = getCategory(categoria);
   if (!category) return {};
+  const title = `${category.name} | EXPERT`;
+  const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}`;
+  const ogImage = `https://expertconsulting.es${category.imageUrl}`;
   return {
-    title: `${category.name} | EXPERT`,
+    title,
     description: category.description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: `${category.name} | EXPERT`,
+      title,
       description: category.description,
-      url: `https://expertconsulting.es/servicios/${categoria}`
+      url: canonicalUrl,
+      type: 'website',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: category.name }]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: category.description,
+      images: [ogImage]
     }
   };
 }

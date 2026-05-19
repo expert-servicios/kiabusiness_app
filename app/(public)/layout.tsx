@@ -15,7 +15,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       {/* Floating action buttons */}
       <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
         <a
-          href="https://calendly.com/soy-kseniailicheva/reunion-informativa"
+          href={process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa'}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Reservar llamada gratuita 15 min"

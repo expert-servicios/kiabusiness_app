@@ -302,7 +302,7 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calendlyFormacion = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+        const calendlyFormacion = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
@@ -419,7 +419,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       const clientId = subscriptionRecord?.clientId ?? dbSub?.client_id;
-      const planName = subscriptionRecord?.planName ?? dbSub?.plan_name ?? 'SuscripciÃ³n';
+      const planName = subscriptionRecord?.planName ?? dbSub?.plan_name ?? 'Suscripción';
 
       if (clientId) {
         const clientInfo = await getClientEmail(clientId);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { data: caseData, error: caseError } = await adminSupabase
       .from('cases')
-      .select('id,client_id')
+      .select('id,client_id,service')
       .eq('id', caseId)
       .single();
 
@@ -99,6 +100,38 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (docError || !doc) {
       return NextResponse.json({ error: 'Error al registrar el documento' }, { status: 500 });
+    }
+
+    // Non-blocking Drive sync — fetch client name then upload
+    if (process.env.GOOGLE_DRIVE_CLIENTS_FOLDER_ID) {
+      (async () => {
+        try {
+          const { data: profile } = await adminSupabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', clientId)
+            .maybeSingle();
+          const clientName = profile?.full_name ?? profile?.email ?? `cliente-${clientId}`;
+          const serviceName = (caseData as { service?: string }).service ?? 'Expediente';
+
+          const driveResult = await syncDocumentToDrive({
+            fileBuffer: buffer,
+            fileName: file.name,
+            mimeType: file.type || `application/${ext}`,
+            clientName,
+            serviceName,
+          });
+
+          if (driveResult) {
+            await adminSupabase
+              .from('documents')
+              .update({ metadata: { drive_file_id: driveResult.fileId, drive_url: driveResult.webViewLink } })
+              .eq('id', doc.id);
+          }
+        } catch (e) {
+          console.error('[Drive sync]', e);
+        }
+      })();
     }
 
     return NextResponse.json({ document: doc }, { status: 201 });

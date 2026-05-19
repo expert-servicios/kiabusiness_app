@@ -7,12 +7,13 @@ import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
 
 // Update this URL once you create the Calendly event
-const CALENDLY_DEMO_URL = 'https://calendly.com/soy-kseniailicheva/30min';
+const CALENDLY_DEMO_URL = process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? 'https://calendly.com/soy-kseniailicheva/30min';
 
 export const metadata: Metadata = {
   title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
   description:
     'Migramos tu contabilidad a Holded con estructura clara. Pack Starter, migración completa y migración con inventario. Somos Holded Solution Partner certificados.',
+  alternates: { canonical: 'https://expertconsulting.es/holded' },
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/holded',
@@ -20,7 +21,14 @@ export const metadata: Metadata = {
     description:
       'Migramos tu contabilidad a Holded con estructura clara. Somos Holded Solution Partner certificados.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
+    locale: 'es_ES',
+    images: [{ url: 'https://expertconsulting.es/catalog/holded.png', width: 1200, height: 630, alt: 'Holded Solution Partner — EXPERT' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
+    description: 'Migramos tu contabilidad a Holded con estructura clara. Somos Holded Solution Partner certificados.',
+    images: ['https://expertconsulting.es/catalog/holded.png']
   }
 };
 

@@ -6,7 +6,16 @@ import { Breadcrumb } from '@/components/site/Breadcrumb';
 export const metadata: Metadata = {
   title: 'Plan Colaborativo — 199 €/mes | EXPERT',
   description:
-    'Plan Colaborativo de asesoría fiscal y administrativa para autónomos activos y pymes. 199 €/mes. Contabilidad completa, impuestos, nóminas y soporte prioritario.'
+    'Plan Colaborativo de asesoría fiscal y administrativa para autónomos activos y pymes. 199 €/mes. Contabilidad completa, impuestos, nóminas y soporte prioritario.',
+  alternates: { canonical: 'https://expertconsulting.es/planes/estandar' },
+  openGraph: {
+    type: 'website',
+    url: 'https://expertconsulting.es/planes/estandar',
+    title: 'Plan Colaborativo — 199 €/mes | EXPERT',
+    description: 'Plan Colaborativo de asesoría fiscal. 199 €/mes sin permanencia.',
+    images: [{ url: 'https://expertconsulting.es/catalog/consultoria.png', width: 1200, height: 630, alt: 'Plan Colaborativo — EXPERT' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['https://expertconsulting.es/catalog/consultoria.png'] }
 };
 
 const includes = [

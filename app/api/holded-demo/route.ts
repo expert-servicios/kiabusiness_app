@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo registrar la solicitud.' }, { status: 500 });
     }
 
-    const adminEmails = (process.env.ADMIN_EMAILS ?? 'soy@expertconsulting.es')
+    const adminEmails = (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
       .split(',').map((e) => e.trim()).filter(Boolean);
 
     await Promise.all([

@@ -27,8 +27,8 @@ const contactItems = [
   {
     Icon: Mail,
     label: 'Email',
-    value: 'soy@expertconsulting.es',
-    href: 'mailto:soy@expertconsulting.es',
+    value: 'info@expertconsulting.es',
+    href: 'mailto:info@expertconsulting.es',
     note: 'Respondemos en menos de 24 h hábiles'
   },
   {
@@ -116,7 +116,7 @@ export default function ContactoPage() {
             </a>
 
             <a
-              href="https://calendly.com/soy-kseniailicheva/reunion-informativa"
+              href={process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col border border-[#D4A017] bg-white p-5 transition hover:bg-[#D4A017]/5"

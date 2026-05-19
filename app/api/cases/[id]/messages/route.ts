@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           }
         } else {
           // Notify admin
-          const adminEmail = process.env.ADMIN_EMAILS ?? 'soy@expertconsulting.es';
+          const adminEmail = process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es';
           const { data: senderProfile } = await adminSupabase
             .from('profiles').select('full_name').eq('id', userId).single();
           const clientName = senderProfile?.full_name ?? 'Cliente';

@@ -9,7 +9,6 @@ import { categories } from '@/lib/utils/catalog';
 const navLinks = [
   { label: 'Holded', href: '/holded' },
   { label: 'Formación', href: '/servicios/formacion' },
-  { label: 'Docs', href: '/docs' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Reservar cita', href: '/cita' }

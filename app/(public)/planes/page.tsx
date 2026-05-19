@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded | EXPERT',
   description:
     'Gestión contable integral en España con Holded. Plan Avanzado desde 99 €/mes, Plan Colaborativo desde 199 €/mes. También presupuesto personalizado con gestión laboral. Sin permanencia.',
+  alternates: { canonical: 'https://expertconsulting.es/planes' },
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/planes',
@@ -18,12 +19,19 @@ export const metadata: Metadata = {
     description:
       'Gestión contable integral en España con Holded. Desde 99 €/mes. Sin permanencia.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
+    locale: 'es_ES',
+    images: [{ url: 'https://expertconsulting.es/catalog/consultoria.png', width: 1200, height: 630, alt: 'Planes de asesoría — EXPERT' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Planes de gestión contable con Holded | EXPERT',
+    description: 'Gestión contable integral en España con Holded. Desde 99 €/mes. Sin permanencia.',
+    images: ['https://expertconsulting.es/catalog/consultoria.png']
   }
 };
 
-const CALENDLY_DEMO = 'https://calendly.com/soy-kseniailicheva/30min';
-const CALENDLY_FORMACION = 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+const CALENDLY_DEMO = process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? 'https://calendly.com/soy-kseniailicheva/30min';
+const CALENDLY_FORMACION = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
 
 const plans = [
   {

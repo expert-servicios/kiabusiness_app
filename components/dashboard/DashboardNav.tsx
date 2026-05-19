@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Globe } from 'lucide-react';
 import { CompanySwitcher } from './CompanySwitcher';
 import { LogoutButton } from './LogoutButton';
 import { NotificationBell } from './NotificationBell';
@@ -21,6 +21,7 @@ interface Props {
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Panel' },
+  { href: '/dashboard/servicios', label: 'Servicios' },
   { href: '/dashboard/expedientes', label: 'Expedientes' },
   { href: '/dashboard/presupuestos', label: 'Presupuestos' },
   { href: '/dashboard/calendario-fiscal', label: 'Calendario Fiscal' },
@@ -68,6 +69,15 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
         <div className="ml-auto flex items-center gap-2">
           <CompanySwitcher companies={companies} activeCompanyId={activeCompanyId} />
           <NotificationBell />
+          {/* Back to public site */}
+          <Link
+            href="/"
+            title="Volver a la web"
+            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/50 transition hover:bg-white/6 hover:text-white md:flex"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Web</span>
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"

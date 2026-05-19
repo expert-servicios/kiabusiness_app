@@ -6,7 +6,16 @@ import { Breadcrumb } from '@/components/site/Breadcrumb';
 export const metadata: Metadata = {
   title: 'Plan Delegado — 349 €/mes | EXPERT',
   description:
-    'Plan Delegado de asesoría fiscal y administrativa sin límites. 349 €/mes. Contabilidad ilimitada, gestiones de extranjería, nóminas, formación incluida y atención personalizada.'
+    'Plan Delegado de asesoría fiscal y administrativa sin límites. 349 €/mes. Contabilidad ilimitada, gestiones de extranjería, nóminas, formación incluida y atención personalizada.',
+  alternates: { canonical: 'https://expertconsulting.es/planes/premium' },
+  openGraph: {
+    type: 'website',
+    url: 'https://expertconsulting.es/planes/premium',
+    title: 'Plan Delegado — 349 €/mes | EXPERT',
+    description: 'Plan Delegado de asesoría fiscal sin límites. 349 €/mes. Extranjería, nóminas y formación incluida.',
+    images: [{ url: 'https://expertconsulting.es/catalog/consultoria.png', width: 1200, height: 630, alt: 'Plan Delegado — EXPERT' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['https://expertconsulting.es/catalog/consultoria.png'] }
 };
 
 const includes = [

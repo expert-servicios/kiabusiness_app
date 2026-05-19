@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, Calendar, FileText, User } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, Calendar, ShoppingBag, User } from 'lucide-react';
 
 const NAV = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/expedientes', label: 'Trámites', icon: FolderOpen, exact: false },
+  { href: '/dashboard/servicios', label: 'Servicios', icon: ShoppingBag, exact: false },
   { href: '/dashboard/calendario-fiscal', label: 'Fiscal', icon: Calendar, exact: false },
-  { href: '/dashboard/presupuestos', label: 'Presupuestos', icon: FileText, exact: false },
   { href: '/dashboard/perfil', label: 'Perfil', icon: User, exact: false },
 ];
 

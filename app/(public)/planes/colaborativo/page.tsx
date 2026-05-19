@@ -6,7 +6,16 @@ import { Breadcrumb } from '@/components/site/Breadcrumb';
 export const metadata: Metadata = {
   title: 'Plan Colaborativo — 199 €/mes | EXPERT',
   description:
-    'Plan Colaborativo de gestión contable para autónomos activos y pymes. 199 €/mes sin permanencia. Tú introduces facturas en Holded, nosotros revisamos, cuadramos y presentamos todos los impuestos.'
+    'Plan Colaborativo de gestión contable para autónomos activos y pymes. 199 €/mes sin permanencia. Tú introduces facturas en Holded, nosotros revisamos, cuadramos y presentamos todos los impuestos.',
+  alternates: { canonical: 'https://expertconsulting.es/planes/colaborativo' },
+  openGraph: {
+    type: 'website',
+    url: 'https://expertconsulting.es/planes/colaborativo',
+    title: 'Plan Colaborativo — 199 €/mes | EXPERT',
+    description: 'Plan Colaborativo de gestión contable. 199 €/mes sin permanencia.',
+    images: [{ url: 'https://expertconsulting.es/catalog/consultoria.png', width: 1200, height: 630, alt: 'Plan Colaborativo — EXPERT' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['https://expertconsulting.es/catalog/consultoria.png'] }
 };
 
 const includes = [

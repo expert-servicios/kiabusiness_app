@@ -170,7 +170,7 @@ function buildEmailHtml(
 
         <!-- Header -->
         <tr><td style="background:#07111d;border-radius:16px 16px 0 0;padding:24px 32px;">
-          <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#d7a33a;">Expert Estudios</p>
+          <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#d7a33a;">EXPERT Consulting</p>
           <h1 style="margin:4px 0 0;font-size:20px;color:#ffffff;">Recordatorio Fiscal</h1>
         </td></tr>
 
@@ -194,7 +194,7 @@ function buildEmailHtml(
         <!-- Footer -->
         <tr><td style="background:#f8f4eb;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
           <p style="margin:0;font-size:11px;color:#29384a;">
-            Expert Estudios Pro · <a href="${appUrl}/dashboard/perfil" style="color:#c88b25;">Gestionar notificaciones</a>
+            EXPERT Consulting · <a href="${appUrl}/dashboard/perfil" style="color:#c88b25;">Gestionar notificaciones</a>
           </p>
         </td></tr>
 

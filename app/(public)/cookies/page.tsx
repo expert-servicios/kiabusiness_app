@@ -195,7 +195,7 @@ export default function CookiesPage() {
 
           <Section title="8. Contacto">
             <p>
-              Si tienes dudas sobre el uso de cookies en este sitio, puedes contactar con nosotros en <a href="mailto:soy@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">soy@expertconsulting.es</a>.
+              Si tienes dudas sobre el uso de cookies en este sitio, puedes contactar con nosotros en <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a>.
             </p>
           </Section>
 
