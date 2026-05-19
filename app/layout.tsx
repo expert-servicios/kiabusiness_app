@@ -6,7 +6,6 @@ import { type ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
 
 const GTM_ID = 'GTM-MKZ522HP';
-const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 const inter = Inter({
   subsets: ['latin'],
@@ -89,13 +88,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','${GTM_ID}');`
           }}
         />
-        {RECAPTCHA_SITE_KEY ? (
-          <Script
-            id="recaptcha-v3"
-            src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
-            strategy="afterInteractive"
-          />
-        ) : null}
         <PwaRegister />
         {children}
       </body>
