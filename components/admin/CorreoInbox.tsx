@@ -57,6 +57,7 @@ interface Props {
   ms365Email: string | null;
   gmailConnected: boolean;
   gmailEmail: string | null;
+  gmailSA?: boolean;
   initialMails: MailSummary[];
   initialProvider: Provider;
   errorParam?: string | null;
@@ -68,6 +69,7 @@ export function CorreoInbox({
   ms365Email,
   gmailConnected,
   gmailEmail,
+  gmailSA = false,
   initialMails,
   initialProvider,
   errorParam,
@@ -89,6 +91,7 @@ export function CorreoInbox({
   const [caseSearch, setCaseSearch] = useState('');
   const [linking, setLinking] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [suggestingAI, setSuggestingAI] = useState(false);
 
   const activeEmail = provider === 'gmail' ? gmailEmail : ms365Email;
   const activeConnected = provider === 'gmail' ? gmailConnected : ms365Connected;
@@ -205,6 +208,23 @@ export function CorreoInbox({
         setCases(data.cases ?? []);
       }
     }
+  };
+
+  const handleSuggestAI = async () => {
+    if (!selectedSummary || threadMessages.length === 0) return;
+    setSuggestingAI(true);
+    try {
+      const res = await fetch('/api/admin/correo/suggest-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: selectedSummary.subject, messages: threadMessages }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.suggestion) setReply(data.suggestion);
+      }
+    } catch { /* silent */ }
+    setSuggestingAI(false);
   };
 
   const handleLink = async (caseId: string | null) => {
@@ -423,19 +443,21 @@ export function CorreoInbox({
         ))}
       </ul>
 
-      <div className="border-t border-[#d8cbb5] px-4 py-2.5">
-        <button
-          type="button"
-          onClick={async () => {
-            if (!confirm(`¿Desconectar la cuenta de ${provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}?`)) return;
-            await fetch(`/api/admin/correo?provider=${provider}`, { method: 'DELETE' });
-            location.reload();
-          }}
-          className="text-xs text-[#29384a]/50 transition hover:text-red-600"
-        >
-          Desconectar cuenta
-        </button>
-      </div>
+      {!(provider === 'gmail' && gmailSA) && (
+        <div className="border-t border-[#d8cbb5] px-4 py-2.5">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm(`¿Desconectar la cuenta de ${provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}?`)) return;
+              await fetch(`/api/admin/correo?provider=${provider}`, { method: 'DELETE' });
+              location.reload();
+            }}
+            className="text-xs text-[#29384a]/50 transition hover:text-red-600"
+          >
+            Desconectar cuenta
+          </button>
+        </div>
+      )}
     </aside>
   );
 
@@ -524,7 +546,17 @@ export function CorreoInbox({
               rows={3}
               className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm outline-none focus:border-[#c88b25]"
             />
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={handleSuggestAI}
+                disabled={suggestingAI || loadingThread || threadMessages.length === 0}
+                className="flex items-center gap-1.5 rounded-full border border-[#c88b25] px-4 py-2 text-sm font-semibold text-[#c88b25] transition hover:bg-[#c88b25]/10 disabled:opacity-40"
+                title="Sugerir respuesta con IA"
+              >
+                <span className="text-base leading-none">✦</span>
+                {suggestingAI ? 'Generando...' : 'Sugerir IA'}
+              </button>
               <button
                 type="button"
                 onClick={handleSendReply}

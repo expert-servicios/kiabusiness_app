@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listMails, getConversation, sendReply } from '@/lib/integrations/microsoft365';
-import { listGmailMails, getGmailThread, sendGmailReply } from '@/lib/integrations/gmail';
+import {
+  listGmailMails, getGmailThread, sendGmailReply,
+  listGmailMailsSA, getGmailThreadSA, sendGmailReplySA,
+  hasGmailSA, GMAIL_SA_IMPERSONATE_EMAIL,
+} from '@/lib/integrations/gmail';
 import type { GmailTokens } from '@/lib/integrations/gmail';
 import { z } from 'zod';
 
@@ -68,15 +72,17 @@ export async function GET(request: NextRequest) {
   const { admin } = ctx;
 
   if (action === 'status') {
+    const saActive = hasGmailSA();
     const [ms365Row, gmailRow] = await Promise.all([
       getMs365Tokens(admin),
-      getGmailTokens(admin),
+      saActive ? Promise.resolve(null) : getGmailTokens(admin),
     ]);
     return NextResponse.json({
       ms365Connected:  !!ms365Row,
       ms365Email:      ms365Row?.email ?? null,
-      gmailConnected:  !!gmailRow,
-      gmailEmail:      gmailRow?.email ?? null,
+      gmailConnected:  saActive || !!gmailRow,
+      gmailEmail:      saActive ? GMAIL_SA_IMPERSONATE_EMAIL : (gmailRow?.email ?? null),
+      gmailSA:         saActive,
     });
   }
 
@@ -84,6 +90,10 @@ export async function GET(request: NextRequest) {
     const q = searchParams.get('q') ?? undefined;
 
     if (provider === 'gmail') {
+      if (hasGmailSA()) {
+        const mails = await listGmailMailsSA({ query: q, maxResults: 25 });
+        return NextResponse.json({ mails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
+      }
       const gmailRow = await getGmailTokens(admin);
       if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
       const stored: GmailTokens = {
@@ -111,17 +121,21 @@ export async function GET(request: NextRequest) {
 
     let messages;
     if (provider === 'gmail') {
-      const gmailRow = await getGmailTokens(admin);
-      if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
-      const stored: GmailTokens = {
-        access_token:  gmailRow.access_token,
-        refresh_token: gmailRow.refresh_token,
-        expiry_date:   gmailRow.expiry_date,
-        email:         gmailRow.email,
-      };
-      const result = await getGmailThread(stored, conversationId);
-      await saveGmailRefresh(admin, result.refreshed);
-      messages = result.messages;
+      if (hasGmailSA()) {
+        messages = await getGmailThreadSA(conversationId);
+      } else {
+        const gmailRow = await getGmailTokens(admin);
+        if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
+        const stored: GmailTokens = {
+          access_token:  gmailRow.access_token,
+          refresh_token: gmailRow.refresh_token,
+          expiry_date:   gmailRow.expiry_date,
+          email:         gmailRow.email,
+        };
+        const result = await getGmailThread(stored, conversationId);
+        await saveGmailRefresh(admin, result.refreshed);
+        messages = result.messages;
+      }
     } else {
       const ms365Row = await getMs365Tokens(admin);
       if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
@@ -172,21 +186,30 @@ export async function POST(request: NextRequest) {
     const { messageId, comment, conversationId, subject, clientEmail, provider: prov } = parsed.data;
 
     if (prov === 'gmail') {
-      const gmailRow = await getGmailTokens(admin);
-      if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
-      const stored: GmailTokens = {
-        access_token:  gmailRow.access_token,
-        refresh_token: gmailRow.refresh_token,
-        expiry_date:   gmailRow.expiry_date,
-        email:         gmailRow.email,
-      };
-      const { refreshed } = await sendGmailReply(stored, {
-        threadId: conversationId ?? messageId,
-        to:       clientEmail ?? '',
-        subject:  subject ?? '',
-        body:     comment,
-      });
-      await saveGmailRefresh(admin, refreshed);
+      if (hasGmailSA()) {
+        await sendGmailReplySA({
+          threadId: conversationId ?? messageId,
+          to:       clientEmail ?? '',
+          subject:  subject ?? '',
+          body:     comment,
+        });
+      } else {
+        const gmailRow = await getGmailTokens(admin);
+        if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
+        const stored: GmailTokens = {
+          access_token:  gmailRow.access_token,
+          refresh_token: gmailRow.refresh_token,
+          expiry_date:   gmailRow.expiry_date,
+          email:         gmailRow.email,
+        };
+        const { refreshed } = await sendGmailReply(stored, {
+          threadId: conversationId ?? messageId,
+          to:       clientEmail ?? '',
+          subject:  subject ?? '',
+          body:     comment,
+        });
+        await saveGmailRefresh(admin, refreshed);
+      }
     } else {
       const ms365Row = await getMs365Tokens(admin);
       if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
@@ -228,7 +251,9 @@ export async function DELETE(request: NextRequest) {
   const { admin } = ctx;
 
   if (provider === 'gmail') {
-    await admin.from('gmail_tokens').delete().eq('id', 'admin');
+    if (!hasGmailSA()) {
+      await admin.from('gmail_tokens').delete().eq('id', 'admin');
+    }
   } else {
     await admin.from('ms365_tokens').delete().eq('id', 'admin');
   }

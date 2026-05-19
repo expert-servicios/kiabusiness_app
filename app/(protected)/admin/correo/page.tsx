@@ -22,7 +22,8 @@ async function fetchCorreoData() {
 
   const status = await statusRes.json();
   const ms365Connected: boolean = status.ms365Connected ?? false;
-  const gmailConnected: boolean  = status.gmailConnected ?? false;
+  const gmailConnected: boolean = status.gmailConnected ?? false;
+  const gmailSA: boolean = status.gmailSA ?? false;
 
   // Determine which provider to show first
   const initialProvider: 'ms365' | 'gmail' = gmailConnected ? 'gmail' : 'ms365';
@@ -45,6 +46,7 @@ async function fetchCorreoData() {
     ms365Email: status.ms365Email ?? null,
     gmailConnected,
     gmailEmail:  status.gmailEmail ?? null,
+    gmailSA,
     initialMails,
     initialProvider,
   };
@@ -64,6 +66,7 @@ export default async function AdminCorreoPage({
       ms365Email={data.ms365Email}
       gmailConnected={data.gmailConnected}
       gmailEmail={data.gmailEmail}
+      gmailSA={data.gmailSA}
       initialMails={data.initialMails as Parameters<typeof CorreoInbox>[0]['initialMails']}
       initialProvider={data.initialProvider}
       errorParam={params.error ?? null}

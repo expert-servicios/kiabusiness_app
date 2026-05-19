@@ -1,7 +1,8 @@
 /**
  * Gmail API integration (admin inbox).
- * Uses GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET — same app as Google Calendar.
- * Scopes: gmail.readonly, gmail.send, userinfo.email
+ * Supports two auth modes:
+ *   1. Service Account with Domain-Wide Delegation — GOOGLE_GMAIL_SA_* env vars
+ *   2. OAuth2 — fallback using stored tokens in gmail_tokens table
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,6 +14,28 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
+
+// ── Service Account (Domain-Wide Delegation) ──────────────────────────────
+
+export const GMAIL_SA_IMPERSONATE_EMAIL = 'info@expertconsulting.es';
+
+export function hasGmailSA(): boolean {
+  return !!(process.env.GOOGLE_GMAIL_SA_EMAIL && process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY);
+}
+
+async function getGmailSAClient(): Promise<AnyGoogle | null> {
+  if (!hasGmailSA()) return null;
+  const { google } = await import('googleapis' as AnyGoogle);
+  const auth = new google.auth.JWT({
+    email: process.env.GOOGLE_GMAIL_SA_EMAIL!,
+    key: process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+    scopes: GMAIL_SCOPES,
+    subject: GMAIL_SA_IMPERSONATE_EMAIL,
+  });
+  return google.gmail({ version: 'v1', auth });
+}
+
+// ── OAuth2 helpers ────────────────────────────────────────────────────────
 
 export interface GmailTokens {
   access_token: string;
@@ -90,7 +113,7 @@ async function ensureFresh(stored: GmailTokens): Promise<{ client: AnyGoogle; re
   return { client, refreshed };
 }
 
-// ── Shared types (same shape as MS365 inbox) ──────────────────────────
+// ── Shared types ──────────────────────────────────────────────────────────
 
 export interface GmailSummary {
   id: string;
@@ -117,7 +140,7 @@ export interface GmailMessage {
   unread: boolean;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function hdr(headers: Array<{ name: string; value: string }>, name: string): string {
   return headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? '';
@@ -150,16 +173,12 @@ function extractBody(payload: AnyGoogle): { body: string; bodyType: 'html' | 'te
   return { body: '', bodyType: 'text' };
 }
 
-// ── Public API ─────────────────────────────────────────────────────────
+// ── Internal implementations (shared between SA and OAuth2) ───────────────
 
-export async function listGmailMails(
-  stored: GmailTokens,
+async function _listThreads(
+  gmail: AnyGoogle,
   opts?: { query?: string; maxResults?: number }
-): Promise<{ mails: GmailSummary[]; refreshed: GmailTokens | null }> {
-  const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
-  const gmail = google.gmail({ version: 'v1', auth: client });
-
+): Promise<GmailSummary[]> {
   const q = opts?.query ? `in:inbox ${opts.query}` : 'in:inbox';
   const listRes = await gmail.users.threads.list({
     userId: 'me',
@@ -204,24 +223,16 @@ export async function listGmailMails(
     });
   }
 
-  return { mails, refreshed };
+  return mails;
 }
 
-export async function getGmailThread(
-  stored: GmailTokens,
-  threadId: string
-): Promise<{ messages: GmailMessage[]; refreshed: GmailTokens | null }> {
-  const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
-  const gmail = google.gmail({ version: 'v1', auth: client });
-
+async function _getThread(gmail: AnyGoogle, threadId: string): Promise<GmailMessage[]> {
   const threadRes = await gmail.users.threads.get({
     userId: 'me',
     id: threadId,
     format: 'full',
   });
 
-  // Mark thread as read
   await gmail.users.threads.modify({
     userId: 'me',
     id: threadId,
@@ -229,7 +240,7 @@ export async function getGmailThread(
   }).catch(() => null);
 
   const rawMsgs: AnyGoogle[] = threadRes.data.messages ?? [];
-  const messages: GmailMessage[] = rawMsgs.map((msg: AnyGoogle) => {
+  return rawMsgs.map((msg: AnyGoogle) => {
     const headers: Array<{ name: string; value: string }> = msg.payload?.headers ?? [];
     const { name: fromName, email: fromEmail } = parseAddr(hdr(headers, 'From'));
     const subject = hdr(headers, 'Subject') || '(Sin asunto)';
@@ -249,21 +260,16 @@ export async function getGmailThread(
       unread: (msg.labelIds ?? []).includes('UNREAD'),
     };
   });
-
-  return { messages, refreshed };
 }
 
-export async function sendGmailReply(
-  stored: GmailTokens,
-  opts: { threadId: string; to: string; subject: string; body: string }
-): Promise<{ refreshed: GmailTokens | null }> {
-  const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
-  const gmail = google.gmail({ version: 'v1', auth: client });
-
+async function _sendReply(
+  gmail: AnyGoogle,
+  opts: { threadId: string; to: string; subject: string; body: string; from?: string }
+): Promise<void> {
   const subject = opts.subject.startsWith('Re:') ? opts.subject : `Re: ${opts.subject}`;
+  const fromLine = opts.from ? `From: ${opts.from}\r\n` : '';
   const raw = [
-    `To: ${opts.to}`,
+    `${fromLine}To: ${opts.to}`,
     `Subject: ${subject}`,
     'Content-Type: text/plain; charset=utf-8',
     'MIME-Version: 1.0',
@@ -281,6 +287,63 @@ export async function sendGmailReply(
     userId: 'me',
     requestBody: { raw: encoded, threadId: opts.threadId },
   });
+}
 
+// ── Public API — Service Account path ────────────────────────────────────
+
+export async function listGmailMailsSA(
+  opts?: { query?: string; maxResults?: number }
+): Promise<GmailSummary[]> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _listThreads(gmail, opts);
+}
+
+export async function getGmailThreadSA(threadId: string): Promise<GmailMessage[]> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _getThread(gmail, threadId);
+}
+
+export async function sendGmailReplySA(
+  opts: { threadId: string; to: string; subject: string; body: string }
+): Promise<void> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _sendReply(gmail, { ...opts, from: GMAIL_SA_IMPERSONATE_EMAIL });
+}
+
+// ── Public API — OAuth2 path ──────────────────────────────────────────────
+
+export async function listGmailMails(
+  stored: GmailTokens,
+  opts?: { query?: string; maxResults?: number }
+): Promise<{ mails: GmailSummary[]; refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = await import('googleapis' as AnyGoogle);
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  const mails = await _listThreads(gmail, opts);
+  return { mails, refreshed };
+}
+
+export async function getGmailThread(
+  stored: GmailTokens,
+  threadId: string
+): Promise<{ messages: GmailMessage[]; refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = await import('googleapis' as AnyGoogle);
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  const messages = await _getThread(gmail, threadId);
+  return { messages, refreshed };
+}
+
+export async function sendGmailReply(
+  stored: GmailTokens,
+  opts: { threadId: string; to: string; subject: string; body: string }
+): Promise<{ refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = await import('googleapis' as AnyGoogle);
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  await _sendReply(gmail, opts);
   return { refreshed };
 }
