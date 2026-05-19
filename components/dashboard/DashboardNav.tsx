@@ -87,9 +87,12 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
               Admin
             </Link>
           )}
-          <span className="hidden max-w-[120px] truncate text-xs text-white/40 md:block" title={userEmail}>
-            {displayName}
-          </span>
+          <div className="hidden items-center gap-2 md:flex" title={userEmail}>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/20 text-[11px] font-bold text-[#d7a33a]">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <span className="max-w-[100px] truncate text-xs text-white/50">{displayName}</span>
+          </div>
           <LogoutButton />
         </div>
       </div>

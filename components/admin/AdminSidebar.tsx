@@ -53,6 +53,13 @@ const NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'Equipo',
+    icon: UserPlus,
+    items: [
+      { label: 'Equipo y accesos', href: '/admin/equipo' },
+    ]
+  },
+  {
     label: 'Sistema',
     icon: Plug,
     items: [
