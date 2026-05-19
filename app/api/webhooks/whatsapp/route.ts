@@ -45,6 +45,107 @@ function extractMessageText(msg: Record<string, unknown>): string | null {
   return null;
 }
 
+function extractButtonId(msg: Record<string, unknown>): string | null {
+  if (msg.type !== 'interactive') return null;
+  const interactive = msg.interactive as Record<string, unknown>;
+  if (interactive?.type === 'button_reply') {
+    return (interactive.button_reply as { id?: string })?.id?.trim() || null;
+  }
+  if (interactive?.type === 'list_reply') {
+    return (interactive.list_reply as { id?: string })?.id?.trim() || null;
+  }
+  return null;
+}
+
+const GREETING_RE = /^(hola|buenos|buenas|hi|hello|hey|buon|salut|ola|привет|добрый|здравствуйте|доброе|добрый день|добрый вечер|доброе утро)[\s!,.]*$/i;
+
+function isFirstContact(history: { direction: string }[]): boolean {
+  return !history.some((h) => h.direction === 'outbound');
+}
+
+function isGreetingMessage(body: string): boolean {
+  return GREETING_RE.test(body.trim());
+}
+
+interface MenuButton { id: string; title: string }
+interface MenuConfig  { body: string; buttons: MenuButton[] }
+
+const WELCOME_INTERACTIVE: Record<'es' | 'ru', MenuConfig> = {
+  es: {
+    body: '¡Hola! 👋 Soy el asistente de EXPERT Asesoría. ¿En qué área podemos ayudarte?',
+    buttons: [
+      { id: 'cat_fiscal',      title: 'Fiscal / Impuestos' },
+      { id: 'cat_extranjeria', title: 'Extranjería / NIE'  },
+      { id: 'cat_empresa',     title: 'Empresa / Otros'    },
+    ],
+  },
+  ru: {
+    body: 'Привет! 👋 Я помощник EXPERT Gestoría. Чем могу помочь?',
+    buttons: [
+      { id: 'cat_fiscal',      title: 'Налоги / НДФЛ'    },
+      { id: 'cat_extranjeria', title: 'ВНЖ / Гражданство' },
+      { id: 'cat_empresa',     title: 'Бизнес / Другое'  },
+    ],
+  },
+};
+
+const CATEGORY_SUBMENUS: Record<string, Record<'es' | 'ru', MenuConfig>> = {
+  cat_fiscal: {
+    es: {
+      body: '¿Qué trámite fiscal necesitas?',
+      buttons: [
+        { id: 'svc_irpf',          title: 'Declaración Renta' },
+        { id: 'svc_autonomo',      title: 'Autónomo / IVA'    },
+        { id: 'svc_no_residente',  title: 'No Residente'      },
+      ],
+    },
+    ru: {
+      body: 'Какой налоговый вопрос вас интересует?',
+      buttons: [
+        { id: 'svc_irpf',         title: 'Декларация НДФЛ'    },
+        { id: 'svc_autonomo',     title: 'Самозанятый / НДС'  },
+        { id: 'svc_no_residente', title: 'Нерезидент'         },
+      ],
+    },
+  },
+  cat_extranjeria: {
+    es: {
+      body: '¿Qué trámite de extranjería necesitas?',
+      buttons: [
+        { id: 'svc_residencia',   title: 'Permiso residencia' },
+        { id: 'svc_nacionalidad', title: 'Nacionalidad'       },
+        { id: 'svc_arraigo',      title: 'Arraigo / Familia'  },
+      ],
+    },
+    ru: {
+      body: 'Какой документ или статус вам нужен?',
+      buttons: [
+        { id: 'svc_residencia',   title: 'ВНЖ / Разрешение' },
+        { id: 'svc_nacionalidad', title: 'Гражданство'       },
+        { id: 'svc_arraigo',      title: 'Воссоединение'     },
+      ],
+    },
+  },
+  cat_empresa: {
+    es: {
+      body: '¿En qué más podemos ayudarte?',
+      buttons: [
+        { id: 'svc_empresa_sl', title: 'Empresa / SL'      },
+        { id: 'svc_notaria',    title: 'Notaría / Inmueble' },
+        { id: 'svc_trafico',    title: 'Tráfico / Certif.' },
+      ],
+    },
+    ru: {
+      body: 'Что ещё вас интересует?',
+      buttons: [
+        { id: 'svc_empresa_sl', title: 'Открыть компанию' },
+        { id: 'svc_notaria',    title: 'Недвижимость'     },
+        { id: 'svc_trafico',    title: 'Транспорт / ЭЦП'  },
+      ],
+    },
+  },
+};
+
 // Incoming messages
 export async function POST(request: NextRequest) {
   try {
@@ -99,6 +200,57 @@ export async function POST(request: NextRequest) {
         .limit(8);
 
       const conversationHistory = (history ?? []).reverse() as { direction: string; body: string }[];
+
+      // --- DETERMINISTIC MENU INTERCEPTION ---
+      const buttonId = extractButtonId(msg as Record<string, unknown>);
+      const menuLang: 'es' | 'ru' = /[А-Яа-яЁё]/.test(msgBody) ? 'ru' : 'es';
+
+      // Level 2: category button tap → send specific service submenu
+      if (buttonId && CATEGORY_SUBMENUS[buttonId]) {
+        const submenu = CATEGORY_SUBMENUS[buttonId][menuLang];
+        const sent = await sendWhatsAppInteractive({
+          to: from,
+          body: submenu.body,
+          footer: 'Asesoría EXPERT 💼',
+          buttons: submenu.buttons,
+        });
+        if (sent.success) {
+          await logWhatsAppConversation({
+            clientId,
+            phoneNumber: from,
+            direction: 'outbound',
+            body: `[Menú] ${submenu.body} | ${submenu.buttons.map((b) => b.title).join(' / ')}`,
+            whatsappMessageId: sent.messageId,
+            aiResponded: false,
+            needsReview: false,
+          });
+        }
+        continue;
+      }
+
+      // Level 1: first contact OR greeting → send welcome buttons
+      if (isFirstContact(conversationHistory) || (!buttonId && isGreetingMessage(msgBody))) {
+        const welcome = WELCOME_INTERACTIVE[menuLang];
+        const sent = await sendWhatsAppInteractive({
+          to: from,
+          body: welcome.body,
+          footer: 'Asesoría EXPERT 💼',
+          buttons: welcome.buttons,
+        });
+        if (sent.success) {
+          await logWhatsAppConversation({
+            clientId,
+            phoneNumber: from,
+            direction: 'outbound',
+            body: `[Bienvenida] ${welcome.body}`,
+            whatsappMessageId: sent.messageId,
+            aiResponded: false,
+            needsReview: false,
+          });
+        }
+        continue;
+      }
+      // --- END DETERMINISTIC MENU ---
 
       // Generate AI response
       const aiResult = await generateAiResponse({ clientId, from, msgBody, admin, conversationHistory });
@@ -269,8 +421,10 @@ CUÁNDO NO usar botones (responde con texto directamente):
 ✗ "¿Cuánto cuesta montar una SL?" → responde sobre constitución de empresa
 ✗ "Soy autónomo y quiero llevar mi contabilidad" → responde directamente
 ✗ "¿Qué es Holded?" → responde sobre Holded
+✗ Si el historial muestra "[Bienvenida]" o "[Menú]" → el cliente ya seleccionó categoría; responde con texto
 ✗ Si el usuario YA eligió un botón en el turno anterior → responde con texto, no pongas más botones
 ✗ Si hay historial de conversación y ya sabes qué quiere → responde con texto
+IMPORTANTE: El sistema ya muestra menús interactivos de forma automática para saludos y primeras preguntas genéricas. NUNCA uses OPCIÓN B si el historial contiene "[Bienvenida]" o "[Menú]".
 
 IDIOMA DE LOS BOTONES: los botones deben estar en el mismo idioma que el cliente. Si escribe en ruso, los botones en ruso (máx. 20 caracteres cirílicos). Si en español, en español.
 
