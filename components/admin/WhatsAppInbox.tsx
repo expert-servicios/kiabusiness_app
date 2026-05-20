@@ -4,8 +4,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft,
   RefreshCw, Plus, Paperclip, Sparkles, X, FileText, Image as ImageIcon,
-  FolderOpen, ChevronDown, Smile, UserPlus, Search, BookMarked, Check
+  FolderOpen, ChevronDown, Smile, UserPlus, Search, BookMarked, Check,
+  ClipboardList,
 } from 'lucide-react';
+import { WaServiceWorkflow } from './WaServiceWorkflow';
 import { SERVICES_CATALOG, type CatalogSection } from '@/lib/data/services-catalog';
 import Link from 'next/link';
 import { WaTemplateModal } from './WaTemplateModal';
@@ -92,7 +94,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error ?? 'Error al crear contacto'); return; }
-      if (data.client) { onLinked(data.client, true); }
+      if (data.client) { onLinked({ ...data.client, full_name: data.client.full_name ?? newName.trim() }, true); }
     } catch {
       setCreateError('Error de conexión');
     } finally {
@@ -649,6 +651,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLinkClient, setShowLinkClient] = useState(false);
+  const [showWorkflow, setShowWorkflow] = useState(false);
   const [inboxToast, setInboxToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -1118,6 +1121,21 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             {showEmoji && (
               <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
             )}
+            {/* AI mode hint — only shown when text is typed */}
+            {reply.trim() && !aiLoading && (
+              <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                <Sparkles className="h-3 w-3 text-[#c88b25]" />
+                <span className="text-[11px] text-[#c88b25]">
+                  Escribe en español · presiona ✦ para mejorar y traducir al idioma del cliente
+                </span>
+              </div>
+            )}
+            {aiLoading && (
+              <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                <RefreshCw className="h-3 w-3 animate-spin text-[#c88b25]" />
+                <span className="text-[11px] text-[#c88b25]">IA mejorando y traduciendo…</span>
+              </div>
+            )}
             <div className="flex items-end gap-1 sm:gap-2">
               {/* Attach */}
               <input
@@ -1157,6 +1175,17 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                 aria-label="Enviar catálogo de servicios"
               >
                 <BookMarked className="h-4 w-4" />
+              </button>
+
+              {/* Service workflow templates */}
+              <button
+                type="button"
+                onClick={() => setShowWorkflow(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
+                title="Plantillas de servicio"
+                aria-label="Plantillas de servicio"
+              >
+                <ClipboardList className="h-4 w-4" />
               </button>
 
               {/* AI compose / edit+translate */}
@@ -1218,6 +1247,16 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           phone={activeConv.phone}
           onLinked={handleClientLinked}
           onClose={() => setShowLinkClient(false)}
+        />
+      )}
+      {showWorkflow && activeConv && (
+        <WaServiceWorkflow
+          clientName={activeConv.clientName ?? ''}
+          onInsert={(text) => {
+            setReply(text);
+            setTimeout(() => textareaRef.current?.focus(), 50);
+          }}
+          onClose={() => setShowWorkflow(false)}
         />
       )}
       {showCatalog && activeConv && (

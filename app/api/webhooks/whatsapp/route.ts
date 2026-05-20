@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   logWhatsAppConversation,
+  downloadAndStoreWhatsAppMedia,
   mapWhatsAppMessageToClient,
   sendWhatsAppMessage,
   sendWhatsAppInteractive,
@@ -450,14 +451,47 @@ export async function POST(request: NextRequest) {
 
     for (const msg of messages) {
       const msgType = msg.type as string;
-      if (!['text', 'interactive'].includes(msgType)) continue;
+      const isMedia = ['image', 'document', 'audio', 'video'].includes(msgType);
+      if (!['text', 'interactive'].includes(msgType) && !isMedia) continue;
 
       const from: string = msg.from;
-      const msgBody = extractMessageText(msg as Record<string, unknown>);
-      if (!msgBody) continue;
-
       const messageId: string = msg.id;
       const clientId = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
+      const senderName = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
+
+      // ── Media messages: download + store in Supabase, then skip bot flow ──
+      if (isMedia) {
+        const mediaObj = msg[msgType] as { id?: string; caption?: string; filename?: string } | undefined;
+        const mediaId = mediaObj?.id ?? '';
+        const caption = mediaObj?.caption ?? '';
+        const rawFilename = (mediaObj as { filename?: string })?.filename ?? `archivo.${msgType === 'image' ? 'jpg' : msgType === 'audio' ? 'ogg' : msgType === 'video' ? 'mp4' : 'pdf'}`;
+
+        const storedUrl = mediaId
+          ? await downloadAndStoreWhatsAppMedia(mediaId, msgType, rawFilename, from, clientId)
+          : null;
+
+        await logWhatsAppConversation({
+          clientId,
+          phoneNumber: from,
+          direction: 'inbound',
+          body: caption || `[${msgType}]`,
+          whatsappMessageId: messageId,
+          mediaUrl: storedUrl ?? mediaId ?? undefined,
+          mediaType: msgType,
+        });
+
+        const mediaIcon = msgType === 'image' ? '📷' : msgType === 'audio' ? '🎤' : msgType === 'video' ? '🎥' : '📄';
+        notifyAdmins({
+          title: `${mediaIcon} Archivo de ${senderName}`,
+          body: caption || `Ha enviado un ${msgType}`,
+          url: '/admin/whatsapp',
+          tag: `wa-${from}`,
+        }).catch(() => {});
+        continue; // Don't run bot on media — admin reviews in inbox
+      }
+
+      const msgBody = extractMessageText(msg as Record<string, unknown>);
+      if (!msgBody) continue;
 
       // Log inbound message
       await logWhatsAppConversation({
@@ -469,7 +503,6 @@ export async function POST(request: NextRequest) {
       });
 
       // Push notification to admins (non-blocking)
-      const senderName = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
       notifyAdmins({
         title: `WhatsApp de ${senderName}`,
         body: msgBody.length > 100 ? msgBody.slice(0, 97) + '…' : msgBody,

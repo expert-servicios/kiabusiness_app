@@ -317,6 +317,64 @@ export function mapWhatsAppMessageToClient(
   return match?.id ?? null;
 }
 
+/** Download a WhatsApp media object from Meta and store it in Supabase Storage.
+ *  Returns the public URL, or null if anything fails (non-fatal). */
+export async function downloadAndStoreWhatsAppMedia(
+  mediaId: string,
+  mediaType: string,
+  filename: string,
+  phone: string,
+  clientId: string | undefined,
+): Promise<string | null> {
+  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  if (!token) return null;
+  try {
+    // 1. Resolve download URL from Meta
+    const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!metaRes.ok) return null;
+    const metaData = await metaRes.json() as { url?: string; mime_type?: string };
+    const downloadUrl = metaData.url;
+    if (!downloadUrl) return null;
+
+    // 2. Download the file
+    const fileRes = await fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!fileRes.ok) return null;
+    const buffer = await fileRes.arrayBuffer();
+
+    // 3. Determine extension
+    const MIME_TO_EXT: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+      'application/pdf': 'pdf', 'audio/ogg': 'ogg', 'audio/mpeg': 'mp3',
+      'video/mp4': 'mp4',
+    };
+    const mimeType = metaData.mime_type ?? (
+      mediaType === 'image' ? 'image/jpeg' :
+      mediaType === 'audio' ? 'audio/ogg' :
+      mediaType === 'video' ? 'video/mp4' : 'application/pdf'
+    );
+    const ext = MIME_TO_EXT[mimeType] ?? filename.split('.').pop() ?? 'bin';
+    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 60);
+    const folder = clientId ? `clients/${clientId}` : `unknown/${phone.replace(/\D/g, '')}`;
+    const path = `${folder}/${Date.now()}-${safeName}.${ext}`;
+
+    // 4. Upload to Supabase Storage
+    const { getSupabaseAdmin } = await import('./supabase');
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase.storage
+      .from('whatsapp-attachments')
+      .upload(path, buffer, { contentType: mimeType, upsert: false });
+
+    if (error || !data) { console.error('[WA media upload]', error); return null; }
+    const { data: { publicUrl } } = supabase.storage.from('whatsapp-attachments').getPublicUrl(data.path);
+    return publicUrl;
+  } catch (err) {
+    console.error('[WA media download]', err);
+    return null;
+  }
+}
+
 export async function logWhatsAppConversation(params: LogConversationParams): Promise<void> {
   try {
     const { getSupabaseAdmin } = await import('./supabase');
