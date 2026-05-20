@@ -1199,7 +1199,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-133px)] overflow-hidden lg:h-screen">
+      <div className="flex h-[calc(100dvh-109px)] overflow-hidden lg:h-screen">
         {ContactList}
         {ThreadPanel}
       </div>
