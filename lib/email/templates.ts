@@ -867,6 +867,86 @@ export function caseNewMessageFromAdvisor(clientName: string, service: string, p
   };
 }
 
+// ── Client invite / onboarding ────────────────────────────────────────────────
+export function clientInviteEmail(name: string, inviteUrl: string) {
+  const firstName = name.split(' ')[0];
+  return {
+    subject: '🎉 Tu acceso a EXPERT está listo — actívalo ahora',
+    html: base('Bienvenido/a a EXPERT', `
+      ${heading(`¡Hola ${escapeHtml(firstName)}! 👋`)}
+      ${para('Tu asesor/a de <strong>EXPERT</strong> ha creado tu área privada. Desde aquí podrás seguir tus trámites en tiempo real, enviar documentación y mucho más — todo sin llamadas ni papeleos.')}
+
+      <div style="margin:24px 0;padding:20px 24px;background:#f8f4eb;border-radius:12px;border:1px solid #d8cbb5;">
+        <p style="margin:0 0 12px;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;color:#c88b25;">✨ Lo que encontrarás en tu área privada</p>
+        <table cellpadding="0" cellspacing="0" style="width:100%;">
+          <tr><td style="padding:6px 0;font-size:14px;color:#29384a;">📋 <strong>Mis expedientes</strong> — estado en tiempo real de cada trámite</td></tr>
+          <tr><td style="padding:6px 0;font-size:14px;color:#29384a;">📂 <strong>Documentación</strong> — sube archivos de forma segura en segundos</td></tr>
+          <tr><td style="padding:6px 0;font-size:14px;color:#29384a;">💶 <strong>Presupuestos</strong> — revisa y paga online sin trámites extra</td></tr>
+          <tr><td style="padding:6px 0;font-size:14px;color:#29384a;">🔔 <strong>Notificaciones</strong> — te avisamos en cada avance importante</td></tr>
+          <tr><td style="padding:6px 0;font-size:14px;color:#29384a;">💬 <strong>Comunicación directa</strong> — escríbenos sin cambiar de pantalla</td></tr>
+        </table>
+      </div>
+
+      ${para('Activa tu cuenta ahora — <strong>es gratis y solo te llevará 30 segundos</strong>:')}
+      ${btn('🚀 Activar mi área privada', inviteUrl)}
+      ${para('<small style="color:#8899aa;">Este enlace es personal y caduca en 24 horas. Si no lo solicitaste tú, ignora este correo.</small>')}
+
+      <div style="margin-top:28px;padding:16px 20px;background:#e8f5e9;border-left:3px solid #25D366;border-radius:0 8px 8px 0;">
+        <p style="margin:0;font-size:13px;color:#1a5c2a;">💡 <strong>¿Tienes dudas?</strong> Puedes escribirnos directamente por WhatsApp al <a href="https://wa.me/34696550480" style="color:#1a9e4a;font-weight:bold;">+34 696 55 04 80</a> — respondemos en menos de 2 horas en horario de oficina.</p>
+      </div>
+    `)
+  };
+}
+
+// ── Admin: nuevo cliente registrado ──────────────────────────────────────────
+export function newClientAdminAlert(input: {
+  name: string;
+  email: string;
+  phone: string | null;
+  source: string;
+}) {
+  return {
+    subject: `🆕 Nuevo cliente registrado: ${escapeHtml(input.name)}`,
+    html: base('Nuevo cliente', `
+      ${heading('Nuevo cliente registrado 🎉')}
+      ${para('Se ha creado un nuevo acceso de cliente desde el panel de administración.')}
+      ${table(
+        detail('Nombre', escapeHtml(input.name)),
+        detail('Email', `<a href="mailto:${escapeHtml(input.email)}" style="color:#c88b25;">${escapeHtml(input.email)}</a>`),
+        ...(input.phone ? [detail('Teléfono / WhatsApp', escapeHtml(input.phone))] : []),
+        detail('Origen', escapeHtml(input.source)),
+        detail('Estado', '✉️ Invitación de activación enviada al cliente')
+      )}
+      ${para('Se ha enviado al cliente un email con enlace para activar su cuenta y acceder al área privada.')}
+      ${btn('Ver en Usuarios', `${BRAND.appUrl}/admin/usuarios`)}
+    `)
+  };
+}
+
+// ── Admin: nuevo usuario registrado (vía cualquier flujo) ─────────────────────
+export function newUserRegisteredAdmin(input: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  registrationMethod: string;
+}) {
+  return {
+    subject: `👤 Nuevo usuario en EXPERT: ${escapeHtml(input.name)}`,
+    html: base('Nuevo registro', `
+      ${heading('Nuevo usuario registrado')}
+      ${para('Un nuevo usuario acaba de crear o activar su cuenta en la plataforma.')}
+      ${table(
+        detail('Nombre', escapeHtml(input.name)),
+        detail('Email', `<a href="mailto:${escapeHtml(input.email)}" style="color:#c88b25;">${escapeHtml(input.email)}</a>`),
+        ...(input.phone ? [detail('Teléfono', escapeHtml(input.phone))] : []),
+        detail('Método', escapeHtml(input.registrationMethod)),
+        detail('Fecha', new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }))
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/usuarios`)}
+    `)
+  };
+}
+
 // ── New message: client → admin notification ─────────────────────────────────
 export function caseNewMessageFromClient(clientName: string, service: string, preview: string, caseId: string) {
   return {

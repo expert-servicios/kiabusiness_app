@@ -40,7 +40,7 @@ function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onC
 // ── Link / Create contact modal ───────────────────────────────
 function LinkClientModal({ phone, onLinked, onClose }: {
   phone: string;
-  onLinked: (client: { id: string; full_name: string | null; email: string }) => void;
+  onLinked: (client: { id: string; full_name: string | null; email: string }, isNew?: boolean) => void;
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<'search' | 'create'>('search');
@@ -76,12 +76,12 @@ function LinkClientModal({ phone, onLinked, onClose }: {
         body: JSON.stringify({ phone, clientId, savePhone: true }),
       });
       const data = await res.json();
-      if (res.ok && data.client) onLinked(data.client);
+      if (res.ok && data.client) { onLinked(data.client, false); }
     } finally { setLinking(false); }
   };
 
   const create = async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !newEmail.trim()) return;
     setCreating(true);
     setCreateError(null);
     try {
@@ -92,7 +92,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error ?? 'Error al crear contacto'); return; }
-      if (data.client) onLinked(data.client);
+      if (data.client) { onLinked(data.client, true); }
     } catch {
       setCreateError('Error de conexión');
     } finally {
@@ -181,7 +181,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#07111d]">Email (opcional)</label>
+              <label className="mb-1 block text-xs font-semibold text-[#07111d]">Email *</label>
               <input
                 type="email"
                 value={newEmail}
@@ -191,13 +191,13 @@ function LinkClientModal({ phone, onLinked, onClose }: {
               />
             </div>
             <p className="text-[10px] text-[#29384a]">
-              Teléfono: <strong>{phone}</strong> · Se creará una cuenta de cliente vinculada a este número.
+              Teléfono: <strong>{phone}</strong> · Se creará cuenta de cliente y se enviará email de activación.
             </p>
             {createError && <p className="text-xs text-red-600">{createError}</p>}
             <button
               type="button"
               onClick={create}
-              disabled={creating || !newName.trim()}
+              disabled={creating || !newName.trim() || !newEmail.trim()}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-2.5 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
             >
               {creating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
@@ -649,6 +649,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLinkClient, setShowLinkClient] = useState(false);
+  const [inboxToast, setInboxToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -831,12 +832,18 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setTimeout(() => { el.focus(); el.setSelectionRange(start + emoji.length, start + emoji.length); }, 0);
   };
 
-  const handleClientLinked = (client: { id: string; full_name: string | null; email: string }) => {
+  const showInboxToast = (msg: string, ok: boolean) => {
+    setInboxToast({ msg, ok });
+    setTimeout(() => setInboxToast(null), 3500);
+  };
+
+  const handleClientLinked = (client: { id: string; full_name: string | null; email: string }, isNew = false) => {
     if (!selected) return;
     setConversations((prev) => prev.map((c) =>
       c.phone !== selected ? c : { ...c, clientId: client.id, clientName: client.full_name, clientEmail: client.email }
     ));
     setShowLinkClient(false);
+    showInboxToast(isNew ? `✅ Contacto creado — email de activación enviado a ${client.email}` : '✅ Contacto vinculado correctamente', true);
   };
 
   const handleNewConvSent = useCallback((phone: string, previewText: string) => {
@@ -1238,6 +1245,14 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             ));
           }}
         />
+      )}
+
+      {/* Inbox toast */}
+      {inboxToast && (
+        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-xl ${inboxToast.ok ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {inboxToast.ok ? <Check className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
+          {inboxToast.msg}
+        </div>
       )}
     </>
   );

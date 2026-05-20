@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendEmail } from '@/lib/email/send';
+import { newUserRegisteredAdmin } from '@/lib/email/templates';
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -100,6 +102,18 @@ export async function POST(request: NextRequest) {
       entity_id: userId,
       metadata: { email, mode, isNewUser }
     }).then(() => {});
+
+    // Notify admin when a new user is created
+    if (isNewUser) {
+      const adminEmail = process.env.ADMIN_EMAIL ?? 'info@expertconsulting.es';
+      const tpl = newUserRegisteredAdmin({
+        name: fullName ?? email,
+        email,
+        phone: phone ?? null,
+        registrationMethod: mode === 'invite_email' ? 'Invitación por email' : 'Creación directa (admin)',
+      });
+      void sendEmail({ to: adminEmail, eventType: 'new_user_admin_alert', subject: tpl.subject, html: tpl.html });
+    }
 
     return NextResponse.json({ ok: true, userId, isNewUser, email });
   } catch (err) {
