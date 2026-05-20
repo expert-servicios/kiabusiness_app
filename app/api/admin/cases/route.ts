@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { z } from 'zod';
+
+async function requireAdmin(request: NextRequest) {
+  const supabase = createServerSupabaseClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const admin = getSupabaseAdmin();
+  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
+  return profile?.role === 'admin' ? admin : null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient(request);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-
-    const admin = getSupabaseAdmin();
-    const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    const admin = await requireAdmin(request);
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const { searchParams } = new URL(request.url);
     const clientIdFilter = searchParams.get('clientId');
@@ -55,6 +60,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ cases: enriched });
   } catch (err) {
     console.error('[admin/cases GET]', err);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
+
+const createCaseSchema = z.object({
+  client_id: z.string().uuid(),
+  service:   z.string().min(1).max(200),
+  category:  z.string().min(1).max(100),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const admin = await requireAdmin(request);
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
+    const body = await request.json();
+    const parsed = createCaseSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+
+    const { client_id, service, category } = parsed.data;
+
+    const { data: newCase, error } = await admin
+      .from('cases')
+      .insert({ client_id, service, category, state: 'pendiente', opened_at: new Date().toISOString() })
+      .select('id,service,state,category')
+      .single();
+
+    if (error) {
+      console.error('[admin/cases POST]', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ case: newCase }, { status: 201 });
+  } catch (err) {
+    console.error('[admin/cases POST]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }

@@ -50,6 +50,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
   const [results, setResults] = useState<{ id: string; full_name: string | null; email: string; phone: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
   // Create form
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -57,13 +58,17 @@ function LinkClientModal({ phone, onLinked, onClose }: {
   const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (tab !== 'search' || query.length < 2) { setResults([]); return; }
+    if (tab !== 'search' || query.length < 2) { setResults([]); setLinkError(null); return; }
     const t = setTimeout(async () => {
       setLoading(true);
+      setLinkError(null);
       try {
         const res = await fetch(`/api/admin/whatsapp/link-client?q=${encodeURIComponent(query)}`);
         const data = await res.json();
+        if (!res.ok) { setLinkError(data.error ?? 'Error al buscar contactos'); return; }
         setResults(data.clients ?? []);
+      } catch {
+        setLinkError('Error de conexión');
       } finally { setLoading(false); }
     }, 300);
     return () => clearTimeout(t);
@@ -71,6 +76,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
 
   const link = async (clientId: string) => {
     setLinking(true);
+    setLinkError(null);
     try {
       const res = await fetch('/api/admin/whatsapp/link-client', {
         method: 'POST',
@@ -78,7 +84,10 @@ function LinkClientModal({ phone, onLinked, onClose }: {
         body: JSON.stringify({ phone, clientId, savePhone: true }),
       });
       const data = await res.json();
-      if (res.ok && data.client) { onLinked(data.client, false); }
+      if (!res.ok) { setLinkError(data.error ?? 'Error al vincular contacto'); return; }
+      if (data.client) { onLinked(data.client, false); }
+    } catch {
+      setLinkError('Error de conexión');
     } finally { setLinking(false); }
   };
 
@@ -142,9 +151,10 @@ function LinkClientModal({ phone, onLinked, onClose }: {
                 className="w-full rounded-xl border border-[#d8cbb5] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#25D366]"
               />
             </div>
+            {linkError && <p className="mt-1 text-xs text-red-600">{linkError}</p>}
             <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
               {loading && <p className="py-3 text-center text-xs text-[#29384a]">Buscando…</p>}
-              {!loading && query.length >= 2 && results.length === 0 && (
+              {!loading && query.length >= 2 && results.length === 0 && !linkError && (
                 <p className="py-3 text-center text-xs text-[#29384a]">Sin resultados — prueba a crear un nuevo contacto</p>
               )}
               {results.map((c) => (
@@ -409,6 +419,8 @@ function NewConvModal({
   );
 }
 
+const CASE_CATEGORIES = ['Fiscal', 'Extranjería', 'Empresa', 'Notaría', 'Tráfico', 'Otros'];
+
 // Case assignment dropdown
 function CaseAssign({
   clientId,
@@ -424,16 +436,26 @@ function CaseAssign({
   const [cases, setCases] = useState<WaCase[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newService, setNewService] = useState('');
+  const [newCategory, setNewCategory] = useState(CASE_CATEGORIES[0]);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open || cases.length > 0) return;
+  const loadCases = () => {
     setLoading(true);
-    fetch(`/api/admin/cases?clientId=${clientId}&limit=20`)
+    fetch(`/api/admin/cases?clientId=${clientId}`)
       .then((r) => r.json())
       .then((d) => setCases(d.cases ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [open, clientId, cases.length]);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    loadCases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, clientId]);
 
   const assign = async (caseId: string | null) => {
     setOpen(false);
@@ -445,11 +467,35 @@ function CaseAssign({
     onAssigned(caseId);
   };
 
+  const createAndAssign = async () => {
+    if (!newService.trim()) return;
+    setSaveLoading(true);
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/admin/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: clientId, service: newService.trim(), category: newCategory }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setSaveError(data.error ?? 'Error al crear'); return; }
+      const created: WaCase = data.case;
+      setCases((prev) => [created, ...prev]);
+      setCreating(false);
+      setNewService('');
+      await assign(created.id);
+    } catch {
+      setSaveError('Error de conexión');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); setCreating(false); setSaveError(null); }}
         className="flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2.5 py-1 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
       >
         <FolderOpen className="h-3 w-3" />
@@ -457,13 +503,57 @@ function CaseAssign({
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-[#d8cbb5] bg-white shadow-xl">
-          <div className="border-b border-[#f0e9d8] px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#29384a]">
-            Expedientes del cliente
+        <div className="absolute right-0 top-full z-50 mt-1 w-80 rounded-xl border border-[#d8cbb5] bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#f0e9d8] px-3 py-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#29384a]">Expedientes del cliente</span>
+            <button
+              type="button"
+              onClick={() => { setCreating((c) => !c); setSaveError(null); setNewService(''); }}
+              className="flex items-center gap-1 rounded-lg bg-[#07111d] px-2 py-1 text-[10px] font-bold text-white transition hover:bg-[#1a2e44]"
+            >
+              <Plus className="h-3 w-3" />
+              Nuevo
+            </button>
           </div>
+
+          {/* Create mini-form */}
+          {creating && (
+            <div className="border-b border-[#f0e9d8] bg-[#faf8f2] px-3 py-3 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#c88b25]">Crear y asignar nuevo expediente</p>
+              <input
+                autoFocus
+                type="text"
+                value={newService}
+                onChange={(e) => setNewService(e.target.value)}
+                placeholder="Nombre del servicio…"
+                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366]"
+              />
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                aria-label="Categoría del expediente"
+                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366] bg-white"
+              >
+                {CASE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              {saveError && <p className="text-[10px] text-red-600">{saveError}</p>}
+              <button
+                type="button"
+                onClick={createAndAssign}
+                disabled={saveLoading || !newService.trim()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#25D366] py-1.5 text-xs font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
+              >
+                {saveLoading ? <RefreshCw className="h-3 w-3 animate-spin" /> : <FolderOpen className="h-3 w-3" />}
+                {saveLoading ? 'Creando…' : 'Crear y asignar'}
+              </button>
+            </div>
+          )}
+
           {loading && <p className="px-3 py-3 text-xs text-[#29384a]">Cargando…</p>}
-          {!loading && cases.length === 0 && (
-            <p className="px-3 py-3 text-xs text-[#29384a]">Sin expedientes</p>
+          {!loading && cases.length === 0 && !creating && (
+            <p className="px-3 py-3 text-xs text-[#29384a]">Sin expedientes — pulsa &quot;Nuevo&quot; para crear uno</p>
           )}
           {currentCaseId && (
             <button
@@ -681,6 +771,9 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       }
     } catch { /* silent */ }
   }, []);
+
+  // Fetch immediately on mount (SSR self-fetch can fail silently)
+  useEffect(() => { void loadConversations(); }, [loadConversations]);
 
   useEffect(() => {
     const id = setInterval(loadConversations, 30_000);

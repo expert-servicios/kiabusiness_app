@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     const { data } = await admin
       .from('profiles')
       .select('id,full_name,email,phone')
-      .eq('role', 'client')
+      .neq('role', 'admin')
       .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(8);
 
