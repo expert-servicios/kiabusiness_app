@@ -45,13 +45,13 @@ export const metadata: Metadata = {
     description:
       'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
     url: 'https://expertconsulting.es',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
   },
   twitter: {
     card: 'summary_large_image',
     title: 'EXPERT | Asesoría fiscal, legal y administrativa',
     description: 'Asesoría fiscal en España para empresas, autónomos y personas físicas.',
-    images: ['/og-image.png']
+    images: ['/branding/expert%20servicios.png']
   }
 };
 

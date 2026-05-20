@@ -98,7 +98,11 @@
       "mcp__claude_ai_Stripe__stripe_api_search",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\admin\\\\correo\\\\suggest-reply\")",
       "mcp__supabase__get_logs",
-      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add app/\\(protected\\)/admin/layout.tsx app/\\(protected\\)/dashboard/layout.tsx; git commit -m \"fix: leer sesion y role directamente de Supabase en layouts admin y dashboard \\(evita redireccion por fallo HTTP interno\\)\")"
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add app/\\(protected\\)/admin/layout.tsx app/\\(protected\\)/dashboard/layout.tsx; git commit -m \"fix: leer sesion y role directamente de Supabase en layouts admin y dashboard \\(evita redireccion por fallo HTTP interno\\)\")",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $env:NEXT_SKIP_TYPE_CHECK=\"1\"; npm run build 2>&1 | Select-Object -Last 60)",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; Select-String -Pattern \"^import \" app/api/webhooks/whatsapp/route.ts | Select-Object -First 20 | ForEach-Object { $_.Line })",
+      "PowerShell(Copy-Item -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logo_expert_new.png\" -Destination \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\icon.png\" -Force)",
+      "PowerShell(Copy-Item -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\public\\\\logo_expert_new.png\" -Destination \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\apple-icon.png\" -Force)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
