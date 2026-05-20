@@ -5,14 +5,14 @@ import {
   Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft,
   RefreshCw, Plus, Paperclip, Sparkles, X, FileText, Image as ImageIcon,
   FolderOpen, ChevronDown, Smile, UserPlus, Search, BookMarked, Check,
-  ClipboardList,
+  ClipboardList, ShieldCheck, UserCircle2,
 } from 'lucide-react';
 import { WaServiceWorkflow } from './WaServiceWorkflow';
 import { SERVICES_CATALOG, type CatalogSection } from '@/lib/data/services-catalog';
 import Link from 'next/link';
 import { WaTemplateModal } from './WaTemplateModal';
 
-// ── Emoji picker ──────────────────────────────────────────────
+// ── Emoji picker ──────────────────────────────────────────────────────────────
 const EMOJIS = [
   '😊','👋','🙏','😄','👍','✅','❤️','🌟','💪','🎉',
   '👏','🤝','✨','📋','📄','📅','💼','🏢','💡','📞',
@@ -39,19 +39,33 @@ function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onC
   );
 }
 
-// ── Link / Create contact modal ───────────────────────────────
+// ── Client vs Lead badge ──────────────────────────────────────────────────────
+function ContactBadge({ isClient }: { isClient: boolean }) {
+  return isClient ? (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
+      <ShieldCheck className="h-2.5 w-2.5" />
+      Cliente
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+      <UserCircle2 className="h-2.5 w-2.5" />
+      Lead
+    </span>
+  );
+}
+
+// ── Link / Create contact modal ───────────────────────────────────────────────
 function LinkClientModal({ phone, onLinked, onClose }: {
   phone: string;
-  onLinked: (client: { id: string; full_name: string | null; email: string }, isNew?: boolean) => void;
+  onLinked: (client: { id: string; full_name: string | null; email: string | null; role?: string | null }, isNew?: boolean) => void;
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<'search' | 'create'>('search');
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<{ id: string; full_name: string | null; email: string; phone: string | null }[]>([]);
+  const [results, setResults] = useState<{ id: string; full_name: string | null; email: string | null; phone: string | null; role: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
-  // Create form
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [creating, setCreating] = useState(false);
@@ -85,7 +99,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
       });
       const data = await res.json();
       if (!res.ok) { setLinkError(data.error ?? 'Error al vincular contacto'); return; }
-      if (data.client) { onLinked(data.client, false); }
+      if (data.client) onLinked(data.client, false);
     } catch {
       setLinkError('Error de conexión');
     } finally { setLinking(false); }
@@ -103,12 +117,10 @@ function LinkClientModal({ phone, onLinked, onClose }: {
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error ?? 'Error al crear contacto'); return; }
-      if (data.client) { onLinked({ ...data.client, full_name: data.client.full_name ?? newName.trim() }, true); }
+      if (data.client) onLinked({ ...data.client, full_name: data.client.full_name ?? newName.trim() }, true);
     } catch {
       setCreateError('Error de conexión');
-    } finally {
-      setCreating(false);
-    }
+    } finally { setCreating(false); }
   };
 
   return (
@@ -122,7 +134,6 @@ function LinkClientModal({ phone, onLinked, onClose }: {
         </div>
         <p className="mb-3 text-xs text-[#29384a]">Número: <strong>{phone}</strong></p>
 
-        {/* Tabs */}
         <div className="mb-4 flex rounded-xl border border-[#d8cbb5] p-0.5">
           {(['search', 'create'] as const).map((t) => (
             <button
@@ -166,11 +177,14 @@ function LinkClientModal({ phone, onLinked, onClose }: {
                   className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9] disabled:opacity-50"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-xs font-bold text-[#1a9e4a]">
-                    {(c.full_name ?? c.email)[0].toUpperCase()}
+                    {(c.full_name ?? c.email ?? '?')[0].toUpperCase()}
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#07111d]">{c.full_name ?? '—'}</p>
-                    <p className="truncate text-xs text-[#29384a]">{c.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold text-[#07111d]">{c.full_name ?? '—'}</p>
+                      <ContactBadge isClient={c.role === 'client'} />
+                    </div>
+                    {c.email && <p className="truncate text-xs text-[#29384a]">{c.email}</p>}
                     {c.phone && <p className="text-[10px] text-[#9ca3af]">{c.phone}</p>}
                   </div>
                 </button>
@@ -243,6 +257,7 @@ interface Conversation {
   clientId: string | null;
   clientName: string | null;
   clientEmail: string | null;
+  clientRole?: string | null;
   messages: WaMessage[];
   unread: number;
   needsReview: boolean;
@@ -258,13 +273,19 @@ function fmtTime(d: string) {
   return `${dt.getDate()} ${MONTH[dt.getMonth()]}`;
 }
 
-function Avatar({ name }: { name: string | null }) {
+function Avatar({ name, isClient }: { name: string | null; isClient: boolean }) {
   const initials = name
     ? name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/20 text-sm font-bold text-[#1a9e4a]">
+    <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+      isClient ? 'bg-emerald-100 text-emerald-700' : 'bg-[#f0e9d8] text-[#8a6d3b]'
+    }`}>
       {initials}
+      {/* Status dot */}
+      <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+        isClient ? 'bg-emerald-500' : 'bg-amber-400'
+      }`} />
     </div>
   );
 }
@@ -288,11 +309,8 @@ function MediaPreview({ url, type }: { url: string; type: string }) {
   );
 }
 
-// New conversation modal: free-form or template
-function NewConvModal({
-  onClose,
-  onSent,
-}: {
+// ── New conversation modal ─────────────────────────────────────────────────────
+function NewConvModal({ onClose, onSent }: {
   onClose: () => void;
   onSent: (phone: string, previewText: string) => void;
 }) {
@@ -313,17 +331,12 @@ function NewConvModal({
         body: JSON.stringify({ phone: phone.trim(), body: text.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? 'Error al enviar');
-        return;
-      }
+      if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
       onSent(phone.trim(), text.trim());
       onClose();
     } catch {
       setError('Error de conexión');
-    } finally {
-      setSending(false);
-    }
+    } finally { setSending(false); }
   };
 
   return (
@@ -335,18 +348,13 @@ function NewConvModal({
             <X className="h-4 w-4 text-[#29384a]" />
           </button>
         </div>
-
         {mode === 'choose' && (
           <div className="space-y-3 p-5">
             <p className="text-xs text-[#29384a]">
               Si el cliente no te ha escrito en las últimas 24h debes usar una plantilla aprobada por Meta.
-              Si ya hay conversación activa, puedes enviar texto libre.
             </p>
-            <button
-              type="button"
-              onClick={() => setMode('template')}
-              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] p-4 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9]"
-            >
+            <button type="button" onClick={() => setMode('template')}
+              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] p-4 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9]">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-[#1a9e4a]">
                 <FileText className="h-4 w-4" />
               </div>
@@ -355,11 +363,8 @@ function NewConvModal({
                 <p className="text-xs text-[#29384a]">Recomendado para iniciar conversación</p>
               </div>
             </button>
-            <button
-              type="button"
-              onClick={() => setMode('freeform')}
-              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] p-4 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9]"
-            >
+            <button type="button" onClick={() => setMode('freeform')}
+              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] p-4 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9]">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                 <Send className="h-4 w-4" />
               </div>
@@ -370,49 +375,29 @@ function NewConvModal({
             </button>
           </div>
         )}
-
         {mode === 'freeform' && (
           <div className="space-y-4 p-5">
             <button type="button" onClick={() => setMode('choose')} className="text-xs text-[#c88b25] hover:underline">← Volver</button>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[#07111d]">Número de teléfono (con prefijo)</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="34612345678"
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#25D366]"
-              />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="34612345678"
+                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#25D366]" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[#07111d]">Mensaje</label>
-              <textarea
-                rows={4}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Escribe el mensaje..."
-                className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#25D366]"
-              />
+              <textarea rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe el mensaje..."
+                className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#25D366]" />
             </div>
             {error && <p className="text-xs text-red-600">{error}</p>}
-            <button
-              type="button"
-              onClick={sendFreeform}
-              disabled={sending || !phone.trim() || !text.trim()}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
-            >
+            <button type="button" onClick={sendFreeform} disabled={sending || !phone.trim() || !text.trim()}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50">
               <Send className="h-4 w-4" />
               {sending ? 'Enviando…' : 'Enviar mensaje'}
             </button>
           </div>
         )}
-
         {mode === 'template' && (
-          <WaTemplateModal
-            embedded
-            onClose={onClose}
-            onSent={onSent}
-          />
+          <WaTemplateModal embedded onClose={onClose} onSent={onSent} />
         )}
       </div>
     </div>
@@ -421,13 +406,7 @@ function NewConvModal({
 
 const CASE_CATEGORIES = ['Fiscal', 'Extranjería', 'Empresa', 'Notaría', 'Tráfico', 'Otros'];
 
-// Case assignment dropdown
-function CaseAssign({
-  clientId,
-  currentCaseId,
-  phone,
-  onAssigned,
-}: {
+function CaseAssign({ clientId, currentCaseId, phone, onAssigned }: {
   clientId: string;
   currentCaseId: string | null;
   phone: string;
@@ -486,91 +465,62 @@ function CaseAssign({
       await assign(created.id);
     } catch {
       setSaveError('Error de conexión');
-    } finally {
-      setSaveLoading(false);
-    }
+    } finally { setSaveLoading(false); }
   };
 
   return (
     <div className="relative">
-      <button
-        type="button"
+      <button type="button"
         onClick={() => { setOpen((o) => !o); setCreating(false); setSaveError(null); }}
-        className="flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2.5 py-1 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+        className="flex items-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white transition hover:bg-white/20"
       >
         <FolderOpen className="h-3 w-3" />
-        {currentCaseId ? 'Expediente asignado' : 'Asignar expediente'}
+        <span className="hidden sm:inline">{currentCaseId ? 'Expediente' : 'Asignar'}</span>
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-80 rounded-xl border border-[#d8cbb5] bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-[#f0e9d8] px-3 py-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#29384a]">Expedientes del cliente</span>
-            <button
-              type="button"
+            <span className="text-xs font-bold uppercase tracking-wider text-[#29384a]">Expedientes</span>
+            <button type="button"
               onClick={() => { setCreating((c) => !c); setSaveError(null); setNewService(''); }}
               className="flex items-center gap-1 rounded-lg bg-[#07111d] px-2 py-1 text-[10px] font-bold text-white transition hover:bg-[#1a2e44]"
             >
-              <Plus className="h-3 w-3" />
-              Nuevo
+              <Plus className="h-3 w-3" />Nuevo
             </button>
           </div>
-
-          {/* Create mini-form */}
           {creating && (
             <div className="border-b border-[#f0e9d8] bg-[#faf8f2] px-3 py-3 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#c88b25]">Crear y asignar nuevo expediente</p>
-              <input
-                autoFocus
-                type="text"
-                value={newService}
-                onChange={(e) => setNewService(e.target.value)}
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#c88b25]">Crear y asignar</p>
+              <input autoFocus type="text" value={newService} onChange={(e) => setNewService(e.target.value)}
                 placeholder="Nombre del servicio…"
-                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366]"
-              />
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366]" />
+              <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)}
                 aria-label="Categoría del expediente"
-                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366] bg-white"
-              >
-                {CASE_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                className="w-full rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-xs outline-none focus:border-[#25D366] bg-white">
+                {CASE_CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
               </select>
               {saveError && <p className="text-[10px] text-red-600">{saveError}</p>}
-              <button
-                type="button"
-                onClick={createAndAssign}
-                disabled={saveLoading || !newService.trim()}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#25D366] py-1.5 text-xs font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
-              >
+              <button type="button" onClick={createAndAssign} disabled={saveLoading || !newService.trim()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#25D366] py-1.5 text-xs font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50">
                 {saveLoading ? <RefreshCw className="h-3 w-3 animate-spin" /> : <FolderOpen className="h-3 w-3" />}
                 {saveLoading ? 'Creando…' : 'Crear y asignar'}
               </button>
             </div>
           )}
-
           {loading && <p className="px-3 py-3 text-xs text-[#29384a]">Cargando…</p>}
           {!loading && cases.length === 0 && !creating && (
-            <p className="px-3 py-3 text-xs text-[#29384a]">Sin expedientes — pulsa &quot;Nuevo&quot; para crear uno</p>
+            <p className="px-3 py-3 text-xs text-[#29384a]">Sin expedientes — pulsa &quot;Nuevo&quot;</p>
           )}
           {currentCaseId && (
-            <button
-              type="button"
-              onClick={() => assign(null)}
-              className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50"
-            >
-              ✕ Desasignar expediente
+            <button type="button" onClick={() => assign(null)}
+              className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50">
+              ✕ Desasignar
             </button>
           )}
           {cases.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => assign(c.id)}
-              className={`w-full px-3 py-2.5 text-left transition hover:bg-[#faf8f2] ${c.id === currentCaseId ? 'bg-[#fdf7e9]' : ''}`}
-            >
+            <button key={c.id} type="button" onClick={() => assign(c.id)}
+              className={`w-full px-3 py-2.5 text-left transition hover:bg-[#faf8f2] ${c.id === currentCaseId ? 'bg-[#fdf7e9]' : ''}`}>
               <p className="text-xs font-semibold text-[#07111d]">{c.service}</p>
               <p className="text-[10px] text-[#29384a]">{c.state}</p>
             </button>
@@ -581,37 +531,30 @@ function CaseAssign({
   );
 }
 
-// ── Service catalog modal ─────────────────────────────────────
+// ── Service catalog modal ──────────────────────────────────────────────────────
 function CatalogModal({ phone, onClose, onSent }: {
   phone: string;
   onClose: () => void;
   onSent: (preview: string) => void;
 }) {
   const [mode, setMode] = useState<'list' | 'cards'>('list');
-  const [selected, setSelected] = useState<Set<string>>(
-    new Set(SERVICES_CATALOG.map((s) => s.id))
-  );
+  const [selected, setSelected] = useState<Set<string>>(new Set(SERVICES_CATALOG.map((s) => s.id)));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggle = (id: string) => setSelected((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
-  const totalRows = SERVICES_CATALOG
-    .filter((s) => selected.has(s.id))
-    .reduce((n, s) => n + s.services.length, 0);
+  const totalRows = SERVICES_CATALOG.filter((s) => selected.has(s.id)).reduce((n, s) => n + s.services.length, 0);
 
   const send = async () => {
     if (selected.size === 0) return;
     setSending(true);
     setError(null);
-    const endpoint = mode === 'cards'
-      ? '/api/admin/whatsapp/catalog-cards'
-      : '/api/admin/whatsapp/catalog';
+    const endpoint = mode === 'cards' ? '/api/admin/whatsapp/catalog-cards' : '/api/admin/whatsapp/catalog';
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -620,107 +563,65 @@ function CatalogModal({ phone, onClose, onSent }: {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
-      const names = SERVICES_CATALOG
-        .filter((s) => selected.has(s.id))
-        .map((s) => `${s.emoji} ${s.title}`)
-        .join(', ');
+      const names = SERVICES_CATALOG.filter((s) => selected.has(s.id)).map((s) => `${s.emoji} ${s.title}`).join(', ');
       onSent(mode === 'cards' ? `[Tarjetas] ${names}` : `[Catálogo] ${names}`);
       onClose();
     } catch {
       setError('Error de conexión');
-    } finally {
-      setSending(false);
-    }
+    } finally { setSending(false); }
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-sm rounded-t-3xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
           <div>
             <p className="font-semibold text-[#07111d]">Catálogo de servicios</p>
             <p className="text-xs text-[#29384a]">
-              {selected.size > 0
-                ? `${selected.size} sección${selected.size > 1 ? 'es' : ''} · ${Math.min(totalRows, 10)} servicios`
-                : 'Selecciona al menos una sección'}
+              {selected.size > 0 ? `${selected.size} sección${selected.size > 1 ? 'es' : ''} · ${Math.min(totalRows, 10)} servicios` : 'Selecciona al menos una sección'}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[#f0e9d8]">
             <X className="h-4 w-4 text-[#29384a]" />
           </button>
         </div>
-
-        {/* Mode toggle */}
         <div className="flex gap-1 px-4 pt-3">
           {(['list', 'cards'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-                mode === m
-                  ? 'bg-[#25D366] text-white'
-                  : 'bg-[#f0e9d8] text-[#29384a] hover:bg-[#e8deca]'
-              }`}
-            >
+            <button key={m} type="button" onClick={() => setMode(m)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${mode === m ? 'bg-[#25D366] text-white' : 'bg-[#f0e9d8] text-[#29384a] hover:bg-[#e8deca]'}`}>
               {m === 'list' ? '📋 Lista interactiva' : '🖼️ Tarjetas visuales'}
             </button>
           ))}
         </div>
         {mode === 'cards' && (
-          <p className="px-4 pt-1.5 text-[10px] text-[#29384a]">
-            Envía una tarjeta con imagen + botones por cada sección. Las imágenes deben estar en /public/catalog/.
-          </p>
+          <p className="px-4 pt-1.5 text-[10px] text-[#29384a]">Envía una tarjeta por sección con imagen + botones.</p>
         )}
-
-        {/* Sections */}
         <div className="max-h-64 overflow-y-auto px-4 py-3 space-y-2">
           {SERVICES_CATALOG.map((section: CatalogSection) => {
             const on = selected.has(section.id);
             return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => toggle(section.id)}
-                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${
-                  on
-                    ? 'border-[#25D366] bg-[#f0fff5]'
-                    : 'border-[#d8cbb5] bg-white hover:border-[#25D366]/50 hover:bg-[#f9fff9]'
-                }`}
-              >
-                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                  on ? 'border-[#25D366] bg-[#25D366]' : 'border-[#d8cbb5]'
-                }`}>
+              <button key={section.id} type="button" onClick={() => toggle(section.id)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${on ? 'border-[#25D366] bg-[#f0fff5]' : 'border-[#d8cbb5] bg-white hover:border-[#25D366]/50 hover:bg-[#f9fff9]'}`}>
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? 'border-[#25D366] bg-[#25D366]' : 'border-[#d8cbb5]'}`}>
                   {on && <Check className="h-3 w-3 text-white" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-[#07111d]">{section.emoji} {section.title}</p>
-                  <p className="mt-0.5 text-xs text-[#29384a]">
-                    {section.services.map((s) => s.title).join(' · ')}
-                  </p>
+                  <p className="mt-0.5 text-xs text-[#29384a]">{section.services.map((s) => s.title).join(' · ')}</p>
                 </div>
               </button>
             );
           })}
         </div>
-
-        {/* Footer */}
         <div className="border-t border-[#f0e9d8] px-4 py-3 space-y-2">
           {mode === 'list' && totalRows > 10 && (
-            <p className="text-[10px] text-amber-600">
-              WhatsApp permite máx. 10 servicios en lista. Se enviarán los primeros 10.
-            </p>
+            <p className="text-[10px] text-amber-600">WhatsApp permite máx. 10 servicios. Se enviarán los primeros 10.</p>
           )}
           {error && <p className="text-xs text-red-600">{error}</p>}
-          <button
-            type="button"
-            onClick={send}
-            disabled={sending || selected.size === 0}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
-          >
+          <button type="button" onClick={send} disabled={sending || selected.size === 0}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50">
             <BookMarked className="h-4 w-4" />
-            {sending ? 'Enviando…' : mode === 'cards' ? 'Enviar tarjetas visuales' : 'Enviar catálogo lista'}
+            {sending ? 'Enviando…' : mode === 'cards' ? 'Enviar tarjetas' : 'Enviar catálogo'}
           </button>
         </div>
       </div>
@@ -728,6 +629,7 @@ function CatalogModal({ phone, onClose, onSent }: {
   );
 }
 
+// ── Main component ─────────────────────────────────────────────────────────────
 export function WhatsAppInbox({ initialConversations }: { initialConversations: Conversation[] }) {
   const [conversations, setConversations] = useState(initialConversations);
   const [selected, setSelected] = useState<string | null>(null);
@@ -772,9 +674,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     } catch { /* silent */ }
   }, []);
 
-  // Fetch immediately on mount (SSR self-fetch can fail silently)
   useEffect(() => { void loadConversations(); }, [loadConversations]);
-
   useEffect(() => {
     const id = setInterval(loadConversations, 30_000);
     return () => clearInterval(id);
@@ -791,7 +691,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setError(null);
     setReply('');
     setPendingFile(null);
-    // Mark as read
     fetch('/api/admin/whatsapp', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -802,7 +701,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     ));
   };
 
-  // File upload
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -823,10 +721,8 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     }
   };
 
-  // AI compose
   const handleAiCompose = async () => {
     if (!activeConv) return;
-    const hasText = Boolean(reply.trim());
     setAiLoading(true);
     setError(null);
     try {
@@ -838,7 +734,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           phone: activeConv.phone,
           history: activeConv.messages.slice(-30).map((m) => ({ direction: m.direction, body: m.body })),
           intent: reply.trim() || undefined,
-          mode: hasText ? 'edit' : 'compose',
+          mode: reply.trim() ? 'edit' : 'compose',
         }),
       });
       const data = await res.json();
@@ -847,9 +743,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       textareaRef.current?.focus();
     } catch {
       setError('Error al generar borrador.');
-    } finally {
-      setAiLoading(false);
-    }
+    } finally { setAiLoading(false); }
   };
 
   const handleSend = async () => {
@@ -867,7 +761,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       } else {
         payload.body = text;
       }
-
       const res = await fetch('/api/admin/whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -879,7 +772,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         setError(`${data.error ?? 'Error al enviar'}${detail ? ` — ${detail}` : ''}`);
         return;
       }
-
       const newMsg: WaMessage = {
         id: crypto.randomUUID(),
         direction: 'outbound',
@@ -893,15 +785,11 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         case_id: null,
         case: null,
       };
-
       setConversations((prev) => prev.map((c) => {
         if (c.phone !== selected) return c;
         return {
-          ...c,
-          unread: 0,
-          needsReview: false,
+          ...c, unread: 0, needsReview: false, lastAt: newMsg.created_at,
           messages: [...c.messages.map((m) => ({ ...m, needs_review: false })), newMsg],
-          lastAt: newMsg.created_at,
         };
       }));
       setReply('');
@@ -909,9 +797,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       textareaRef.current?.focus();
     } catch {
       setError('Error de conexión.');
-    } finally {
-      setSending(false);
-    }
+    } finally { setSending(false); }
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
@@ -923,8 +809,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     if (!el) { setReply((r) => r + emoji); return; }
     const start = el.selectionStart ?? reply.length;
     const end   = el.selectionEnd   ?? reply.length;
-    const next  = reply.slice(0, start) + emoji + reply.slice(end);
-    setReply(next);
+    setReply(reply.slice(0, start) + emoji + reply.slice(end));
     setTimeout(() => { el.focus(); el.setSelectionRange(start + emoji.length, start + emoji.length); }, 0);
   };
 
@@ -933,13 +818,24 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setTimeout(() => setInboxToast(null), 3500);
   };
 
-  const handleClientLinked = (client: { id: string; full_name: string | null; email: string }, isNew = false) => {
+  const handleClientLinked = (client: { id: string; full_name: string | null; email: string | null; role?: string | null }, isNew = false) => {
     if (!selected) return;
     setConversations((prev) => prev.map((c) =>
-      c.phone !== selected ? c : { ...c, clientId: client.id, clientName: client.full_name, clientEmail: client.email }
+      c.phone !== selected ? c : {
+        ...c,
+        clientId: client.id,
+        clientName: client.full_name,
+        clientEmail: client.email,
+        clientRole: client.role,
+      }
     ));
     setShowLinkClient(false);
-    showInboxToast(isNew ? `✅ Contacto creado — email de activación enviado a ${client.email}` : '✅ Contacto vinculado correctamente', true);
+    showInboxToast(
+      isNew
+        ? `✅ Contacto creado — email de activación enviado a ${client.email}`
+        : '✅ Contacto vinculado correctamente',
+      true
+    );
   };
 
   const handleNewConvSent = useCallback((phone: string, previewText: string) => {
@@ -947,34 +843,18 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setConversations((prev) => {
       const exists = prev.find((c) => c.phone === normalized);
       const newMsg: WaMessage = {
-        id: crypto.randomUUID(),
-        direction: 'outbound',
-        body: previewText,
-        created_at: new Date().toISOString(),
-        needs_review: false,
-        ai_responded: false,
-        read_at: null,
-        media_url: null,
-        media_type: null,
-        case_id: null,
-        case: null,
+        id: crypto.randomUUID(), direction: 'outbound', body: previewText,
+        created_at: new Date().toISOString(), needs_review: false, ai_responded: false,
+        read_at: null, media_url: null, media_type: null, case_id: null, case: null,
       };
       if (exists) {
         return prev.map((c) => c.phone !== normalized ? c : {
-          ...c,
-          messages: [...c.messages, newMsg],
-          lastAt: newMsg.created_at,
+          ...c, messages: [...c.messages, newMsg], lastAt: newMsg.created_at,
         });
       }
       return [{
-        phone: normalized,
-        clientId: null,
-        clientName: null,
-        clientEmail: null,
-        messages: [newMsg],
-        unread: 0,
-        needsReview: false,
-        lastAt: newMsg.created_at,
+        phone: normalized, clientId: null, clientName: null, clientEmail: null, clientRole: null,
+        messages: [newMsg], unread: 0, needsReview: false, lastAt: newMsg.created_at,
       }, ...prev];
     });
     setSelected(normalized);
@@ -986,8 +866,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     if (!selected) return;
     setConversations((prev) => prev.map((c) =>
       c.phone !== selected ? c : {
-        ...c,
-        messages: c.messages.map((m) => ({ ...m, case_id: caseId, case: null })),
+        ...c, messages: c.messages.map((m) => ({ ...m, case_id: caseId, case: null })),
       }
     ));
   };
@@ -996,139 +875,157 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const totalReview  = conversations.filter((c) => c.needsReview).length;
   const currentCaseId = activeConv?.messages.findLast((m) => m.case_id)?.case_id ?? null;
 
-  // ── Contact list ──────────────────────────────────────────────
+  // ── Contact list ─────────────────────────────────────────────────────────────
   const ContactList = (
-    <aside className={`flex flex-col bg-white ${selected ? 'hidden lg:flex' : 'flex'} w-full lg:w-72 lg:shrink-0 lg:border-r lg:border-[#d8cbb5]`}>
-      <div className="flex items-center justify-between border-b border-[#d8cbb5] px-4 py-3">
+    <aside className={`flex flex-col bg-white ${selected ? 'hidden lg:flex' : 'flex'} w-full lg:w-[280px] lg:shrink-0 lg:border-r lg:border-[#d8cbb5]`}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[#d8cbb5] bg-[#075e54] px-4 py-3">
         <div>
-          <h1 className="font-serif text-base font-bold text-[#07111d]">WhatsApp</h1>
-          <p className="mt-0.5 text-xs text-[#29384a]">
-            {totalUnread > 0 && <span className="font-semibold text-[#c88b25]">{totalUnread} sin leer · </span>}
-            {totalReview > 0 && <span className="font-semibold text-red-600">{totalReview} revisión · </span>}
-            {conversations.length} conversaciones
+          <h1 className="font-serif text-base font-bold text-white">WhatsApp</h1>
+          <p className="mt-0.5 text-[11px] text-white/70">
+            {totalUnread > 0 && <span className="font-semibold text-[#d7e86d]">{totalUnread} sin leer · </span>}
+            {totalReview > 0 && <span className="font-semibold text-red-300">{totalReview} rev. · </span>}
+            {conversations.length} conv.
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setShowNewModal(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#25D366] text-white transition hover:bg-[#1da851]"
-            title="Nueva conversación"
-          >
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={() => setShowNewModal(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25" title="Nueva conversación">
             <Plus className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
-            title="Actualizar"
-          >
+          <button type="button" onClick={handleRefresh} disabled={refreshing}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 disabled:opacity-40" title="Actualizar">
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      <ul className="flex-1 divide-y divide-[#f0e9d8] overflow-y-auto">
+      {/* Filter legend */}
+      <div className="flex items-center gap-3 border-b border-[#f0e9d8] bg-[#faf8f2] px-4 py-2">
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />Cliente portal
+        </span>
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-700">
+          <span className="h-2 w-2 rounded-full bg-amber-400" />Lead / contacto
+        </span>
+      </div>
+
+      {/* List */}
+      <ul className="flex-1 divide-y divide-[#f5f0e8] overflow-y-auto">
         {conversations.length === 0 && (
-          <li className="px-4 py-12 text-center text-sm text-[#29384a]">
-            Sin conversaciones aún.<br />
-            <span className="text-xs text-[#29384a]/60">Los mensajes aparecerán aquí.</span>
+          <li className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">
+            <Phone className="h-8 w-8 text-[#d8cbb5]" />
+            <p className="text-sm text-[#29384a]">Sin conversaciones aún</p>
+            <p className="text-xs text-[#29384a]/50">Los mensajes de WhatsApp aparecerán aquí.</p>
           </li>
         )}
-        {conversations.map((conv) => (
-          <li key={conv.phone}>
-            <button
-              type="button"
-              onClick={() => handleSelectConversation(conv.phone)}
-              className={`flex w-full items-start gap-3 px-4 py-3.5 text-left transition active:bg-[#f0e9d8] ${
-                selected === conv.phone ? 'bg-[#faf8f2]' : 'hover:bg-[#faf8f2]'
-              }`}
-            >
-              <Avatar name={conv.clientName} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-1">
-                  <p className="truncate text-sm font-semibold text-[#07111d]">
-                    {conv.clientName ?? conv.phone}
-                  </p>
-                  <span className="shrink-0 text-[10px] text-[#29384a]/60">{fmtTime(conv.lastAt)}</span>
-                </div>
-                {conv.clientName && <p className="text-xs text-[#29384a]/60">{conv.phone}</p>}
-                <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="truncate text-xs text-[#29384a]">{conv.messages.at(-1)?.body ?? ''}</p>
-                  <div className="flex shrink-0 gap-1">
-                    {conv.needsReview && (
-                      <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700">REVISAR</span>
-                    )}
-                    {conv.unread > 0 && (
-                      <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#25D366] px-1 text-[9px] font-bold text-white">
-                        {conv.unread}
-                      </span>
+        {conversations.map((conv) => {
+          const isClient = Boolean(conv.clientId);
+          const lastMsg  = conv.messages.at(-1);
+          const preview  = lastMsg?.body?.replace(/^\[Kia[^\]]*\]\s*/,'').replace(/^\[Catálogo\]\s*/,'').slice(0, 60) ?? '';
+          return (
+            <li key={conv.phone}>
+              <button type="button" onClick={() => handleSelectConversation(conv.phone)}
+                className={`flex w-full items-start gap-3 px-3 py-3 text-left transition active:bg-[#f0e9d8] ${
+                  selected === conv.phone ? 'bg-[#e8f5e9]' : 'hover:bg-[#faf8f2]'
+                }`}
+              >
+                <Avatar name={conv.clientName} isClient={isClient} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="truncate text-[13px] font-semibold text-[#07111d]">
+                      {conv.clientName ?? conv.phone}
+                    </p>
+                    <span className="shrink-0 text-[10px] text-[#29384a]/50">{fmtTime(conv.lastAt)}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <ContactBadge isClient={isClient} />
+                    {conv.clientName && (
+                      <span className="truncate text-[10px] text-[#29384a]/50">{conv.phone}</span>
                     )}
                   </div>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="truncate text-xs text-[#29384a]/70">
+                      {lastMsg?.direction === 'outbound' && <span className="text-[#29384a]/40">↩ </span>}
+                      {preview || <span className="italic text-[#29384a]/40">Archivo adjunto</span>}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {conv.needsReview && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      {conv.unread > 0 && (
+                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#25D366] px-1 text-[9px] font-bold text-white">
+                          {conv.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </button>
-          </li>
-        ))}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </aside>
   );
 
-  // ── Thread panel ──────────────────────────────────────────────
+  // ── Thread panel ─────────────────────────────────────────────────────────────
+  const isActiveClient = Boolean(activeConv?.clientId);
+
   const ThreadPanel = (
-    <div className={`flex flex-col bg-[#ece5dd] ${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 min-h-0`}>
+    <div className={`wa-chat-bg flex flex-col ${selected ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 min-h-0`}>
       {!activeConv ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[#29384a]/60">
-          <Phone className="h-10 w-10 text-[#d8cbb5]" />
-          <p>Selecciona una conversación</p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-sm text-[#29384a]/60">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/60">
+            <Phone className="h-10 w-10 text-[#d8cbb5]" />
+          </div>
+          <div className="text-center">
+            <p className="font-semibold">Selecciona una conversación</p>
+            <p className="mt-1 text-xs">Los mensajes aparecerán aquí</p>
+          </div>
         </div>
       ) : (
         <>
           {/* Thread header */}
-          <div className="flex items-center gap-2 border-b border-black/10 bg-[#075e54] px-3 py-2.5 sm:px-4">
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10"
-              aria-label="Volver"
-            >
+          <div className="flex items-center gap-2.5 border-b border-black/10 bg-[#075e54] px-3 py-2 sm:px-4">
+            <button type="button" onClick={() => setSelected(null)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 lg:hidden"
+              aria-label="Volver">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <Avatar name={activeConv.clientName} />
+            <Avatar name={activeConv.clientName} isClient={isActiveClient} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">
-                {activeConv.clientName ?? activeConv.phone}
-              </p>
-              <p className="truncate text-xs text-white/70">
-                {activeConv.clientName ? activeConv.phone : null}
+              <div className="flex items-center gap-2">
+                <p className="truncate text-[15px] font-semibold text-white">
+                  {activeConv.clientName ?? activeConv.phone}
+                </p>
+                <span className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold sm:inline ${
+                  isActiveClient ? 'bg-emerald-400/20 text-emerald-200' : 'bg-amber-400/20 text-amber-200'
+                }`}>
+                  {isActiveClient ? 'Cliente portal' : 'Lead WhatsApp'}
+                </span>
+              </div>
+              <p className="truncate text-[11px] text-white/60">
+                {activeConv.clientName ? `${activeConv.phone}` : 'Sin cuenta registrada'}
+                {activeConv.clientEmail && ` · ${activeConv.clientEmail}`}
                 {activeConv.clientId && (
-                  <> · <Link href={`/admin/clientes/${activeConv.clientId}`} className="underline">ficha</Link></>
+                  <> · <Link href={`/admin/clientes/${activeConv.clientId}`} className="underline decoration-white/40 hover:text-white">ficha ↗</Link></>
                 )}
               </p>
             </div>
-            {/* Actions — collapsed on very small screens */}
+            {/* Actions */}
             <div className="flex shrink-0 items-center gap-1">
               {activeConv.needsReview && (
-                <span className="hidden items-center gap-1 rounded-full bg-red-500/20 px-2 py-1 text-[10px] font-bold text-red-200 sm:flex">
-                  <AlertTriangle className="h-3 w-3" /> REVISAR
-                </span>
+                <span title="Necesita revisión"><AlertTriangle className="h-4 w-4 text-red-300" /></span>
               )}
-              {activeConv.needsReview && (
-                <span title="Necesita revisión"><AlertTriangle className="h-4 w-4 text-red-300 sm:hidden" /></span>
-              )}
-              {!activeConv.clientId && (
-                <button
-                  type="button"
-                  onClick={() => setShowLinkClient(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white/80 transition hover:bg-white/20 sm:h-auto sm:w-auto sm:gap-1 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-[10px] sm:font-bold"
-                  title="Vincular cliente"
-                >
+              {!activeConv.clientId ? (
+                <button type="button" onClick={() => setShowLinkClient(true)}
+                  className="flex items-center gap-1 rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white transition hover:bg-white/20"
+                  title="Vincular cliente">
                   <UserPlus className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Vincular</span>
                 </button>
-              )}
-              {activeConv.clientId && (
+              ) : (
                 <CaseAssign
                   clientId={activeConv.clientId}
                   currentCaseId={currentCaseId}
@@ -1140,32 +1037,42 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           </div>
 
           {/* Messages area */}
-          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          <div className="flex-1 overflow-y-auto px-2 py-3 sm:px-4 space-y-0.5">
             {activeConv.messages.map((msg, i) => {
               const isOut = msg.direction === 'outbound';
-              const prev = activeConv.messages[i - 1];
-              const showTime = !prev || new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000;
+              const prev  = activeConv.messages[i - 1];
+              const showDateDivider = !prev ||
+                new Date(msg.created_at).toDateString() !== new Date(prev.created_at).toDateString();
+              const showTime = !prev ||
+                new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000;
 
               return (
                 <div key={msg.id}>
-                  {showTime && (
-                    <div className="my-2 text-center">
-                      <span className="rounded-full bg-black/10 px-3 py-1 text-[10px] text-[#29384a]">
-                        {fmtTime(msg.created_at)}
+                  {showDateDivider && (
+                    <div className="my-3 flex items-center gap-2">
+                      <div className="h-px flex-1 bg-black/10" />
+                      <span className="rounded-full bg-black/15 px-3 py-1 text-[10px] font-semibold text-[#29384a]">
+                        {new Date(msg.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                       </span>
+                      <div className="h-px flex-1 bg-black/10" />
+                    </div>
+                  )}
+                  {!showDateDivider && showTime && (
+                    <div className="my-2 text-center">
+                      <span className="text-[10px] text-[#29384a]/50">{fmtTime(msg.created_at)}</span>
                     </div>
                   )}
                   {msg.case && (
                     <div className={`mb-1 flex ${isOut ? 'justify-end' : 'justify-start'}`}>
-                      <span className="flex items-center gap-1 rounded-full bg-[#c88b25]/15 px-2 py-0.5 text-[10px] font-semibold text-[#c88b25]">
+                      <span className="flex items-center gap-1 rounded-full bg-[#c88b25]/20 px-2 py-0.5 text-[10px] font-semibold text-[#c88b25]">
                         <FolderOpen className="h-2.5 w-2.5" /> {msg.case.service}
                       </span>
                     </div>
                   )}
-                  <div className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`relative max-w-[88%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+                  <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} mb-[2px]`}>
+                    <div className={`relative max-w-[88%] sm:max-w-[72%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed shadow-sm ${
                       isOut
-                        ? 'rounded-tr-sm bg-[#dcf8c6] text-[#07111d]'
+                        ? 'rounded-tr-sm bg-[#d9fdd3] text-[#07111d]'
                         : msg.needs_review
                           ? 'rounded-tl-sm border border-red-200 bg-red-50 text-[#07111d]'
                           : 'rounded-tl-sm bg-white text-[#07111d]'
@@ -1173,12 +1080,14 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                       {msg.media_url && msg.media_type && (
                         <MediaPreview url={msg.media_url} type={msg.media_type} />
                       )}
-                      {msg.body && <p className="mt-1 whitespace-pre-wrap break-words">{msg.body}</p>}
-                      <div className={`mt-1 flex items-center gap-1 text-[10px] text-[#29384a]/60 ${isOut ? 'justify-end' : 'justify-start'}`}>
-                        {isOut && msg.ai_responded && <Bot className="h-3 w-3" />}
+                      {msg.body && (
+                        <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                      )}
+                      <div className={`mt-0.5 flex items-center gap-1 text-[10px] text-[#29384a]/50 ${isOut ? 'justify-end' : 'justify-start'}`}>
+                        {isOut && msg.ai_responded && <Bot className="h-3 w-3 text-[#c88b25]" />}
                         {isOut && !msg.ai_responded && <User className="h-3 w-3" />}
                         <span>{fmtTime(msg.created_at)}</span>
-                        {isOut && <CheckCheck className="h-3 w-3 text-[#25D366]" />}
+                        {isOut && <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />}
                       </div>
                     </div>
                   </div>
@@ -1204,9 +1113,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
           {/* Error bar */}
           {error && (
-            <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
-              {error}
-            </div>
+            <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</div>
           )}
 
           {/* Reply box */}
@@ -1214,7 +1121,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             {showEmoji && (
               <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
             )}
-            {/* AI mode hint — only shown when text is typed */}
             {reply.trim() && !aiLoading && (
               <div className="mb-1.5 flex items-center gap-1.5 px-1">
                 <Sparkles className="h-3 w-3 text-[#c88b25]" />
@@ -1229,94 +1135,54 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                 <span className="text-[11px] text-[#c88b25]">IA mejorando y traduciendo…</span>
               </div>
             )}
-            <div className="flex items-end gap-1 sm:gap-2">
-              {/* Attach */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                aria-label="Seleccionar archivo adjunto"
+            <div className="flex items-end gap-1">
+              {/* File input */}
+              <input ref={fileInputRef} type="file" aria-label="Seleccionar archivo adjunto"
                 accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/ogg,audio/mpeg"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40"
-                title="Adjuntar archivo"
-              >
-                {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-              </button>
+                onChange={handleFileChange} className="hidden" />
 
-              {/* Emoji — oculto en móvil muy pequeño para dar espacio */}
-              <button
-                type="button"
-                onClick={() => setShowEmoji((v) => !v)}
-                className={`hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#29384a]'}`}
-                title="Emojis"
-              >
-                <Smile className="h-4 w-4" />
-              </button>
+              {/* Toolbar — wrapped on very small screens */}
+              <div className="flex shrink-0 items-center gap-0.5">
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40" title="Adjuntar">
+                  {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                </button>
+                <button type="button" onClick={() => setShowEmoji((v) => !v)}
+                  className={`hidden sm:flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#54656f]'}`}
+                  title="Emojis">
+                  <Smile className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => setShowCatalog(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50" title="Catálogo de servicios" aria-label="Catálogo">
+                  <BookMarked className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => setShowWorkflow(true)}
+                  className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50" title="Plantillas" aria-label="Plantillas">
+                  <ClipboardList className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={handleAiCompose} disabled={aiLoading}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition disabled:opacity-40 ${
+                    reply.trim() ? 'bg-[#d7a33a]/15 text-[#c88b25] hover:bg-[#d7a33a]/25' : 'text-[#54656f] hover:bg-[#d8cbb5]/50'
+                  }`}
+                  title={reply.trim() ? 'Mejorar con IA' : 'Generar respuesta IA'} aria-label="IA">
+                  {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                </button>
+              </div>
 
-              {/* Catalog */}
-              <button
-                type="button"
-                onClick={() => setShowCatalog(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
-                title="Enviar catálogo de servicios"
-                aria-label="Enviar catálogo de servicios"
-              >
-                <BookMarked className="h-4 w-4" />
-              </button>
-
-              {/* Service workflow templates */}
-              <button
-                type="button"
-                onClick={() => setShowWorkflow(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
-                title="Plantillas de servicio"
-                aria-label="Plantillas de servicio"
-              >
-                <ClipboardList className="h-4 w-4" />
-              </button>
-
-              {/* AI compose / edit+translate */}
-              <button
-                type="button"
-                onClick={handleAiCompose}
-                disabled={aiLoading}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 ${
-                  reply.trim()
-                    ? 'bg-[#d7a33a]/15 text-[#c88b25] hover:bg-[#d7a33a]/25'
-                    : 'text-[#29384a] hover:bg-[#d8cbb5]/50'
-                }`}
-                title={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
-                aria-label={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
-              >
-                {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              </button>
-
-              <textarea
-                ref={textareaRef}
-                value={reply}
+              <textarea ref={textareaRef} value={reply}
                 onChange={(e) => {
                   setReply(e.target.value);
                   e.target.style.height = 'auto';
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
                 }}
                 onKeyDown={handleKey}
-                placeholder={pendingFile ? 'Añadir texto al adjunto (opcional)' : 'Escribe un mensaje'}
+                placeholder={pendingFile ? 'Añadir texto (opcional)' : 'Escribe un mensaje'}
                 rows={1}
-                className="min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-[16px] leading-snug text-[#07111d] outline-none placeholder:text-[#29384a]/50 sm:text-sm sm:py-2.5"
+                className="min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-[16px] leading-snug text-[#07111d] outline-none placeholder:text-[#29384a]/40 sm:text-sm sm:py-2.5"
               />
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={sending || (!reply.trim() && !pendingFile)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:opacity-50 active:scale-95"
-                aria-label="Enviar"
-              >
+              <button type="button" onClick={handleSend} disabled={sending || (!reply.trim() && !pendingFile)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:bg-[#54656f]/50 active:scale-95"
+                aria-label="Enviar">
                 <Send className="h-5 w-5" />
               </button>
             </div>
@@ -1328,10 +1194,13 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-109px)] overflow-hidden lg:h-screen">
+      {/* Full viewport minus admin chrome: 53px top + ~56px bottom nav on mobile */}
+      <div className="flex h-[calc(100dvh-53px-56px)] overflow-hidden lg:h-screen lg:max-h-screen">
         {ContactList}
         {ThreadPanel}
       </div>
+
+      {/* Modals */}
       {showNewModal && (
         <NewConvModal onClose={() => setShowNewModal(false)} onSent={handleNewConvSent} />
       )}
@@ -1345,10 +1214,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       {showWorkflow && activeConv && (
         <WaServiceWorkflow
           clientName={activeConv.clientName ?? ''}
-          onInsert={(text) => {
-            setReply(text);
-            setTimeout(() => textareaRef.current?.focus(), 50);
-          }}
+          onInsert={(text) => { setReply(text); setTimeout(() => textareaRef.current?.focus(), 50); }}
           onClose={() => setShowWorkflow(false)}
         />
       )}
@@ -1358,17 +1224,9 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           onClose={() => setShowCatalog(false)}
           onSent={(preview) => {
             const newMsg: WaMessage = {
-              id: crypto.randomUUID(),
-              direction: 'outbound',
-              body: preview,
-              created_at: new Date().toISOString(),
-              needs_review: false,
-              ai_responded: false,
-              read_at: null,
-              media_url: null,
-              media_type: null,
-              case_id: null,
-              case: null,
+              id: crypto.randomUUID(), direction: 'outbound', body: preview,
+              created_at: new Date().toISOString(), needs_review: false, ai_responded: false,
+              read_at: null, media_url: null, media_type: null, case_id: null, case: null,
             };
             setConversations((prev) => prev.map((c) =>
               c.phone !== activeConv.phone ? c : {
@@ -1379,9 +1237,11 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         />
       )}
 
-      {/* Inbox toast */}
+      {/* Toast */}
       {inboxToast && (
-        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-xl ${inboxToast.ok ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+        <div className={`fixed bottom-20 right-4 z-[100] flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-xl lg:bottom-6 lg:right-6 ${
+          inboxToast.ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+        }`}>
           {inboxToast.ok ? <Check className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
           {inboxToast.msg}
         </div>

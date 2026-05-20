@@ -59,11 +59,12 @@ export async function POST(request: NextRequest) {
       const userId = linkData.user.id;
       const inviteUrl = linkData.properties?.action_link ?? `${appUrl}/dashboard`;
 
-      // Update profile with name, phone, role
+      // Update profile with name, phone, role, email (searchable copy)
       await admin.from('profiles').update({
         full_name,
         phone: normalized,
         role: 'client',
+        email,
       }).eq('id', userId);
 
       // Link conversation
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
       const { data: client } = await admin
         .from('profiles')
-        .select('id,full_name,email,phone')
+        .select('id,full_name,email,phone,role')
         .eq('id', userId)
         .single();
 
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Return client info
     const { data: client } = await admin
       .from('profiles')
-      .select('id,full_name,email,phone')
+      .select('id,full_name,email,phone,role')
       .eq('id', clientId)
       .single();
 
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     const { data } = await admin
       .from('profiles')
-      .select('id,full_name,email,phone')
+      .select('id,full_name,email,phone,role')
       .neq('role', 'admin')
       .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(8);

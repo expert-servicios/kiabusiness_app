@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
   }
   if (!msgs) return NextResponse.json({ conversations: [] });
 
-  // Profiles
+  // Profiles (email column now exists after migration 20260520092000)
   const clientIds = [...new Set(msgs.filter((m) => m.client_id).map((m) => m.client_id as string))];
   const { data: profiles } = clientIds.length
-    ? await admin.from('profiles').select('id,full_name,email,phone,whatsapp_number').in('id', clientIds)
+    ? await admin.from('profiles').select('id,full_name,email,phone,role,whatsapp_number').in('id', clientIds)
     : { data: [] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
     clientId: string | null;
     clientName: string | null;
     clientEmail: string | null;
+    clientRole: string | null;
     messages: (typeof msgs)[number][];
     unread: number;
     needsReview: boolean;
@@ -65,12 +66,12 @@ export async function GET(request: NextRequest) {
   for (const msg of msgs) {
     const p = msg.phone_number;
     if (!grouped.has(p)) {
-      const profile = msg.client_id ? profileMap.get(msg.client_id) : null;
       grouped.set(p, {
         phone: p,
-        clientId: msg.client_id ?? null,
-        clientName: profile?.full_name ?? null,
-        clientEmail: profile?.email ?? null,
+        clientId: null,
+        clientName: null,
+        clientEmail: null,
+        clientRole: null,
         messages: [],
         unread: 0,
         needsReview: false,
@@ -78,6 +79,16 @@ export async function GET(request: NextRequest) {
       });
     }
     const conv = grouped.get(p)!;
+
+    // Update client info from any message that has a client_id (handles retroactive linking)
+    if (msg.client_id && !conv.clientId) {
+      const profile = profileMap.get(msg.client_id);
+      conv.clientId    = msg.client_id;
+      conv.clientName  = profile?.full_name ?? null;
+      conv.clientEmail = profile?.email     ?? null;
+      conv.clientRole  = profile?.role      ?? null;
+    }
+
     // Attach case info inline
     const enriched = {
       ...msg,
