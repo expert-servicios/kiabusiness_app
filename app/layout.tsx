@@ -44,22 +44,14 @@ export const metadata: Metadata = {
     title: 'EXPERT | Asesoría fiscal, legal y administrativa',
     description:
       'Asesoría fiscal en España para empresas, autónomos y personas físicas. Impuestos, extranjería, trámites y gestión administrativa.',
-    url: 'https://expertconsulting.es'
+    url: 'https://expertconsulting.es',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
   },
   twitter: {
     card: 'summary_large_image',
     title: 'EXPERT | Asesoría fiscal, legal y administrativa',
-    description: 'Asesoría fiscal en España para empresas, autónomos y personas físicas.'
-  },
-  icons: {
-    icon: [
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '96x96' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '192x192' },
-      { url: '/logos/EXPERT_logo/expert-favicon.png', type: 'image/png', sizes: '512x512' },
-    ],
-    shortcut: '/logos/EXPERT_logo/expert-favicon.png',
-    apple: { url: '/logos/EXPERT_logo/expert-favicon.png', sizes: '180x180', type: 'image/png' },
+    description: 'Asesoría fiscal en España para empresas, autónomos y personas físicas.',
+    images: ['/og-image.png']
   }
 };
 
