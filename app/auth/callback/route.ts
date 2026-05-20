@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login?error=auth_failed', origin));
   }
 
-  // Build redirect URL before creating response so cookies are set on it
-  const redirectUrl = new URL(next.startsWith('/') ? next : '/dashboard', origin);
-  const response = NextResponse.redirect(redirectUrl);
+  // Collect cookies written during session exchange so we can apply them
+  // to the final redirect response (redirect target is determined after role check)
+  const collectedCookies: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,9 +24,7 @@ export async function GET(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+          cookiesToSet.forEach((c) => collectedCookies.push(c as typeof collectedCookies[number]));
         }
       }
     }
@@ -39,18 +37,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login?error=auth_failed', origin));
   }
 
-  // Send welcome email on first login (non-blocking)
+  let redirectPath = next;
+
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) {
       const admin = getSupabaseAdmin();
       const { data: profile } = await admin
         .from('profiles')
-        .select('full_name, welcome_email_sent')
+        .select('full_name, welcome_email_sent, role')
         .eq('id', user.id)
         .single();
 
-      // Extract first name from Google OAuth metadata if profile has none
+      // Redirect admins to /admin unless the caller explicitly requested a different page
+      if (profile?.role === 'admin' && next === '/dashboard') {
+        redirectPath = '/admin';
+      }
+
+      // Backfill display name from OAuth metadata on first login
       const metaGivenName = user.user_metadata?.given_name as string | undefined;
       const metaFullName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
       const derivedFirstName = metaGivenName ?? metaFullName?.split(' ')[0];
@@ -81,6 +85,15 @@ export async function GET(request: NextRequest) {
   } catch (emailError) {
     console.error('[auth/callback] welcome email error:', emailError);
   }
+
+  const redirectUrl = new URL(redirectPath.startsWith('/') ? redirectPath : '/dashboard', origin);
+  const response = NextResponse.redirect(redirectUrl);
+
+  // Apply session cookies to the final redirect response
+  collectedCookies.forEach(({ name, value, options }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    response.cookies.set(name, value, options as any);
+  });
 
   return response;
 }

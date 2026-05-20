@@ -50,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const companies = companiesData?.companies ?? [];
 
   return (
-    <>
+    <div className="flex min-h-screen">
       <DashboardNav
         companies={companies}
         activeCompanyId={profileRow?.active_company_id ?? null}
@@ -58,10 +58,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         userEmail={user.email ?? ''}
         isAdmin={profileRow?.role === 'admin'}
       />
-      <div className="pb-20 lg:pb-0">
+      {/* pt-[53px] offsets the fixed mobile top bar; lg:pt-0 removes it on desktop */}
+      <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
         {children}
       </div>
       <MobileNav />
-    </>
+    </div>
   );
 }
