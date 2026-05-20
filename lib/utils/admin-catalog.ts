@@ -73,12 +73,12 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     mode: 'payment'
   },
 
-  // ── Declaraciones e Impuestos ────────────────────────────────────────────────
+  // ── Fiscalidad ───────────────────────────────────────────────────────────────
   {
     id: 'irpf',
     label: 'Declaración de la Renta (IRPF)',
     category: 'servicio',
-    subcategory: 'Declaraciones e Impuestos',
+    subcategory: 'Fiscalidad',
     description: 'Preparación y presentación del IRPF con revisión fiscal completa',
     suggestedPrice: 90,
     mode: 'payment'
@@ -87,7 +87,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'modelo-303',
     label: 'IVA trimestral (Modelo 303)',
     category: 'servicio',
-    subcategory: 'Declaraciones e Impuestos',
+    subcategory: 'Fiscalidad',
     description: 'Liquidación y presentación del IVA trimestral ante la AEAT',
     suggestedPrice: 60,
     mode: 'payment'
@@ -96,7 +96,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'impuesto-sociedades',
     label: 'Impuesto sobre Sociedades (Mod. 200)',
     category: 'servicio',
-    subcategory: 'Declaraciones e Impuestos',
+    subcategory: 'Fiscalidad',
     description: 'Preparación y presentación del Impuesto sobre Sociedades',
     suggestedPrice: 250,
     mode: 'payment'
@@ -105,7 +105,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'modelo-151',
     label: 'Ley Beckham (Modelo 151)',
     category: 'servicio',
-    subcategory: 'Declaraciones e Impuestos',
+    subcategory: 'Fiscalidad',
     description: 'Declaración anual bajo el Régimen de Impatriados (Ley Beckham)',
     suggestedPrice: 180,
     mode: 'payment'

@@ -46,7 +46,7 @@ const SERVICES_OPTIONS = [
   },
   {
     id: 'formacion',
-    label: 'Formación (Holded, fiscal o laboral)',
+    label: 'Formación en Holded',
     desc: 'Sesiones de formación para el equipo: uso de Holded, obligaciones fiscales o gestión laboral.'
   },
   {

@@ -204,7 +204,7 @@ export default async function BlogArticlePage({
               <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Servicios relacionados</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li><Link href="/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana" className="text-[#D4A017] hover:text-[#F2C14E]">Nacionalidad menor nacido en España</Link></li>
-                <li><Link href="/servicios/declaraciones-impuestos" className="text-[#D4A017] hover:text-[#F2C14E]">Declaraciones e Impuestos</Link></li>
+                <li><Link href="/servicios/declaraciones-impuestos" className="text-[#D4A017] hover:text-[#F2C14E]">Fiscalidad</Link></li>
                 <li><Link href="/servicios/extranjeria-nacionalidad" className="text-[#D4A017] hover:text-[#F2C14E]">Extranjería y Nacionalidad</Link></li>
                 <li><Link href="/servicios/empresas-autonomos" className="text-[#D4A017] hover:text-[#F2C14E]">Empresas y Autónomos</Link></li>
               </ul>

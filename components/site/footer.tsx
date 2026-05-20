@@ -7,7 +7,6 @@ const quickLinks = [
   { label: 'Planes', href: '/planes' },
   { label: 'Servicios', href: '/servicios' },
   { label: 'Holded', href: '/holded' },
-  { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
@@ -15,14 +14,13 @@ const quickLinks = [
 ] as const;
 
 const serviceLinks = [
-  { label: 'Nacionalidad menor nacido en España', href: '/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana' },
-  { label: 'Declaraciones e Impuestos', href: '/servicios/declaraciones-impuestos' },
+  { label: 'Fiscalidad', href: '/servicios/declaraciones-impuestos' },
   { label: 'Extranjería y Nacionalidad', href: '/servicios/extranjeria-nacionalidad' },
   { label: 'Empresas y Autónomos', href: '/servicios/empresas-autonomos' },
-  { label: 'Tráfico y Capitanía', href: '/servicios/trafico-capitania-maritima' },
-  { label: 'Notaría y Propiedades', href: '/servicios/notaria-propiedades' },
-  { label: 'Gestiones Especializadas', href: '/servicios/gestiones-especializadas' },
-  { label: 'Formación', href: '/servicios/formacion' }
+  { label: 'Holded', href: '/holded' },
+  { label: 'Certificado digital', href: '/servicios/certificado-digital' },
+  { label: 'Tráfico y Capitanía Marítima', href: '/servicios/trafico-capitania-maritima' },
+  { label: 'Notaría y Propiedades', href: '/servicios/notaria-propiedades' }
 ] as const;
 
 const resourceLinks = [

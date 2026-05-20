@@ -805,7 +805,7 @@ Un error frecuente es pensar que si no se cobra alquiler no hay que declarar. Si
     updatedAt: '18 may 2026',
     readTime: '8 min',
     relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
-    relatedServiceCategories: ['gestiones-especializadas'],
+    relatedServiceCategories: ['certificado-digital'],
     seoTitle: 'Certificado digital Camerfirma: guía completa | EXPERT Asesoría',
     seoDescription: 'Cómo obtener el certificado digital Camerfirma para persona física o entidad. Diferencias, usos, proceso y documentación necesaria.',
     body: `

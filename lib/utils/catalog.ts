@@ -1,50 +1,51 @@
 export const categories = [
   {
     slug: 'declaraciones-impuestos',
-    name: 'Declaraciones e Impuestos',
-    description: 'Renta, IVA, Sociedades y planificación fiscal anual para personas físicas y empresas.',
+    name: 'Fiscalidad',
+    description: 'Declaraciones fiscales para personas físicas, residentes, no residentes y contribuyentes con patrimonio o rentas internacionales.',
     imageUrl: '/catalog/fiscal.png'
   },
   {
     slug: 'extranjeria-nacionalidad',
     name: 'Extranjería y Nacionalidad',
-    description: 'Arraigo, permisos, renovaciones y expedientes de nacionalidad española.',
+    description: 'Tramitación y revisión de expedientes de residencia, arraigo, reagrupación familiar y nacionalidad española.',
     imageUrl: '/catalog/extranjeria.png'
   },
   {
     slug: 'empresas-autonomos',
     name: 'Empresas y Autónomos',
-    description: 'Alta de actividad, asesoría contable y obligaciones recurrentes de negocio.',
+    description: 'Alta de actividad, constitución de sociedades, gestión mensual con Holded y trámites mercantiles para mantener tu empresa al día.',
     imageUrl: '/catalog/empresa.png'
+  },
+  {
+    slug: 'holded',
+    name: 'Holded',
+    description: 'Implantación, migración y formación práctica en Holded para autónomos, pymes y empresas.',
+    imageUrl: '/catalog/holded.png'
+  },
+  {
+    slug: 'certificado-digital',
+    name: 'Certificado digital',
+    description: 'Certificados digitales para personas físicas, entidades mercantiles y entidades sin ánimo de lucro.',
+    imageUrl: '/catalog/certificados.png'
   },
   {
     slug: 'trafico-capitania-maritima',
     name: 'Tráfico y Capitanía Marítima',
-    description: 'Gestiones de tráfico, matriculaciones y trámites de embarcaciones.',
+    description: 'Gestiones administrativas para vehículos y embarcaciones, incluyendo transferencias, matriculaciones, duplicados y trámites marítimos.',
     imageUrl: '/catalog/trafico.png'
   },
   {
     slug: 'notaria-propiedades',
     name: 'Notaría y Propiedades',
-    description: 'Compraventas, escrituras, herencias y fiscalidad inmobiliaria.',
+    description: 'Acompañamiento en operaciones inmobiliarias, herencias, donaciones y cancelaciones hipotecarias.',
     imageUrl: '/catalog/notaria.png'
-  },
-  {
-    slug: 'gestiones-especializadas',
-    name: 'Gestiones Especializadas',
-    description: 'Certificados digitales Camerfirma para personas físicas y entidades. Punto de Registro Autorizado.',
-    imageUrl: '/catalog/certificados.png'
-  },
-  {
-    slug: 'formacion',
-    name: 'Formación',
-    description:
-      'Formación fiscal, contable, legal, mercantil, laboral, RRHH y uso de Holded. Bloques de 2 horas desde 180 euros.',
-    imageUrl: '/catalog/formacion.png'
   }
 ] as const;
 
-export type CategorySlug = (typeof categories)[number]['slug'];
+export type PublicCategorySlug = (typeof categories)[number]['slug'];
+export type HiddenCategorySlug = 'formacion';
+export type CategorySlug = PublicCategorySlug | HiddenCategorySlug;
 
 export type Service = {
   slug: string;
@@ -75,7 +76,7 @@ export type Service = {
 };
 
 export const services: Service[] = [
-  // ── Declaraciones e Impuestos ─────────────────────────────────────────────
+  // ── Fiscalidad ───────────────────────────────────────────────────────────
   {
     slug: 'irpf',
     categoria: 'declaraciones-impuestos',
@@ -691,6 +692,48 @@ export const services: Service[] = [
       { q: '¿Cuándo conviene darse de baja como autónomo?', a: 'Cuando cesan de forma definitiva los ingresos de la actividad. La baja en el RETA se puede hacer hasta el último día del mes para no pagar ese mes.' }
     ]
   },
+  {
+    slug: 'cuentas-anuales',
+    categoria: 'empresas-autonomos',
+    name: 'Cuentas Anuales',
+    shortDescription: 'Formulación, aprobación y depósito de cuentas anuales en el Registro Mercantil.',
+    description:
+      'Preparamos las cuentas anuales de tu sociedad (balance, cuenta de pérdidas y ganancias, memoria y, si aplica, estado de cambios en el patrimonio neto y flujos de efectivo), coordinamos su aprobación en Junta General y las depositamos en el Registro Mercantil dentro del plazo legal.',
+    price: 'Consultar',
+    duration: '5–10 días hábiles',
+    includes: [
+      'Formulación del balance y cuenta de resultados',
+      'Redacción de la memoria anual',
+      'Coordinación de la Junta General de aprobación',
+      'Depósito en el Registro Mercantil',
+      'Justificante de presentación'
+    ],
+    faqs: [
+      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio para ejercicios cerrados a 31 de diciembre).' },
+      { q: '¿Qué pasa si no deposito las cuentas?', a: 'La sociedad puede quedar en situación de cierre registral y el ICAC puede imponer multas de hasta 300.000 €.' }
+    ]
+  },
+  {
+    slug: 'apoderamientos-mercantiles',
+    categoria: 'empresas-autonomos',
+    name: 'Apoderamientos y Modificaciones Mercantiles',
+    shortDescription: 'Cambio de administrador, modificación de estatutos, poderes notariales y compraventa de participaciones.',
+    description:
+      'Gestionamos todo tipo de modificaciones societarias: cambio o nombramiento de administrador, modificación de estatutos sociales, otorgamiento y revocación de poderes notariales, ampliaciones y reducciones de capital, compraventa de participaciones sociales y otras operaciones registrales.',
+    price: 'Consultar',
+    duration: '7–20 días hábiles',
+    includes: [
+      'Preparación del acuerdo de Junta o del administrador',
+      'Elevación a escritura pública notarial',
+      'Inscripción en el Registro Mercantil',
+      'Notificación a Hacienda si aplica',
+      'Justificante de inscripción registral'
+    ],
+    faqs: [
+      { q: '¿Cómo cambio al administrador de mi empresa?', a: 'Se acuerda en Junta General o por el propio órgano de administración, se eleva a escritura notarial y se inscribe en el Registro Mercantil.' },
+      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un documento que otorga a una persona la facultad de actuar en nombre de otra o de la empresa. Puede ser general o especial (para actos concretos).' }
+    ]
+  },
 
   // ── Tráfico y Capitanía Marítima ───────────────────────────────────────────
   {
@@ -851,10 +894,10 @@ export const services: Service[] = [
     ]
   },
 
-  // ── Gestiones Especializadas ───────────────────────────────────────────────
+  // ── Certificado digital ───────────────────────────────────────────────────
   {
     slug: 'certificado-digital-persona-fisica',
-    categoria: 'gestiones-especializadas',
+    categoria: 'certificado-digital',
     name: 'Certificado Digital Persona Física — Camerfirma',
     shortDescription: 'Obtén tu certificado digital cualificado Camerfirma. Válido ante AEAT, Seguridad Social y todos los organismos públicos.',
     description:
@@ -926,7 +969,7 @@ export const services: Service[] = [
   },
   {
     slug: 'certificado-digital-entidad',
-    categoria: 'gestiones-especializadas',
+    categoria: 'certificado-digital',
     name: 'Certificado Digital de Entidad — Camerfirma',
     shortDescription: 'Certificado digital cualificado para tu empresa, asociación o entidad. Actúa digitalmente en nombre de tu organización.',
     description:
@@ -1008,6 +1051,28 @@ export const services: Service[] = [
     ],
   },
 
+  {
+    slug: 'certificado-digital-sin-animo-lucro',
+    categoria: 'certificado-digital',
+    name: 'Certificado Digital Entidad Sin Ánimo de Lucro — Camerfirma',
+    shortDescription: 'Certificado digital cualificado Camerfirma para asociaciones, fundaciones y entidades sin ánimo de lucro.',
+    description:
+      'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad adaptado a estas organizaciones, con verificación del representante legal y emisión en 24–48 horas.',
+    price: '150 €',
+    duration: '24–48 h desde la verificación',
+    includes: [
+      'Verificación documental de la entidad y del representante legal',
+      'Emisión del certificado digital de entidad sin ánimo de lucro Camerfirma',
+      'Instalación y configuración en el equipo del representante',
+      'Prueba de funcionamiento',
+      'Soporte técnico ante incidencias durante 30 días',
+    ],
+    faqs: [
+      { q: '¿Qué documentación necesita una asociación para el certificado digital?', a: 'Estatutos de la asociación, acta de nombramiento del representante legal o presidente en vigor, y DNI/NIE de dicha persona.' },
+      { q: '¿Cuánto tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante legal.' },
+    ],
+  },
+
   // ── Formación ──────────────────────────────────────────────────────────────
   {
     slug: 'formacion-fiscal-contable',
@@ -1069,6 +1134,69 @@ export const services: Service[] = [
     faqs: [
       { q: '¿Necesito tener Holded contratado para hacer la formación?', a: 'Sí, trabajamos directamente sobre tu cuenta. Si aún no tienes Holded, podemos ayudarte a configurarlo antes.' },
       { q: '¿Cuántos bloques de formación necesito?', a: 'Depende del módulo. Para facturación básica suele ser suficiente con 1–2 bloques. Para contabilidad completa, 3–4 bloques.' }
+    ]
+  },
+  {
+    slug: 'formacion-administraciones-publicas',
+    categoria: 'formacion',
+    name: 'Formación: Administraciones Públicas',
+    shortDescription: 'Aprende a relacionarte con la AEAT, la Seguridad Social, Extranjería y otros organismos de forma autónoma.',
+    description:
+      'Formación práctica para autónomos, pymes y particulares que quieren entender cómo funcionan y comunicarse correctamente con los principales organismos públicos: AEAT (Sede Electrónica, certificados, notificaciones), Seguridad Social (Importass, vida laboral, altas/bajas), DGT, Extranjería y Registro Civil. Bloques de 2 horas desde 180 €.',
+    price: 'Desde 180 € / bloque de 2 h',
+    duration: '2 horas por bloque',
+    includes: [
+      'Sesión online o presencial',
+      'Recorrido por la Sede Electrónica de la AEAT e Importass',
+      'Cómo ver y gestionar notificaciones electrónicas',
+      'Uso del certificado digital en organismos públicos',
+      'Material de referencia con guías paso a paso'
+    ],
+    faqs: [
+      { q: '¿Para quién está pensado este curso?', a: 'Para autónomos, pequeños empresarios y particulares que quieren gestionar sus propios trámites con la Administración sin depender siempre de un asesor.' },
+      { q: '¿Puedo elegir los organismos que me interesan?', a: 'Sí, la formación se adapta a tus necesidades concretas: AEAT, SS, extranjería, DGT, etc.' }
+    ]
+  },
+  {
+    slug: 'formacion-alta-autonomo-sl',
+    categoria: 'formacion',
+    name: 'Formación: Alta de Autónomo y Constitución de SL',
+    shortDescription: 'Todo lo que necesitas saber antes y después de darte de alta o constituir una sociedad.',
+    description:
+      'Formación práctica orientada a emprendedores y profesionales que van a iniciar su actividad: diferencias entre autónomo y sociedad limitada, obligaciones fiscales desde el día uno, cuotas de la Seguridad Social, facturación, IVA y gestión básica contable. Bloques de 2 horas desde 180 €.',
+    price: 'Desde 180 € / bloque de 2 h',
+    duration: '2 horas por bloque',
+    includes: [
+      'Autónomo vs. SL: cuándo conviene cada opción',
+      'Obligaciones fiscales y de SS desde el inicio',
+      'Cómo emitir facturas y gestionar el IVA',
+      'Cuota de autónomos y cotización mínima',
+      'Preguntas frecuentes del primer año de actividad'
+    ],
+    faqs: [
+      { q: '¿Es apta para personas que aún no han empezado?', a: 'Sí, está diseñada para quienes están en la fase previa o acaban de darse de alta y quieren entender todo desde cero.' },
+      { q: '¿Incluye asesoramiento personalizado?', a: 'La sesión es formativa, pero puedes plantear tu caso concreto y recibir orientación durante la misma.' }
+    ]
+  },
+  {
+    slug: 'formacion-planificacion-fiscal',
+    categoria: 'formacion',
+    name: 'Formación en Planificación Fiscal',
+    shortDescription: 'Estrategias y herramientas para optimizar tu carga fiscal como autónomo, socio o empresa.',
+    description:
+      'Formación práctica sobre planificación y optimización fiscal para autónomos y pymes: reducción de la base imponible del IRPF, gastos deducibles, retribución óptima del socio-administrador, planes de pensiones, tributación de dividendos y estrategias para el cierre fiscal de fin de año. Bloques de 2 horas desde 180 €.',
+    price: 'Desde 180 € / bloque de 2 h',
+    duration: '2 horas por bloque',
+    includes: [
+      'Gastos deducibles reales vs. riesgo de inspección',
+      'Retribución del socio-administrador: nómina vs. dividendo',
+      'Aportaciones a planes de pensiones y su impacto fiscal',
+      'Cierre fiscal de diciembre: qué puedes hacer antes de año nuevo',
+      'Casos prácticos adaptados a tu situación'
+    ],
+    faqs: [
+      { q: '¿Es útil si ya llevo varios años como autónomo?', a: 'Especialmente útil. Muchos autónomos no aprovechan todas las deducciones disponibles o cometen errores que generan inspecciones.' },
+      { q: '¿Puedo aplicar lo aprendido de inmediato?', a: 'Sí. La formación es práctica y aplicable desde el primer día.' }
     ]
   }
 ];

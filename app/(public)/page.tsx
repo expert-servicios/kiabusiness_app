@@ -15,11 +15,9 @@ import {
   LockKeyhole,
   MonitorCheck,
   Search,
-  Settings,
   ShieldCheck,
   Star,
   Upload,
-  Users
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
@@ -62,10 +60,10 @@ const serviceAreas: Array<
   }
 > = [
   {
-    title: 'Fiscalidad e impuestos',
-    text: 'Declaraciones, regularizaciones, tributación de residentes y no residentes.',
+    title: 'Fiscalidad',
+    text: 'Declaraciones fiscales para residentes, no residentes y contribuyentes con patrimonio o rentas internacionales.',
     href: '/servicios/declaraciones-impuestos',
-    items: ['IRPF', 'Modelo 151', 'No residentes'],
+    items: ['IRPF', 'Modelo 151', 'Modelo 720'],
     Icon: FileText
   },
   {
@@ -77,10 +75,24 @@ const serviceAreas: Array<
   },
   {
     title: 'Empresas y autónomos',
-    text: 'Altas, constitución, contabilidad, impuestos y gestión recurrente.',
+    text: 'Alta de actividad, constitución de sociedades, gestión mensual con Holded y trámites mercantiles.',
     href: '/servicios/empresas-autonomos',
-    items: ['Alta autónomos', 'Sociedades', 'Contabilidad'],
+    items: ['Alta autónomos', 'Sociedades', 'Planes mensuales'],
     Icon: Briefcase
+  },
+  {
+    title: 'Holded',
+    text: 'Implantación, migración y formación práctica para trabajar con datos ordenados y procesos claros.',
+    href: '/holded',
+    items: ['Pack Starter', 'Migración', 'Formación Holded'],
+    Icon: MonitorCheck
+  },
+  {
+    title: 'Certificado digital',
+    text: 'Certificados digitales para personas físicas, entidades mercantiles y entidades sin ánimo de lucro.',
+    href: '/servicios/certificado-digital',
+    items: ['Persona física', 'Entidad mercantil', 'Sin ánimo de lucro'],
+    Icon: FileCheck
   },
   {
     title: 'Tráfico y marítima',
@@ -96,13 +108,6 @@ const serviceAreas: Array<
     items: ['Compraventas', 'Escrituras', 'Propiedades'],
     Icon: Home
   },
-  {
-    title: 'Gestiones especializadas',
-    text: 'Certificados digitales, migraciones a Holded y trámites de mayor complejidad.',
-    href: '/servicios/gestiones-especializadas',
-    items: ['Camerfirma', 'Holded', 'Automatización'],
-    Icon: Settings
-  }
 ];
 
 const featuredServices: Array<IconItem & { title: string; text: string; href: string }> = [
@@ -174,24 +179,6 @@ const holdedBenefits = [
   'Acompañamiento inicial para tu equipo'
 ] as const;
 
-const trainingTopics: Array<IconItem & { title: string; text: string }> = [
-  {
-    title: 'Fiscal, contable y mercantil',
-    text: 'Sesiones prácticas para entender obligaciones, modelos, cierres y documentación societaria.',
-    Icon: Calculator
-  },
-  {
-    title: 'Legal, laboral y RRHH',
-    text: 'Formación operativa para procesos internos, contratación, documentación y buenas prácticas.',
-    Icon: Users
-  },
-  {
-    title: 'Formación en Holded',
-    text: 'Bloques de 2 horas para aprender a trabajar con Holded de forma ordenada. Precio: 180 € por bloque.',
-    Icon: MonitorCheck
-  }
-];
-
 export default async function HomePage({
   searchParams
 }: {
@@ -239,7 +226,6 @@ export default async function HomePage({
       <HowItWorks />
       <ClientPortal />
       <HoldedMigration />
-      <TrainingPrograms />
       <Operations />
       <BlogPreview />
       <AdvisorSaasTeaser />
@@ -452,41 +438,6 @@ function HoldedMigration() {
         </div>
 
         <HoldedDemoForm />
-      </div>
-    </section>
-  );
-}
-
-function TrainingPrograms() {
-  return (
-    <section className="px-6 py-16 md:py-20">
-      <div className="mx-auto max-w-7xl">
-        <SectionTitle
-          centered
-          eyebrow="Formación"
-          title="Formación práctica para equipos, autónomos y empresas."
-          text="Sesiones enfocadas a aplicar bien los procesos fiscales, contables, legales, mercantiles, laborales, de RRHH y el uso diario de Holded."
-        />
-
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {trainingTopics.map(({ Icon, title, text }) => (
-            <article key={title} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)]">
-              <Icon className="h-8 w-8 stroke-[#D4A017]" strokeWidth={1.7} />
-              <h3 className="mt-6 font-serif text-xl font-bold">{title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#23364D]">{text}</p>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <Link
-            href="/servicios/formacion"
-            className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
-          >
-            Ver formación
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
       </div>
     </section>
   );

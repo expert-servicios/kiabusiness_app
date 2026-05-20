@@ -14,7 +14,7 @@ function detectCatalogBody(recentInbound: string[]): string {
 
 const schema = z.object({
   phone:      z.string().min(1),
-  sectionIds: z.array(z.string()).min(1).max(4),
+  sectionIds: z.array(z.string()).min(1).max(7),
   bodyText:   z.string().max(1024).optional(),
 });
 

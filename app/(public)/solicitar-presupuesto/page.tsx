@@ -9,7 +9,7 @@ import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 const serviceCategories = [
   {
     id: 'impuestos',
-    title: 'Declaraciones e Impuestos',
+    title: 'Fiscalidad',
     services: [
       { id: 'irpf', name: 'Declaración de la Renta (IRPF)', description: 'Declaración anual de renta personal' },
       { id: 'modelo151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },

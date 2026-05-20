@@ -76,8 +76,8 @@ export default function CondicionesPage() {
               <li><strong>Societario:</strong> constitución de empresas, ampliaciones de capital, cambios estatutarios, disoluciones.</li>
               <li><strong>Tráfico y capitanía:</strong> transferencias, bajas, altas, permisos de circulación.</li>
               <li><strong>Notarial e inmobiliario:</strong> apoderamiento notarial, compraventas, herencias.</li>
-              <li><strong>Formación:</strong> sesiones de formación en Holded y herramientas de gestión.</li>
-              <li><strong>Tecnológico:</strong> migración a Holded, configuración y onboarding.</li>
+              <li><strong>Holded:</strong> implantación, migración, configuración, formación en Holded y automatización.</li>
+              <li><strong>Certificado digital:</strong> certificados para personas físicas, entidades mercantiles y entidades sin ánimo de lucro.</li>
             </ul>
             <p>
               Los servicios contratables en cada momento son los que figuran en las páginas del sitio y en los presupuestos personalizados emitidos por EXPERT.

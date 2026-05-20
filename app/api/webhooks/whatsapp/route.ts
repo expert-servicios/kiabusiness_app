@@ -797,7 +797,7 @@ PÁGINAS CLAVE (comparte el enlace completo cuando sea relevante):
 • Presupuesto → https://expertconsulting.es/solicitar-presupuesto
 • Cita gratuita → https://expertconsulting.es/cita
 • Holded → https://expertconsulting.es/holded
-• Formación Holded → https://expertconsulting.es/servicios/formacion
+• Formación Holded → https://expertconsulting.es/holded#formacion
 
 ═══════════════════════════════════════
 FORMATO DE RESPUESTA — ELIGE UNO:

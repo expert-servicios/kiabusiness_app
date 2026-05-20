@@ -637,6 +637,66 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
   },
 
   {
+    serviceId: 'cuentas-anuales',
+    serviceName: 'Cuentas Anuales',
+    category: 'empresas-autonomos',
+    requiredData: [
+      'Ejercicio fiscal a formular (normalmente año natural)',
+      'Si la contabilidad está llevada con EXPERT o por el propio cliente',
+      'Resultado contable del ejercicio (beneficio o pérdida)',
+      'Si la sociedad es pequeña (PYME) o grande (determina formato de cuentas)',
+      'Si necesita también presentar el Impuesto de Sociedades',
+      'Fecha prevista de la Junta General de aprobación',
+    ],
+    requiredDocs: [
+      'Balance de situación al cierre del ejercicio',
+      'Cuenta de pérdidas y ganancias del ejercicio',
+      'Libro diario y libro mayor',
+      'Escrituras de constitución y CIF',
+      'Datos de socios y participaciones',
+      'Acta de la Junta General aprobando las cuentas (la preparamos nosotros)',
+    ],
+    keyQuestions: [
+      '¿Quién lleva la contabilidad? ¿Está al día?',
+      '¿Cuándo quieres celebrar la Junta General?',
+      '¿Necesitas también el Impuesto de Sociedades?',
+      '¿La sociedad tiene auditor?',
+    ],
+    botInstructions:
+      'El plazo para depositar las cuentas es el mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio). La falta de depósito puede generar cierre registral. Si la contabilidad la lleva EXPERT, el depósito suele estar incluido en el plan mensual. Precio: consultar.',
+    estimatedPrice: 'Consultar',
+  },
+
+  {
+    serviceId: 'apoderamientos-mercantiles',
+    serviceName: 'Apoderamientos y Modificaciones Mercantiles',
+    category: 'empresas-autonomos',
+    requiredData: [
+      'Tipo de modificación: cambio de administrador, estatutos, poderes, capital, compraventa participaciones',
+      'Datos de la sociedad (CIF, denominación, domicilio)',
+      'Si hay acuerdo unánime de todos los socios o se necesita convocatoria de Junta',
+      'Datos del nuevo administrador o apoderado (DNI/NIE, dirección)',
+      'Si se quieren otorgar poderes generales o especiales (para qué actos)',
+    ],
+    requiredDocs: [
+      'Escrituras de constitución actualizadas de la sociedad',
+      'Libro de actas de la sociedad',
+      'DNI/NIE de todos los socios o del administrador',
+      'Nota simple del Registro Mercantil (actualizada)',
+      'En compraventa de participaciones: valoración o precio acordado',
+    ],
+    keyQuestions: [
+      '¿Qué modificación necesitas hacer en la empresa?',
+      '¿Estáis de acuerdo todos los socios?',
+      '¿Necesitas poderes para una gestión concreta o poderes generales?',
+      '¿Hay que convocar Junta o es decisión del administrador?',
+    ],
+    botInstructions:
+      'Muchas modificaciones requieren escritura notarial e inscripción en el Registro Mercantil. El plazo varía: notaría 1–5 días, registro 5–15 días hábiles. Para poderes simples (sin cargo registral) el proceso es más rápido. Precio: consultar según tipo de modificación.',
+    estimatedPrice: 'Consultar',
+  },
+
+  {
     serviceId: 'baja-cese-actividad',
     serviceName: 'Baja y Cese de Actividad',
     category: 'empresas-autonomos',
@@ -896,12 +956,12 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     estimatedPrice: 'Desde 150 €',
   },
 
-  // ── GESTIONES ESPECIALIZADAS ─────────────────────────────────────────────
+  // ── CERTIFICADO DIGITAL ─────────────────────────────────────────────────
 
   {
     serviceId: 'certificado-digital-persona-fisica',
     serviceName: 'Certificado Digital Persona Física — Camerfirma',
-    category: 'gestiones-especializadas',
+    category: 'certificado-digital',
     requiredData: [
       'Si prefiere la cita presencial o por videoconferencia',
       'Si tiene ordenador con Windows o macOS disponible para la instalación',
@@ -924,7 +984,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
   {
     serviceId: 'certificado-digital-entidad',
     serviceName: 'Certificado Digital de Entidad — Camerfirma',
-    category: 'gestiones-especializadas',
+    category: 'certificado-digital',
     requiredData: [
       'CIF de la entidad',
       'Nombre y cargo del representante legal',
@@ -946,6 +1006,35 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     botInstructions:
       'El certificado de entidad permite actuar y firmar en nombre de la organización. Precio: 150 €. Plazo: 24–48 horas desde la verificación del representante. Somos Punto de Registro Autorizado de Camerfirma.',
+    estimatedPrice: '150 €',
+  },
+
+  {
+    serviceId: 'certificado-digital-sin-animo-lucro',
+    serviceName: 'Certificado Digital Entidad Sin Ánimo de Lucro — Camerfirma',
+    category: 'certificado-digital',
+    requiredData: [
+      'Tipo de entidad (asociación, fundación, ONG, comunidad religiosa…)',
+      'CIF o NIF de la entidad',
+      'Nombre y cargo del representante legal (presidente, secretario, etc.)',
+      'Si tiene estatutos y acta de nombramiento del cargo actualizados',
+      'Si prefiere la cita presencial o por videoconferencia',
+    ],
+    requiredDocs: [
+      'CIF o NIF de la entidad',
+      'Estatutos de la entidad vigentes',
+      'Acta de nombramiento del representante legal en vigor',
+      'DNI o NIE original en vigor del representante legal',
+      'Email activo de la entidad durante el proceso',
+    ],
+    keyQuestions: [
+      '¿Qué tipo de entidad es?',
+      '¿Tienes los estatutos y el acta de nombramiento del representante actualizados?',
+      '¿Para qué trámites necesita el certificado la entidad?',
+      '¿Prefieres la cita presencial o por videoconferencia?',
+    ],
+    botInstructions:
+      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso que el de entidad comercial pero adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo: 24–48 horas desde la verificación. Somos Punto de Registro Autorizado de Camerfirma.',
     estimatedPrice: '150 €',
   },
 
@@ -1013,6 +1102,71 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     botInstructions:
       'Como Holded Solution Partner, trabajamos directamente sobre la cuenta del cliente. Si no tiene Holded, podemos ayudarle a configurarlo primero. Precio: 180 € / bloque de 2 horas. Para facturación básica suele ser suficiente 1–2 bloques; para contabilidad completa, 3–4. Ofrecer enlace Holded: expertconsulting.es/holded.',
+    estimatedPrice: '180 € / bloque de 2 h',
+  },
+  {
+    serviceId: 'formacion-administraciones-publicas',
+    serviceName: 'Formación: Administraciones Públicas',
+    category: 'formacion',
+    requiredData: [
+      'Organismos de interés (AEAT, Seguridad Social, Extranjería, DGT, etc.)',
+      'Nivel de experiencia previo con la Administración electrónica',
+      'Si ya tiene certificado digital o Cl@ve instalados',
+      'Número de participantes',
+      'Preferencia: sesión online o presencial',
+    ],
+    requiredDocs: [],
+    keyQuestions: [
+      '¿Con qué organismos necesitas relacionarte habitualmente?',
+      '¿Tienes ya certificado digital o Cl@ve?',
+      '¿Cuántos participantes asistirán?',
+      '¿Qué nivel de conocimiento digital tienen los participantes?',
+    ],
+    botInstructions:
+      'La formación se adapta a los organismos y necesidades del cliente (AEAT, SS, extranjería, DGT…). Precio: 180 € / bloque de 2 horas. Incluye guías de referencia.',
+    estimatedPrice: '180 € / bloque de 2 h',
+  },
+
+  {
+    serviceId: 'formacion-alta-autonomo-sl',
+    serviceName: 'Formación: Alta de Autónomo y Constitución de SL',
+    category: 'formacion',
+    requiredData: [
+      'Si ya está dado de alta o está en fase previa',
+      'Si valora autónomo, SL o ambas opciones',
+      'Actividad que va a desarrollar',
+      'Número de participantes',
+      'Preferencia: sesión online o presencial',
+    ],
+    requiredDocs: [],
+    keyQuestions: [
+      '¿Ya tienes claro si quieres ser autónomo o constituir una SL?',
+      '¿Estás en fase previa o ya has iniciado trámites?',
+      '¿Cuántas personas participarán?',
+    ],
+    botInstructions:
+      'Formación orientada a emprendedores antes o durante el proceso de inicio de actividad. Muy práctica. Precio: 180 € / bloque de 2 horas.',
+    estimatedPrice: '180 € / bloque de 2 h',
+  },
+
+  {
+    serviceId: 'formacion-planificacion-fiscal',
+    serviceName: 'Formación en Planificación Fiscal',
+    category: 'formacion',
+    requiredData: [
+      'Si es autónomo, socio-administrador o empresa',
+      'Nivel de ingresos aproximado (para orientar las estrategias)',
+      'Áreas de interés (IRPF, IS, gastos deducibles, retribución del socio, pensiones)',
+      'Número de participantes',
+    ],
+    requiredDocs: [],
+    keyQuestions: [
+      '¿Eres autónomo o tienes sociedad?',
+      '¿Qué te gustaría aprender: reducir el IRPF, optimizar la retribución del socio, maximizar deducciones…?',
+      '¿Cuántos bloques de formación necesitas?',
+    ],
+    botInstructions:
+      'Formación muy valorada por autónomos y pymes que quieren reducir su carga fiscal legalmente. Muy práctica con casos reales. Precio: 180 € / bloque de 2 horas.',
     estimatedPrice: '180 € / bloque de 2 h',
   },
 ];

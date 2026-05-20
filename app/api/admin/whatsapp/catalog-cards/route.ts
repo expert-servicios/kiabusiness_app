@@ -25,8 +25,7 @@ function translateCardBody(sectionId: string, cardBody: string, lang: 'ru' | 'es
     'extranjeria-nacionalidad':   '🌍 Оформим ваш статус в Испании: вид на жительство, гражданство, аррайго и другое. Что нужно?',
     'trafico-capitania-maritima': '🚗 Переоформление авто, постановка на учёт, дубликаты и суда. Какой трámite нужен?',
     'notaria-propiedades':        '🏠 Купля-продажа, наследство, дарение и ипотека. Чем можем помочь?',
-    'gestiones-especializadas':   '🔐 Мы авторизованный партнёр Camerfirma. Для физического лица или компании?',
-    'formacion':                  '🎓 Практическое обучение: налоги, трудовое право, РRHH и Holded. От 180 €/2 ч. Что интересует?',
+    'certificado-digital':        '🔐 Мы авторизованный партнёр Camerfirma. Для физического лица или компании?',
   };
   return map[sectionId] ?? cardBody;
 }

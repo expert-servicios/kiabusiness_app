@@ -32,8 +32,8 @@ export const trustItems: Array<{ label: string; Icon: LucideIcon }> = [
 
 export const serviceCategories = [
   {
-    title: 'Declaraciones e Impuestos',
-    description: 'IRPF, Modelo 151, IVA, Sociedades, no residentes y regularizaciones fiscales.',
+    title: 'Fiscalidad',
+    description: 'IRPF, Modelo 151, no residentes, patrimonio y rentas internacionales.',
     href: '/servicios',
     icon: Sparkles
   },
@@ -45,9 +45,21 @@ export const serviceCategories = [
   },
   {
     title: 'Empresas y Autónomos',
-    description: 'Altas, sociedades, contabilidad, impuestos y gestión fiscal recurrente.',
+    description: 'Altas, sociedades, gestión mensual con Holded y trámites mercantiles.',
     href: '/servicios',
     icon: Briefcase
+  },
+  {
+    title: 'Holded',
+    description: 'Implantación, migración y formación práctica en Holded.',
+    href: '/holded',
+    icon: Briefcase
+  },
+  {
+    title: 'Certificado digital',
+    description: 'Certificados digitales para personas físicas, entidades mercantiles y entidades sin ánimo de lucro.',
+    href: '/servicios/certificado-digital',
+    icon: Award
   },
   {
     title: 'Tráfico y Capitanía Marítima',
@@ -61,12 +73,6 @@ export const serviceCategories = [
     href: '/servicios',
     icon: CheckCircle2
   },
-  {
-    title: 'Gestiones Especializadas',
-    description: 'Certificados Camerfirma, Holded, automatizaciones y trámites especiales.',
-    href: '/servicios',
-    icon: Award
-  }
 ] as const;
 
 export const featuredServices = [
@@ -122,10 +128,13 @@ export const accreditationItems = [
 
 export const footerLinks = {
   services: [
-    { label: 'Declaraciones e Impuestos', href: '/servicios' },
-    { label: 'Extranjería y Nacionalidad', href: '/servicios' },
-    { label: 'Empresas y Autónomos', href: '/servicios' },
-    { label: 'Gestiones Especializadas', href: '/servicios' }
+    { label: 'Fiscalidad', href: '/servicios/declaraciones-impuestos' },
+    { label: 'Extranjería y Nacionalidad', href: '/servicios/extranjeria-nacionalidad' },
+    { label: 'Empresas y Autónomos', href: '/servicios/empresas-autonomos' },
+    { label: 'Holded', href: '/holded' },
+    { label: 'Certificado digital', href: '/servicios/certificado-digital' },
+    { label: 'Tráfico y Capitanía Marítima', href: '/servicios/trafico-capitania-maritima' },
+    { label: 'Notaría y Propiedades', href: '/servicios/notaria-propiedades' }
   ],
   company: [
     { label: 'Sobre mí', href: '/sobre-mi' },

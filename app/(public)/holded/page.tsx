@@ -25,24 +25,24 @@ import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
 
 export const metadata: Metadata = {
-  title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
+  title: 'Implantación, migración y formación en Holded | EXPERT',
   description:
-    'Implantamos Holded con datos bien vinculados: clientes, proveedores, bancos, impuestos y stock. Añadimos conectores de IA (Claude / ChatGPT) para reducir trabajo manual. Holded Solution Partner certificados.',
+    'Implantamos Holded con datos bien vinculados: clientes, proveedores, bancos, facturación, contabilidad, impuestos y stock. Holded Solution Partner certificados.',
   alternates: { canonical: 'https://expertconsulting.es/holded' },
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/holded',
-    title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
+    title: 'Implantación, migración y formación en Holded | EXPERT',
     description:
-      'Implantamos Holded con datos bien vinculados y añadimos conectores de IA para reducir trabajo manual. EXPERT — Holded Solution Partner certificados.',
+      'Implantamos Holded con datos bien vinculados para facturación, contabilidad, bancos e impuestos. EXPERT — Holded Solution Partner certificados.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
     images: [{ url: 'https://expertconsulting.es/catalog/holded.png', width: 1200, height: 630, alt: 'Holded Solution Partner — EXPERT' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
-    description: 'Implantamos Holded con datos bien vinculados y añadimos conectores de IA. EXPERT — Holded Solution Partner.',
+    title: 'Implantación, migración y formación en Holded | EXPERT',
+    description: 'Implantamos Holded con datos bien vinculados para facturación, contabilidad, bancos e impuestos.',
     images: ['https://expertconsulting.es/catalog/holded.png'],
   },
 };
@@ -188,10 +188,10 @@ export default async function HoldedPage() {
             <Image src="/Holded-Logotype-Red_Light.svg" alt="Holded" width={120} height={36} className="mb-5 h-9 w-auto" />
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Solution Partner certificado</p>
             <h1 className="mt-5 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">
-              Implantación de Holded con migración, formación y automatización
+              Implantación, migración y formación práctica en Holded
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[#9CA3AF] md:text-lg">
-              Dejamos Holded operativo con datos bien vinculados. Y si quieres ir más allá, añadimos automatizaciones e IA para reducir trabajo manual.
+              Dejamos Holded operativo con datos bien vinculados, procesos claros y una configuración preparada para facturación, contabilidad, bancos e impuestos.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
@@ -456,7 +456,7 @@ export default async function HoldedPage() {
       </section>
 
       {/* ── 3 CTAs ────────────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-16 md:py-20">
+      <section id="demo" className="bg-white px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">¿Por dónde empezar?</p>
@@ -516,7 +516,7 @@ export default async function HoldedPage() {
       </section>
 
       {/* ── Formación por horas — CTA horizontal ─────────────────────────── */}
-      <section className="px-6 py-10 md:py-12">
+      <section id="formacion" className="px-6 py-10 md:py-12">
         <div className="mx-auto max-w-7xl">
           <div className="border border-[#D4A017] bg-white p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

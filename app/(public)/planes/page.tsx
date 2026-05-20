@@ -363,7 +363,7 @@ export default function PlanesPage() {
                       'Gestión laboral y nóminas',
                       'Trámites de extranjería',
                       'Asesoramiento fiscal estratégico',
-                      'Formación en Holded o gestión',
+                      'Formación en Holded',
                       'Precio ajustado a tu volumen real'
                     ].map((f) => (
                       <span key={f} className="inline-flex items-center gap-1.5 text-xs text-[#9CA3AF]">

@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { getRecaptchaSiteKey, getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const AREAS = [
-  'Declaraciones e impuestos (IRPF, IVA, IS...)',
+  'Fiscalidad',
   'Extranjería y nacionalidad',
   'Empresas y autónomos',
+  'Holded',
+  'Certificado digital',
   'Tráfico y capitanía marítima',
   'Notaría y propiedades',
-  'Gestiones especializadas',
-  'Formación',
   'Planes de suscripción',
   'Otro'
 ];

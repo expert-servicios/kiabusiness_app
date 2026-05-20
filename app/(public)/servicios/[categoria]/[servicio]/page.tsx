@@ -1,5 +1,6 @@
 ﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { AlertCircle, BookOpen, Check, Clock, FileText, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
 import { ServiceBuyButton } from '@/components/services/ServiceBuyButton';
@@ -67,6 +68,16 @@ export default async function ServicioDetallePage({
   params: Promise<{ categoria: string; servicio: string }>;
 }) {
   const { categoria, servicio } = await params;
+  if (categoria === 'gestiones-especializadas') {
+    permanentRedirect(`/servicios/certificado-digital/${servicio}`);
+  }
+  if (categoria === 'formacion') {
+    permanentRedirect('/holded#formacion');
+  }
+  if (categoria === 'holded') {
+    permanentRedirect('/holded');
+  }
+
   const service = getService(categoria as CategorySlug, servicio);
   if (!service) return notFound();
 

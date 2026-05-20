@@ -6,9 +6,10 @@ const CATEGORY_ICONS: Record<string, string> = {
   'declaraciones-impuestos': '📊',
   'extranjeria-nacionalidad': '🛂',
   'empresas-autonomos': '🏢',
+  holded: '📈',
+  'certificado-digital': '🔐',
   'trafico-capitania-maritima': '🚗',
   'notaria-propiedades': '🏠',
-  'gestiones-especializadas': '🔐',
   'formacion': '🎓'
 };
 

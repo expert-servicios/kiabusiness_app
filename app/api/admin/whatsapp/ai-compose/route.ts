@@ -153,7 +153,7 @@ PÁGINAS CLAVE (incluye el enlace completo cuando sea relevante para el mensaje)
 • Solicitar presupuesto → https://expertconsulting.es/solicitar-presupuesto
 • Reservar cita gratuita → https://expertconsulting.es/cita
 • Holded con EXPERT → https://expertconsulting.es/holded
-• Formación Holded → https://expertconsulting.es/servicios/formacion
+• Formación Holded → https://expertconsulting.es/holded#formacion
 
 ACTITUD:
 - Idioma obligatorio: ${languageInstruction}

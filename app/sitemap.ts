@@ -45,7 +45,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/planes/gratuito`,                 changeFrequency: 'monthly', priority: 0.5, lastModified: now },
     { url: `${BASE}/planes/presupuesto-personalizado`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
     // Especiales
-    { url: `${BASE}/servicios/formacion`,             changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/nacionalidad-espanola-menor-nacido-en-espana`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     // Legal
     { url: `${BASE}/aviso-legal`,   changeFrequency: 'yearly', priority: 0.2, lastModified: now },
@@ -55,19 +54,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/terminos`,      changeFrequency: 'yearly', priority: 0.2, lastModified: now }
   ];
 
-  const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat) => ({
-    url: `${BASE}/servicios/${cat.slug}`,
-    changeFrequency: 'monthly',
-    priority: 0.8,
-    lastModified: now
-  }));
+  const categoryRoutes: MetadataRoute.Sitemap = categories
+    .filter((cat) => cat.slug !== 'holded')
+    .map((cat) => ({
+      url: `${BASE}/servicios/${cat.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+      lastModified: now
+    }));
 
-  const serviceRoutes: MetadataRoute.Sitemap = services.map((service) => ({
-    url: `${BASE}/servicios/${service.categoria}/${service.slug}`,
-    changeFrequency: 'monthly',
-    priority: service.stripePriceId ? 0.85 : 0.7,
-    lastModified: now
-  }));
+  const serviceRoutes: MetadataRoute.Sitemap = services
+    .filter((service) => service.categoria !== 'formacion')
+    .map((service) => ({
+      url: `${BASE}/servicios/${service.categoria}/${service.slug}`,
+      changeFrequency: 'monthly',
+      priority: service.stripePriceId ? 0.85 : 0.7,
+      lastModified: now
+    }));
 
   const blogRoutes: MetadataRoute.Sitemap = blogArticles.map((article) => ({
     url: `${BASE}/blog/${article.slug}`,

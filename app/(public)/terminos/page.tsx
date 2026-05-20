@@ -59,7 +59,7 @@ export default function TerminosPage() {
           <Section title="3. Servicios ofrecidos">
             <p>
               A través de la plataforma EXPERT se prestan servicios profesionales de carácter fiscal, legal, administrativo y
-              formativo, entre los que se incluyen, sin carácter exhaustivo:
+              tecnológico, entre los que se incluyen, sin carácter exhaustivo:
             </p>
             <ul>
               <li>Gestión de declaraciones fiscales (IRPF, IVA, Modelo 151, Impuesto de Sociedades)</li>
@@ -67,8 +67,8 @@ export default function TerminosPage() {
               <li>Constitución y gestión de empresas y autónomos</li>
               <li>Gestiones de tráfico y capitanía marítima</li>
               <li>Soporte en operaciones notariales e inmobiliarias</li>
-              <li>Certificados digitales, migraciones a Holded y gestiones especializadas</li>
-              <li>Formación fiscal, contable, laboral y en herramientas de gestión</li>
+              <li>Certificados digitales para personas físicas, entidades mercantiles y entidades sin ánimo de lucro</li>
+              <li>Implantación, migración, configuración, formación en Holded y automatización</li>
             </ul>
             <p>
               La descripción de cada servicio y su precio se detallan en las páginas específicas del Sitio y en los presupuestos

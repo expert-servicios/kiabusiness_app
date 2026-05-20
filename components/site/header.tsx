@@ -8,7 +8,6 @@ import { categories } from '@/lib/utils/catalog';
 
 const navLinks = [
   { label: 'Holded', href: '/holded' },
-  { label: 'Formación', href: '/servicios/formacion' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Reservar cita', href: '/cita' }
@@ -99,7 +98,7 @@ export function Header() {
                 {categories.map((cat) => (
                   <Link
                     key={cat.slug}
-                    href={`/servicios/${cat.slug}`}
+                    href={cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`}
                     onClick={() => setServicesOpen(false)}
                     className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                   >
@@ -211,7 +210,7 @@ export function Header() {
                   {categories.map((cat) => (
                     <Link
                       key={cat.slug}
-                      href={`/servicios/${cat.slug}`}
+                      href={cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`}
                       onClick={closeMobile}
                       className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
                     >

@@ -2,9 +2,9 @@ import Link from 'next/link';
 
 const serviceCategories = [
   {
-    title: 'Declaraciones e Impuestos',
+    title: 'Fiscalidad',
     icon: 'document',
-    items: ['IRPF', 'Modelo 151', 'No residentes'],
+    items: ['IRPF', 'Modelo 151', 'Modelo 720'],
     href: '/servicios/declaraciones-impuestos'
   },
   {
@@ -16,8 +16,20 @@ const serviceCategories = [
   {
     title: 'Empresas y Autónomos',
     icon: 'briefcase',
-    items: ['Alta de autónomos', 'Constitución de empresas', 'Contabilidad e impuestos'],
+    items: ['Alta de autónomos', 'Constitución de empresas', 'Planes mensuales'],
     href: '/servicios/empresas-autonomos'
+  },
+  {
+    title: 'Holded',
+    icon: 'settings',
+    items: ['Pack Starter', 'Migración sin inventario', 'Migración con inventario', 'Formación en Holded'],
+    href: '/holded'
+  },
+  {
+    title: 'Certificado digital',
+    icon: 'settings',
+    items: ['Persona física', 'Entidad mercantil', 'Entidad sin ánimo de lucro'],
+    href: '/servicios/certificado-digital'
   },
   {
     title: 'Tráfico y Capitanía Marítima',
@@ -31,12 +43,6 @@ const serviceCategories = [
     items: ['Compraventas', 'Escrituras', 'Gestión documental'],
     href: '/servicios/notaria-propiedades'
   },
-  {
-    title: 'Gestiones Especializadas',
-    icon: 'settings',
-    items: ['Camerfirma', 'Migraciones a Holded', 'Automatizaciones'],
-    href: '/servicios/gestiones-especializadas'
-  }
 ];
 
 function Icon({ name, className = '' }: { name: string; className?: string }) {

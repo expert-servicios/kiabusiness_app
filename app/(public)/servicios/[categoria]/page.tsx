@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
@@ -42,6 +42,16 @@ export async function generateMetadata({
 
 export default async function CategoriaPage({ params }: { params: Promise<{ categoria: string }> }) {
   const { categoria } = await params;
+  if (categoria === 'gestiones-especializadas') {
+    permanentRedirect('/servicios/certificado-digital');
+  }
+  if (categoria === 'formacion') {
+    permanentRedirect('/holded#formacion');
+  }
+  if (categoria === 'holded') {
+    permanentRedirect('/holded');
+  }
+
   const category = getCategory(categoria);
   if (!category) return notFound();
 
