@@ -21,6 +21,17 @@ const schema = z.object({
   mode:      z.enum(['compose', 'edit']).default('compose'),
 });
 
+function cleanMarkdownForWhatsApp(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/gs, '*$1*')   // **bold** → *bold*
+    .replace(/__(.+?)__/gs, '_$1_')         // __italic__ → _italic_
+    .replace(/^#{1,6}\s+/gm, '')            // ## Heading → remove #
+    .replace(/~~(.+?)~~/gs, '~$1~')         // ~~strike~~ → ~strike~
+    .replace(/`([^`]+)`/g, '$1')            // `code` → code (plain)
+    .replace(/\n{3,}/g, '\n\n')             // max 2 consecutive newlines
+    .trim();
+}
+
 function detectLanguageInstruction(text: string): string {
   if (/[А-Яа-яЁё]/.test(text)) {
     return 'ruso. Redacta en ruso natural usando alfabeto cirilico.';
@@ -86,6 +97,12 @@ Tu tarea (sigue este orden exacto):
 4. Si el borrador incluye enlaces, mantenlos tal cual.
 5. Devuelve ÚNICAMENTE el mensaje final listo para enviar. Sin explicaciones, sin prefijos, sin comillas.
 
+FORMATO WHATSAPP OBLIGATORIO:
+- Negrita: asterisco SIMPLE *texto* — NUNCA doble **texto**
+- Cursiva: guión bajo _texto_
+- Tachado: tilde ~texto~
+- NO uses ##, ***, \`código\`, ni guiones de lista. Usa párrafos cortos.
+
 CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
 ${historyText || 'Sin historial previo.'}`;
 
@@ -94,7 +111,7 @@ ${historyText || 'Sin historial previo.'}`;
         messages: [{ role: 'user', content: 'Edita y traduce el borrador.' }],
         maxTokens: 500,
       });
-      const draft = ai?.text?.trim() ?? '';
+      const draft = cleanMarkdownForWhatsApp(ai?.text?.trim() ?? '');
       if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
       return NextResponse.json({ draft });
     }
@@ -122,7 +139,8 @@ ACTITUD:
 - Usa emojis ocasionales (✅ 📋 👋 😊 💼 📅 🚀) para humanizar.
 - Si el contexto lo permite, termina con una CTA suave: reservar cita, ver planes, pedir presupuesto o ver Holded.
 - Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial, ofrece demo gratuita y enlaza la página.
-- Máximo 3 párrafos cortos. No uses markdown ni listas con guiones. Firma como "Asesoría EXPERT 💼" si es apropiado.
+- Máximo 3 párrafos cortos. Firma como "Asesoría EXPERT 💼" si es apropiado.
+- FORMATO WHATSAPP: negrita con *asterisco simple*, NO con **doble asterisco**. Cursiva con _guión bajo_. NUNCA uses ##, ***, ni listas markdown.
 - Si hay fuentes oficiales disponibles, usalas como apoyo y comparte 1 o 2 enlaces oficiales utiles.
 - No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
 
@@ -139,11 +157,11 @@ ${historyText || 'Sin historial previo.'}`;
       messages: [{ role: 'user', content: 'Redacta el siguiente mensaje para este cliente.' }],
       maxTokens: 350,
     });
-    const draft = ai?.text ?? '';
+    const draft = cleanMarkdownForWhatsApp(ai?.text ?? '');
 
     if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
 
-    return NextResponse.json({ draft: draft.trim() });
+    return NextResponse.json({ draft });
   } catch (err) {
     console.error('[WA ai-compose]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

@@ -37,19 +37,25 @@ function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onC
   );
 }
 
-// ── Link unknown contact ──────────────────────────────────────
+// ── Link / Create contact modal ───────────────────────────────
 function LinkClientModal({ phone, onLinked, onClose }: {
   phone: string;
   onLinked: (client: { id: string; full_name: string | null; email: string }) => void;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<'search' | 'create'>('search');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ id: string; full_name: string | null; email: string; phone: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [linking, setLinking] = useState(false);
+  // Create form
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
+    if (tab !== 'search' || query.length < 2) { setResults([]); return; }
     const t = setTimeout(async () => {
       setLoading(true);
       try {
@@ -59,7 +65,7 @@ function LinkClientModal({ phone, onLinked, onClose }: {
       } finally { setLoading(false); }
     }, 300);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, tab]);
 
   const link = async (clientId: string) => {
     setLinking(true);
@@ -74,53 +80,131 @@ function LinkClientModal({ phone, onLinked, onClose }: {
     } finally { setLinking(false); }
   };
 
+  const create = async () => {
+    if (!newName.trim()) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await fetch('/api/admin/whatsapp/link-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, full_name: newName.trim(), email: newEmail.trim(), create: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCreateError(data.error ?? 'Error al crear contacto'); return; }
+      if (data.client) onLinked(data.client);
+    } catch {
+      setCreateError('Error de conexión');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
-          <p className="font-semibold text-[#07111d]">Vincular cliente</p>
+          <p className="font-semibold text-[#07111d]">Vincular contacto</p>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-1 hover:bg-[#f0e9d8]">
             <X className="h-4 w-4 text-[#29384a]" />
           </button>
         </div>
-        <p className="mb-3 text-xs text-[#29384a]">
-          Número: <strong>{phone}</strong> · Busca el cliente para vincularlo
-        </p>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-          <input
-            autoFocus
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nombre, email o teléfono…"
-            className="w-full rounded-xl border border-[#d8cbb5] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#25D366]"
-          />
-        </div>
-        <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
-          {loading && <p className="py-3 text-center text-xs text-[#29384a]">Buscando…</p>}
-          {!loading && query.length >= 2 && results.length === 0 && (
-            <p className="py-3 text-center text-xs text-[#29384a]">Sin resultados</p>
-          )}
-          {results.map((c) => (
+        <p className="mb-3 text-xs text-[#29384a]">Número: <strong>{phone}</strong></p>
+
+        {/* Tabs */}
+        <div className="mb-4 flex rounded-xl border border-[#d8cbb5] p-0.5">
+          {(['search', 'create'] as const).map((t) => (
             <button
-              key={c.id}
+              key={t}
               type="button"
-              disabled={linking}
-              onClick={() => link(c.id)}
-              className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9] disabled:opacity-50"
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                tab === t ? 'bg-[#25D366] text-white' : 'text-[#29384a] hover:bg-[#f0e9d8]'
+              }`}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-xs font-bold text-[#1a9e4a]">
-                {(c.full_name ?? c.email)[0].toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[#07111d]">{c.full_name ?? '—'}</p>
-                <p className="truncate text-xs text-[#29384a]">{c.email}</p>
-                {c.phone && <p className="text-[10px] text-[#9ca3af]">{c.phone}</p>}
-              </div>
+              {t === 'search' ? '🔍 Buscar existente' : '➕ Crear nuevo'}
             </button>
           ))}
         </div>
+
+        {tab === 'search' && (
+          <>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Nombre, email o teléfono…"
+                className="w-full rounded-xl border border-[#d8cbb5] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#25D366]"
+              />
+            </div>
+            <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
+              {loading && <p className="py-3 text-center text-xs text-[#29384a]">Buscando…</p>}
+              {!loading && query.length >= 2 && results.length === 0 && (
+                <p className="py-3 text-center text-xs text-[#29384a]">Sin resultados — prueba a crear un nuevo contacto</p>
+              )}
+              {results.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={linking}
+                  onClick={() => link(c.id)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-left transition hover:border-[#25D366] hover:bg-[#f9fff9] disabled:opacity-50"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/15 text-xs font-bold text-[#1a9e4a]">
+                    {(c.full_name ?? c.email)[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[#07111d]">{c.full_name ?? '—'}</p>
+                    <p className="truncate text-xs text-[#29384a]">{c.email}</p>
+                    {c.phone && <p className="text-[10px] text-[#9ca3af]">{c.phone}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {tab === 'create' && (
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[#07111d]">Nombre completo *</label>
+              <input
+                autoFocus
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nombre Apellido"
+                className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#25D366]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[#07111d]">Email (opcional)</label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="email@ejemplo.com"
+                className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#25D366]"
+              />
+            </div>
+            <p className="text-[10px] text-[#29384a]">
+              Teléfono: <strong>{phone}</strong> · Se creará una cuenta de cliente vinculada a este número.
+            </p>
+            {createError && <p className="text-xs text-red-600">{createError}</p>}
+            <button
+              type="button"
+              onClick={create}
+              disabled={creating || !newName.trim()}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-2.5 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50"
+            >
+              {creating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+              {creating ? 'Creando…' : 'Crear contacto'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1023,88 +1107,90 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           )}
 
           {/* Reply box */}
-          <div className="relative flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2 pb-[max(8px,env(safe-area-inset-bottom))]">
+          <div className="relative border-t border-black/10 bg-[#f0f2f5] px-2 py-2 pb-[max(8px,env(safe-area-inset-bottom))] sm:px-3">
             {showEmoji && (
               <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
             )}
-            {/* Attach */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              aria-label="Seleccionar archivo adjunto"
-              accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/ogg,audio/mpeg"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40"
-              title="Adjuntar archivo"
-            >
-              {uploading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
-            </button>
+            <div className="flex items-end gap-1 sm:gap-2">
+              {/* Attach */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                aria-label="Seleccionar archivo adjunto"
+                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/ogg,audio/mpeg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40"
+                title="Adjuntar archivo"
+              >
+                {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+              </button>
 
-            {/* Emoji */}
-            <button
-              type="button"
-              onClick={() => setShowEmoji((v) => !v)}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#29384a]'}`}
-              title="Emojis"
-            >
-              <Smile className="h-5 w-5" />
-            </button>
+              {/* Emoji — oculto en móvil muy pequeño para dar espacio */}
+              <button
+                type="button"
+                onClick={() => setShowEmoji((v) => !v)}
+                className={`hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#29384a]'}`}
+                title="Emojis"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
 
-            {/* Catalog */}
-            <button
-              type="button"
-              onClick={() => setShowCatalog(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
-              title="Enviar catálogo de servicios"
-              aria-label="Enviar catálogo de servicios"
-            >
-              <BookMarked className="h-4 w-4" />
-            </button>
+              {/* Catalog */}
+              <button
+                type="button"
+                onClick={() => setShowCatalog(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#d8cbb5]/50"
+                title="Enviar catálogo de servicios"
+                aria-label="Enviar catálogo de servicios"
+              >
+                <BookMarked className="h-4 w-4" />
+              </button>
 
-            {/* AI compose / edit+translate */}
-            <button
-              type="button"
-              onClick={handleAiCompose}
-              disabled={aiLoading}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 ${
-                reply.trim()
-                  ? 'bg-[#d7a33a]/15 text-[#c88b25] hover:bg-[#d7a33a]/25'
-                  : 'text-[#29384a] hover:bg-[#d8cbb5]/50'
-              }`}
-              title={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
-              aria-label={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
-            >
-              {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            </button>
+              {/* AI compose / edit+translate */}
+              <button
+                type="button"
+                onClick={handleAiCompose}
+                disabled={aiLoading}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 ${
+                  reply.trim()
+                    ? 'bg-[#d7a33a]/15 text-[#c88b25] hover:bg-[#d7a33a]/25'
+                    : 'text-[#29384a] hover:bg-[#d8cbb5]/50'
+                }`}
+                title={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
+                aria-label={reply.trim() ? 'Mejorar y traducir con IA' : 'Generar respuesta con IA'}
+              >
+                {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              </button>
 
-            <textarea
-              ref={textareaRef}
-              value={reply}
-              onChange={(e) => {
-                setReply(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-              }}
-              onKeyDown={handleKey}
-              placeholder={pendingFile ? 'Añadir texto al adjunto (opcional)' : 'Escribe un mensaje'}
-              rows={1}
-              className="flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-2.5 text-sm text-[#07111d] outline-none placeholder:text-[#29384a]/50"
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={sending || (!reply.trim() && !pendingFile)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:opacity-50 active:scale-95"
-              aria-label="Enviar"
-            >
-              <Send className="h-5 w-5" />
-            </button>
+              <textarea
+                ref={textareaRef}
+                value={reply}
+                onChange={(e) => {
+                  setReply(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+                }}
+                onKeyDown={handleKey}
+                placeholder={pendingFile ? 'Añadir texto al adjunto (opcional)' : 'Escribe un mensaje'}
+                rows={1}
+                className="min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-[16px] leading-snug text-[#07111d] outline-none placeholder:text-[#29384a]/50 sm:text-sm sm:py-2.5"
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={sending || (!reply.trim() && !pendingFile)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:opacity-50 active:scale-95"
+                aria-label="Enviar"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </>
       )}
