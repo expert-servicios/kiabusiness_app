@@ -15,8 +15,11 @@ export const metadata: Metadata = {
     description:
       'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+    locale: 'es_ES',
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'Blog EXPERT — Fiscalidad y Extranjería' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  alternates: { canonical: 'https://expertconsulting.es/blog' }
 };
 
 const categoryColors: Record<string, string> = {

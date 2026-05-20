@@ -13,8 +13,11 @@ export const metadata: Metadata = {
     title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
     description: 'Contacta con EXPERT. Respuesta en menos de 24 horas hábiles.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+    locale: 'es_ES',
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'Contacto EXPERT Asesoría' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  alternates: { canonical: 'https://expertconsulting.es/contacto' }
 };
 
 const contactItems = [

@@ -37,8 +37,16 @@ export const metadata: Metadata = {
     description:
       'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+    locale: 'es_ES',
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
+    description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares.',
+    images: ['/branding/expert%20servicios.png']
+  },
+  alternates: { canonical: 'https://expertconsulting.es' }
 };
 
 type IconItem = {
@@ -193,9 +201,38 @@ export default async function HomePage({
   if (params.code) {
     redirect(`/auth/callback?code=${encodeURIComponent(params.code)}&next=/dashboard`);
   }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    name: 'EXPERT — Asesoría Fiscal y Legal',
+    url: 'https://expertconsulting.es',
+    logo: 'https://expertconsulting.es/branding/expert-app.png',
+    image: 'https://expertconsulting.es/branding/expert%20servicios.png',
+    description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión.',
+    telephone: '+34-XXX-XXX-XXX',
+    address: { '@type': 'PostalAddress', addressCountry: 'ES' },
+    areaServed: 'ES',
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Servicios de asesoría',
+      itemListElement: [
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Declaración de la Renta (IRPF)' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Asesoría de extranjería' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Constitución de sociedades' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Contabilidad para autónomos' } }
+      ]
+    },
+    sameAs: ['https://expertconsulting.es']
+  };
+
   return (
-    <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-      <Hero />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+        <Hero />
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <Services />
       <FeaturedServices />
@@ -208,6 +245,7 @@ export default async function HomePage({
       <AdvisorSaasTeaser />
       <FinalCta />
     </main>
+    </>
   );
 }
 

@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard/', '/admin/', '/auth/', '/api/']
+        disallow: ['/dashboard/', '/admin/', '/auth/', '/api/', '/gracias/']
       }
     ],
     sitemap: 'https://expertconsulting.es/sitemap.xml'

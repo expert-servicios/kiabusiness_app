@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Check, FileText, MonitorCheck, Settings, Upload, Clock, Calendar, Gift, Zap } from 'lucide-react';
 import { getStripeClient } from '@/lib/integrations/stripe';
@@ -139,7 +140,7 @@ export default async function HoldedPage() {
       <section className="brand-blue-bg px-6 py-20 text-[#F8F6F1] md:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
-            <img src="/Holded-Logotype-Red_Light.svg" alt="Holded" className="mb-5 h-9 w-auto" />
+            <Image src="/Holded-Logotype-Red_Light.svg" alt="Holded" width={120} height={36} className="mb-5 h-9 w-auto" />
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Solution Partner certificado</p>
             <h1 className="mt-5 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">
               Migración contable a Holded con una estructura clara.

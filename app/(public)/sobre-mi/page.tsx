@@ -14,8 +14,11 @@ export const metadata: Metadata = {
     description:
       'Más de 20 años de experiencia en asesoría fiscal, legal y administrativa en España. Colaboradora social AEAT, Holded Solution Partner.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+    locale: 'es_ES',
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'Ksenia Ilicheva — EXPERT' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  alternates: { canonical: 'https://expertconsulting.es/sobre-mi' }
 };
 
 const credentials = [

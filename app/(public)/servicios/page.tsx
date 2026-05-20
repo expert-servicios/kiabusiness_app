@@ -15,8 +15,11 @@ export const metadata: Metadata = {
     description:
       'Todos los servicios de EXPERT: declaraciones fiscales, extranjería, empresas, tráfico, notaría, gestiones especializadas y formación.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+    locale: 'es_ES',
+    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Servicios de asesoría' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  alternates: { canonical: 'https://expertconsulting.es/servicios' }
 };
 
 const categoryIcons: Record<string, LucideIcon> = {

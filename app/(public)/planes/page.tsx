@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight, Check, Calendar, Gift,
@@ -220,7 +221,7 @@ export default function PlanesPage() {
           <div className="flex flex-col items-center justify-between gap-4 border border-[#D4A017]/30 bg-white px-6 py-5 sm:flex-row">
             <div className="flex items-center gap-4">
               <div className="flex h-10 w-auto shrink-0 items-center justify-center rounded bg-[#0D1B2A] px-3 py-1.5">
-                <img src="/Holded-Logotype-Red_Light.svg" alt="Holded" className="h-5 w-auto" />
+                <Image src="/Holded-Logotype-Red_Light.svg" alt="Holded" width={80} height={20} className="h-5 w-auto" />
               </div>
               <div>
                 <p className="font-semibold text-[#0D1B2A]">¿Todavía no tienes Holded?</p>
