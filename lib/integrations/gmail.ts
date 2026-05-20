@@ -25,7 +25,7 @@ export function hasGmailSA(): boolean {
 
 async function getGmailSAClient(): Promise<AnyGoogle | null> {
   if (!hasGmailSA()) return null;
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const auth = new google.auth.JWT({
     email: process.env.GOOGLE_GMAIL_SA_EMAIL!,
     key: process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY!.replace(/\\n/g, '\n'),
@@ -54,7 +54,7 @@ function getRedirectUri(): string {
 }
 
 async function getOAuth2Client(tokens?: GmailTokens): Promise<AnyGoogle> {
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -84,7 +84,7 @@ export async function exchangeGmailCode(code: string): Promise<GmailTokens> {
   const { tokens } = await client.getToken(code);
   client.setCredentials(tokens);
 
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const oauth2 = google.oauth2({ version: 'v2', auth: client });
   const { data } = await oauth2.userinfo.get();
 
@@ -320,7 +320,7 @@ export async function listGmailMails(
   opts?: { query?: string; maxResults?: number }
 ): Promise<{ mails: GmailSummary[]; refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
   const mails = await _listThreads(gmail, opts);
   return { mails, refreshed };
@@ -331,7 +331,7 @@ export async function getGmailThread(
   threadId: string
 ): Promise<{ messages: GmailMessage[]; refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
   const messages = await _getThread(gmail, threadId);
   return { messages, refreshed };
@@ -342,7 +342,7 @@ export async function sendGmailReply(
   opts: { threadId: string; to: string; subject: string; body: string }
 ): Promise<{ refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
-  const { google } = await import('googleapis' as AnyGoogle);
+  const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
   await _sendReply(gmail, opts);
   return { refreshed };

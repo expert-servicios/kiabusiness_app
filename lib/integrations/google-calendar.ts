@@ -25,7 +25,7 @@ function getRedirectUri(): string {
 
 async function getOAuth2Client(tokens?: StoredTokens) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { google } = await import('googleapis' as any);
+  const { google } = (await import('googleapis')) as any;
   const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -83,7 +83,7 @@ export async function upsertCalendarEvent(
   const fresh = await refreshTokensIfNeeded(tokens);
   const client = await getOAuth2Client(fresh);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { google } = await import('googleapis' as any);
+  const { google } = (await import('googleapis')) as any;
   const cal = google.calendar({ version: 'v3', auth: client });
 
   const overrides = (input.reminderDaysBefore ?? [7, 1]).map((days) => ({
@@ -116,7 +116,7 @@ export async function deleteCalendarEvent(tokens: StoredTokens, eventId: string)
   const fresh = await refreshTokensIfNeeded(tokens);
   const client = await getOAuth2Client(fresh);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { google } = await import('googleapis' as any);
+  const { google } = (await import('googleapis')) as any;
   const cal = google.calendar({ version: 'v3', auth: client });
   await cal.events.delete({ calendarId: 'primary', eventId }).catch(() => {
     // Already deleted — ignore

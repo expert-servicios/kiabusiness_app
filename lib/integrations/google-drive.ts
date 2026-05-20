@@ -12,7 +12,7 @@ async function getDriveClient() {
   const creds = getDriveAuth();
   if (!creds) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { google } = await import('googleapis' as any);
+  const { google } = (await import('googleapis')) as any;
   const auth = new google.auth.JWT(creds);
   return google.drive({ version: 'v3', auth });
 }
