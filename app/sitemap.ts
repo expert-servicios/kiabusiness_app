@@ -29,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/servicios`,                       changeFrequency: 'monthly', priority: 0.9, lastModified: now },
     { url: `${BASE}/planes`,                          changeFrequency: 'monthly', priority: 0.9, lastModified: now },
     { url: `${BASE}/holded`,                          changeFrequency: 'monthly', priority: 0.8, lastModified: now },
+    { url: `${BASE}/holded/conectores`,               changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/sobre-mi`,                        changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/blog`,                            changeFrequency: 'weekly',  priority: 0.8, lastModified: now },
     { url: `${BASE}/docs`,                            changeFrequency: 'weekly',  priority: 0.85, lastModified: now },

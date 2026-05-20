@@ -1,7 +1,23 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Check, FileText, MonitorCheck, Settings, Upload, Clock, Calendar, Gift, Zap } from 'lucide-react';
+import {
+  ArrowRight,
+  Bot,
+  Calendar,
+  Check,
+  ClipboardCheck,
+  Eye,
+  FileText,
+  Gift,
+  Layers,
+  MonitorCheck,
+  Settings,
+  ShieldCheck,
+  Upload,
+  Clock,
+  Zap,
+} from 'lucide-react';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
@@ -9,33 +25,54 @@ import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
 
 export const metadata: Metadata = {
-  title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
+  title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
   description:
-    'Migramos tu contabilidad a Holded con estructura clara. Pack Starter, migración completa y migración con inventario. Somos Holded Solution Partner certificados.',
+    'Implantamos Holded con datos bien vinculados: clientes, proveedores, bancos, impuestos y stock. Añadimos conectores de IA (Claude / ChatGPT) para reducir trabajo manual. Holded Solution Partner certificados.',
   alternates: { canonical: 'https://expertconsulting.es/holded' },
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/holded',
-    title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
+    title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
     description:
-      'Migramos tu contabilidad a Holded con estructura clara. Somos Holded Solution Partner certificados.',
+      'Implantamos Holded con datos bien vinculados y añadimos conectores de IA para reducir trabajo manual. EXPERT — Holded Solution Partner certificados.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: 'https://expertconsulting.es/catalog/holded.png', width: 1200, height: 630, alt: 'Holded Solution Partner — EXPERT' }]
+    images: [{ url: 'https://expertconsulting.es/catalog/holded.png', width: 1200, height: 630, alt: 'Holded Solution Partner — EXPERT' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Holded Solution Partner | Migración y Onboarding | EXPERT',
-    description: 'Migramos tu contabilidad a Holded con estructura clara. Somos Holded Solution Partner certificados.',
-    images: ['https://expertconsulting.es/catalog/holded.png']
-  }
+    title: 'Implantación de Holded con migración, formación y automatización | EXPERT',
+    description: 'Implantamos Holded con datos bien vinculados y añadimos conectores de IA. EXPERT — Holded Solution Partner.',
+    images: ['https://expertconsulting.es/catalog/holded.png'],
+  },
 };
 
 const migrationSteps = [
   { title: 'Diagnóstico', text: 'Revisamos tu sistema actual, facturación, bancos, impuestos y necesidades de reporting.', Icon: FileText },
-  { title: 'Migración', text: 'Definimos qué datos se trasladan, qué se depura y cómo se ordena la operativa en Holded.', Icon: Upload },
-  { title: 'Configuración', text: 'Ajustamos facturas, contactos, bancos, categorías, impuestos y circuitos de trabajo.', Icon: Settings },
-  { title: 'Formación', text: 'Sesiones prácticas para que el equipo trabaje con seguridad desde el primer día.', Icon: MonitorCheck }
+  { title: 'Migración', text: 'Definimos qué datos se trasladan, qué se depura y cómo quedan bien vinculados en Holded: clientes, proveedores, artículos, bancos e impuestos.', Icon: Upload },
+  { title: 'Configuración', text: 'Ajustamos facturas, contactos, bancos, categorías, impuestos y circuitos de trabajo por metodología con checklist de cierre.', Icon: Settings },
+  { title: 'Formación', text: 'Sesiones prácticas para que el equipo trabaje con seguridad desde el primer día.', Icon: MonitorCheck },
+] as const;
+
+const aiCards = [
+  {
+    Icon: Eye,
+    title: 'IA en modo consulta',
+    subtitle: 'Solo lectura',
+    desc: 'Pregunta por facturas, cobros, clientes o contabilidad en lenguaje claro. Sin modificar nada en tu cuenta.',
+  },
+  {
+    Icon: ClipboardCheck,
+    title: 'Borradores con confirmación',
+    subtitle: 'Revisión obligatoria',
+    desc: 'La IA genera propuestas revisables. Nada se publica ni se envía sin tu aprobación explícita.',
+  },
+  {
+    Icon: Layers,
+    title: 'Automatizaciones por API',
+    subtitle: 'Integraciones a medida',
+    desc: 'Flujos automatizados, conectores con herramientas externas y reporting a medida sobre tus datos reales.',
+  },
 ] as const;
 
 const PACKAGE_META = [
@@ -49,8 +86,8 @@ const PACKAGE_META = [
       'Setup de empresa, facturación y bancos',
       'Conexión bancaria (Open Banking)',
       '1 sesión de formación de 2 horas',
-      'Soporte por email durante 30 días'
-    ]
+      'Soporte por email durante 30 días',
+    ],
   },
   {
     priceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
@@ -63,8 +100,8 @@ const PACKAGE_META = [
       'Migración de facturas emitidas y recibidas',
       'Configuración contable completa (PGC)',
       '2 sesiones de formación de 2 horas',
-      'Soporte prioritario durante 60 días'
-    ]
+      'Soporte prioritario durante 60 días',
+    ],
   },
   {
     priceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
@@ -77,9 +114,9 @@ const PACKAGE_META = [
       'Configuración de almacenes y stock inicial',
       'Integración inventario ↔ facturación',
       '3 sesiones de formación de 2 horas',
-      'Soporte prioritario durante 90 días'
-    ]
-  }
+      'Soporte prioritario durante 90 días',
+    ],
+  },
 ];
 
 const FORMACION_PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
@@ -105,28 +142,36 @@ const holdedArticles = articles.filter((a) => a.category === 'Holded');
 const holdedFaq = [
   {
     q: '¿Qué es Holded y para qué sirve?',
-    a: 'Holded es un software de gestión empresarial en la nube que integra contabilidad, facturación, inventario, proyectos y CRM en un solo lugar. Permite tener visibilidad total del negocio en tiempo real desde cualquier dispositivo.'
+    a: 'Holded es un software de gestión empresarial en la nube que integra contabilidad, facturación, inventario, proyectos y CRM en un solo lugar. Permite tener visibilidad total del negocio en tiempo real desde cualquier dispositivo.',
   },
   {
     q: '¿Cuánto tiempo tarda la migración a Holded?',
-    a: 'Depende del volumen de datos y la complejidad de tu situación actual. Un Pack Starter puede estar listo en 1-2 semanas. Una migración completa con historial contable e inventario suele tardar entre 3 y 6 semanas.'
+    a: 'Depende del volumen de datos y la complejidad de tu situación actual. Un Pack Starter puede estar listo en 1-2 semanas. Una migración completa con historial contable e inventario suele tardar entre 3 y 6 semanas.',
   },
   {
     q: '¿Qué datos se pueden migrar a Holded?',
-    a: 'Migramos clientes, proveedores, facturas emitidas y recibidas, saldos contables, productos y referencias de inventario, contactos y configuración bancaria. Previamente hacemos un diagnóstico para definir qué se migra y qué se depura.'
+    a: 'Migramos clientes, proveedores, facturas emitidas y recibidas, saldos contables, productos y referencias de inventario, contactos y configuración bancaria. Previamente hacemos un diagnóstico para definir qué se migra y qué se depura, asegurando que los datos quedan bien vinculados.',
   },
   {
     q: '¿La formación está incluida en el precio de migración?',
-    a: 'Sí. Todos los paquetes de migración incluyen 2 horas de formación onboarding gratuita para que arranques con seguridad. También ofrecemos sesiones adicionales de formación por horas si necesitas profundizar en algún módulo.'
+    a: 'Sí. Todos los paquetes de migración incluyen horas de formación onboarding para que arranques con seguridad. También ofrecemos sesiones adicionales de formación por horas si necesitas profundizar en algún módulo.',
   },
   {
     q: '¿Puedo probar Holded antes de contratar la migración?',
-    a: 'Sí. Como Holded Solution Partner podemos facilitarte una prueba gratuita de 14 días sin tarjeta de crédito. También ofrecemos una demo en vivo de 30 minutos adaptada a tu sector.'
+    a: 'Sí. Como Holded Solution Partner podemos facilitarte una prueba gratuita de 14 días sin tarjeta de crédito. También ofrecemos una demo en vivo de 30 minutos adaptada a tu sector.',
   },
   {
     q: '¿Qué pasa si ya tengo Holded pero mal configurado?',
-    a: 'Podemos hacer una auditoría de tu cuenta actual, reorganizar la estructura contable, limpiar datos y configurar correctamente todos los módulos. Contacta con nosotros para valorar tu caso.'
-  }
+    a: 'Podemos hacer una auditoría de tu cuenta actual, reorganizar la estructura contable, limpiar datos y configurar correctamente todos los módulos. Contacta con nosotros para valorar tu caso.',
+  },
+  {
+    q: '¿En qué consisten los conectores de IA para Holded?',
+    a: 'Los conectores permiten consultar tus datos de Holded (facturas, cobros, contabilidad, clientes) mediante IA como Claude o ChatGPT en lenguaje claro, sin exportar hojas de cálculo. Empezamos siempre en modo solo lectura. Las acciones de escritura funcionan solo como borradores bajo confirmación explícita.',
+  },
+  {
+    q: '¿Es seguro conectar Holded con IA?',
+    a: 'Sí. La integración opera por defecto en solo lectura sobre la API de Holded. No mueve dinero, no envía emails automáticamente ni cierra contabilidad de forma autónoma. Cuando aplican acciones, se trabaja con borradores que el usuario revisa y confirma antes de ejecutarlos.',
+  },
 ];
 
 export default async function HoldedPage() {
@@ -143,22 +188,22 @@ export default async function HoldedPage() {
             <Image src="/Holded-Logotype-Red_Light.svg" alt="Holded" width={120} height={36} className="mb-5 h-9 w-auto" />
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Solution Partner certificado</p>
             <h1 className="mt-5 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">
-              Migración contable a Holded con una estructura clara.
+              Implantación de Holded con migración, formación y automatización
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[#9CA3AF] md:text-lg">
-              Te ayudamos a pasar de procesos dispersos a una gestión contable y administrativa más ordenada,
-              conectada y preparada para crecer.
+              Dejamos Holded operativo con datos bien vinculados. Y si quieres ir más allá, añadimos automatizaciones e IA para reducir trabajo manual.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
                 <Calendar className="h-4 w-4" />
-                Demo gratuita — 30 min
+                Reservar demo — 30 min
               </HoldedCalendlyButton>
               <Link
-                href="#precios"
-                className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+                href="/holded/conectores"
+                className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
               >
-                Ver paquetes →
+                <Bot className="h-4 w-4" />
+                Ver Conectores e IA
               </Link>
             </div>
           </div>
@@ -168,10 +213,11 @@ export default async function HoldedPage() {
             <div className="mt-5 space-y-3">
               {[
                 'Migración desde hojas de cálculo o software anterior',
-                'Configuración inicial de empresa, facturación y bancos',
-                'Revisión de procesos contables y administrativos',
+                'Datos bien vinculados: clientes, proveedores, bancos e impuestos',
+                'Configuración inicial de empresa, facturación y contabilidad',
+                'Implantación por metodología con checklist de cierre',
                 'Formación en Holded en bloques de 2 horas',
-                'Acompañamiento inicial tras la migración'
+                'Acompañamiento inicial tras la migración',
               ].map((s) => (
                 <div key={s} className="flex gap-3 border border-[#D4A017]/20 bg-[#0D1B2A]/45 p-4">
                   <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" />
@@ -250,8 +296,62 @@ export default async function HoldedPage() {
         </div>
       </section>
 
+      {/* ── Conectores e IA ───────────────────────────────────────────────── */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Conectores e IA</p>
+              <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
+                La capa que hace Holded más rápido
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-[#23364D] md:text-base">
+                Conecta Holded con la IA que ya usas para consultar facturas, clientes y contabilidad en lenguaje claro. Empezamos en modo solo lectura y, cuando aplica, trabajamos con borradores bajo confirmación.
+              </p>
+              <div className="mt-5 flex items-start gap-3 border border-[#D4A017]/30 bg-[#D4A017]/8 px-4 py-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" />
+                <p className="text-xs leading-5 text-[#23364D]">
+                  <span className="font-bold">Seguridad:</span> lectura por defecto; acciones solo como borradores con revisión.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/holded/conectores"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                >
+                  Ver opciones de conectores <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a
+                  href="https://holded.verifactu.business/demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]"
+                >
+                  Solicitar demo conectores
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {aiCards.map(({ Icon, title, subtitle, desc }) => (
+                <div key={title} className="flex gap-4 border border-[#D4A017]/25 bg-white p-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#D4A017]/10">
+                    <Icon className="h-5 w-5 text-[#D4A017]" />
+                  </div>
+                  <div>
+                    <p className="font-serif text-base font-bold text-[#0D1B2A]">{title}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">{subtitle}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-[#23364D]">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing cards ─────────────────────────────────────────────────── */}
-      <section id="precios" className="px-6 py-16 md:py-20">
+      <section id="precios" className="bg-white px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Paquetes</p>
@@ -303,6 +403,17 @@ export default async function HoldedPage() {
                     <p className="text-xs font-bold text-[#0D1B2A]">2 horas de formación onboarding GRATIS</p>
                   </div>
 
+                  <div className="mt-3 flex items-center gap-2 border border-[#D4A017]/20 bg-[#F8F6F1] px-3 py-2">
+                    <Bot className="h-4 w-4 shrink-0 text-[#D4A017]" />
+                    <p className="text-xs text-[#23364D]">
+                      <span className="font-semibold">Opcional:</span> activar{' '}
+                      <Link href="/holded/conectores" className="font-bold text-[#D4A017] hover:underline">
+                        Conectores e IA
+                      </Link>{' '}
+                      (fase 2)
+                    </p>
+                  </div>
+
                   <div className="mt-4 space-y-2">
                     <HoldedBuyButton priceId={pkg.priceId} packageName={`${pkg.name} ${pkg.subtitle}`} />
                     <Link
@@ -320,15 +431,15 @@ export default async function HoldedPage() {
       </section>
 
       {/* ── Process steps ─────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-16 md:py-20">
+      <section className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Proceso</p>
             <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Una migración pensada para no desordenar tu actividad.
+              Una implantación pensada para no desordenar tu actividad.
             </h2>
             <p className="mt-4 text-sm leading-7 text-[#23364D] md:text-base">
-              Primero ordenamos el punto de partida, después migramos y configuramos, y finalmente formamos al equipo.
+              Primero ordenamos el punto de partida, después migramos y configuramos por metodología, y finalmente formamos al equipo.
             </p>
           </div>
 
@@ -345,7 +456,7 @@ export default async function HoldedPage() {
       </section>
 
       {/* ── 3 CTAs ────────────────────────────────────────────────────────── */}
-      <section className="px-6 py-16 md:py-20">
+      <section className="bg-white px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">¿Por dónde empezar?</p>
@@ -354,7 +465,7 @@ export default async function HoldedPage() {
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {/* CTA 1 — Presupuesto personalizado */}
-            <div className="flex flex-col border border-[#D4A017]/25 bg-white p-7">
+            <div className="flex flex-col border border-[#D4A017]/25 bg-[#F8F6F1] p-7">
               <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10 text-[#D4A017]">
                 <Zap className="h-6 w-6" />
               </div>
@@ -371,7 +482,7 @@ export default async function HoldedPage() {
             </div>
 
             {/* CTA 2 — Prueba gratuita 14 días */}
-            <div className="flex flex-col border border-[#D4A017]/25 bg-white p-7">
+            <div className="flex flex-col border border-[#D4A017]/25 bg-[#F8F6F1] p-7">
               <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10 text-[#D4A017]">
                 <Gift className="h-6 w-6" />
               </div>
@@ -405,9 +516,9 @@ export default async function HoldedPage() {
       </section>
 
       {/* ── Formación por horas — CTA horizontal ─────────────────────────── */}
-      <section className="bg-white px-6 py-10 md:py-12">
+      <section className="px-6 py-10 md:py-12">
         <div className="mx-auto max-w-7xl">
-          <div className="border border-[#D4A017] bg-[#F8F6F1] p-6 md:p-8">
+          <div className="border border-[#D4A017] bg-white p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-5">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/10">
@@ -426,7 +537,7 @@ export default async function HoldedPage() {
                       'Sesión de 2 h por videollamada',
                       'Contenido adaptado a tu sector',
                       'Grabación de la sesión incluida',
-                      'Reserva tu horario tras el pago'
+                      'Reserva tu horario tras el pago',
                     ].map((f) => (
                       <li key={f} className="flex items-center gap-1.5 text-xs text-[#23364D]">
                         <Check className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
@@ -460,10 +571,7 @@ export default async function HoldedPage() {
                   Guías sobre Holded para tu empresa.
                 </h2>
               </div>
-              <Link
-                href="/blog"
-                className="text-sm font-semibold text-[#D4A017] hover:text-[#F2C14E]"
-              >
+              <Link href="/blog" className="text-sm font-semibold text-[#D4A017] hover:text-[#F2C14E]">
                 Ver todos los artículos →
               </Link>
             </div>
@@ -512,10 +620,11 @@ export default async function HoldedPage() {
               Reservar demo gratuita
             </HoldedCalendlyButton>
             <Link
-              href="#precios"
+              href="/holded/conectores"
               className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#0D1B2A]/25 px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]"
             >
-              Ver precios <ArrowRight className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
+              Ver Conectores e IA
             </Link>
           </div>
         </div>
