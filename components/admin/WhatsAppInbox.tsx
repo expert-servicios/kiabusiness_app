@@ -739,7 +739,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         body: JSON.stringify({
           clientId: activeConv.clientId,
           phone: activeConv.phone,
-          history: activeConv.messages.slice(-10).map((m) => ({ direction: m.direction, body: m.body })),
+          history: activeConv.messages.slice(-30).map((m) => ({ direction: m.direction, body: m.body })),
           intent: reply.trim() || undefined,
           mode: hasText ? 'edit' : 'compose',
         }),
@@ -987,7 +987,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 lg:hidden"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10"
               aria-label="Volver"
             >
               <ArrowLeft className="h-5 w-5" />

@@ -17,7 +17,7 @@ async function requireAdmin(request: NextRequest) {
 const schema = z.object({
   clientId:  z.string().uuid().nullish(),
   phone:     z.string().min(1),
-  history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(20),
+  history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(40),
   intent:    z.string().max(2000).optional(),
   mode:      z.enum(['compose', 'edit']).default('compose'),
   serviceId: z.string().optional(),
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const historyText = history.slice(-10)
+    const historyText = history.slice(-25)
       .map((m) => `${m.direction === 'inbound' ? 'Cliente' : 'EXPERT'}: ${m.body}`)
       .join('\n');
 
@@ -166,6 +166,7 @@ ACTITUD:
 - FORMATO WHATSAPP: negrita con *asterisco simple*, NO con **doble asterisco**. Cursiva con _guión bajo_. NUNCA uses ##, ***, ni listas markdown.
 - Si hay fuentes oficiales disponibles, usalas como apoyo y comparte 1 o 2 enlaces oficiales utiles.
 - No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
+- Lee TODA LA CONVERSACIÓN RECIENTE antes de redactar. No repitas información ya dada. Muestra continuidad y memoria: si el cliente ya proporcionó un dato, no lo vuelvas a pedir.
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
