@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   const { data: profile } = await getSupabaseAdmin()
     .from('profiles')
-    .select('id,role,full_name,email')
+    .select('id,role,full_name')
     .eq('id', user.id)
     .single();
 
@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect('/dashboard');
   }
 
-  const enrichedProfile = { ...profile, email: profile?.email ?? user.email ?? '' };
+  const enrichedProfile = { ...profile, email: user.email ?? '' };
 
   const obligationsData = await fetchJson(
     `/api/admin/fiscal-calendar?year=${new Date().getFullYear()}`,
