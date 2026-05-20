@@ -54,6 +54,9 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
 
+  // Only cache http/https — chrome-extension:// and others are not cacheable
+  if (!url.protocol.startsWith('http')) return;
+
   // Skip non-GET and API calls — always go to network
   if (request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 

@@ -77,10 +77,27 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
 
-    // Create company
+    const d = parse.data;
+
+    // Create company — map form field names to actual DB column names
     const { data: company, error: createError } = await admin
       .from('companies')
-      .insert({ ...parse.data, created_by: user.id })
+      .insert({
+        razon_social:    d.razon_social,
+        nombre_comercial:d.nombre_comercial,
+        cif_nif:         d.cif_nif,
+        forma_juridica:  d.forma_juridica,
+        direccion:       d.direccion,
+        ciudad:          d.ciudad,
+        provincia:       d.provincia,
+        codigo_postal:   d.codigo_postal,
+        pais:            d.pais ?? 'ES',
+        telefono:        d.telefono,
+        email:           d.email,
+        web:             d.web,
+        name:            d.razon_social,   // keep legacy column in sync
+        user_id:         user.id,
+      })
       .select('*')
       .single();
 
