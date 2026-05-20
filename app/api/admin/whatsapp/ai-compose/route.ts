@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
+import { formatChecklistForPrompt, getChecklistsByCategory, getServiceChecklist } from '@/lib/utils/service-checklists';
 import { z } from 'zod';
 
 async function requireAdmin(request: NextRequest) {
@@ -19,6 +20,7 @@ const schema = z.object({
   history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(20),
   intent:    z.string().max(2000).optional(),
   mode:      z.enum(['compose', 'edit']).default('compose'),
+  serviceId: z.string().optional(),
 });
 
 function cleanMarkdownForWhatsApp(text: string): string {
@@ -55,7 +57,19 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
-    const { clientId, history, intent, mode } = parsed.data;
+    const { clientId, history, intent, mode, serviceId } = parsed.data;
+
+    // ── Checklist context ─────────────────────────────────────────
+    let checklistContext = '';
+    if (serviceId) {
+      const checklist = getServiceChecklist(serviceId);
+      if (checklist) {
+        checklistContext = `\nCHECKLIST DEL SERVICIO:\n${formatChecklistForPrompt(checklist)}`;
+      }
+    } else if (clientId) {
+      // If no specific service, try to infer from client's open cases
+      // (will be populated below after fetching cases)
+    }
 
     let clientContext = 'No hay datos del cliente registrado con este número.';
 
@@ -72,6 +86,15 @@ export async function POST(request: NextRequest) {
         .join('\n');
 
       clientContext = `Cliente: ${name}\nExpedientes:\n${caseList || 'Ninguno'}`;
+
+      // Infer checklist from most recent case when no explicit serviceId given
+      if (!serviceId && cases && cases.length > 0) {
+        const latestService = cases[0].service as string;
+        const inferred = getServiceChecklist(latestService) ?? getChecklistsByCategory(latestService)[0];
+        if (inferred) {
+          checklistContext = `\nCHECKLIST DEL SERVICIO (inferido del expediente más reciente):\n${formatChecklistForPrompt(inferred)}`;
+        }
+      }
     }
 
     const historyText = history.slice(-10)
@@ -104,7 +127,7 @@ FORMATO WHATSAPP OBLIGATORIO:
 - NO uses ##, ***, \`código\`, ni guiones de lista. Usa párrafos cortos.
 
 CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
-${historyText || 'Sin historial previo.'}`;
+${historyText || 'Sin historial previo.'}${checklistContext}`;
 
       const ai = await generateWabaAiText({
         systemPrompt: editPrompt,
@@ -148,7 +171,7 @@ ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este men
 
 CONTEXTO DEL CLIENTE:
 ${clientContext}${intentText}
-
+${checklistContext}
 CONVERSACIÓN RECIENTE:
 ${historyText || 'Sin historial previo.'}`;
 
