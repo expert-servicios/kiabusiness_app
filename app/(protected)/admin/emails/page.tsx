@@ -32,15 +32,19 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 async function getEmailEvents(): Promise<EmailEvent[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/emails`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.events as EmailEvent[];
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/emails`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.events as EmailEvent[];
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminEmailsPage() {

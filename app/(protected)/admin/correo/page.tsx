@@ -1,55 +1,57 @@
 import { cookies } from 'next/headers';
 import { CorreoInbox } from '@/components/admin/CorreoInbox';
 
+const CORREO_FALLBACK = {
+  ms365Connected: false, ms365Email: null,
+  gmailConnected: false, gmailEmail: null,
+  gmailSA: false, initialMails: [], initialProvider: 'ms365' as const,
+};
+
 async function fetchCorreoData() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const base = process.env.NEXT_PUBLIC_APP_URL;
-  const headers = { cookie: cookieHeader };
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const base = process.env.NEXT_PUBLIC_APP_URL;
+    const headers = { cookie: cookieHeader };
 
-  const statusRes = await fetch(`${base}/api/admin/correo?action=status`, {
-    headers,
-    cache: 'no-store',
-  });
+    const statusRes = await fetch(`${base}/api/admin/correo?action=status`, {
+      headers,
+      cache: 'no-store',
+    });
 
-  if (!statusRes.ok) {
-    return {
-      ms365Connected: false, ms365Email: null,
-      gmailConnected: false, gmailEmail: null,
-      initialMails: [], initialProvider: 'ms365' as const,
-    };
-  }
+    if (!statusRes.ok) return CORREO_FALLBACK;
 
-  const status = await statusRes.json();
-  const ms365Connected: boolean = status.ms365Connected ?? false;
-  const gmailConnected: boolean = status.gmailConnected ?? false;
-  const gmailSA: boolean = status.gmailSA ?? false;
+    const status = await statusRes.json();
+    const ms365Connected: boolean = status.ms365Connected ?? false;
+    const gmailConnected: boolean = status.gmailConnected ?? false;
+    const gmailSA: boolean = status.gmailSA ?? false;
 
-  // Determine which provider to show first
-  const initialProvider: 'ms365' | 'gmail' = gmailConnected ? 'gmail' : 'ms365';
-  const activeProvider = initialProvider;
+    const initialProvider: 'ms365' | 'gmail' = gmailConnected ? 'gmail' : 'ms365';
 
-  let initialMails: unknown[] = [];
-  if (ms365Connected || gmailConnected) {
-    const mailsRes = await fetch(
-      `${base}/api/admin/correo?action=list&provider=${activeProvider}`,
-      { headers, cache: 'no-store' }
-    );
-    if (mailsRes.ok) {
-      const data = await mailsRes.json();
-      initialMails = data.mails ?? [];
+    let initialMails: unknown[] = [];
+    if (ms365Connected || gmailConnected) {
+      const mailsRes = await fetch(
+        `${base}/api/admin/correo?action=list&provider=${initialProvider}`,
+        { headers, cache: 'no-store' }
+      );
+      if (mailsRes.ok) {
+        const data = await mailsRes.json();
+        initialMails = data.mails ?? [];
+      }
     }
-  }
 
-  return {
-    ms365Connected,
-    ms365Email: status.ms365Email ?? null,
-    gmailConnected,
-    gmailEmail:  status.gmailEmail ?? null,
-    gmailSA,
-    initialMails,
-    initialProvider,
-  };
+    return {
+      ms365Connected,
+      ms365Email: status.ms365Email ?? null,
+      gmailConnected,
+      gmailEmail: status.gmailEmail ?? null,
+      gmailSA,
+      initialMails,
+      initialProvider,
+    };
+  } catch {
+    return CORREO_FALLBACK;
+  }
 }
 
 export default async function AdminCorreoPage({

@@ -87,30 +87,37 @@ interface GoogleStatus {
 }
 
 async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
-  const base = process.env.NEXT_PUBLIC_APP_URL;
-  const headers = { cookie: cookieHeader };
-  const [gmailRes, correoRes] = await Promise.all([
-    fetch(`${base}/api/auth/google-gmail/status`, { headers, cache: 'no-store' }),
-    fetch(`${base}/api/admin/correo?action=status`, { headers, cache: 'no-store' }),
-  ]);
-  const gmailData  = gmailRes.ok  ? await gmailRes.json()  : {};
-  const correoData = correoRes.ok ? await correoRes.json() : {};
-  return {
-    gmailConnected:    gmailData.connected ?? correoData.gmailConnected ?? false,
-    gmailEmail:        gmailData.email     ?? correoData.gmailEmail     ?? null,
-    calendarConnected: false, // user-level tokens exist; admin uses client dashboard
-  };
+  try {
+    const base = process.env.NEXT_PUBLIC_APP_URL;
+    const headers = { cookie: cookieHeader };
+    const [gmailRes, correoRes] = await Promise.all([
+      fetch(`${base}/api/auth/google-gmail/status`, { headers, cache: 'no-store' }),
+      fetch(`${base}/api/admin/correo?action=status`, { headers, cache: 'no-store' }),
+    ]);
+    const gmailData  = gmailRes.ok  ? await gmailRes.json()  : {};
+    const correoData = correoRes.ok ? await correoRes.json() : {};
+    return {
+      gmailConnected:    gmailData.connected ?? correoData.gmailConnected ?? false,
+      gmailEmail:        gmailData.email     ?? correoData.gmailEmail     ?? null,
+      calendarConnected: false,
+    };
+  } catch {
+    return { gmailConnected: false, gmailEmail: null, calendarConnected: false };
+  }
 }
 
 async function getSyncEvents(cookieHeader: string): Promise<SyncEvent[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integration-sync-events?provider=holded`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.events ?? [];
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integration-sync-events?provider=holded`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.events ?? [];
+  } catch {
+    return [];
+  }
 }
 
 async function getHoldedStatus(cookieHeader: string): Promise<HoldedStatus | null> {

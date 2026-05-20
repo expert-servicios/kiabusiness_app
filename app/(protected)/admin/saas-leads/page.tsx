@@ -27,15 +27,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 async function getLeads(): Promise<SaasLead[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/saas-leads`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.leads ?? [];
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/saas-leads`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.leads ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminSaasLeadsPage() {

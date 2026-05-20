@@ -15,15 +15,19 @@ interface CaseWithClient {
 }
 
 async function getAdminCases(): Promise<CaseWithClient[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/cases`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.cases as CaseWithClient[];
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/cases`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.cases as CaseWithClient[];
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminCasesPage() {

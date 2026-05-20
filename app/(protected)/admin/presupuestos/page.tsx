@@ -14,19 +14,19 @@ interface Quote {
 }
 
 async function getAdminQuotes() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/quotes`, {
-    headers: { cookie: cookieHeader ?? '' },
-    cache: 'no-store'
-  });
-
-  if (!response.ok) {
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/quotes`, {
+      headers: { cookie: cookieHeader ?? '' },
+      cache: 'no-store'
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.quotes as Quote[];
+  } catch {
     return [];
   }
-
-  const data = await response.json();
-  return data.quotes as Quote[];
 }
 
 export default async function AdminQuotesPage() {

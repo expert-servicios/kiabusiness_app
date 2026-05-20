@@ -28,15 +28,19 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 async function getDemos(): Promise<HoldedDemo[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/holded-demos`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.demos ?? [];
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/holded-demos`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.demos ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminHoldedDemosPage() {

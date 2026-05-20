@@ -22,15 +22,19 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; colo
 };
 
 async function getAdminSubscriptions(): Promise<Subscription[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/subscriptions`, {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.subscriptions as Subscription[];
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/subscriptions`, {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store'
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.subscriptions as Subscription[];
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminSubscriptionsPage() {
