@@ -651,10 +651,62 @@ export function processKiaStep(
 
   if (flow === 'welcome' && step === 'init') {
     const l = langChanged ? detectedLang : lang;
+    if (name) {
+      // Known contact — skip capture
+      return {
+        replies : [privacyNotice(l), welcome(l, name)],
+        updates : { flow: 'welcome', step: 'waiting_intent', lang: l },
+        sideEffects: {},
+      };
+    }
+    // New/unknown contact — ask name first
+    const askName: KiaReply = {
+      type: 'text',
+      body: l === 'ru'
+        ? '🙋 Как вас зовут? Напишите, пожалуйста, имя и фамилию.'
+        : '🙋 ¿Cómo te llamas? Escríbenos tu nombre y apellido.',
+    };
     return {
-      replies : [privacyNotice(l), welcome(l, name)],
-      updates : { flow: 'welcome', step: 'waiting_intent', lang: l },
+      replies : [privacyNotice(l), askName],
+      updates : { flow: 'welcome', step: 'asking_name', lang: l },
       sideEffects: {},
+    };
+  }
+
+  if (flow === 'welcome' && step === 'asking_name') {
+    const l = langChanged ? detectedLang : lang;
+    const rawName = msgBody.replace(/[^\w\sáéíóúÁÉÍÓÚüÜñÑА-Яа-яЁё.'-]/g, ' ').trim().slice(0, 80);
+    if (rawName.length < 2) {
+      return {
+        replies : [{ type: 'text', body: l === 'ru' ? 'Повторите, пожалуйста, только текстом 🙂' : 'Disculpa, ¿cómo te llamas? Solo escríbenos tu nombre 🙂' }],
+        updates : { lang: l },
+        sideEffects: {},
+      };
+    }
+    return {
+      replies : [{ type: 'text', body: l === 'ru' ? `Encantados, *${rawName}* 😊 ¿Y su email? (para enviarte información si la necesitas)\nO responde "пропустить" para continuar.` : `Encantado/a, *${rawName}* 😊 ¿Y tu email? (para enviarte información si la necesitas)\nO escribe "omitir" para continuar.` }],
+      updates : { step: 'asking_email', name: rawName, lang: l },
+      sideEffects: {},
+    };
+  }
+
+  if (flow === 'welcome' && step === 'asking_email') {
+    const l = langChanged ? detectedLang : lang;
+    const currentName = session.name ?? name;
+    const emailMatch  = msgBody.match(/[\w.+%-]+@[\w-]+\.[a-zA-Z]{2,}/);
+    const capturedEmail = emailMatch?.[0] ?? null;
+    const wantsSkip = /^(no|sin|omit|skip|пропустить|нет|no\s+tengo|не\s+даю)$/i.test(msgBody.trim());
+    if (!capturedEmail && !wantsSkip) {
+      return {
+        replies : [{ type: 'text', body: l === 'ru' ? 'No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO "пропустить" para continuar.' : 'No veo un email válido. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' }],
+        updates : { lang: l },
+        sideEffects: {},
+      };
+    }
+    return {
+      replies    : [welcome(l, currentName)],
+      updates    : { flow: 'welcome', step: 'waiting_intent', email: capturedEmail, lang: l },
+      sideEffects: { saveLead: true },
     };
   }
 
@@ -670,7 +722,8 @@ export function processKiaStep(
     if (interaction === 'btn_consult') {
       return { replies: [menuToReply(CONSULT_MENU[l])], updates: { flow: 'consult', step: 'waiting_option', lang: l }, sideEffects: {} };
     }
-    return { replies: [welcome(l, name)], updates: { lang: l }, sideEffects: {} };
+    // Free text in welcome menu → AI handles it contextually instead of repeating the menu
+    return { replies: [], updates: { lang: l }, sideEffects: { needsAiFallback: true } };
   }
 
   // ── NEW CLIENT — area ─────────────────────────────────────────────────────
