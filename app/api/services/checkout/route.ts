@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
       cancel_url : cancelUrl,
       metadata   : {
         product_type  : services.length > 1 ? 'cart' : 'service',
-        service_names : services.map(s => s.name).join(' | ').slice(0, 499),
         service_slugs : services.map(s => s.slug).join(',').slice(0, 499),
       },
       locale: 'es',
