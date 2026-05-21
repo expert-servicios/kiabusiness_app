@@ -137,21 +137,15 @@ export default async function ServicioDetallePage({
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-white/60">{service.shortDescription}</p>
 
-          {/* Price + duration chips */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {service.price && (
-              <div className="rounded-2xl border border-[#D4A017]/35 bg-[#D4A017]/12 px-5 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Precio</p>
-                <p className="mt-0.5 text-lg font-bold text-white">{service.price}</p>
-              </div>
-            )}
-            {service.duration && (
+          {/* Duration chip only — price lives exclusively in sidebar */}
+          {service.duration && (
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 rounded-2xl border border-white/12 px-4 py-2.5">
                 <Clock className="h-4 w-4 text-[#D4A017]" />
                 <span className="text-sm text-white/70">{service.duration}</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* CTA buttons */}
           <div className="mt-8 flex flex-wrap gap-3">
@@ -389,9 +383,9 @@ export default async function ServicioDetallePage({
 
             {/* Final CTA */}
             {service.finalCta && (
-              <div className="rounded-2xl bg-[#0D1B2A] p-7 text-[#F8F6F1]">
-                <h2 className="font-serif text-2xl font-bold">{service.finalCta.title}</h2>
-                <p className="mt-3 text-sm leading-7 text-white/60">{service.finalCta.text}</p>
+              <div className="rounded-2xl border border-[#D4A017]/30 bg-[#D4A017]/8 p-7">
+                <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">{service.finalCta.title}</h2>
+                <p className="mt-3 text-sm leading-7 text-[#23364D]">{service.finalCta.text}</p>
                 {service.stripePriceId && (
                   <div className="mt-6">
                     <ServiceBuyButton
@@ -424,13 +418,13 @@ export default async function ServicioDetallePage({
           <aside className="space-y-5 lg:sticky lg:top-6">
 
             {/* CTA card */}
-            <div className="overflow-hidden rounded-2xl bg-[#0D1B2A]">
+            <div className="overflow-hidden rounded-2xl border border-[#D4A017]/30 bg-white">
               {service.price && (
-                <div className="border-b border-white/8 bg-[#D4A017]/10 px-6 py-4">
+                <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Precio</p>
-                  <p className="mt-1 text-2xl font-bold text-white">{service.price}</p>
+                  <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{service.price}</p>
                   {service.checkoutLegal && (
-                    <p className="mt-1 text-xs text-white/40">{service.checkoutLegal}</p>
+                    <p className="mt-1 text-xs text-[#23364D]/60">{service.checkoutLegal}</p>
                   )}
                 </div>
               )}
@@ -451,13 +445,13 @@ export default async function ServicioDetallePage({
                 )}
                 <a
                   href="https://wa.me/34696550480"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/70 transition hover:border-[#D4A017]/50 hover:text-white"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   <MessageCircle className="h-4 w-4 text-[#D4A017]" />
                   Preguntar por WhatsApp
                 </a>
                 {!service.price && service.checkoutLegal && (
-                  <p className="pt-1 text-xs leading-5 text-white/40">{service.checkoutLegal}</p>
+                  <p className="pt-1 text-xs leading-5 text-[#23364D]/50">{service.checkoutLegal}</p>
                 )}
               </div>
             </div>

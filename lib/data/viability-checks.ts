@@ -631,12 +631,186 @@ const generic: ViabilityCheck = {
   aiCriteria: `Eres un asesor fiscal y legal de EXPERT, asesoría española especializada en extranjería, fiscalidad y derecho mercantil. Evalúa si el caso descrito por el cliente es viable para el servicio solicitado. Usa criterios de viabilidad general: documentación básica disponible, situación legal regularizable, ausencia de impedimentos legales evidentes. Si el caso es complejo o requiere análisis profundo, recomienda una consulta con el equipo de EXPERT.`,
 };
 
+// ── Arraigo Laboral ───────────────────────────────────────────────────────────
+
+const arraigo_laboral: ViabilityCheck = {
+  serviceSlug: 'arraigo-laboral',
+  serviceName: 'Arraigo Laboral',
+  intro: 'El arraigo laboral requiere 2 años de permanencia y una relación laboral irregular acreditada por la Inspección de Trabajo. Verifica tu situación en 2 minutos.',
+  estimatedMinutes: 2,
+  questions: [
+    {
+      id: 'tiempo_espana',
+      type: 'boolean',
+      label: '¿Llevas al menos 2 años de permanencia continuada en España?',
+      required: true,
+      disqualifiesIfFalse: true,
+    },
+    {
+      id: 'acta_inspeccion',
+      type: 'select',
+      label: '¿Dispones de resolución que acredite la relación laboral irregular?',
+      required: true,
+      options: [
+        { value: 'acta_itss',   label: 'Sí, tengo acta de la Inspección de Trabajo (ITSS)' },
+        { value: 'sentencia',   label: 'Sí, tengo sentencia judicial firme' },
+        { value: 'sepe',        label: 'Sí, tengo resolución del SEPE' },
+        { value: 'no',          label: 'No tengo ninguno de estos documentos', disqualifies: true },
+        { value: 'tramitando',  label: 'Estoy en proceso de obtenerlo', escalates: true },
+      ],
+    },
+    {
+      id: 'meses_laboral',
+      type: 'select',
+      label: '¿Cuántos meses de relación laboral acredita el documento?',
+      required: true,
+      options: [
+        { value: 'menos_6', label: 'Menos de 6 meses', disqualifies: true },
+        { value: '6_o_mas', label: '6 meses o más' },
+      ],
+    },
+    {
+      id: 'antecedentes',
+      type: 'boolean',
+      label: '¿Tienes antecedentes penales en España o en tu país de origen?',
+      required: true,
+      escalatesIfTrue: true,
+    },
+  ],
+  docs: [
+    { id: 'pasaporte', label: 'Pasaporte en vigor', required: true },
+    { id: 'acta_itss', label: 'Acta de la Inspección de Trabajo, sentencia judicial o resolución del SEPE', required: true },
+    { id: 'empadronamiento', label: 'Certificado de empadronamiento histórico (2 años)', required: true },
+    { id: 'antecedentes_espana', label: 'Certificado de antecedentes penales de España', required: true },
+    { id: 'antecedentes_origen', label: 'Certificado de antecedentes penales del país de origen (apostillado)', required: true },
+  ],
+  aiCriteria: `Evalúa si el caso es VIABLE para el Arraigo Laboral (art. 123 RD 557/2011).
+REQUISITOS: 2 años de permanencia + relación laboral irregular acreditable durante al menos 6 meses mediante acta de la ITSS, sentencia judicial o resolución del SEPE. Sin antecedentes penales.
+VIABLE: cumple 2 años y tiene documento válido con ≥6 meses. PARCIAL: tiene el documento pero con período inferior o hay dudas sobre continuidad. NO VIABLE: sin acta/sentencia/resolución, o menos de 2 años de permanencia.`,
+};
+
+// ── Reagrupación Familiar ─────────────────────────────────────────────────────
+
+const reagrupacion_familiar: ViabilityCheck = {
+  serviceSlug: 'reagrupacion-familiar',
+  serviceName: 'Reagrupación Familiar',
+  intro: 'La reagrupación familiar exige residencia legal, ingresos suficientes y vivienda adecuada. Verifica si cumples los requisitos en 3 minutos.',
+  estimatedMinutes: 3,
+  questions: [
+    {
+      id: 'residencia_reagrupante',
+      type: 'select',
+      label: '¿Cuánto tiempo llevas con permiso de residencia legal en España?',
+      required: true,
+      options: [
+        { value: 'menos_1', label: 'Menos de 1 año', disqualifies: true },
+        { value: '1_a_2',   label: 'Entre 1 y 2 años' },
+        { value: 'mas_2',   label: 'Más de 2 años' },
+      ],
+    },
+    {
+      id: 'parentesco',
+      type: 'select',
+      label: '¿Qué familiar quieres reagrupar?',
+      required: true,
+      options: [
+        { value: 'conyuge',    label: 'Cónyuge o pareja de hecho inscrita' },
+        { value: 'hijo_menor', label: 'Hijo/a menor de 18 años' },
+        { value: 'ascendiente', label: 'Padre o madre dependiente económicamente' },
+        { value: 'otro',       label: 'Otro familiar', escalates: true },
+      ],
+    },
+    {
+      id: 'ingresos',
+      type: 'select',
+      label: '¿Cuáles son tus ingresos netos mensuales aproximados?',
+      required: true,
+      hint: 'Necesitas al menos 150 % del IPREM mensual (~1.200 €) por el primer familiar.',
+      options: [
+        { value: 'menos_1200', label: 'Menos de 1.200 € al mes', disqualifies: true },
+        { value: '1200_1800',  label: 'Entre 1.200 € y 1.800 € al mes' },
+        { value: 'mas_1800',   label: 'Más de 1.800 € al mes' },
+      ],
+    },
+    {
+      id: 'vivienda',
+      type: 'boolean',
+      label: '¿Tienes una vivienda con habitabilidad suficiente para el familiar que quieres reagrupar?',
+      hint: 'El Ayuntamiento emite un informe de habitabilidad según el número de ocupantes y m².',
+      required: true,
+    },
+  ],
+  docs: [
+    { id: 'tie_reagrupante', label: 'TIE del reagrupante en vigor', required: true },
+    { id: 'pasaporte_reagrupante', label: 'Pasaporte del reagrupante', required: true },
+    { id: 'nominas', label: 'Últimas 3–6 nóminas o justificantes de ingresos', required: true },
+    { id: 'informe_vivienda', label: 'Informe de habitabilidad de la vivienda (Ayuntamiento)', required: true, howToGet: 'Solicítalo en el Ayuntamiento donde resides.' },
+    { id: 'doc_parentesco', label: 'Certificado de matrimonio, libro de familia o acta de pareja de hecho (apostillado y traducido si es extranjero)', required: true },
+    { id: 'pasaporte_familiar', label: 'Pasaporte del familiar a reagrupar', required: true },
+  ],
+  aiCriteria: `Evalúa si el caso es VIABLE para la Reagrupación Familiar (arts. 52-60 LO 4/2000, RD 557/2011).
+REQUISITOS DEL REAGRUPANTE: ≥1 año de residencia legal, renovable al menos otro año. Ingresos ≥150 % IPREM por el primer familiar (~1.200 €/mes en 2025) + 50 % adicional por cada extra. Vivienda con informe de habitabilidad. FAMILIARES REAGRUPABLES: cónyuge/pareja, hijos <18, ascendientes dependientes.
+VIABLE: cumple ingresos, vivienda y residencia. PARCIAL: ingresos limítrofes o vivienda pendiente de informe. NO VIABLE: <1 año de residencia o ingresos claramente insuficientes.`,
+};
+
+// ── Renovación de Residencia ──────────────────────────────────────────────────
+
+const renovacion_residencia: ViabilityCheck = {
+  serviceSlug: 'renovacion-residencia',
+  serviceName: 'Renovación de Residencia',
+  intro: 'Verifica si tu situación es apta para renovar tu permiso de residencia y qué documentación necesitas.',
+  estimatedMinutes: 2,
+  questions: [
+    {
+      id: 'tipo_permiso',
+      type: 'select',
+      label: '¿Qué tipo de autorización de residencia tienes actualmente?',
+      required: true,
+      options: [
+        { value: 'arraigo',      label: 'Arraigo (social, familiar o laboral)' },
+        { value: 'trabajo',      label: 'Residencia y trabajo por cuenta ajena' },
+        { value: 'reagrupacion', label: 'Residencia por reagrupación familiar' },
+        { value: 'otras',        label: 'Otra (circunstancias excepcionales, estudiante…)', escalates: true },
+      ],
+    },
+    {
+      id: 'caducidad',
+      type: 'select',
+      label: '¿En qué situación está tu autorización actual?',
+      required: true,
+      options: [
+        { value: 'vigente',       label: 'Vigente — caduca en menos de 60 días' },
+        { value: 'muy_vigente',   label: 'Vigente — caduca en más de 60 días' },
+        { value: 'recien_caducada', label: 'Caducada hace menos de 90 días' },
+        { value: 'mas_90',        label: 'Caducada hace más de 90 días', escalates: true },
+      ],
+    },
+    {
+      id: 'mantiene_requisitos',
+      type: 'boolean',
+      label: '¿Sigues manteniendo los requisitos que motivaron el permiso inicial (contrato, ingresos, vínculo familiar…)?',
+      required: true,
+      escalatesIfTrue: false,
+    },
+  ],
+  docs: [
+    { id: 'tie', label: 'TIE actual (por ambas caras)', required: true },
+    { id: 'pasaporte', label: 'Pasaporte en vigor', required: true },
+    { id: 'empadronamiento', label: 'Certificado de empadronamiento actualizado (máx. 3 meses)', required: true },
+    { id: 'justificante_ingresos', label: 'Nóminas, contrato o justificante de ingresos (según tipo de permiso)', required: false },
+  ],
+  aiCriteria: `Evalúa si el caso es VIABLE para la Renovación de Residencia. VIABLE si tiene permiso vigente o caducado hace <90 días y mantiene requisitos. PARCIAL si mantiene requisitos pero está al límite del plazo o tiene algún cambio de circunstancias. ESCALAR si caducó hace >90 días (puede requerir nuevo expediente) o si cambió radicalmente su situación laboral/familiar.`,
+};
+
 // ── Registry ──────────────────────────────────────────────────────────────────
 
 const VIABILITY_CHECKS: Record<string, ViabilityCheck> = {
   'irpf':                                          irpf,
   'arraigo-social':                                arraigo_social,
   'arraigo-familiar':                              arraigo_familiar,
+  'arraigo-laboral':                               arraigo_laboral,
+  'reagrupacion-familiar':                         reagrupacion_familiar,
+  'renovacion-residencia':                         renovacion_residencia,
   'nacionalidad-espanola':                         nacionalidad,
   'nacionalidad-espanola-menor-nacido-en-espana':  nacionalidad_menor,
   'permiso-residencia-inicial':                    permiso_residencia,

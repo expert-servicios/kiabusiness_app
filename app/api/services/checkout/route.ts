@@ -42,6 +42,36 @@ const SERVICE_CHECKOUTS = {
     name: 'Modelo 720 — Bienes en el Extranjero',
     slug: 'modelo-720',
     category: 'declaraciones-impuestos'
+  },
+  price_1TZYiBLeYwwgvux4EO07gS0W: {
+    name: 'Certificado Digital Persona Física — Camerfirma',
+    slug: 'certificado-digital-persona-fisica',
+    category: 'certificado-digital'
+  },
+  price_1TZYiDLeYwwgvux4ovAjIxrz: {
+    name: 'Certificado Digital de Entidad — Camerfirma',
+    slug: 'certificado-digital-entidad',
+    category: 'certificado-digital'
+  },
+  price_1TZYl8LeYwwgvux4EWcyxqwn: {
+    name: 'Arraigo Laboral',
+    slug: 'arraigo-laboral',
+    category: 'extranjeria-nacionalidad'
+  },
+  price_1TZYlBLeYwwgvux4c3bW4zwF: {
+    name: 'Reagrupación Familiar',
+    slug: 'reagrupacion-familiar',
+    category: 'extranjeria-nacionalidad'
+  },
+  price_1TZYlELeYwwgvux4Et7Loldl: {
+    name: 'Renovación de Residencia',
+    slug: 'renovacion-residencia',
+    category: 'extranjeria-nacionalidad'
+  },
+  price_1TZYlGLeYwwgvux4Rj6u0Jqk: {
+    name: 'Nacionalidad Española por Residencia',
+    slug: 'nacionalidad-espanola',
+    category: 'extranjeria-nacionalidad'
   }
 } as const;
 

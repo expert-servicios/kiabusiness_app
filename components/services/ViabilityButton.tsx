@@ -24,7 +24,7 @@ export function ViabilityButton({ check, serviceSlug, className }: ViabilityButt
         onClick={() => setOpen(true)}
         className={
           className ??
-          'inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white'
+          'inline-flex items-center gap-2 rounded-xl border border-[#D4A017]/40 bg-white/8 px-5 py-3 text-sm font-semibold text-white/85 transition hover:border-[#D4A017] hover:bg-[#D4A017]/10 hover:text-white'
         }
       >
         <ClipboardCheck className="h-4 w-4 shrink-0 text-[#D4A017]" />
