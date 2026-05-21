@@ -46,7 +46,7 @@ export function ServiceBuyButton({ priceId, label, className }: ServiceBuyButton
         disabled={loading}
         className={
           className ??
-          'inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60'
+          'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60'
         }
       >
         <ShoppingCart className="h-4 w-4" />
