@@ -41,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: CreditCard,
     items: [
       { label: 'Suscripciones', href: '/admin/suscripciones' },
+      { label: 'Pagos Stripe', href: '/admin/pagos' },
       { label: 'Emails', href: '/admin/emails' },
     ]
   },

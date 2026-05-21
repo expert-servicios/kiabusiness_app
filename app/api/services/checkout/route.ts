@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
         service_slug: service.slug,
         service_category: service.category
       },
-      automatic_tax: { enabled: true },
       locale: 'es',
       customer_creation: 'always',
       phone_number_collection: { enabled: true }
