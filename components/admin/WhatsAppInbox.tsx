@@ -538,6 +538,7 @@ function CatalogModal({ phone, onClose, onSent }: {
   onSent: (preview: string) => void;
 }) {
   const [mode, setMode] = useState<'list' | 'cards'>('list');
+  // For cards mode: select which sections to send
   const [selected, setSelected] = useState<Set<string>>(new Set(SERVICES_CATALOG.map((s) => s.id)));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -548,23 +549,33 @@ function CatalogModal({ phone, onClose, onSent }: {
     return next;
   });
 
-  const totalRows = SERVICES_CATALOG.filter((s) => selected.has(s.id)).reduce((n, s) => n + s.services.length, 0);
-
   const send = async () => {
-    if (selected.size === 0) return;
+    if (mode === 'cards' && selected.size === 0) return;
     setSending(true);
     setError(null);
-    const endpoint = mode === 'cards' ? '/api/admin/whatsapp/catalog-cards' : '/api/admin/whatsapp/catalog';
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, sectionIds: [...selected] }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
-      const names = SERVICES_CATALOG.filter((s) => selected.has(s.id)).map((s) => `${s.emoji} ${s.title}`).join(', ');
-      onSent(mode === 'cards' ? `[Tarjetas] ${names}` : `[Catálogo] ${names}`);
+      if (mode === 'list') {
+        // List mode: always sends all 7 categories (user selects one → bot replies with services)
+        const res = await fetch('/api/admin/whatsapp/catalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
+        onSent('[Catálogo] Menú de 7 categorías');
+      } else {
+        // Cards mode: sends a button card per selected section
+        const res = await fetch('/api/admin/whatsapp/catalog-cards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, sectionIds: [...selected] }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
+        const names = SERVICES_CATALOG.filter((s) => selected.has(s.id)).map((s) => `${s.emoji} ${s.title}`).join(', ');
+        onSent(`[Tarjetas] ${names}`);
+      }
       onClose();
     } catch {
       setError('Error de conexión');
@@ -578,50 +589,70 @@ function CatalogModal({ phone, onClose, onSent }: {
           <div>
             <p className="font-semibold text-[#07111d]">Catálogo de servicios</p>
             <p className="text-xs text-[#29384a]">
-              {selected.size > 0 ? `${selected.size} sección${selected.size > 1 ? 'es' : ''} · ${Math.min(totalRows, 10)} servicios` : 'Selecciona al menos una sección'}
+              {mode === 'list'
+                ? '7 categorías · el usuario elige una y recibe los servicios'
+                : selected.size > 0
+                  ? `${selected.size} sección${selected.size > 1 ? 'es' : ''} · tarjeta por sección`
+                  : 'Selecciona al menos una sección'}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[#f0e9d8]">
             <X className="h-4 w-4 text-[#29384a]" />
           </button>
         </div>
+
         <div className="flex gap-1 px-4 pt-3">
           {(['list', 'cards'] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)}
               className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${mode === m ? 'bg-[#25D366] text-white' : 'bg-[#f0e9d8] text-[#29384a] hover:bg-[#e8deca]'}`}>
-              {m === 'list' ? '📋 Lista interactiva' : '🖼️ Tarjetas visuales'}
+              {m === 'list' ? '📋 Menú de categorías' : '🃏 Tarjetas por sección'}
             </button>
           ))}
         </div>
-        {mode === 'cards' && (
-          <p className="px-4 pt-1.5 text-[10px] text-[#29384a]">Envía una tarjeta por sección con imagen + botones.</p>
-        )}
-        <div className="max-h-64 overflow-y-auto px-4 py-3 space-y-2">
-          {SERVICES_CATALOG.map((section: CatalogSection) => {
-            const on = selected.has(section.id);
-            return (
-              <button key={section.id} type="button" onClick={() => toggle(section.id)}
-                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${on ? 'border-[#25D366] bg-[#f0fff5]' : 'border-[#d8cbb5] bg-white hover:border-[#25D366]/50 hover:bg-[#f9fff9]'}`}>
-                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? 'border-[#25D366] bg-[#25D366]' : 'border-[#d8cbb5]'}`}>
-                  {on && <Check className="h-3 w-3 text-white" />}
-                </div>
+
+        {mode === 'list' ? (
+          // List mode: preview of all 7 categories — no selection needed
+          <div className="px-4 py-3 space-y-1.5">
+            <p className="text-[10px] text-[#29384a]/70 mb-2">
+              Se envía una lista con las 7 categorías. Al tocar una, se despliegan sus servicios automáticamente.
+            </p>
+            {SERVICES_CATALOG.map((section: CatalogSection) => (
+              <div key={section.id} className="flex items-center gap-2 rounded-lg border border-[#f0e9d8] bg-[#fafaf8] px-3 py-2">
+                <span className="text-base">{section.emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#07111d]">{section.emoji} {section.title}</p>
-                  <p className="mt-0.5 text-xs text-[#29384a]">{section.services.map((s) => s.title).join(' · ')}</p>
+                  <p className="text-xs font-semibold text-[#07111d]">{section.title}</p>
+                  <p className="text-[10px] text-[#29384a]/60">{section.services.length} servicios</p>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Cards mode: select which sections to send as button cards
+          <div className="max-h-64 overflow-y-auto px-4 py-3 space-y-2">
+            {SERVICES_CATALOG.map((section: CatalogSection) => {
+              const on = selected.has(section.id);
+              return (
+                <button key={section.id} type="button" onClick={() => toggle(section.id)}
+                  className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${on ? 'border-[#25D366] bg-[#f0fff5]' : 'border-[#d8cbb5] bg-white hover:border-[#25D366]/50 hover:bg-[#f9fff9]'}`}>
+                  <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? 'border-[#25D366] bg-[#25D366]' : 'border-[#d8cbb5]'}`}>
+                    {on && <Check className="h-3 w-3 text-white" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#07111d]">{section.emoji} {section.title}</p>
+                    <p className="mt-0.5 text-xs text-[#29384a]">{section.services.slice(0, 3).map((s) => s.title).join(' · ')}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="border-t border-[#f0e9d8] px-4 py-3 space-y-2">
-          {mode === 'list' && totalRows > 10 && (
-            <p className="text-[10px] text-amber-600">WhatsApp permite máx. 10 servicios. Se enviarán los primeros 10.</p>
-          )}
           {error && <p className="text-xs text-red-600">{error}</p>}
-          <button type="button" onClick={send} disabled={sending || selected.size === 0}
+          <button type="button" onClick={send} disabled={sending || (mode === 'cards' && selected.size === 0)}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1da851] disabled:opacity-50">
             <BookMarked className="h-4 w-4" />
-            {sending ? 'Enviando…' : mode === 'cards' ? 'Enviar tarjetas' : 'Enviar catálogo'}
+            {sending ? 'Enviando…' : mode === 'cards' ? `Enviar ${selected.size} tarjeta${selected.size !== 1 ? 's' : ''}` : 'Enviar menú de categorías'}
           </button>
         </div>
       </div>

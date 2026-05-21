@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendWhatsAppInteractive, logWhatsAppConversation, mapWhatsAppMessageToClient } from '@/lib/integrations/whatsapp';
-import { SERVICES_CATALOG, CATALOG_BODY_DEFAULT, CATALOG_FOOTER } from '@/lib/data/services-catalog';
+import { SERVICES_CATALOG, CATALOG_FOOTER } from '@/lib/data/services-catalog';
 import { z } from 'zod';
 
-function detectCatalogBody(recentInbound: string[]): string {
-  const text = recentInbound.join(' ');
-  if (/[А-Яа-яЁё]/.test(text)) {
-    return 'Привет 👋 Ниже список наших услуг EXPERT Asesoría. Нажмите кнопку, чтобы выбрать нужную.';
-  }
-  return CATALOG_BODY_DEFAULT;
+function detectLang(texts: string[]): 'ru' | 'es' {
+  return /[А-Яа-яЁё]/.test(texts.join(' ')) ? 'ru' : 'es';
 }
 
 const schema = z.object({
   phone:      z.string().min(1),
-  sectionIds: z.array(z.string()).min(1).max(7),
+  sectionIds: z.array(z.string()).min(1).max(7).optional(),
   bodyText:   z.string().max(1024).optional(),
 });
 
@@ -33,48 +29,48 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
     const { phone, sectionIds, bodyText } = parsed.data;
+    const normalized = phone.replace(/\D/g, '');
 
-    // Detect client language from recent inbound messages
-    let catalogBody = bodyText?.trim() || CATALOG_BODY_DEFAULT;
-    if (!bodyText?.trim()) {
-      const { data: recentMsgs } = await admin
-        .from('whatsapp_conversations')
-        .select('body')
-        .eq('phone_number', phone)
-        .eq('direction', 'inbound')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      const inboundTexts = (recentMsgs ?? []).map((m: { body: string }) => m.body);
-      catalogBody = detectCatalogBody(inboundTexts);
+    // Detect language from recent inbound messages
+    const { data: recentMsgs } = await admin
+      .from('whatsapp_conversations')
+      .select('body')
+      .eq('phone_number', normalized)
+      .eq('direction', 'inbound')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const lang = detectLang((recentMsgs ?? []).map((m: { body: string }) => m.body));
+
+    const catalogBody = bodyText?.trim() || (
+      lang === 'ru'
+        ? 'Привет 👋 Выберите нужную категорию услуг EXPERT Asesoría:'
+        : 'Hola 👋 Selecciona la categoría de servicio que necesitas:'
+    );
+
+    // Build category rows — max 7, always within WhatsApp's 10-row limit
+    const selectedSections = sectionIds
+      ? SERVICES_CATALOG.filter((s) => sectionIds.includes(s.id))
+      : SERVICES_CATALOG;
+
+    if (selectedSections.length === 0) {
+      return NextResponse.json({ error: 'Sin categorías seleccionadas' }, { status: 400 });
     }
 
-    // Build list sections respecting WhatsApp 10-row limit
-    let totalRows = 0;
-    const sections: { title: string; rows: { id: string; title: string; description: string }[] }[] = [];
-
-    for (const section of SERVICES_CATALOG) {
-      if (!sectionIds.includes(section.id)) continue;
-      const remaining = 10 - totalRows;
-      if (remaining <= 0) break;
-      const rows = section.services.slice(0, remaining).map((s) => ({
-        id:          `cat_${s.id}`,
-        title:       s.title.slice(0, 24),
-        description: s.description.slice(0, 72),
-      }));
-      sections.push({ title: section.title.slice(0, 24), rows });
-      totalRows += rows.length;
-    }
-
-    if (sections.length === 0) {
-      return NextResponse.json({ error: 'Sin servicios seleccionados' }, { status: 400 });
-    }
+    const rows = selectedSections.map((section) => ({
+      id:          `menu_cat_${section.id}`,
+      title:       `${section.emoji} ${section.title}`.slice(0, 24),
+      description: section.services.slice(0, 3).map((s) => s.title).join(' · ').slice(0, 72),
+    }));
 
     const sent = await sendWhatsAppInteractive({
       to: phone,
       header: { type: 'text', text: 'EXPERT Asesoría 💼' },
       body: catalogBody.slice(0, 1024),
       footer: CATALOG_FOOTER,
-      list: { buttonText: 'Ver servicios', sections },
+      list: {
+        buttonText: lang === 'ru' ? 'Ver categorías' : 'Ver categorías',
+        sections:   [{ title: lang === 'ru' ? 'Categorías' : 'Categorías', rows }],
+      },
     });
 
     if (!sent.success) {
@@ -85,16 +81,11 @@ export async function POST(request: NextRequest) {
     const { data: profiles } = await admin.from('profiles').select('id, phone').not('phone', 'is', null);
     const clientId = mapWhatsAppMessageToClient(phone, profiles ?? []) ?? undefined;
 
-    const sectionNames = SERVICES_CATALOG
-      .filter((s) => sectionIds.includes(s.id))
-      .map((s) => s.title)
-      .join(', ');
-
     await logWhatsAppConversation({
       clientId,
-      phoneNumber: phone,
+      phoneNumber: normalized,
       direction:   'outbound',
-      body:        `[Catálogo] ${sectionNames}`,
+      body:        `[Catálogo] ${selectedSections.map((s) => `${s.emoji} ${s.title}`).join(', ')}`,
       whatsappMessageId: sent.messageId,
       aiResponded: false,
       needsReview: false,

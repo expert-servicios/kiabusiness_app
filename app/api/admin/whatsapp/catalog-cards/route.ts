@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
-  sendWhatsAppImageMessage,
   sendWhatsAppInteractive,
   logWhatsAppConversation,
   mapWhatsAppMessageToClient,
@@ -45,12 +44,13 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
     const { phone, sectionIds } = parsed.data;
+    const normalized = phone.replace(/\D/g, '');
 
     // Detect language from recent inbound messages
     const { data: recentMsgs } = await admin
       .from('whatsapp_conversations')
       .select('body')
-      .eq('phone_number', phone)
+      .eq('phone_number', normalized)
       .eq('direction', 'inbound')
       .order('created_at', { ascending: false })
       .limit(5);
@@ -65,17 +65,7 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
 
     for (const section of selectedSections) {
-      // 1. Send image if configured
-      if (section.imageUrl) {
-        const imgResult = await sendWhatsAppImageMessage({
-          to: phone,
-          imageUrl: section.imageUrl,
-        });
-        if (imgResult.success && imgResult.messageId) sentIds.push(imgResult.messageId);
-        else if (!imgResult.success) errors.push(`img:${section.id}`);
-      }
-
-      // 2. Send button card with up to 3 service quick-replies
+      // Send button card with up to 3 service quick-replies (no images — avoids Meta download timeouts)
       const cardBodyText = translateCardBody(section.id, section.cardBody, lang);
       const buttons = section.services.slice(0, 3).map((s) => ({
         id:    `card_${s.id}`,
@@ -83,10 +73,10 @@ export async function POST(request: NextRequest) {
       }));
 
       const btnResult = await sendWhatsAppInteractive({
-        to: phone,
-        header: { type: 'text', text: `${section.emoji} ${section.title}`.slice(0, 60) },
-        body: cardBodyText,
-        footer: 'expertconsulting.es/cita',
+        to:      phone,
+        header:  { type: 'text', text: `${section.emoji} ${section.title}`.slice(0, 60) },
+        body:    cardBodyText,
+        footer:  'expertconsulting.es/cita',
         buttons,
       });
 
@@ -94,23 +84,30 @@ export async function POST(request: NextRequest) {
         sentIds.push(btnResult.messageId);
         await logWhatsAppConversation({
           clientId,
-          phoneNumber: phone,
-          direction: 'outbound',
-          body: `[Tarjeta] ${section.emoji} ${section.title}`,
+          phoneNumber: normalized,
+          direction:   'outbound',
+          body:        `[Tarjeta] ${section.emoji} ${section.title}`,
           whatsappMessageId: btnResult.messageId,
           aiResponded: false,
           needsReview: false,
         });
       } else {
-        errors.push(`btn:${section.id}`);
+        errors.push(`btn:${section.id}${btnResult.success === false ? ` (${btnResult.error})` : ''}`);
       }
     }
 
     if (sentIds.length === 0) {
-      return NextResponse.json({ error: errors.join(', ') || 'No se pudo enviar ninguna tarjeta' }, { status: 500 });
+      return NextResponse.json(
+        { error: errors.join(', ') || 'No se pudo enviar ninguna tarjeta' },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({ ok: true, sent: sentIds.length, errors: errors.length > 0 ? errors : undefined });
+    return NextResponse.json({
+      ok:     true,
+      sent:   sentIds.length,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   } catch (err) {
     console.error('[WA catalog-cards]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

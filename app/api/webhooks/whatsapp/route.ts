@@ -19,6 +19,7 @@ import {
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
+import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
 
@@ -438,9 +439,50 @@ export async function POST(request: NextRequest) {
         tag:   `wa-${from}`,
       }).catch(() => {});
 
+      const buttonId = extractButtonId(msg as Record<string, unknown>);
+
+      // ── Catalog: category selection → send services list ──────────────────
+      if (buttonId?.startsWith('menu_cat_')) {
+        const categoryId = buttonId.slice('menu_cat_'.length);
+        const section = SERVICES_CATALOG.find((s) => s.id === categoryId);
+        if (section) {
+          const isRu = /[А-Яа-яЁё]/.test(msgBody);
+          const rows = section.services.slice(0, 10).map((s) => ({
+            id:          `svc_cat_${s.id}`,
+            title:       s.title.slice(0, 24),
+            description: s.description.slice(0, 72),
+          }));
+          const replyBody = isRu
+            ? `Услуги раздела *${section.title}*. Выберите нужную:`
+            : `Servicios de *${section.emoji} ${section.title}*. Elige el que necesitas:`;
+          const sentList = await sendWhatsAppInteractive({
+            to:     from,
+            header: { type: 'text', text: `${section.emoji} ${section.title}`.slice(0, 60) },
+            body:   replyBody,
+            footer: 'expertconsulting.es/cita',
+            list: {
+              buttonText: isRu ? 'Ver servicios' : 'Ver servicios',
+              sections:   [{ title: section.title.slice(0, 24), rows }],
+            },
+          });
+          if (sentList.success) {
+            await logWhatsAppConversation({
+              clientId,
+              phoneNumber: from,
+              direction:   'outbound',
+              body:        `[Catálogo:cat] ${section.emoji} ${section.title}`,
+              whatsappMessageId: sentList.messageId,
+              aiResponded: false,
+              needsReview: false,
+            });
+          }
+          await persistSessionUpdates(admin, from, {});
+          continue;
+        }
+      }
+
       // ── Kia session ────────────────────────────────────────────────────────
       const session  = await getOrCreateSession(admin, from, clientId);
-      const buttonId = extractButtonId(msg as Record<string, unknown>);
       const clientName = clientId
         ? (profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
