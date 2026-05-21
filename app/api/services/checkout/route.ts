@@ -11,6 +11,22 @@ type ServiceCheckout = {
   unitAmount: number;
 };
 
+const DEFAULT_APP_URL = 'https://expertconsulting.es';
+
+function getAppUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!configuredUrl) return DEFAULT_APP_URL;
+
+  try {
+    const url = new URL(configuredUrl);
+    if (url.protocol === 'http:' || url.protocol === 'https:') return url.origin;
+  } catch {
+    return DEFAULT_APP_URL;
+  }
+
+  return DEFAULT_APP_URL;
+}
+
 function parseUnitAmount(price?: string): number | null {
   const match = price?.match(/(\d+(?:[.,]\d{1,2})?)/);
   if (!match) return null;
@@ -77,7 +93,7 @@ export async function POST(request: NextRequest) {
     });
 
     const stripe    = getStripeClient();
-    const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const appUrl    = getAppUrl();
     const cancelUrl = checkoutServices.length === 1
       ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
       : `${appUrl}/carrito`;
