@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { AlertCircle, BookOpen, Check, CheckCircle2, Clock, FileText, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
-import { ServiceBuyButton } from '@/components/services/ServiceBuyButton';
+import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { ViabilityButton } from '@/components/services/ViabilityButton';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
 import { getViabilityCheck } from '@/lib/data/viability-checks';
@@ -92,6 +92,14 @@ export default async function ServicioDetallePage({
   const offerPrice = service.stripePriceId
     ? service.price?.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(',', '.')
     : undefined;
+
+  const cartItem = service.stripePriceId ? {
+    priceId     : service.stripePriceId,
+    name        : service.name,
+    displayPrice: service.price ?? 'Consultar',
+    slug        : service.slug,
+    category    : service.categoria,
+  } : null;
   const serviceJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -149,10 +157,10 @@ export default async function ServicioDetallePage({
 
           {/* CTA buttons */}
           <div className="mt-8 flex flex-wrap gap-3">
-            {service.stripePriceId ? (
-              <ServiceBuyButton
-                priceId={service.stripePriceId}
-                label={service.checkoutLabel ?? 'Contratar servicio'}
+            {cartItem ? (
+              <AddToCartButton
+                item={cartItem}
+                label={service.checkoutLabel ?? 'Añadir a la cesta'}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
               />
             ) : (
@@ -386,11 +394,11 @@ export default async function ServicioDetallePage({
               <div className="rounded-2xl border border-[#D4A017]/30 bg-[#D4A017]/8 p-7">
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">{service.finalCta.title}</h2>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{service.finalCta.text}</p>
-                {service.stripePriceId && (
+                {cartItem && (
                   <div className="mt-6">
-                    <ServiceBuyButton
-                      priceId={service.stripePriceId}
-                      label={service.checkoutLabel ?? 'Contratar ahora'}
+                    <AddToCartButton
+                      item={cartItem}
+                      label="Añadir a la cesta"
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                     />
                   </div>
@@ -429,10 +437,10 @@ export default async function ServicioDetallePage({
                 </div>
               )}
               <div className="space-y-3 px-6 py-5">
-                {service.stripePriceId ? (
-                  <ServiceBuyButton
-                    priceId={service.stripePriceId}
-                    label={service.checkoutLabel ?? 'Contratar ahora'}
+                {cartItem ? (
+                  <AddToCartButton
+                    item={cartItem}
+                    label="Añadir a la cesta"
                     className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                   />
                 ) : (

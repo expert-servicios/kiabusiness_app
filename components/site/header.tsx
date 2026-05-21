@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
 import { categories } from '@/lib/utils/catalog';
+import { CartIcon } from '@/components/cart/CartIcon';
 
 const navLinks = [
   { label: 'Holded', href: '/holded' },
@@ -80,7 +81,7 @@ export function Header() {
               type="button"
               onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
-              aria-expanded={servicesOpen ? 'true' : 'false'}
+              aria-expanded={servicesOpen}
             >
               Servicios
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
@@ -155,6 +156,7 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          <CartIcon />
           <Link
             href="/auth/login"
             className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E] sm:px-5"
@@ -169,7 +171,7 @@ export function Header() {
             onClick={() => setMobileOpen((v) => !v)}
             className="flex h-11 w-11 items-center justify-center rounded-md border border-white/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] lg:hidden"
             aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={mobileOpen ? 'true' : 'false'}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

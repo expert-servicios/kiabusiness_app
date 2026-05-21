@@ -5,13 +5,15 @@ import { Footer } from '@/components/site/footer';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
 import { CalendlyFloatingButton } from '@/components/site/CalendlyFloatingButton';
 import { WhatsAppChatWidget } from '@/components/site/WhatsAppChatWidget';
+import { CartProvider } from '@/contexts/CartContext';
+import { CartSidebar } from '@/components/cart/CartSidebar';
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const CALENDLY_REUNION = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
-    <>
+    <CartProvider>
       {RECAPTCHA_SITE_KEY && (
         <Script
           id="recaptcha-v3"
@@ -29,6 +31,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <CalendlyFloatingButton url={CALENDLY_REUNION} />
         <WhatsAppChatWidget />
       </div>
-    </>
+      {/* Cart sidebar — rendered above floating buttons */}
+      <CartSidebar />
+    </CartProvider>
   );
 }

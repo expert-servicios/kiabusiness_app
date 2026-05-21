@@ -75,52 +75,59 @@ const SERVICE_CHECKOUTS = {
   }
 } as const;
 
+// Accept either a single priceId (backwards compat) or an array (cart checkout)
 const checkoutSchema = z.object({
-  priceId: z.string().min(1)
-});
+  priceId : z.string().min(1).optional(),
+  priceIds: z.array(z.string().min(1)).min(1).max(10).optional(),
+}).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
 
 export async function POST(request: NextRequest) {
   try {
-    const input = checkoutSchema.parse(await request.json());
-    const service = SERVICE_CHECKOUTS[input.priceId as keyof typeof SERVICE_CHECKOUTS];
+    const input  = checkoutSchema.parse(await request.json());
+    const rawIds = input.priceIds ?? (input.priceId ? [input.priceId] : []);
 
-    if (!service) {
-      return NextResponse.json({ error: 'Servicio no válido.' }, { status: 400 });
-    }
+    // Validate every priceId against the allow-list
+    const services = rawIds.map(id => {
+      const svc = SERVICE_CHECKOUTS[id as keyof typeof SERVICE_CHECKOUTS];
+      if (!svc) throw Object.assign(new Error(`Servicio no válido: ${id}`), { _isUserError: true });
+      return { priceId: id, ...svc };
+    });
 
-    const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
-    const serviceUrl = `${appUrl}/servicios/${service.category}/${service.slug}`;
+    const stripe    = getStripeClient();
+    const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const cancelUrl = services.length === 1
+      ? `${appUrl}/servicios/${services[0].category}/${services[0].slug}`
+      : `${appUrl}/carrito`;
 
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [{ price: input.priceId, quantity: 1 }],
-      success_url: `${appUrl}/gracias/pago?source=service&service=${service.slug}`,
-      cancel_url: serviceUrl,
-      metadata: {
-        product_type: 'service',
-        service_name: service.name,
-        service_slug: service.slug,
-        service_category: service.category,
+      mode      : 'payment',
+      line_items: services.map(s => ({ price: s.priceId, quantity: 1 })),
+      success_url: `${appUrl}/gracias/pago?source=${services.length > 1 ? 'cart' : 'service'}&service=${services[0].slug}`,
+      cancel_url : cancelUrl,
+      metadata   : {
+        product_type  : services.length > 1 ? 'cart' : 'service',
+        service_names : services.map(s => s.name).join(' | ').slice(0, 499),
+        service_slugs : services.map(s => s.slug).join(',').slice(0, 499),
       },
       locale: 'es',
     });
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
-    const stripeErr = err as { type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };
+    const e = err as { _isUserError?: boolean; type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };
+    if (e._isUserError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     console.error('[services/checkout] error:', {
-      type: stripeErr?.type,
-      code: stripeErr?.code,
-      message: stripeErr?.message,
-      statusCode: stripeErr?.statusCode,
-      raw: stripeErr?.raw,
+      type      : e.type,
+      code      : e.code,
+      message   : e.message,
+      statusCode: e.statusCode,
+      raw       : e.raw,
     });
-    const msg = stripeErr?.message ?? '';
+    const msg     = e.message ?? '';
     const userMsg = msg.includes('No such price')
       ? 'Producto no encontrado en Stripe. Contacta con soporte.'
-      : msg.includes('tax')
-      ? 'Error de configuración fiscal. Contacta con soporte.'
       : 'Error al iniciar el pago.';
     return NextResponse.json({ error: userMsg, _detail: msg }, { status: 500 });
   }
