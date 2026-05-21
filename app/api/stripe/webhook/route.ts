@@ -262,13 +262,16 @@ export async function POST(req: NextRequest) {
     }
 
     const productType = session.metadata?.product_type;
-    if (session.mode === 'payment' && productType === 'service') {
+    if (session.mode === 'payment' && (productType === 'service' || productType === 'cart')) {
       const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
       const customerName =
         (session.customer_details as { name?: string } | null)?.name ??
         customerEmail?.split('@')[0] ??
         'Cliente';
-      const serviceName = session.metadata?.service_name ?? 'Servicio EXPERT';
+      const serviceName =
+        session.metadata?.service_name ??
+        session.metadata?.service_names ??
+        'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
 
       if (customerEmail) {
@@ -279,7 +282,7 @@ export async function POST(req: NextRequest) {
           ...tpl,
           metadata: {
             session_id: session.id,
-            service_slug: session.metadata?.service_slug ?? null
+            service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null
           }
         });
 
