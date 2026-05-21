@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { exchangeGmailCode } from '@/lib/integrations/gmail';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 // GET /api/auth/google-gmail/callback?code=...
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const appUrl = getPublicAppUrl();
 
   if (!code) {
     return NextResponse.redirect(`${appUrl}/admin/correo?error=oauth_denied`);

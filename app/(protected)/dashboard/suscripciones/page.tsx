@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { CustomerPortalButton } from '@/components/subscriptions/CustomerPortalButton';
 import { SubscriptionCheckoutButton } from '@/components/subscriptions/SubscriptionCheckoutButton';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SubscriptionRecord {
   id: string;
@@ -46,7 +47,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; color
 async function getSubscriptions(): Promise<SubscriptionRecord[]> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/subscriptions`, {
+  const response = await fetch(absoluteAppUrl('/api/subscriptions'), {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });

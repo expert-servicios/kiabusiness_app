@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { X, CheckCircle2 } from 'lucide-react';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 // ── Workflow stages ────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ function buildMessage(
   extraData?: { paymentUrl?: string; draftUrl?: string; deliveredUrl?: string },
 ): string {
   const name = clientName || 'cliente';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+  const appUrl = getPublicAppUrl();
 
   switch (stage) {
     case 'ack':

@@ -1,74 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStripeClient } from '@/lib/integrations/stripe';
-import { services as catalogServices } from '@/lib/utils/catalog';
-
-type ServiceCheckout = {
-  priceId: string;
-  name: string;
-  slug: string;
-  category: string;
-  unitAmount: number;
-};
-
-const DEFAULT_APP_URL = 'https://expertconsulting.es';
-
-function getAppUrl(): string {
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (!configuredUrl) return DEFAULT_APP_URL;
-
-  try {
-    const url = new URL(configuredUrl);
-    if (url.protocol === 'http:' || url.protocol === 'https:') return url.origin;
-  } catch {
-    return DEFAULT_APP_URL;
-  }
-
-  return DEFAULT_APP_URL;
-}
-
-function parseUnitAmount(price?: string): number | null {
-  const match = price?.match(/(\d+(?:[.,]\d{1,2})?)/);
-  if (!match) return null;
-
-  const amount = Number.parseFloat(match[1].replace(',', '.'));
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-
-  return Math.round(amount * 100);
-}
-
-function toStripeAscii(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\x20-\x7E]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 499);
-}
-
-function buildServiceCheckouts() {
-  const checkouts = new Map<string, ServiceCheckout>();
-
-  for (const service of catalogServices) {
-    if (!service.stripePriceId) continue;
-
-    const unitAmount = parseUnitAmount(service.price);
-    if (!unitAmount) continue;
-
-    checkouts.set(service.stripePriceId, {
-      priceId: service.stripePriceId,
-      name: service.name,
-      slug: service.slug,
-      category: service.categoria,
-      unitAmount,
-    });
-  }
-
-  return checkouts;
-}
-
-const SERVICE_CHECKOUTS = buildServiceCheckouts();
+import {
+  getServiceCheckoutByPriceId,
+  getServiceCheckoutLineItem,
+  getServiceCheckoutMetadata,
+} from '@/lib/integrations/service-checkout';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 // Accept either a single priceId (backwards compat) or an array (cart checkout).
 const checkoutSchema = z.object({
@@ -87,47 +25,24 @@ export async function POST(request: NextRequest) {
     const rawIds = input.priceIds ?? (input.priceId ? [input.priceId] : []);
 
     const checkoutServices = rawIds.map(id => {
-      const svc = SERVICE_CHECKOUTS.get(id);
+      const svc = getServiceCheckoutByPriceId(id);
       if (!svc) throw Object.assign(new Error(`Servicio no valido: ${id}`), { _isUserError: true });
       return svc;
     });
 
     const stripe    = getStripeClient();
-    const appUrl    = getAppUrl();
+    const appUrl    = getPublicAppUrl();
     const cancelUrl = checkoutServices.length === 1
       ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
       : `${appUrl}/carrito`;
-    const serviceSlugs = checkoutServices.map(s => s.slug).join(',').slice(0, 499);
-    const serviceNames = toStripeAscii(checkoutServices.map(s => s.name).join(', '));
 
     const session = await stripe.checkout.sessions.create({
       mode      : 'payment',
       automatic_tax: { enabled: true },
-      line_items: checkoutServices.map(s => ({
-        quantity  : 1,
-        price_data: {
-          currency    : 'eur',
-          unit_amount : s.unitAmount,
-          tax_behavior: 'exclusive',
-          product_data: {
-            name    : toStripeAscii(s.name),
-            metadata: {
-              service_slug       : s.slug,
-              service_category   : s.category,
-              configured_price_id: s.priceId,
-            },
-          },
-        },
-      })),
+      line_items: checkoutServices.map(getServiceCheckoutLineItem),
       success_url: `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
       cancel_url : cancelUrl,
-      metadata   : {
-        product_type : checkoutServices.length > 1 ? 'cart' : 'service',
-        service_slug : checkoutServices.length === 1 ? checkoutServices[0].slug : '',
-        service_name : checkoutServices.length === 1 ? toStripeAscii(checkoutServices[0].name) : 'Pedido de servicios EXPERT',
-        service_slugs: serviceSlugs,
-        service_names: serviceNames,
-      },
+      metadata   : getServiceCheckoutMetadata(checkoutServices),
       locale: 'es',
     });
 

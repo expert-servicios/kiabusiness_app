@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, FileText, Clock, CheckCircle2 } from 'lucide-react';
 import { CheckoutButton } from '@/components/quotes/CheckoutButton';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Quote {
   id: string;
@@ -15,7 +16,7 @@ interface Quote {
 async function getQuotes() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/quotes`, {
+  const response = await fetch(absoluteAppUrl('/api/quotes'), {
     headers: { cookie: cookieHeader ?? '' },
     cache: 'no-store'
   });

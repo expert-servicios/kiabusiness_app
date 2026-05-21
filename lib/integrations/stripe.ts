@@ -12,3 +12,13 @@ export function getStripeClient() {
     apiVersion: '2024-06-20' as any,
   });
 }
+
+export function toStripeAscii(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 499);
+}

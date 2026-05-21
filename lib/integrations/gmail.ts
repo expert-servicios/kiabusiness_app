@@ -5,6 +5,8 @@
  *   2. OAuth2 — fallback using stored tokens in gmail_tokens table
  */
 
+import { absoluteAppUrl } from '@/lib/utils/app-url';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGoogle = any;
 
@@ -50,7 +52,7 @@ export interface GmailRefreshResult {
 }
 
 function getRedirectUri(): string {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google-gmail/callback`;
+  return absoluteAppUrl('/api/auth/google-gmail/callback');
 }
 
 async function getOAuth2Client(tokens?: GmailTokens): Promise<AnyGoogle> {

@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, FolderOpen
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface CaseDetail {
   id: string;
@@ -170,7 +171,7 @@ const STEP_LABELS: Record<string, string> = {
 async function fetchWithCookies(path: string) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+  const response = await fetch(absoluteAppUrl(path), {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });

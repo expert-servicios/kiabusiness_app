@@ -13,6 +13,7 @@ import {
   QuotesFunnel,
   EmailDeliveryBar
 } from '@/components/admin/AdminDashboardCharts';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface AdminStats {
   totalUsers: number;
@@ -39,7 +40,7 @@ async function fetchAdmin<T>(path: string, fallback: T): Promise<T> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

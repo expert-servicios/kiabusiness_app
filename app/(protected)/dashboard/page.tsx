@@ -4,12 +4,13 @@ import {
   AlertCircle, ArrowRight, Building2, CheckCircle2,
   ChevronRight, Clock, FileText, FolderOpen, MessageCircle, Plus, Zap
 } from 'lucide-react';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 async function fetchWithCookies(path: string) {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

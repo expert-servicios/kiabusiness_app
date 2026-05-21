@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { FileText } from 'lucide-react';
 import { AdminQuoteCard } from '@/components/quotes/AdminQuoteCard';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Quote {
   id: string;
@@ -17,7 +18,7 @@ async function getAdminQuotes() {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/quotes`, {
+    const response = await fetch(absoluteAppUrl('/api/quotes'), {
       headers: { cookie: cookieHeader ?? '' },
       cache: 'no-store'
     });

@@ -21,6 +21,12 @@ import {
   SERVICES,
 } from '@/lib/integrations/kia-engine';
 import { getStripeClient } from '@/lib/integrations/stripe';
+import {
+  getServiceCheckoutByPriceId,
+  getServiceCheckoutLineItem,
+  getServiceCheckoutMetadata,
+} from '@/lib/integrations/service-checkout';
+import { absoluteAppUrl, getPublicAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
@@ -236,14 +242,20 @@ async function handleKiaSideEffects({
   if (sendPaymentLink && svc?.stripePriceId) {
     try {
       const stripe  = getStripeClient();
-      const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
-      const pageUrl = getServicePageUrl(svc.id) ?? `${appUrl}/servicios`;
+      const appUrl  = getPublicAppUrl();
+      const pageUrl = getServicePageUrl(svc.id) ?? absoluteAppUrl('/servicios');
+      const checkoutService = getServiceCheckoutByPriceId(svc.stripePriceId);
+      if (!checkoutService) {
+        throw new Error(`Servicio no valido para checkout: ${svc.stripePriceId}`);
+      }
+      const metadata = getServiceCheckoutMetadata([checkoutService]);
       const stripeSession = await stripe.checkout.sessions.create({
         mode            : 'payment',
-        line_items      : [{ price: svc.stripePriceId, quantity: 1 }],
+        automatic_tax   : { enabled: true },
+        line_items      : [getServiceCheckoutLineItem(checkoutService)],
         success_url     : `${appUrl}/gracias/pago?source=whatsapp&service=${svc.id}`,
         cancel_url      : pageUrl,
-        metadata        : { product_type: 'service', service_name: svc.label.es, service_slug: svc.id, source: 'whatsapp', whatsapp_phone: phone },
+        metadata        : { ...metadata, source: 'whatsapp', whatsapp_phone: phone },
         locale          : 'es',
         customer_creation: 'always',
         phone_number_collection: { enabled: true },

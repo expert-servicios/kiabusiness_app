@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { Mail, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface EmailEvent {
   id: number;
@@ -35,7 +36,7 @@ async function getEmailEvents(): Promise<EmailEvent[]> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/emails`, {
+    const response = await fetch(absoluteAppUrl('/api/admin/emails'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

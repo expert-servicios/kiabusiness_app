@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, FolderOpen, ChevronRight, MessageCircle } from 'lucide-react';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Case {
   id: string;
@@ -31,7 +32,7 @@ const STATE_COLORS: Record<string, string> = {
 async function getCases(): Promise<Case[]> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases`, {
+  const response = await fetch(absoluteAppUrl('/api/cases'), {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });

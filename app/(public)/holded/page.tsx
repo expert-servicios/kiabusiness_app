@@ -18,7 +18,6 @@ import {
   Clock,
   Zap,
 } from 'lucide-react';
-import { getStripeClient } from '@/lib/integrations/stripe';
 import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { articles } from '@/lib/utils/blog';
@@ -78,6 +77,7 @@ const aiCards = [
 const PACKAGE_META = [
   {
     priceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
+    amountCents: 49000,
     name: 'Pack Starter',
     subtitle: 'Onboarding a Holded',
     badge: null,
@@ -91,6 +91,7 @@ const PACKAGE_META = [
   },
   {
     priceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
+    amountCents: 120000,
     name: 'Migración completa',
     subtitle: 'Sin módulo de inventario',
     badge: 'Más popular',
@@ -105,6 +106,7 @@ const PACKAGE_META = [
   },
   {
     priceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
+    amountCents: 240000,
     name: 'Migración completa',
     subtitle: '+ Módulo de inventario',
     badge: null,
@@ -120,17 +122,7 @@ const PACKAGE_META = [
 ];
 
 const FORMACION_PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
-
-async function getPrices() {
-  try {
-    const stripe = getStripeClient();
-    const allIds = [...PACKAGE_META.map((p) => p.priceId), FORMACION_PRICE_ID];
-    const results = await Promise.all(allIds.map((id) => stripe.prices.retrieve(id)));
-    return results.map((p) => p.unit_amount ?? null);
-  } catch {
-    return [null, null, null, null];
-  }
-}
+const FORMACION_AMOUNT_CENTS = 18000;
 
 function formatPrice(cents: number | null) {
   if (cents === null) return '—';
@@ -175,8 +167,7 @@ const holdedFaq = [
 ];
 
 export default async function HoldedPage() {
-  const prices = await getPrices();
-  const formacionPrice = prices[3];
+  const formacionPrice = FORMACION_AMOUNT_CENTS;
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
@@ -367,7 +358,7 @@ export default async function HoldedPage() {
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {PACKAGE_META.map((pkg, i) => {
+            {PACKAGE_META.map((pkg) => {
               const isHighlighted = pkg.badge !== null;
               return (
                 <div
@@ -384,7 +375,7 @@ export default async function HoldedPage() {
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">{pkg.name}</p>
                     <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">{pkg.subtitle}</h3>
                     <p className="mt-4 font-serif text-4xl font-bold text-[#0D1B2A]">
-                      {formatPrice(prices[i])}
+                      {formatPrice(pkg.amountCents)}
                     </p>
                     <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
                   </div>

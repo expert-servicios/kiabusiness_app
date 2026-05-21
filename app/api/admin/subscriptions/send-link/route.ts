@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getStripeClient } from '@/lib/integrations/stripe';
+import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { subscriptionInvite } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
   STRIPE_PLAN_MONTHLY_99:  process.env.STRIPE_PLAN_MONTHLY_99,
@@ -46,11 +47,7 @@ export async function POST(request: NextRequest) {
 
     const { clientEmail, planName, amountEur, stripePriceEnvKey } = parsed.data;
 
-    // Resolve Stripe price ID from allowlist only
-    const priceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
-    if (!priceId) {
-      return NextResponse.json({ error: 'Precio Stripe no configurado para el plan seleccionado' }, { status: 500 });
-    }
+    const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
 
     const adminSupabase = getSupabaseAdmin();
 
@@ -69,7 +66,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     const clientName = clientProfile?.full_name ?? clientEmail.split('@')[0];
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const appUrl = getPublicAppUrl();
 
     // Create Stripe subscription checkout session
     const stripe = getStripeClient();
@@ -77,10 +74,31 @@ export async function POST(request: NextRequest) {
       mode: 'subscription',
       client_reference_id: clientId,
       customer_email: clientEmail,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'eur',
+            unit_amount: Math.round(amountEur * 100),
+            recurring: { interval: 'month' },
+            product_data: {
+              name: toStripeAscii(planName),
+              metadata: {
+                configured_price_key: stripePriceEnvKey,
+                configured_price_id: configuredPriceId ?? '',
+              },
+            },
+          },
+        },
+      ],
       metadata: { user_id: clientId, plan_name: planName, product_type: 'suscripcion' },
       subscription_data: {
-        metadata: { user_id: clientId, plan_name: planName, price_id: priceId }
+        metadata: {
+          user_id: clientId,
+          plan_name: planName,
+          configured_price_key: stripePriceEnvKey,
+          configured_price_id: configuredPriceId ?? '',
+        }
       },
       success_url: `${appUrl}/dashboard/suscripciones?activada=ok`,
       cancel_url: `${appUrl}/dashboard?suscripcion=cancelada`

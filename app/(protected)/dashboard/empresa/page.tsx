@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check, Plus, Pencil } from 'lucide-react';
 import { CompanyEditForm } from './CompanyEditForm';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Company {
   id: string;
@@ -31,8 +32,8 @@ async function getData() {
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
 
   const [profileRes, companiesRes] = await Promise.all([
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/profile`, { headers: { cookie: cookieHeader }, cache: 'no-store' }),
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/companies`, { headers: { cookie: cookieHeader }, cache: 'no-store' })
+    fetch(absoluteAppUrl('/api/profile'), { headers: { cookie: cookieHeader }, cache: 'no-store' }),
+    fetch(absoluteAppUrl('/api/companies'), { headers: { cookie: cookieHeader }, cache: 'no-store' })
   ]);
 
   const profileData = profileRes.ok ? await profileRes.json() : null;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getResendClient } from '@/lib/integrations/resend';
-import { urgencyLevel } from '@/lib/utils/fiscal-calendar';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 // Vercel Cron: runs daily at 08:00 UTC
 // Protected by CRON_SECRET header (set in Vercel env vars)
@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
     const toRemind1: typeof obls = [];
 
     for (const obl of obls) {
-      const urgency = urgencyLevel(obl.deadline);
       const diff = Math.ceil((new Date(obl.deadline).getTime() - today.getTime()) / 86400000);
 
       if (diff <= 1 && diff >= 0 && !obl.reminded_1d_at) {
@@ -133,7 +132,7 @@ function buildEmailHtml(
   soon: typeof urgent,
   upcoming: typeof urgent
 ): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const appUrl = getPublicAppUrl();
   const sections: string[] = [];
 
   if (urgent.length > 0) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripeClient } from '@/lib/integrations/stripe';
+import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const stripe = getStripeClient();
     const { id } = await params;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const appUrl = getPublicAppUrl();
 
     const supabaseAdmin = getSupabaseAdmin();
     const { data: quote, error: quoteError } = await supabaseAdmin
@@ -54,8 +55,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           price_data: {
             currency: 'eur',
             product_data: {
-              name: quote.title,
-              description: quote.description
+              name: toStripeAscii(quote.title),
+              description: quote.description ? toStripeAscii(quote.description) : undefined
             },
             unit_amount: Math.round(amountEur * 100)
           },

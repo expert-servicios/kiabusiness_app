@@ -1,7 +1,8 @@
 import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Clock, MessageCircle } from 'lucide-react';
+import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { categories, getCategory, getServicesByCategory } from '@/lib/utils/catalog';
 import type { CategorySlug } from '@/lib/utils/catalog';
 
@@ -95,23 +96,78 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
           </p>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {servicios.map((servicio) => (
-              <Link
-                key={servicio.slug}
-                href={`/servicios/${categoria}/${servicio.slug}`}
-                className="group border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_24px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_16px_40px_rgba(13,27,42,0.11)]"
-              >
-                <h3 className="font-serif text-xl font-bold text-[#0D1B2A]">{servicio.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#23364D]">{servicio.shortDescription}</p>
-                {servicio.price && (
-                  <p className="mt-3 text-sm font-bold text-[#D4A017]">{servicio.price}</p>
-                )}
-                <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
-                  Ver detalles
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </p>
-              </Link>
-            ))}
+            {servicios.map((servicio) => {
+              const cartItem = servicio.stripePriceId ? {
+                priceId     : servicio.stripePriceId,
+                name        : servicio.name,
+                displayPrice: servicio.price ?? 'Consultar',
+                slug        : servicio.slug,
+                category    : servicio.categoria,
+              } : null;
+
+              return (
+                <article
+                  key={servicio.slug}
+                  className="flex min-h-full flex-col rounded-2xl border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_24px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_16px_40px_rgba(13,27,42,0.11)]"
+                >
+                  <div className="flex-1">
+                    <Link href={`/servicios/${categoria}/${servicio.slug}`} className="group">
+                      <h3 className="font-serif text-xl font-bold text-[#0D1B2A] group-hover:text-[#D4A017]">
+                        {servicio.name}
+                      </h3>
+                    </Link>
+                    <p className="mt-2 text-sm leading-6 text-[#23364D]">{servicio.shortDescription}</p>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {servicio.price && (
+                        <span className="rounded-full border border-[#D4A017]/30 bg-[#D4A017]/8 px-3 py-1 text-xs font-bold text-[#0D1B2A]">
+                          {servicio.price}
+                        </span>
+                      )}
+                      {servicio.duration && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4A017]/20 px-3 py-1 text-xs font-semibold text-[#23364D]">
+                          <Clock className="h-3.5 w-3.5 text-[#D4A017]" />
+                          {servicio.duration}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-2">
+                    {cartItem ? (
+                      <AddToCartButton
+                        item={cartItem}
+                        label={servicio.checkoutLabel ?? 'Añadir a la cesta'}
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                    ) : (
+                      <Link
+                        href="/solicitar-presupuesto"
+                        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+                      >
+                        Solicitar presupuesto
+                      </Link>
+                    )}
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Link
+                        href={`/servicios/${categoria}/${servicio.slug}`}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                      >
+                        Ver detalles
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                      <a
+                        href="https://wa.me/34696550480"
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                      >
+                        <MessageCircle className="h-4 w-4 text-[#D4A017]" />
+                        WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
 
           {servicios.length === 0 && (

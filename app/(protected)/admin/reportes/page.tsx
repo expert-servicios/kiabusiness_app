@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { BarChart3, Mail, CreditCard, FileText, FolderOpen } from 'lucide-react';
 import { CASE_STATE_LABELS } from '@/lib/utils/case-states';
 import { HoldedCharts } from '@/components/admin/HoldedCharts';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface ReportData {
   totalRevenue: number;
@@ -25,7 +26,7 @@ async function fetchWithCookies(path: string) {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 async function assertAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
   const safeRole = ['admin', 'collaborator', 'client'].includes(role) ? role : 'collaborator';
 
   const { data: invited, error } = await getSupabaseAdmin().auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+    redirectTo: absoluteAppUrl('/dashboard')
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, Clock3, Mail, Calendar, PlugZap, RefreshCw, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SyncEvent {
   id: string;
@@ -88,11 +89,10 @@ interface GoogleStatus {
 
 async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
   try {
-    const base = process.env.NEXT_PUBLIC_APP_URL;
     const headers = { cookie: cookieHeader };
     const [gmailRes, correoRes] = await Promise.all([
-      fetch(`${base}/api/auth/google-gmail/status`, { headers, cache: 'no-store' }),
-      fetch(`${base}/api/admin/correo?action=status`, { headers, cache: 'no-store' }),
+      fetch(absoluteAppUrl('/api/auth/google-gmail/status'), { headers, cache: 'no-store' }),
+      fetch(absoluteAppUrl('/api/admin/correo?action=status'), { headers, cache: 'no-store' }),
     ]);
     const gmailData  = gmailRes.ok  ? await gmailRes.json()  : {};
     const correoData = correoRes.ok ? await correoRes.json() : {};
@@ -108,7 +108,7 @@ async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
 
 async function getSyncEvents(cookieHeader: string): Promise<SyncEvent[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integration-sync-events?provider=holded`, {
+    const res = await fetch(absoluteAppUrl('/api/admin/integration-sync-events?provider=holded'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });
@@ -122,7 +122,7 @@ async function getSyncEvents(cookieHeader: string): Promise<SyncEvent[]> {
 
 async function getHoldedStatus(cookieHeader: string): Promise<HoldedStatus | null> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/integrations/holded/status`, {
+    const res = await fetch(absoluteAppUrl('/api/admin/integrations/holded/status'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

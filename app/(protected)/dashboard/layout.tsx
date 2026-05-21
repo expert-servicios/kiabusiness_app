@@ -5,10 +5,11 @@ import { createServerClient } from '@supabase/ssr';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { MobileNav } from '@/components/dashboard/MobileNav';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 async function fetchJson(path: string, cookieHeader: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

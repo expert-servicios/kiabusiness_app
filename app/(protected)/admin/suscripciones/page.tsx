@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { CreditCard, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Subscription {
   id: string;
@@ -25,7 +26,7 @@ async function getAdminSubscriptions(): Promise<Subscription[]> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/subscriptions`, {
+    const response = await fetch(absoluteAppUrl('/api/admin/subscriptions'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { clientInviteEmail, newClientAdminAlert } from '@/lib/email/templates';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { z } from 'zod';
 
 async function requireAdmin(request: NextRequest) {
@@ -58,13 +59,13 @@ export async function POST(request: NextRequest) {
         }).eq('id', userId);
       } else {
         isNew = true;
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+        const dashboardUrl = absoluteAppUrl('/dashboard');
         const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
           type: 'invite',
           email,
           options: {
             data: { full_name },
-            redirectTo: `${appUrl}/dashboard`,
+            redirectTo: dashboardUrl,
           },
         });
         if (linkError || !linkData.user) {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: linkError?.message ?? 'Error al crear usuario' }, { status: 400 });
         }
         userId = linkData.user.id;
-        const inviteUrl = linkData.properties?.action_link ?? `${appUrl}/dashboard`;
+        const inviteUrl = linkData.properties?.action_link ?? dashboardUrl;
 
         await admin.from('profiles').update({
           full_name,

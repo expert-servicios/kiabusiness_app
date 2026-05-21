@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { Calendar } from 'lucide-react';
 import { ClientFiscalCalendar } from '@/components/dashboard/ClientFiscalCalendar';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface FiscalObligation {
   id: string;
@@ -21,7 +22,7 @@ async function fetchWithCookies(path: string) {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store',
     });

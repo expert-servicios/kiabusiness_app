@@ -8,6 +8,7 @@ import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 import { AdminNoteEditor } from '@/components/admin/AdminNoteEditor';
 import { AiCaseActions } from '@/components/admin/AiCaseActions';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface Document {
   id: string;
@@ -43,7 +44,7 @@ async function fetchWithCookies<T>(path: string): Promise<T | null> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}${path}`, {
+    const res = await fetch(absoluteAppUrl(path), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

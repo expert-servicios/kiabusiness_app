@@ -1,12 +1,13 @@
 import { cookies } from 'next/headers';
 import { Users } from 'lucide-react';
 import { AdminUsersTable, type AdminUser } from '@/components/admin/AdminUsersTable';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 async function getUsers(): Promise<AdminUser[]> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/users`, {
+    const res = await fetch(absoluteAppUrl('/api/admin/users'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

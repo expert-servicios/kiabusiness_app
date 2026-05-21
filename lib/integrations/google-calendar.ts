@@ -7,6 +7,8 @@
 // Dynamic import so the module doesn't crash at build time if googleapis isn't installed yet.
 // Once googleapis is installed, these functions work normally.
 
+import { absoluteAppUrl } from '@/lib/utils/app-url';
+
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
@@ -20,7 +22,7 @@ export interface StoredTokens {
 }
 
 function getRedirectUri(): string {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google-calendar/callback`;
+  return absoluteAppUrl('/api/auth/google-calendar/callback');
 }
 
 async function getOAuth2Client(tokens?: StoredTokens) {

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, Building2, Mail, Phone, Monitor, Users } from 'lucide-react';
 import { HoldedDemoStatusSelect } from '@/components/admin/HoldedDemoStatusSelect';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface HoldedDemo {
   id: string;
@@ -31,7 +32,7 @@ async function getDemos(): Promise<HoldedDemo[]> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/holded-demos`, {
+    const res = await fetch(absoluteAppUrl('/api/admin/holded-demos'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

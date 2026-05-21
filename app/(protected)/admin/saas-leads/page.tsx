@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { ArrowLeft, Building2, Mail, MessageSquare, Phone, Users } from 'lucide-react';
 import { LeadStatusSelect } from '@/components/admin/LeadStatusSelect';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SaasLead {
   id: string;
@@ -30,7 +31,7 @@ async function getLeads(): Promise<SaasLead[]> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/saas-leads`, {
+    const res = await fetch(absoluteAppUrl('/api/admin/saas-leads'), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });

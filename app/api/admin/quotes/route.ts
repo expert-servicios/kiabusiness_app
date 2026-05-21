@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getStripeClient } from '@/lib/integrations/stripe';
+import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { quoteWithPaymentLink } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const quoteSchema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Generate Stripe checkout session
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const appUrl = getPublicAppUrl();
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: 'eur',
             unit_amount: Math.round(amountEur * 100),
-            product_data: { name: title, description }
+            product_data: { name: toStripeAscii(title), description: toStripeAscii(description) }
           },
           quantity: 1
         }

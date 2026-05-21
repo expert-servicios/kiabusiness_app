@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getStripeClient } from '@/lib/integrations/stripe';
+import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { quoteWithPaymentLink } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
   const supabase = createServerSupabaseClient(request);
@@ -56,7 +57,7 @@ export async function POST(
 
     // Create a new Stripe checkout session
     const stripe = getStripeClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+    const appUrl = getPublicAppUrl();
     const expiresAt = quote.expires_at ?? new Date(Date.now() + 14 * 86_400_000).toISOString();
 
     const session = await stripe.checkout.sessions.create({
@@ -68,7 +69,10 @@ export async function POST(
           price_data: {
             currency: 'eur',
             unit_amount: Math.round(Number(quote.amount_eur) * 100),
-            product_data: { name: quote.title, description: quote.description ?? undefined }
+            product_data: {
+              name: toStripeAscii(quote.title),
+              description: quote.description ? toStripeAscii(quote.description) : undefined
+            }
           },
           quantity: 1
         }

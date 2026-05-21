@@ -1,6 +1,8 @@
+import { getPublicAppUrl } from '@/lib/utils/app-url';
+
 const BRAND = {
   from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es'
+  appUrl: getPublicAppUrl()
 };
 
 function base(title: string, body: string): string {

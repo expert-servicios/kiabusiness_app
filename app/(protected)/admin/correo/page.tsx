@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { CorreoInbox } from '@/components/admin/CorreoInbox';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 const CORREO_FALLBACK = {
   ms365Connected: false, ms365Email: null,
@@ -11,10 +12,9 @@ async function fetchCorreoData() {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const base = process.env.NEXT_PUBLIC_APP_URL;
     const headers = { cookie: cookieHeader };
 
-    const statusRes = await fetch(`${base}/api/admin/correo?action=status`, {
+    const statusRes = await fetch(absoluteAppUrl('/api/admin/correo?action=status'), {
       headers,
       cache: 'no-store',
     });
@@ -31,7 +31,7 @@ async function fetchCorreoData() {
     let initialMails: unknown[] = [];
     if (ms365Connected || gmailConnected) {
       const mailsRes = await fetch(
-        `${base}/api/admin/correo?action=list&provider=${initialProvider}`,
+        absoluteAppUrl(`/api/admin/correo?action=list&provider=${initialProvider}`),
         { headers, cache: 'no-store' }
       );
       if (mailsRes.ok) {

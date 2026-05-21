@@ -1,3 +1,5 @@
+import { absoluteAppUrl } from '@/lib/utils/app-url';
+
 const AUTH_BASE = 'https://login.microsoftonline.com/common/oauth2/v2.0';
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0/me';
 
@@ -11,7 +13,7 @@ const SCOPES = [
 ].join(' ');
 
 function getRedirectUri() {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/ms365/callback`;
+  return absoluteAppUrl('/api/auth/ms365/callback');
 }
 
 export function getMs365AuthUrl() {
