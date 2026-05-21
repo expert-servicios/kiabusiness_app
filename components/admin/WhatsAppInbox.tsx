@@ -1166,20 +1166,40 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                 <span className="text-[11px] text-[#c88b25]">IA mejorando y traduciendo…</span>
               </div>
             )}
-            <div className="flex items-end gap-1">
+            <div className="flex flex-col gap-1.5">
               {/* File input */}
               <input ref={fileInputRef} type="file" aria-label="Seleccionar archivo adjunto"
                 accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/ogg,audio/mpeg"
                 onChange={handleFileChange} className="hidden" />
 
-              {/* Toolbar — wrapped on very small screens */}
-              <div className="flex shrink-0 items-center gap-0.5">
+              {/* Textarea + send — full width */}
+              <div className="flex items-end gap-1.5">
+                <textarea ref={textareaRef} value={reply}
+                  onChange={(e) => {
+                    setReply(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+                  }}
+                  onKeyDown={handleKey}
+                  placeholder={pendingFile ? 'Añadir texto (opcional)' : 'Escribe un mensaje'}
+                  rows={1}
+                  className="min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-[16px] leading-snug text-[#07111d] outline-none placeholder:text-[#29384a]/40 sm:text-sm sm:py-2.5"
+                />
+                <button type="button" onClick={handleSend} disabled={sending || (!reply.trim() && !pendingFile)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:bg-[#54656f]/50 active:scale-95"
+                  aria-label="Enviar">
+                  <Send className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Toolbar — below textarea, all buttons visible on all screen sizes */}
+              <div className="flex items-center gap-0.5 px-1">
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
                   className="flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50 disabled:opacity-40" title="Adjuntar">
                   {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                 </button>
                 <button type="button" onClick={() => setShowEmoji((v) => !v)}
-                  className={`hidden sm:flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#54656f]'}`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#d8cbb5]/50 ${showEmoji ? 'bg-[#d8cbb5]/50 text-[#c88b25]' : 'text-[#54656f]'}`}
                   title="Emojis">
                   <Smile className="h-4 w-4" />
                 </button>
@@ -1188,7 +1208,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                   <BookMarked className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={() => setShowWorkflow(true)}
-                  className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50" title="Plantillas" aria-label="Plantillas">
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#54656f] transition hover:bg-[#d8cbb5]/50" title="Plantillas" aria-label="Plantillas">
                   <ClipboardList className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={handleAiCompose} disabled={aiLoading}
@@ -1199,23 +1219,6 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                   {aiLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 </button>
               </div>
-
-              <textarea ref={textareaRef} value={reply}
-                onChange={(e) => {
-                  setReply(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
-                }}
-                onKeyDown={handleKey}
-                placeholder={pendingFile ? 'Añadir texto (opcional)' : 'Escribe un mensaje'}
-                rows={1}
-                className="min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-[16px] leading-snug text-[#07111d] outline-none placeholder:text-[#29384a]/40 sm:text-sm sm:py-2.5"
-              />
-              <button type="button" onClick={handleSend} disabled={sending || (!reply.trim() && !pendingFile)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow transition hover:bg-[#1da851] disabled:bg-[#54656f]/50 active:scale-95"
-                aria-label="Enviar">
-                <Send className="h-5 w-5" />
-              </button>
             </div>
           </div>
         </>

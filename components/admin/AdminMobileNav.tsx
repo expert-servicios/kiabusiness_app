@@ -9,7 +9,7 @@ const TABS = [
   { href: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle, exact: false },
   { href: '/admin/expedientes', label: 'Tramites', icon: FolderOpen, exact: false },
   { href: '/admin/usuarios', label: 'Clientes', icon: Users, exact: false },
-  { href: '/admin/calendario-fiscal', label: 'Fiscal', icon: Calendar, exact: false },
+  { href: '/admin/calendario-fiscal', label: 'Agenda', icon: Calendar, exact: false },
 ];
 
 export function AdminMobileNav({ urgentCount = 0 }: { urgentCount?: number }) {
