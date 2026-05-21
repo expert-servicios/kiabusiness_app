@@ -101,11 +101,9 @@ export async function POST(request: NextRequest) {
         product_type: 'service',
         service_name: service.name,
         service_slug: service.slug,
-        service_category: service.category
+        service_category: service.category,
       },
       locale: 'es',
-      customer_creation: 'always',
-      phone_number_collection: { enabled: true }
     });
 
     return NextResponse.json({ url: session.url });

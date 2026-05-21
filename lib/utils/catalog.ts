@@ -129,7 +129,7 @@ export const services: Service[] = [
     shortDescription: 'Declaraciones fiscales para personas no residentes con bienes o rentas en España.',
     description:
       'Si tienes inmuebles, inversiones o percibes rentas de fuente española sin ser residente fiscal, debes presentar el Impuesto sobre la Renta de No Residentes (IRNR). Gestionamos los modelos 210, 211 y 213 adaptados a tu situación.',
-    price: 'Desde 80 € / modelo',
+    price: 'Desde 80 € + IVA / modelo',
     duration: '3–5 días hábiles',
     includes: [
       'Análisis de tu situación como no residente',
@@ -150,7 +150,7 @@ export const services: Service[] = [
     shortDescription: 'Presentación del Modelo 303 y liquidación trimestral del IVA.',
     description:
       'Preparamos y presentamos tu declaración trimestral de IVA (Modelo 303), el resumen anual (Modelo 390) y cualquier otro modelo relacionado. Incluye revisión de facturas emitidas y recibidas para garantizar la correcta liquidación.',
-    price: 'Desde 60 € / trimestre',
+    price: 'Desde 60 € + IVA / trimestre',
     duration: '2–3 días hábiles',
     includes: [
       'Revisión de facturas emitidas y recibidas',
@@ -192,7 +192,7 @@ export const services: Service[] = [
     shortDescription: 'Presentación de modelos 347, 349, 180, 190 y otros declarativos.',
     description:
       'Gestionamos la preparación y presentación de los principales modelos informativos anuales: operaciones con terceros (Modelo 347), operaciones intracomunitarias (Modelo 349), retenciones de alquileres (180), retenciones de trabajo (190), entre otros.',
-    price: 'Desde 50 € / modelo',
+    price: 'Desde 50 € + IVA / modelo',
     duration: '2–4 días hábiles',
     includes: [
       'Revisión y cruce de datos con contabilidad',
@@ -596,13 +596,13 @@ export const services: Service[] = [
       'Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede solicitar la nacionalidad española por residencia con el plazo reducido de 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud. Revisamos la viabilidad del caso, preparamos la documentación y presentamos el expediente ante el Ministerio de Justicia cuando proceda.',
     metaTitle: 'Nacionalidad española para menor nacido en España | Ksenia Ilicheva',
     metaDescription:
-      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 302,50 € IVA incluido.',
-    price: '302,50 € IVA incluido',
+      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 250 € + IVA.',
+    price: '250 € + IVA',
     duration: 'Preparación según documentación; resolución legal hasta 1 año',
     officialFee: 'Tasa administrativa 790-026: 104,05 € no incluida',
-    servicePriceDetail: 'Honorarios profesionales: 250,00 € + IVA 21 % = 302,50 €',
+    servicePriceDetail: 'Honorarios: 250 € + IVA 21 % (total 302,50 € si aplica IVA)',
     stripePriceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
-    checkoutLabel: 'Contratar servicio - 302,50 €',
+    checkoutLabel: 'Contratar — 250 € + IVA',
     checkoutLegal:
       'El pago corresponde exclusivamente a los honorarios profesionales por la preparación y presentación del expediente. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, no está incluida y se abonará aparte.',
     keyPoints: [
@@ -783,7 +783,7 @@ export const services: Service[] = [
     shortDescription: 'Obtención del Número de Identificación de Extranjero (NIE) y gestiones consulares.',
     description:
       'Tramitamos la obtención del NIE (para ciudadanos de la UE o no UE), así como gestiones relacionadas con el Consulado: citas, documentación para visados, certificados de registro y otras diligencias consulares en España.',
-    price: 'Desde 60 €',
+    price: 'Desde 60 € + IVA',
     duration: '1–4 semanas',
     includes: [
       'Gestión de cita previa',
@@ -952,7 +952,7 @@ export const services: Service[] = [
     shortDescription: 'Llevanza de contabilidad y registro contable para autónomos y sociedades.',
     description:
       'Nos encargamos de la contabilidad mensual de tu empresa o actividad: registro de facturas, conciliaciones bancarias, informes mensuales de resultados y balance. Trabajamos con Holded para mayor visibilidad y control.',
-    price: 'Desde 80 € / mes',
+    price: 'Desde 80 € + IVA / mes',
     duration: 'Servicio recurrente mensual',
     includes: [
       'Registro de facturas emitidas y recibidas',
@@ -973,7 +973,7 @@ export const services: Service[] = [
     shortDescription: 'Presentación trimestral de IVA, IRPF y otros modelos recurrentes.',
     description:
       'Gestionamos la presentación trimestral de tus impuestos: IVA (Modelo 303), retenciones a trabajadores (Modelo 111), retenciones de alquileres (Modelo 115) y pagos fraccionados del IRPF (Modelo 130/131). Todo en plazo y con revisión previa.',
-    price: 'Desde 120 € / trimestre',
+    price: 'Desde 120 € + IVA / trimestre',
     duration: 'Servicio recurrente trimestral',
     includes: [
       'Revisión de datos contables del trimestre',
@@ -1055,7 +1055,7 @@ export const services: Service[] = [
     shortDescription: 'Gestión del cambio de titular en la DGT para compraventas de vehículos.',
     description:
       'Tramitamos la transferencia de titularidad de vehículos de segunda mano ante la DGT: verificamos documentación, liquidamos el impuesto de transmisiones (ITP), presentamos la solicitud y obtenemos el nuevo permiso de circulación a nombre del comprador.',
-    price: 'Desde 80 €',
+    price: 'Desde 80 € + IVA',
     duration: '3–7 días hábiles',
     includes: [
       'Verificación del contrato de compraventa',
@@ -1094,7 +1094,7 @@ export const services: Service[] = [
     shortDescription: 'Obtención de duplicados del permiso de conducir, de circulación o ficha técnica.',
     description:
       'Tramitamos duplicados de permiso de conducir, permiso de circulación o ficha técnica del vehículo por pérdida, robo o deterioro ante la DGT o la prefectura correspondiente.',
-    price: 'Desde 50 €',
+    price: 'Desde 50 € + IVA',
     duration: '2–5 días hábiles',
     includes: [
       'Gestión de la solicitud ante la DGT',
@@ -1193,7 +1193,7 @@ export const services: Service[] = [
     shortDescription: 'Cancelación registral de la hipoteca una vez pagado el préstamo.',
     description:
       'Cuando terminas de pagar la hipoteca, el banco no cancela automáticamente la carga en el Registro de la Propiedad. Gestionamos la obtención del certificado de deuda cero, la firma notarial de la escritura de cancelación y la inscripción registral.',
-    price: 'Desde 150 €',
+    price: 'Desde 150 € + IVA',
     duration: '2–4 semanas',
     includes: [
       'Obtención del certificado de saldo cero del banco',
@@ -1214,12 +1214,12 @@ export const services: Service[] = [
     shortDescription: 'Obtén tu certificado digital cualificado Camerfirma. Válido ante AEAT, Seguridad Social y todos los organismos públicos.',
     description:
       'Somos Punto de Registro Autorizado de Camerfirma. Tramitamos la obtención o renovación de tu certificado digital cualificado de persona física, imprescindible para firmar documentos electrónicamente y relacionarte con la AEAT, Seguridad Social, Notarías y cualquier organismo público o privado. El proceso es inmediato: verificación de identidad presencial o por videoconferencia, emisión y instalación en el mismo acto.',
-    price: '90 €',
+    price: '90 € + IVA',
     duration: 'Inmediato (presencial o videoconferencia)',
     stripePriceId: 'price_1TZYiBLeYwwgvux4EO07gS0W',
     checkoutLabel: 'Solicitar certificado digital',
-    metaTitle: 'Certificado Digital Persona Física Camerfirma · 90 € | EXPERT Asesoría',
-    metaDescription: 'Obtén tu certificado digital Camerfirma para persona física desde 90 €. Tramitación inmediata presencial o por videoconferencia. Punto de Registro Autorizado.',
+    metaTitle: 'Certificado Digital Persona Física Camerfirma · 90 € + IVA | EXPERT Asesoría',
+    metaDescription: 'Obtén tu certificado digital Camerfirma para persona física desde 90 € + IVA. Tramitación inmediata presencial o por videoconferencia. Punto de Registro Autorizado.',
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
       { title: 'Inmediato', text: 'Emisión en el mismo acto, presencialmente o por videoconferencia sin desplazamiento.' },
@@ -1276,7 +1276,7 @@ export const services: Service[] = [
       { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Ofrecemos ambas modalidades. Por videoconferencia solo necesitas DNI/NIE y conexión a internet.' },
       { q: '¿Cuánto dura el certificado Camerfirma?', a: 'Entre 2 y 3 años según el tipo. Te avisamos con tiempo para renovarlo sin interrupciones.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es una Autoridad de Certificación reconocida y su certificado es válido en AEAT, Seguridad Social, DGT, Notarías y cualquier organismo público o privado.' },
-      { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 €.' },
+      { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 € + IVA.' },
     ],
   },
   {
@@ -1286,12 +1286,12 @@ export const services: Service[] = [
     shortDescription: 'Certificado digital cualificado para tu empresa, asociación o entidad. Actúa digitalmente en nombre de tu organización.',
     description:
       'Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad (persona jurídica) para que tu empresa, asociación o cualquier organización pueda firmar documentos electrónicamente y relacionarse de forma segura con la AEAT, Seguridad Social, Registros y cualquier organismo público o privado. El proceso incluye la verificación del representante legal y la emisión e instalación en 24–48 horas.',
-    price: '150 €',
+    price: '150 € + IVA',
     duration: '24–48 h desde la verificación',
     stripePriceId: 'price_1TZYiDLeYwwgvux4ovAjIxrz',
     checkoutLabel: 'Solicitar certificado de entidad',
-    metaTitle: 'Certificado Digital de Entidad Camerfirma · 150 € | EXPERT Asesoría',
-    metaDescription: 'Certificado digital Camerfirma para empresas y entidades desde 150 €. Tramitación en 24–48 h. Punto de Registro Autorizado. Válido ante AEAT, SS y todos los organismos.',
+    metaTitle: 'Certificado Digital de Entidad Camerfirma · 150 € + IVA | EXPERT Asesoría',
+    metaDescription: 'Certificado digital Camerfirma para empresas y entidades desde 150 € + IVA. Tramitación en 24–48 h. Punto de Registro Autorizado. Válido ante AEAT, SS y todos los organismos.',
     keyPoints: [
       { title: 'Para cualquier entidad', text: 'Válido para SL, SA, asociaciones, fundaciones, comunidades de propietarios y cualquier persona jurídica.' },
       { title: 'Firma en nombre de la empresa', text: 'Permite actuar y firmar electrónicamente en nombre de tu organización ante cualquier organismo.' },
@@ -1370,7 +1370,7 @@ export const services: Service[] = [
     shortDescription: 'Certificado digital cualificado Camerfirma para asociaciones, fundaciones y entidades sin ánimo de lucro.',
     description:
       'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad adaptado a estas organizaciones, con verificación del representante legal y emisión en 24–48 horas.',
-    price: '150 €',
+    price: '150 € + IVA',
     duration: '24–48 h desde la verificación',
     includes: [
       'Verificación documental de la entidad y del representante legal',
@@ -1393,7 +1393,7 @@ export const services: Service[] = [
     shortDescription: 'Sesiones prácticas sobre fiscalidad, contabilidad y obligaciones tributarias.',
     description:
       'Impartimos formación práctica en materia fiscal y contable para autónomos, pymes y equipos de administración: IRPF, IVA, cierre contable, modelos tributarios, declaraciones y planificación fiscal. Bloques de 2 horas desde 180 €.',
-    price: 'Desde 180 € / bloque de 2 h',
+    price: 'Desde 180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Sesión online o presencial (según disponibilidad)',
@@ -1414,7 +1414,7 @@ export const services: Service[] = [
     shortDescription: 'Formación sobre contratos, nóminas, gestión laboral y recursos humanos.',
     description:
       'Formación práctica para responsables de administración, gerentes y equipos de RRHH: tipos de contratos, nóminas, altas y bajas en Seguridad Social, gestión de ausencias, despidos y documentación laboral. Bloques de 2 horas desde 180 €.',
-    price: 'Desde 180 € / bloque de 2 h',
+    price: 'Desde 180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Sesión online o presencial',
@@ -1434,7 +1434,7 @@ export const services: Service[] = [
     shortDescription: 'Aprende a gestionar tu contabilidad, facturación y CRM en Holded.',
     description:
       'Como Holded Solution Partner, impartimos formación específica en el uso de Holded: módulos de facturación, contabilidad, inventario, proyectos y CRM. Sesiones de 2 horas adaptadas a tu nivel y caso de uso real. Precio: 180 € por bloque.',
-    price: '180 € / bloque de 2 h',
+    price: '180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Sesión práctica sobre tu propio entorno Holded',
@@ -1455,7 +1455,7 @@ export const services: Service[] = [
     shortDescription: 'Aprende a relacionarte con la AEAT, la Seguridad Social, Extranjería y otros organismos de forma autónoma.',
     description:
       'Formación práctica para autónomos, pymes y particulares que quieren entender cómo funcionan y comunicarse correctamente con los principales organismos públicos: AEAT (Sede Electrónica, certificados, notificaciones), Seguridad Social (Importass, vida laboral, altas/bajas), DGT, Extranjería y Registro Civil. Bloques de 2 horas desde 180 €.',
-    price: 'Desde 180 € / bloque de 2 h',
+    price: 'Desde 180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Sesión online o presencial',
@@ -1476,7 +1476,7 @@ export const services: Service[] = [
     shortDescription: 'Todo lo que necesitas saber antes y después de darte de alta o constituir una sociedad.',
     description:
       'Formación práctica orientada a emprendedores y profesionales que van a iniciar su actividad: diferencias entre autónomo y sociedad limitada, obligaciones fiscales desde el día uno, cuotas de la Seguridad Social, facturación, IVA y gestión básica contable. Bloques de 2 horas desde 180 €.',
-    price: 'Desde 180 € / bloque de 2 h',
+    price: 'Desde 180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Autónomo vs. SL: cuándo conviene cada opción',
@@ -1497,7 +1497,7 @@ export const services: Service[] = [
     shortDescription: 'Estrategias y herramientas para optimizar tu carga fiscal como autónomo, socio o empresa.',
     description:
       'Formación práctica sobre planificación y optimización fiscal para autónomos y pymes: reducción de la base imponible del IRPF, gastos deducibles, retribución óptima del socio-administrador, planes de pensiones, tributación de dividendos y estrategias para el cierre fiscal de fin de año. Bloques de 2 horas desde 180 €.',
-    price: 'Desde 180 € / bloque de 2 h',
+    price: 'Desde 180 € + IVA / bloque de 2 h',
     duration: '2 horas por bloque',
     includes: [
       'Gastos deducibles reales vs. riesgo de inspección',
