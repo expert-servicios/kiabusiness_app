@@ -12,8 +12,8 @@ const bodySchema = z.object({
   clientEmail: z.string().email(),
   clientPhone: z.string().optional(),
   gdprConsent: z.boolean(),
-  answers: z.record(z.union([z.string(), z.boolean()])),
-  docStatus: z.record(z.enum(['have', 'missing', 'need_help']))
+  answers: z.record(z.string(), z.union([z.string(), z.boolean()])),
+  docStatus: z.record(z.string(), z.enum(['have', 'missing', 'need_help']))
 });
 
 export async function POST(request: NextRequest) {
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Datos incorrectos.', details: err.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Datos incorrectos.', details: err.issues }, { status: 400 });
     }
     console.error('[viabilidad] error:', err);
     return NextResponse.json({ error: 'Error al evaluar la viabilidad.' }, { status: 500 });

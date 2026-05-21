@@ -48,13 +48,14 @@ export function extractLeadInfo(text: string): { name: string | null; email: str
 // ── Service definitions ───────────────────────────────────────────────────────
 
 export interface KiaServiceDef {
-  id          : string;
-  label       : L10n;
-  area        : string;
-  category    : string;
-  docs        : string[];
-  precalFlow ?: string;
+  id           : string;
+  label        : L10n;
+  area         : string;
+  category     : string;
+  docs         : string[];
+  precalFlow  ?: string;
   autoEscalate?: boolean;
+  stripePriceId?: string;
 }
 
 export const SERVICES: Record<string, KiaServiceDef> = {
@@ -62,6 +63,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   svc_irpf: {
     id: 'svc_irpf', label: { es: 'Renta (IRPF)', ru: 'Декларация НДФЛ (IRPF)' },
     area: 'fiscal', category: 'declaraciones-impuestos', precalFlow: 'irpf',
+    stripePriceId: 'price_1TXMmGLeYwwgvux4wIhcfhEF',
     docs: [
       'DNI / NIE en vigor',
       'Número de referencia o Cl@ve PIN',
@@ -104,6 +106,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   svc_alta_autonomo: {
     id: 'svc_alta_autonomo', label: { es: 'Alta de Autónomo', ru: 'Регистрация самозанятого' },
     area: 'empresa', category: 'empresas-autonomos', precalFlow: 'alta_autonomo',
+    stripePriceId: 'price_1TXMmKLeYwwgvux4oXpYh27g',
     docs: [
       'DNI / NIE en vigor',
       'Certificado digital o Cl@ve PIN (si tienes)',
@@ -154,11 +157,13 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   svc_certificado_fisica: {
     id: 'svc_certificado_fisica', label: { es: 'Certificado Digital (persona física)', ru: 'ЭЦП для физлица' },
     area: 'certificado', category: 'certificado-digital', precalFlow: 'certificado',
+    stripePriceId: 'price_1TZYiBLeYwwgvux4EO07gS0W',
     docs: ['DNI / NIE en vigor', 'Datos del solicitante (nombre completo, NIF)'],
   },
   svc_certificado_empresa: {
     id: 'svc_certificado_empresa', label: { es: 'Certificado Digital (empresa)', ru: 'ЭЦП для юрлица' },
     area: 'certificado', category: 'certificado-digital',
+    stripePriceId: 'price_1TZYiDLeYwwgvux4ovAjIxrz',
     docs: [
       'DNI / NIE del representante legal',
       'CIF de la empresa',
@@ -253,6 +258,97 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   svc_notaria_no_se: {
     id: 'svc_notaria_no_se', label: { es: 'Otro trámite notarial', ru: 'Другой нотариальный вопрос' },
     area: 'notaria', category: 'notaria-propiedades', docs: [], autoEscalate: true,
+  },
+
+  // EXTRANJERÍA — servicios granulares con flujo de precalificación
+  svc_arraigo_social: {
+    id: 'svc_arraigo_social', label: { es: 'Arraigo Social', ru: 'Социальное укоренение' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'arraigo_social',
+    stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
+    docs: [
+      'Pasaporte en vigor (todas las páginas)',
+      'Empadronamiento histórico (mínimo 3 años)',
+      'Contrato de trabajo firmado por empleador (vigente)',
+      'Ausencia de antecedentes penales en España y país de origen',
+    ],
+  },
+  svc_arraigo_familiar: {
+    id: 'svc_arraigo_familiar', label: { es: 'Arraigo Familiar', ru: 'Семейное укоренение' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'arraigo_familiar',
+    stripePriceId: 'price_1TXMmTLeYwwgvux4OvsyKGL2',
+    docs: [
+      'Pasaporte en vigor',
+      'Empadronamiento actualizado',
+      'Documento acreditativo del familiar (español o residente legal)',
+      'Libro de familia o certificado de nacimiento/matrimonio',
+    ],
+  },
+  svc_arraigo_laboral: {
+    id: 'svc_arraigo_laboral', label: { es: 'Arraigo Laboral', ru: 'Трудовое укоренение' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'arraigo_laboral',
+    stripePriceId: 'price_1TZYl8LeYwwgvux4EWcyxqwn',
+    docs: [
+      'Pasaporte en vigor',
+      'Empadronamiento histórico (mínimo 2 años)',
+      'Acta de la ITSS, sentencia judicial o resolución SEPE',
+      'Informe de vida laboral',
+    ],
+  },
+  svc_reagrupacion: {
+    id: 'svc_reagrupacion', label: { es: 'Reagrupación Familiar', ru: 'Воссоединение семьи' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'reagrupacion',
+    stripePriceId: 'price_1TZYlBLeYwwgvux4c3bW4zwF',
+    docs: [
+      'TIE del reagrupante en vigor',
+      'Pasaporte del familiar a reagrupar',
+      'Nóminas o contrato de trabajo (medios económicos)',
+      'Certificado de vivienda (superficie y habitaciones)',
+    ],
+  },
+  svc_renovacion_residencia: {
+    id: 'svc_renovacion_residencia', label: { es: 'Renovación de Residencia', ru: 'Продление ВНЖ' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'renovacion_residencia',
+    stripePriceId: 'price_1TZYlELeYwwgvux4Et7Loldl',
+    docs: [
+      'TIE actual (o resguardo si está en trámite)',
+      'Pasaporte en vigor',
+      'Empadronamiento actualizado',
+      'Contrato de trabajo o medios económicos',
+    ],
+  },
+  svc_nacionalidad_espanola: {
+    id: 'svc_nacionalidad_espanola', label: { es: 'Nacionalidad por Residencia', ru: 'Гражданство по проживанию' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'nacionalidad_espanola',
+    stripePriceId: 'price_1TZYlGLeYwwgvux4Rj6u0Jqk',
+    docs: [
+      'Pasaporte en vigor',
+      'TIE vigente',
+      'Empadronamiento histórico (residencia continuada)',
+      'Antecedentes penales del país de origen (apostillado)',
+      'Certificado de nacimiento (apostillado y traducido)',
+    ],
+  },
+  svc_nacionalidad_menor: {
+    id: 'svc_nacionalidad_menor', label: { es: 'Nacionalidad — Menor nacido en España', ru: 'Гражданство — несовершеннолетний' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'nacionalidad_menor',
+    stripePriceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
+    docs: [
+      'Libro de familia o certificado de nacimiento español',
+      'Pasaportes de ambos progenitores',
+      'TIE/NIE de al menos un progenitor',
+      'Empadronamiento familiar',
+    ],
+  },
+  svc_permiso_inicial: {
+    id: 'svc_permiso_inicial', label: { es: 'Permiso Inicial de Residencia', ru: 'Первичный вид на жительство' },
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', precalFlow: 'permiso_inicial',
+    stripePriceId: 'price_1TZXopLeYwwgvux4C1wVQeer',
+    docs: [
+      'Pasaporte en vigor (mínimo 1 año de vigencia)',
+      'Contrato de trabajo o oferta de empleo (autorización de trabajo)',
+      'Medios económicos o seguro médico',
+      'Empadronamiento (si ya está en España)',
+    ],
   },
 };
 
@@ -360,6 +456,183 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
       ],
     },
   ],
+
+  arraigo_social: [
+    {
+      key: 'tiempo_espana',
+      text: { es: '¿Cuánto tiempo llevas en España de forma continuada?', ru: 'Сколько лет вы непрерывно находитесь в Испании?' },
+      type: 'buttons',
+      options: [
+        { id: 'menos_3', label: { es: 'Menos de 3 años', ru: 'Менее 3 лет'  }, escalate: true },
+        { id: '3_anos',  label: { es: '3 años',          ru: '3 года'       } },
+        { id: 'mas_3',   label: { es: 'Más de 3 años',   ru: 'Более 3 лет'  } },
+      ],
+    },
+    {
+      key: 'contrato',
+      text: { es: '¿Tienes contrato de trabajo firmado o informe de arraigo social del ayuntamiento?', ru: 'Есть ли у вас трудовой договор или отчёт об интеграции от мэрии?' },
+      type: 'buttons',
+      options: [
+        { id: 'si_contrato', label: { es: 'Tengo contrato', ru: 'Есть договор' } },
+        { id: 'si_informe',  label: { es: 'Tengo informe',  ru: 'Есть отчёт'   } },
+        { id: 'ninguno',     label: { es: 'Ninguno aún',    ru: 'Ничего пока'  }, escalate: true },
+      ],
+    },
+  ],
+
+  arraigo_familiar: [
+    {
+      key: 'familiar',
+      text: { es: '¿Tienes padre, madre o hijo/a con nacionalidad española o residencia legal en España?', ru: 'Есть ли у вас родитель или ребёнок — гражданин Испании или законный резидент?' },
+      type: 'buttons',
+      options: [
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
+      ],
+    },
+    {
+      key: 'tiempo_espana',
+      text: { es: '¿Cuánto tiempo llevas en España?', ru: 'Как долго вы в Испании?' },
+      type: 'buttons',
+      options: [
+        { id: 'menos_2', label: { es: 'Menos de 2 años', ru: 'Менее 2 лет'    }, escalate: true },
+        { id: '2_mas',   label: { es: '2 años o más',    ru: '2 года и больше' } },
+      ],
+    },
+  ],
+
+  arraigo_laboral: [
+    {
+      key: 'tiempo_espana',
+      text: { es: '¿Llevas más de 2 años en España sin permiso de trabajo?', ru: 'Вы в Испании более 2 лет без разрешения на работу?' },
+      type: 'buttons',
+      options: [
+        { id: 'si', label: { es: 'Sí, más de 2 años', ru: 'Да, более 2 лет' } },
+        { id: 'no', label: { es: 'No',                 ru: 'Нет'             }, escalate: true },
+      ],
+    },
+    {
+      key: 'relacion_laboral',
+      text: { es: '¿Tienes acta de la ITSS, sentencia judicial o resolución del SEPE que pruebe la relación laboral?', ru: 'Есть акт ITSS, решение суда или SEPE, подтверждающее трудовые отношения?' },
+      type: 'buttons',
+      options: [
+        { id: 'si', label: { es: 'Sí, lo tengo',  ru: 'Да, есть' } },
+        { id: 'no', label: { es: 'No lo tengo',   ru: 'Нет'      }, escalate: true },
+      ],
+    },
+  ],
+
+  reagrupacion: [
+    {
+      key: 'anos_residencia',
+      text: { es: '¿Cuánto tiempo llevas con residencia legal en España (TIE)?', ru: 'Сколько лет у вас законный ВНЖ в Испании (TIE)?' },
+      type: 'buttons',
+      options: [
+        { id: 'menos_1', label: { es: 'Menos de 1 año', ru: 'Менее 1 года'  }, escalate: true },
+        { id: '1_a_2',   label: { es: '1-2 años',       ru: '1-2 года'      } },
+        { id: 'mas_2',   label: { es: 'Más de 2 años',  ru: 'Более 2 лет'   } },
+      ],
+    },
+    {
+      key: 'parentesco',
+      text: { es: '¿Con quién quieres reagrupar?', ru: 'Кого хотите воссоединить?' },
+      type: 'buttons',
+      options: [
+        { id: 'conyuge',      label: { es: 'Cónyuge / Pareja', ru: 'Супруг(а)'       } },
+        { id: 'hijos',        label: { es: 'Hijos menores 18', ru: 'Дети до 18 лет'  } },
+        { id: 'ascendientes', label: { es: 'Padres o abuelos', ru: 'Родители'        }, escalate: true },
+      ],
+    },
+  ],
+
+  renovacion_residencia: [
+    {
+      key: 'caducidad',
+      text: { es: '¿Cuándo vence tu permiso de residencia (TIE)?', ru: 'Когда истекает ваш ВНЖ (TIE)?' },
+      type: 'buttons',
+      options: [
+        { id: 'vencido',  label: { es: 'Ya venció',          ru: 'Уже истёк'      }, priority: 'urgent' },
+        { id: 'menos_60', label: { es: 'En menos de 60 días', ru: 'Менее 60 дней' }, priority: 'high'   },
+        { id: 'mas_60',   label: { es: 'Más de 60 días',     ru: 'Более 60 дней'  } },
+      ],
+    },
+    {
+      key: 'requisitos',
+      text: { es: '¿Sigues cumpliendo los requisitos de tu permiso (trabajo, estudios, etc.)?', ru: 'Продолжаете выполнять условия разрешения (работа, учёба и т.д.)?' },
+      type: 'buttons',
+      options: [
+        { id: 'si',    label: { es: 'Sí, los cumplo',    ru: 'Да'          } },
+        { id: 'no',    label: { es: 'No los cumplo',     ru: 'Нет'         }, escalate: true },
+        { id: 'no_se', label: { es: 'No estoy seguro/a', ru: 'Не уверен(а)' } },
+      ],
+    },
+  ],
+
+  nacionalidad_espanola: [
+    {
+      key: 'anos_residencia',
+      text: { es: '¿Cuántos años llevas en España con residencia legal continua?', ru: 'Сколько лет вы непрерывно законно проживаете в Испании?' },
+      type: 'buttons',
+      options: [
+        { id: 'menos_10',    label: { es: 'Menos de 10 años',   ru: 'Менее 10 лет'      }, escalate: true },
+        { id: '10_mas',      label: { es: '10 años o más',      ru: '10 лет и более'    } },
+        { id: 'iberoamerica', label: { es: '2 años (iberoam.)', ru: '2 года (ибероам.)'  } },
+      ],
+    },
+    {
+      key: 'antecedentes',
+      text: { es: '¿Tienes antecedentes penales en España o en tu país de origen?', ru: 'Есть ли у вас судимости в Испании или стране происхождения?' },
+      type: 'buttons',
+      options: [
+        { id: 'no', label: { es: 'No', ru: 'Нет' } },
+        { id: 'si', label: { es: 'Sí', ru: 'Да'  }, escalate: true },
+      ],
+    },
+  ],
+
+  nacionalidad_menor: [
+    {
+      key: 'nacido_espana',
+      text: { es: '¿El menor nació en España siendo ambos progenitores extranjeros?', ru: 'Ребёнок родился в Испании у иностранных родителей?' },
+      type: 'buttons',
+      options: [
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
+      ],
+    },
+    {
+      key: 'residencia_padre',
+      text: { es: '¿Alguno de los progenitores tiene TIE vigente en España?', ru: 'Есть ли у одного из родителей действующий ВНЖ в Испании?' },
+      type: 'buttons',
+      options: [
+        { id: 'si',    label: { es: 'Sí',             ru: 'Да'    } },
+        { id: 'ambos', label: { es: 'Los dos tienen',  ru: 'Оба'   } },
+        { id: 'no',    label: { es: 'Ninguno',         ru: 'Нет'   }, escalate: true },
+      ],
+    },
+  ],
+
+  permiso_inicial: [
+    {
+      key: 'contrato',
+      text: { es: '¿Tienes un empleador en España que quiera contratarte?', ru: 'Есть ли у вас испанский работодатель, готовый вас оформить?' },
+      type: 'buttons',
+      options: [
+        { id: 'si_contrato',    label: { es: 'Sí, tengo contrato',  ru: 'Да, есть договор' } },
+        { id: 'empresa_propia', label: { es: 'Autónomo / empresa',  ru: 'Самозанятый'       } },
+        { id: 'no',             label: { es: 'No todavía',          ru: 'Нет пока'          }, escalate: true },
+      ],
+    },
+    {
+      key: 'ubicacion',
+      text: { es: '¿Estás actualmente en España o en el extranjero?', ru: 'Вы сейчас в Испании или за рубежом?' },
+      type: 'buttons',
+      options: [
+        { id: 'espana',    label: { es: 'En España',        ru: 'В Испании'  } },
+        { id: 'extranjero', label: { es: 'En el extranjero', ru: 'За рубежом' } },
+      ],
+    },
+  ],
 };
 
 // ── Menus ─────────────────────────────────────────────────────────────────────
@@ -386,8 +659,46 @@ const SERVICE_MENUS: Record<string, Record<KiaLang, AnyMenu>> = {
     ru: { type: 'list', body: 'Какой налоговый вопрос вас интересует?', buttonText: 'Выбрать', sections: [{ title: 'НАЛОГИ', rows: [{ id: 'svc_irpf', title: '📋 Декларация НДФЛ (IRPF)', description: 'Годовая личная декларация' }, { id: 'svc_autonomo_gestion', title: '📊 Самозанятый / НДС', description: 'Квартальные налоги' }, { id: 'svc_no_residente', title: '🌐 Нерезидент (IRNR)', description: 'Недвижимость в Испании' }, { id: 'svc_modelo_151', title: '⭐ Модель 151 / Бекхэм', description: 'Специальный налоговый режим' }, { id: 'svc_modelo_720', title: '🌍 Модель 720', description: 'Имущество за рубежом' }, { id: 'svc_fiscal_no_se', title: '❓ Не знаю, что нужно', description: 'Бесплатная ориентация' }] }] },
   },
   extranjeria: {
-    es: { type: 'list', body: '¿Qué trámite de extranjería necesitas?', buttonText: 'Ver servicios', sections: [{ title: 'EXTRANJERÍA Y NACIONALIDAD', rows: [{ id: 'svc_residencia', title: '📄 Residencia / Renovación', description: 'TIE, permisos…' }, { id: 'svc_arraigo', title: '👨‍👩‍👧 Arraigo / Reagrupación', description: 'Social, familiar…' }, { id: 'svc_nacionalidad', title: '🇪🇸 Nacionalidad Española', description: 'Expediente completo' }, { id: 'svc_extranjeria_no_se', title: '❓ No sé cuál necesito', description: 'Te orientamos' }] }] },
-    ru: { type: 'list', body: 'Какое разрешение или документ вас интересует?', buttonText: 'Выбрать', sections: [{ title: 'ВНЖ И ГРАЖДАНСТВО', rows: [{ id: 'svc_residencia', title: '📄 ВНЖ / Продление (TIE)', description: 'Разрешение на проживание' }, { id: 'svc_arraigo', title: '👨‍👩‍👧 Укоренение / Воссоединение', description: 'Социальное, семейное…' }, { id: 'svc_nacionalidad', title: '🇪🇸 Гражданство Испании', description: 'Полное оформление' }, { id: 'svc_extranjeria_no_se', title: '❓ Не знаю, что нужно', description: 'Ориентация без обязательств' }] }] },
+    es: {
+      type: 'list', body: '¿Qué trámite de extranjería necesitas?', buttonText: 'Ver servicios',
+      sections: [
+        { title: 'PERMISOS DE RESIDENCIA', rows: [
+          { id: 'svc_permiso_inicial',       title: '📄 Permiso Inicial',     description: 'Primera autorización de residencia y trabajo' },
+          { id: 'svc_renovacion_residencia', title: '🔄 Renovación TIE',      description: 'Renovar permiso de residencia vigente' },
+        ] },
+        { title: 'ARRAIGO', rows: [
+          { id: 'svc_arraigo_social',   title: '🏘 Arraigo Social',   description: '3+ años en España sin papeles' },
+          { id: 'svc_arraigo_familiar', title: '👪 Arraigo Familiar', description: 'Tengo familiar español o residente' },
+          { id: 'svc_arraigo_laboral',  title: '👷 Arraigo Laboral',  description: 'Tengo relación laboral acreditada' },
+        ] },
+        { title: 'FAMILIA Y NACIONALIDAD', rows: [
+          { id: 'svc_reagrupacion',        title: '👨‍👩‍👦 Reagrupación',         description: 'Traer a tu familia a España' },
+          { id: 'svc_nacionalidad_menor',  title: '🧒 Menor en España',        description: 'Nacionalidad para hijo nacido aquí' },
+          { id: 'svc_nacionalidad_espanola', title: '🇪🇸 Nacionalidad',        description: 'Por residencia legal continua' },
+          { id: 'svc_extranjeria_no_se',   title: '❓ No sé cuál',            description: 'Te orientamos sin compromiso' },
+        ] },
+      ],
+    },
+    ru: {
+      type: 'list', body: 'Какой документ или разрешение вам нужно?', buttonText: 'Выбрать',
+      sections: [
+        { title: 'РАЗРЕШЕНИЯ НА ПРОЖИВАНИЕ', rows: [
+          { id: 'svc_permiso_inicial',       title: '📄 Первичный ВНЖ',  description: 'Первое разрешение на проживание/работу' },
+          { id: 'svc_renovacion_residencia', title: '🔄 Продление ВНЖ',  description: 'Продлить TIE или разрешение' },
+        ] },
+        { title: 'УКОРЕНЕНИЕ', rows: [
+          { id: 'svc_arraigo_social',   title: '🏘 Социальное',  description: 'В Испании 3+ лет без документов' },
+          { id: 'svc_arraigo_familiar', title: '👪 Семейное',    description: 'Есть родственник-гражданин/резидент' },
+          { id: 'svc_arraigo_laboral',  title: '👷 Трудовое',    description: 'Есть документ о трудовых отношениях' },
+        ] },
+        { title: 'СЕМЬЯ И ГРАЖДАНСТВО', rows: [
+          { id: 'svc_reagrupacion',          title: '👨‍👩‍👦 Воссоединение', description: 'Привезти семью в Испанию' },
+          { id: 'svc_nacionalidad_menor',    title: '🧒 Гражд. ребёнка', description: 'Рождённый в Испании несовершеннолетний' },
+          { id: 'svc_nacionalidad_espanola', title: '🇪🇸 Гражданство',   description: 'По непрерывному проживанию' },
+          { id: 'svc_extranjeria_no_se',     title: '❓ Не знаю',        description: 'Ориентация без обязательств' },
+        ] },
+      ],
+    },
   },
   empresa: {
     es: { type: 'list', body: '¿Qué necesitas para tu empresa o actividad?', buttonText: 'Ver opciones', sections: [{ title: 'INICIO DE ACTIVIDAD', rows: [{ id: 'svc_alta_autonomo', title: '👤 Alta de Autónomo', description: 'Hacienda + RETA' }, { id: 'svc_constitucion_sl', title: '🏢 Constituir una SL', description: 'Sociedad Limitada desde 3.000 €' }] }, { title: 'GESTIÓN CONTINUA', rows: [{ id: 'svc_gestion_mensual', title: '📅 Gestión mensual', description: 'Contabilidad, impuestos, laboral' }] }, { title: 'OTROS', rows: [{ id: 'svc_empresa_no_se', title: '❓ No sé qué necesito', description: 'Te orientamos sin compromiso' }] }] },
@@ -436,13 +747,14 @@ function menuToReply(menu: AnyMenu, footer = FOOTER): KiaReply {
 // ── Side effects ──────────────────────────────────────────────────────────────
 
 export interface KiaSideEffects {
-  escalate      ?: boolean;
-  priority      ?: KiaPriority;
-  createCase    ?: boolean;
-  saveLead      ?: boolean;
-  sendDocsEmail ?: boolean;
-  aiResponded   ?: boolean;
+  escalate       ?: boolean;
+  priority       ?: KiaPriority;
+  createCase     ?: boolean;
+  saveLead       ?: boolean;
+  sendDocsEmail  ?: boolean;
+  aiResponded    ?: boolean;
   needsAiFallback?: boolean;
+  sendPaymentLink?: boolean;
 }
 
 export interface KiaStepResult {
@@ -523,30 +835,57 @@ const UNSURE_CTA = new Set([
 
 // Service page paths (relative to https://expertconsulting.es/servicios/)
 const SERVICE_PAGE: Partial<Record<string, string>> = {
-  svc_irpf:                'declaraciones-impuestos/irpf',
-  svc_autonomo_gestion:    'declaraciones-impuestos/irpf',
-  svc_no_residente:        'declaraciones-impuestos/no-residentes',
-  svc_modelo_151:          'declaraciones-impuestos/modelo-151',
-  svc_modelo_720:          'declaraciones-impuestos/modelo-720',
-  svc_alta_autonomo:       'empresas-autonomos/alta-autonomo',
-  svc_constitucion_sl:     'empresas-autonomos/constitucion-sl',
-  svc_gestion_mensual:     'empresas-autonomos/plan-avanzado',
-  svc_holded_starter:      'holded/holded-starter',
-  svc_holded_formacion:    'holded/formacion-holded',
-  svc_holded_migracion:    'holded/holded-migracion-sin-inventario',
-  svc_certificado_fisica:  'certificado-digital/certificado-digital-persona-fisica',
-  svc_certificado_empresa: 'certificado-digital/certificado-digital-entidad',
-  svc_trafico:             'trafico-capitania-maritima/transferencia-vehiculo',
-  svc_residencia:          'extranjeria-nacionalidad/renovacion-residencia',
-  svc_arraigo:             'extranjeria-nacionalidad/arraigo-social',
-  svc_nacionalidad:        'extranjeria-nacionalidad/nacionalidad-espanola',
-  svc_notaria_compraventa: 'notaria-propiedades/compraventa-inmueble',
-  svc_notaria_herencia:    'notaria-propiedades/herencia',
+  svc_irpf:                    'declaraciones-impuestos/irpf',
+  svc_autonomo_gestion:        'declaraciones-impuestos/irpf',
+  svc_no_residente:            'declaraciones-impuestos/no-residentes',
+  svc_modelo_151:              'declaraciones-impuestos/modelo-151',
+  svc_modelo_720:              'declaraciones-impuestos/modelo-720',
+  svc_alta_autonomo:           'empresas-autonomos/alta-autonomo',
+  svc_constitucion_sl:         'empresas-autonomos/constitucion-sl',
+  svc_gestion_mensual:         'empresas-autonomos/plan-avanzado',
+  svc_holded_starter:          'holded/holded-starter',
+  svc_holded_formacion:        'holded/formacion-holded',
+  svc_holded_migracion:        'holded/holded-migracion-sin-inventario',
+  svc_certificado_fisica:      'certificado-digital/certificado-digital-persona-fisica',
+  svc_certificado_empresa:     'certificado-digital/certificado-digital-entidad',
+  svc_trafico:                 'trafico-capitania-maritima/transferencia-vehiculo',
+  // Extranjería — legacy generic entries
+  svc_residencia:              'extranjeria-nacionalidad/renovacion-residencia',
+  svc_arraigo:                 'extranjeria-nacionalidad/arraigo-social',
+  svc_nacionalidad:            'extranjeria-nacionalidad/nacionalidad-espanola',
+  // Extranjería — granular
+  svc_arraigo_social:          'extranjeria-nacionalidad/arraigo-social',
+  svc_arraigo_familiar:        'extranjeria-nacionalidad/arraigo-familiar',
+  svc_arraigo_laboral:         'extranjeria-nacionalidad/arraigo-laboral',
+  svc_reagrupacion:            'extranjeria-nacionalidad/reagrupacion-familiar',
+  svc_renovacion_residencia:   'extranjeria-nacionalidad/renovacion-residencia',
+  svc_nacionalidad_espanola:   'extranjeria-nacionalidad/nacionalidad-espanola',
+  svc_nacionalidad_menor:      'extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana',
+  svc_permiso_inicial:         'extranjeria-nacionalidad/permiso-residencia-inicial',
+  svc_notaria_compraventa:     'notaria-propiedades/compraventa-inmueble',
+  svc_notaria_herencia:        'notaria-propiedades/herencia',
 };
 
-function getServicePageUrl(svcId: string): string | null {
+export function getServicePageUrl(svcId: string): string | null {
   const path = SERVICE_PAGE[svcId];
   return path ? `https://expertconsulting.es/servicios/${path}` : null;
+}
+
+function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply {
+  const svc      = SERVICES[svcId];
+  const svcLabel = svc?.label[lang] ?? '';
+  const named    = name ? `, *${name}*` : '';
+  const body     = lang === 'ru'
+    ? `✅ Отлично${named}! *${svcLabel}* подходит под вашу ситуацию.\n\nЧто хотите сделать?`
+    : `✅ ¡Perfecto${named}! *${svcLabel}* encaja con tu situación.\n\n¿Qué quieres hacer ahora?`;
+  return {
+    type: 'buttons', body, footer: FOOTER,
+    buttons: [
+      { id: 'btn_check_viability', title: 'Comprobar viabilidad' },
+      { id: 'btn_pay_now',         title: 'Contratar ahora'      },
+      { id: 'btn_book_call',       title: 'Llamada 15 min'       },
+    ],
+  };
 }
 
 // ── Sensitive-topic keywords — trigger immediate escalation ───────────────────
@@ -842,7 +1181,7 @@ export function processKiaStep(
       return { replies: [nextReply], updates: { precal_step: nextQi, data: newData, priority: newPriority }, sideEffects: {} };
     }
 
-    return { replies: [leadCapture(lang, name)], updates: { step: 'lead_capture', data: newData, priority: newPriority }, sideEffects: {} };
+    return { replies: [precalCta(lang, name, svcId)], updates: { step: 'precal_cta', data: newData, priority: newPriority }, sideEffects: {} };
   }
 
   // ── LEAD CAPTURE ─────────────────────────────────────────────────────────
@@ -915,6 +1254,47 @@ export function processKiaStep(
     return { replies: [{ type: 'text', body }], updates: { flow: 'human', step: 'escalated', escalated: true }, sideEffects: { escalate: true } };
   }
 
+  // ── PRECAL CTA — after successful precalification ─────────────────────────
+
+  if (step === 'precal_cta') {
+    if (interaction === 'btn_check_viability') {
+      const svcId   = session.service_id ?? '';
+      const pageUrl = getServicePageUrl(svcId);
+      const url     = pageUrl ?? 'https://expertconsulting.es/servicios';
+      const body    = lang === 'ru'
+        ? `🔍 *Verifica tu viabilidad sin coste* en nuestro formulario:\n${url}\n\nRellena el cuestionario y recibirás un informe al instante. ¿Tienes dudas? Escríbeme aquí.`
+        : `🔍 *Verifica tu viabilidad sin coste* en nuestro formulario:\n${url}\n\nRellena el cuestionario y recibirás un informe al instante. ¿Tienes dudas? Escríbeme aquí.`;
+      return {
+        replies    : [{ type: 'text', body }],
+        updates    : { step: 'viability_sent' },
+        sideEffects: {},
+      };
+    }
+
+    if (interaction === 'btn_pay_now') {
+      const svcId = session.service_id ?? '';
+      const svc   = SERVICES[svcId];
+      if (!svc?.stripePriceId) {
+        return {
+          replies    : [humanEscalate(lang, name)],
+          updates    : { flow: 'human', step: 'escalated', escalated: true },
+          sideEffects: { escalate: true },
+        };
+      }
+      const body = lang === 'ru'
+        ? `🔒 Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\nEn un momento lo recibirás. ¡Gracias por confiar en EXPERT! 💼`
+        : `🔒 Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\nEn un momento lo recibirás. ¡Gracias por confiar en EXPERT! 💼`;
+      return {
+        replies    : [{ type: 'text', body }],
+        updates    : { step: 'payment_pending' },
+        sideEffects: { sendPaymentLink: true, saveLead: true },
+      };
+    }
+
+    // Free text → lead capture
+    return { replies: [leadCapture(lang, name)], updates: { step: 'lead_capture' }, sideEffects: {} };
+  }
+
   // ── UNSURE CTA ────────────────────────────────────────────────────────────
 
   if (step === 'unsure_cta') {
@@ -951,7 +1331,7 @@ export function processKiaStep(
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────
 
-  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult'].includes(step)) {
+  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending'].includes(step)) {
     return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 

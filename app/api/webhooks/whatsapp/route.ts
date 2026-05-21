@@ -14,11 +14,13 @@ import { sendEmail } from '@/lib/email/send';
 import { documentRequired } from '@/lib/email/templates';
 import {
   processKiaStep,
+  getServicePageUrl,
   type KiaSession,
   type KiaReply,
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
+import { getStripeClient } from '@/lib/integrations/stripe';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
@@ -168,7 +170,7 @@ async function handleKiaSideEffects({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin       : any;
 }): Promise<void> {
-  const { escalate, createCase, saveLead, sendDocsEmail, priority = 'normal' } = sideEffects;
+  const { escalate, createCase, saveLead, sendDocsEmail, sendPaymentLink, priority = 'normal' } = sideEffects;
 
   if (escalate) {
     await admin
@@ -228,6 +230,43 @@ async function handleKiaSideEffects({
       });
     } catch (e) {
       console.error('[Kia sendDocsEmail]', e);
+    }
+  }
+
+  if (sendPaymentLink && svc?.stripePriceId) {
+    try {
+      const stripe  = getStripeClient();
+      const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+      const pageUrl = getServicePageUrl(svc.id) ?? `${appUrl}/servicios`;
+      const stripeSession = await stripe.checkout.sessions.create({
+        mode            : 'payment',
+        line_items      : [{ price: svc.stripePriceId, quantity: 1 }],
+        success_url     : `${appUrl}/gracias/pago?source=whatsapp&service=${svc.id}`,
+        cancel_url      : pageUrl,
+        metadata        : { product_type: 'service', service_name: svc.label.es, service_slug: svc.id, source: 'whatsapp', whatsapp_phone: phone },
+        locale          : 'es',
+        customer_creation: 'always',
+        phone_number_collection: { enabled: true },
+      });
+      if (stripeSession.url) {
+        const body = session.lang === 'ru'
+          ? `💳 *Enlace de pago seguro — ${svc.label.ru}:*\n${stripeSession.url}\n\nPago 100% seguro con Stripe. Tras confirmarlo, el equipo de EXPERT abrirá tu expediente. EXPERT 💼`
+          : `💳 *Enlace de pago seguro — ${svc.label.es}:*\n${stripeSession.url}\n\nPago 100% seguro con Stripe. Tras confirmarlo, el equipo de EXPERT abrirá tu expediente. EXPERT 💼`;
+        const sent = await sendWhatsAppMessage({ to: phone, body });
+        if (sent.success) {
+          await logWhatsAppConversation({
+            clientId, phoneNumber: phone, direction: 'outbound',
+            body: `[Kia:payment] ${svc.label.es} → ${stripeSession.url?.slice(0, 60)}…`,
+            whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('[Kia sendPaymentLink]', e);
+      const errBody = session.lang === 'ru'
+        ? 'Lo siento, ha habido un error al generar el enlace de pago. Nuestro equipo te contactará en breve. EXPERT 💼'
+        : 'Lo sentimos, ha habido un problema al generar el enlace. Nuestro equipo te contactará enseguida. EXPERT 💼';
+      await sendWhatsAppMessage({ to: phone, body: errBody }).catch(() => {});
     }
   }
 }
