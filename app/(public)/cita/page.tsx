@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
-import { Calendar, CheckCircle2, Clock, Phone, Video } from 'lucide-react';
-import { CitaForm } from './CitaForm';
+import { CheckCircle2, Clock, Phone, Calendar } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
   description:
-    'Solicita una consulta inicial gratuita con nuestros asesores. Resolvemos tus dudas fiscales, de extranjería, empresa o gestión administrativa en una reunión personalizada.',
+    'Solicita una consulta inicial gratuita con nuestros asesores. Resolvemos tus dudas fiscales, de extranjería, empresa o gestión administrativa en una reunión por teléfono o videollamada.',
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es/cita',
@@ -19,14 +18,20 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://expertconsulting.es/cita' }
 };
 
+const CALENDLY_URL =
+  process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ??
+  'https://calendly.com/soy-kseniailicheva/reunion-informativa';
+
 const BENEFITS = [
   { icon: CheckCircle2, text: 'Consulta inicial completamente gratuita' },
-  { icon: Clock, text: 'Confirmación en menos de 24 horas hábiles' },
-  { icon: Phone, text: 'Reunión por teléfono o videollamada — sin desplazamientos' },
-  { icon: Calendar, text: 'Disponibilidad de lunes a viernes, mañana y tarde' }
+  { icon: Clock,        text: 'Confirmación inmediata al elegir tu hueco' },
+  { icon: Phone,        text: 'Llamada telefónica o videollamada — sin desplazamientos' },
+  { icon: Calendar,     text: 'Disponibilidad de lunes a viernes, mañana y tarde' },
 ];
 
 export default function CitaPage() {
+  const embedUrl = `${CALENDLY_URL}${CALENDLY_URL.includes('?') ? '&' : '?'}background_color=f8f6f1&text_color=061321&primary_color=d4a017`;
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
 
@@ -35,32 +40,34 @@ export default function CitaPage() {
         <div className="mx-auto max-w-5xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Consulta inicial gratuita</p>
           <h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">
-            Reserva una cita con tu asesor
+            Reserva una llamada con tu asesor
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[#9CA3AF]">
-            Cuéntanos tu caso y te ayudamos a encontrar la solución más adecuada. Sin compromiso, sin letra pequeña. La primera consulta siempre es gratuita. La reunión se realiza por teléfono o videollamada.
+            Elige el hueco que mejor te venga. La primera consulta siempre es gratuita — 15 minutos por teléfono o videollamada, sin compromiso ni letra pequeña.
           </p>
         </div>
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-12 md:py-16">
-        <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
+        <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
 
-          {/* ── Form ── */}
+          {/* ── Calendly embed ── */}
           <div className="order-2 lg:order-1">
-            <div className="border border-[#D4A017]/20 bg-white p-8 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
-              <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Solicitar cita</h2>
-              <p className="mt-1 text-sm text-[#4B5563]">Rellena el formulario y te confirmamos en menos de 24h.</p>
-              <div className="mt-6">
-                <CitaForm />
-              </div>
+            <div className="overflow-hidden border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
+              <iframe
+                src={embedUrl}
+                width="100%"
+                height="700"
+                frameBorder="0"
+                title="Reservar llamada gratuita 15 min — EXPERT Asesoría"
+                loading="lazy"
+              />
             </div>
           </div>
 
           {/* ── Info sidebar ── */}
           <div className="order-1 space-y-6 lg:order-2">
 
-            {/* Beneficios */}
             <div className="border border-[#D4A017]/20 bg-white p-6 shadow-[0_4px_16px_rgba(13,27,42,0.06)]">
               <h3 className="font-serif text-lg font-bold text-[#0D1B2A]">¿Cómo funciona?</h3>
               <ul className="mt-4 space-y-3">
@@ -79,7 +86,7 @@ export default function CitaPage() {
               <div className="mt-3 space-y-1.5 text-sm text-[#374151]">
                 <div className="flex justify-between">
                   <span>Lunes – Viernes</span>
-                  <span className="font-semibold">9:00 – 13:30 · 15:00 – 19:00</span>
+                  <span className="font-semibold">9:00 – 19:00</span>
                 </div>
                 <div className="flex justify-between text-[#9CA3AF]">
                   <span>Sábado – Domingo</span>
