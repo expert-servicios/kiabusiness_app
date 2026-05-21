@@ -335,7 +335,7 @@ export const services: Service[] = [
     duration: 'Preparación según documentación; resolución legal hasta 1 año',
     officialFee: 'Tasa administrativa 790-026: 104,05 € no incluida',
     servicePriceDetail: 'Honorarios profesionales: 250,00 € + IVA 21 % = 302,50 €',
-    stripePriceId: 'price_1TQn6XLeYwwgvux4PQCePaoa',
+    stripePriceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
     checkoutLabel: 'Contratar servicio - 302,50 €',
     checkoutLegal:
       'El pago corresponde exclusivamente a los honorarios profesionales por la preparación y presentación del expediente. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, no está incluida y se abonará aparte.',
@@ -557,7 +557,7 @@ export const services: Service[] = [
       'El permiso inicial de residencia es el primer paso para regularizar tu situación en España de forma legal. Gestionamos el expediente completo: evaluamos tu situación personal, determinamos la vía más adecuada (arraigo laboral, circunstancias excepcionales, reagrupación, trabajo…), preparamos toda la documentación y la presentamos ante la Oficina de Extranjería. Te acompañamos en cada fase hasta recibir la resolución favorable y recoger tu TIE.',
     price: '490 € + IVA',
     duration: '2–4 meses',
-    stripePriceId: 'price_1TX3epLeYwwgvux4mspOiVLg',
+    stripePriceId: 'price_1TZXopLeYwwgvux4C1wVQeer',
     includes: [
       'Evaluación gratuita de la vía más adecuada a tu situación',
       'Revisión y guía de aportación de documentación',

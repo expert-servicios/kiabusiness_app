@@ -3,12 +3,12 @@ import { z } from 'zod';
 import { getStripeClient } from '@/lib/integrations/stripe';
 
 const SERVICE_CHECKOUTS = {
-  price_1TQn6XLeYwwgvux4PQCePaoa: {
+  price_1TZXomLeYwwgvux4bTuqVZcU: {
     name: 'Nacionalidad española para menor nacido en España',
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
     category: 'extranjeria-nacionalidad'
   },
-  price_1TX3epLeYwwgvux4mspOiVLg: {
+  price_1TZXopLeYwwgvux4C1wVQeer: {
     name: 'Permiso Inicial de Residencia',
     slug: 'permiso-residencia-inicial',
     category: 'extranjeria-nacionalidad'
