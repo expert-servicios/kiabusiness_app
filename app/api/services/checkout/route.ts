@@ -73,14 +73,25 @@ export async function POST(request: NextRequest) {
         service_slug: service.slug,
         service_category: service.category
       },
+      automatic_tax: { enabled: true },
       locale: 'es',
       customer_creation: 'always',
       phone_number_collection: { enabled: true }
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err) {
-    console.error('[services/checkout]', err);
-    return NextResponse.json({ error: 'Error al iniciar el pago.' }, { status: 500 });
+  } catch (err: unknown) {
+    const stripeErr = err as { type?: string; code?: string; message?: string };
+    console.error('[services/checkout] error:', {
+      type: stripeErr?.type,
+      code: stripeErr?.code,
+      message: stripeErr?.message,
+    });
+    const userMsg = stripeErr?.message?.includes('No such price')
+      ? 'Producto no encontrado en Stripe. Contacta con soporte.'
+      : stripeErr?.message?.includes('tax')
+      ? 'Error de configuración fiscal. Contacta con soporte.'
+      : 'Error al iniciar el pago.';
+    return NextResponse.json({ error: userMsg }, { status: 500 });
   }
 }
