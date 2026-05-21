@@ -110,17 +110,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
-    const stripeErr = err as { type?: string; code?: string; message?: string };
+    const stripeErr = err as { type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };
     console.error('[services/checkout] error:', {
       type: stripeErr?.type,
       code: stripeErr?.code,
       message: stripeErr?.message,
+      statusCode: stripeErr?.statusCode,
+      raw: stripeErr?.raw,
     });
-    const userMsg = stripeErr?.message?.includes('No such price')
+    const msg = stripeErr?.message ?? '';
+    const userMsg = msg.includes('No such price')
       ? 'Producto no encontrado en Stripe. Contacta con soporte.'
-      : stripeErr?.message?.includes('tax')
+      : msg.includes('tax')
       ? 'Error de configuración fiscal. Contacta con soporte.'
       : 'Error al iniciar el pago.';
-    return NextResponse.json({ error: userMsg }, { status: 500 });
+    return NextResponse.json({ error: userMsg, _detail: msg }, { status: 500 });
   }
 }

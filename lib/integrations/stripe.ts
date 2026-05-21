@@ -7,6 +7,8 @@ export function getStripeClient() {
   }
 
   return new Stripe(secretKey, {
-    apiVersion: '2026-04-22.dahlia'
+    // Use stable v1 API — dahlia (v2) restructures checkout params and breaks customer_creation / phone_number_collection
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    apiVersion: '2024-06-20' as any,
   });
 }
