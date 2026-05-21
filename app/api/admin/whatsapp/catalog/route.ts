@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!sent.success) {
-      return NextResponse.json({ error: sent.error }, { status: 500 });
+      console.error('[WA catalog] Meta error:', JSON.stringify(sent.detail ?? sent.error));
+      return NextResponse.json({ error: sent.error, detail: sent.detail }, { status: 500 });
     }
 
     // Resolve clientId for logging

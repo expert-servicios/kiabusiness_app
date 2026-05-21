@@ -1,3 +1,9 @@
+// Strip BOM (﻿) and surrounding whitespace — Vercel CLI on Windows can
+// inject a byte-order-mark when piping env vars via PowerShell 5.1.
+function getWaToken(): string | undefined {
+  return process.env.META_WHATSAPP_ACCESS_TOKEN?.replace(/^﻿/, '').trim() || undefined;
+}
+
 export interface WhatsAppOutbound {
   to: string;
   body?: string;
@@ -63,7 +69,7 @@ export interface LogConversationParams {
 export type WaSendResult = { success: true; messageId: string } | { success: false; error: string; detail?: unknown };
 
 export async function sendWhatsAppMessage(message: WhatsAppOutbound): Promise<WaSendResult> {
-  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const token = getWaToken();
   const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
 
   if (!token || !phoneNumberId) {
@@ -130,7 +136,7 @@ export async function sendWhatsAppMessage(message: WhatsAppOutbound): Promise<Wa
 }
 
 export async function sendWhatsAppInteractive(params: WaInteractiveOutbound): Promise<WaSendResult> {
-  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const token = getWaToken();
   const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneNumberId) {
     return { success: false, error: 'WhatsApp no configurado' };
@@ -214,7 +220,7 @@ export async function sendWhatsAppImageMessage(params: {
   imageUrl: string;
   caption?: string;
 }): Promise<WaSendResult> {
-  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const token = getWaToken();
   const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneNumberId) return { success: false, error: 'WhatsApp no configurado' };
 
@@ -326,7 +332,7 @@ export async function downloadAndStoreWhatsAppMedia(
   phone: string,
   clientId: string | undefined,
 ): Promise<string | null> {
-  const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const token = getWaToken();
   if (!token) return null;
   try {
     // 1. Resolve download URL from Meta

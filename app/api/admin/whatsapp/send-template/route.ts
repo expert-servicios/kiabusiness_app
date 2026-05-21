@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.META_WHATSAPP_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${process.env.META_WHATSAPP_ACCESS_TOKEN?.replace(/^﻿/, '').trim()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

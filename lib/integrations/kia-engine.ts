@@ -477,10 +477,31 @@ function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
   return { type: 'text', body };
 }
 
+function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
+  const named = name ? `, *${name}*` : '';
+  const body = lang === 'ru'
+    ? `Не переживайте${named}! 😊 Иногда сложно сразу определиться. Можно записаться на *бесплатный звонок 15 мин* — команда EXPERT разберётся вместе с вами.`
+    : `¡No te preocupes${named}! 😊 A veces es difícil saber por dónde empezar. Puedes reservar una *llamada gratuita de 15 min* con el equipo de EXPERT y te orientamos sin compromiso.`;
+  return {
+    type: 'buttons', body, footer: FOOTER,
+    buttons: [
+      { id: 'btn_book_call',  title: lang === 'ru' ? 'Reservar llamada' : 'Reservar llamada' },
+      { id: 'btn_write_here', title: lang === 'ru' ? 'Escríbeme aquí'   : 'Escríbeme aquí'   },
+    ],
+  };
+}
+
+function bookingConfirm(lang: KiaLang): KiaReply {
+  const body = lang === 'ru'
+    ? `📅 *Записаться на звонок 15 мин (бесплатно):*\nhttps://expertconsulting.es/cita\n\nКоманда EXPERT свяжется с вами лично. ¡До встречи! 💼`
+    : `📅 *Reservar llamada gratuita de 15 min:*\nhttps://expertconsulting.es/cita\n\nEl equipo de EXPERT te atenderá personalmente. ¡Hasta pronto! 💼`;
+  return { type: 'text', body };
+}
+
 function privacyNotice(lang: KiaLang): KiaReply {
   const body = lang === 'ru'
-    ? '🔒 *Ваши данные под защитой.* Для обработки запроса используем только предоставленные вами данные. Подробнее: https://expertconsulting.es/privacidad'
-    : '🔒 *Tus datos, protegidos.* Solo usaremos los que compartas para gestionar tu consulta o trámite. Más info: https://expertconsulting.es/privacidad';
+    ? '👋 Привет! Я *Kia* — виртуальный ИИ-ассистент EXPERT Asesoría. Я автоматизированная система, *не живой сотрудник*.\n\n🔒 *Ваши данные под защитой.* Используем только предоставленные данные для обработки вашего запроса. Подробнее: https://expertconsulting.es/privacidad'
+    : '👋 ¡Hola! Soy *Kia*, la asistente virtual IA de EXPERT Asesoría. Soy un sistema automatizado, *no una persona*.\n\n🔒 *Tus datos, protegidos.* Solo usaremos los que compartas para gestionar tu consulta o trámite. Más info: https://expertconsulting.es/privacidad';
   return { type: 'text', body };
 }
 
@@ -492,10 +513,70 @@ const AUTO_ESCALATE = new Set([
   'svc_holded_migracion',
   'svc_nacionalidad',
   'svc_notaria_compraventa', 'svc_notaria_herencia',
-  'svc_fiscal_no_se', 'svc_extranjeria_no_se', 'svc_empresa_no_se',
-  'svc_trafico_maritimo', 'svc_trafico_no_se',
-  'svc_notaria_no_se',
 ]);
+
+// "No sé / No estoy segur@" stubs — offer 15-min call instead of blind escalation
+const UNSURE_CTA = new Set([
+  'svc_fiscal_no_se', 'svc_extranjeria_no_se', 'svc_empresa_no_se',
+  'svc_trafico_maritimo', 'svc_trafico_no_se', 'svc_notaria_no_se',
+]);
+
+// Service page paths (relative to https://expertconsulting.es/servicios/)
+const SERVICE_PAGE: Partial<Record<string, string>> = {
+  svc_irpf:                'declaraciones-impuestos/irpf',
+  svc_autonomo_gestion:    'declaraciones-impuestos/irpf',
+  svc_no_residente:        'declaraciones-impuestos/no-residentes',
+  svc_modelo_151:          'declaraciones-impuestos/modelo-151',
+  svc_modelo_720:          'declaraciones-impuestos/modelo-720',
+  svc_alta_autonomo:       'empresas-autonomos/alta-autonomo',
+  svc_constitucion_sl:     'empresas-autonomos/constitucion-sl',
+  svc_gestion_mensual:     'empresas-autonomos/plan-avanzado',
+  svc_holded_starter:      'holded/holded-starter',
+  svc_holded_formacion:    'holded/formacion-holded',
+  svc_holded_migracion:    'holded/holded-migracion-sin-inventario',
+  svc_certificado_fisica:  'certificado-digital/certificado-digital-persona-fisica',
+  svc_certificado_empresa: 'certificado-digital/certificado-digital-entidad',
+  svc_trafico:             'trafico-capitania-maritima/transferencia-vehiculo',
+  svc_residencia:          'extranjeria-nacionalidad/renovacion-residencia',
+  svc_arraigo:             'extranjeria-nacionalidad/arraigo-social',
+  svc_nacionalidad:        'extranjeria-nacionalidad/nacionalidad-espanola',
+  svc_notaria_compraventa: 'notaria-propiedades/compraventa-inmueble',
+  svc_notaria_herencia:    'notaria-propiedades/herencia',
+};
+
+function getServicePageUrl(svcId: string): string | null {
+  const path = SERVICE_PAGE[svcId];
+  return path ? `https://expertconsulting.es/servicios/${path}` : null;
+}
+
+// ── Sensitive-topic keywords — trigger immediate escalation ───────────────────
+
+const SENSITIVE_KEYWORDS_ES = [
+  'requerimiento', 'requerida por hacienda', 'acta de inspección', 'expediente sancionador',
+  'sanción fiscal', 'sancionado', 'sancionada', 'denegación', 'denegado', 'denegada',
+  'recurso de alzada', 'recurso contencioso', 'inspección fiscal', 'inspección tributaria',
+  'multa fiscal', 'embargo', 'delito fiscal', 'fraude fiscal', 'paralización de actividad',
+];
+
+const SENSITIVE_KEYWORDS_RU = [
+  'налоговое требование', 'требование от hacienda', 'штраф налоговой', 'санкция налоговой',
+  'отказ в выдаче', 'апелляция решения', 'налоговая проверка', 'заморозка счетов',
+  'уголовное дело', 'мошенничество',
+];
+
+function hasSensitiveTrigger(text: string, lang: KiaLang): boolean {
+  const lower = text.toLowerCase();
+  const keywords = lang === 'ru' ? SENSITIVE_KEYWORDS_RU : SENSITIVE_KEYWORDS_ES;
+  return keywords.some((kw) => lower.includes(kw));
+}
+
+function sensitiveEscalate(lang: KiaLang, name?: string | null): KiaReply {
+  const named = name ? `, *${name}*` : '';
+  const body = lang === 'ru'
+    ? `⚠️ Понимаю${named}. Эта ситуация требует срочного внимания специалиста. Немедленно передаю ваш случай команде EXPERT — кто-то свяжется с вами как можно скорее.`
+    : `⚠️ Entendido${named}. Esta situación requiere atención urgente de un especialista. Dejo tu caso preparado para el equipo de EXPERT, que se pondrá en contacto contigo cuanto antes.`;
+  return { type: 'text', body };
+}
 
 const AREA_MAP: Record<string, string> = {
   area_fiscal: 'fiscal', area_extranjeria: 'extranjeria', area_empresa: 'empresa',
@@ -532,6 +613,31 @@ export function processKiaStep(
       replies : [welcome(lang, name)],
       updates : { flow: 'welcome', step: 'waiting_intent', service_id: null, precal_step: 0, data: {}, escalated: false },
       sideEffects: {},
+    };
+  }
+
+  // Global button shortcuts — work from any flow/step
+  if (interaction === 'btn_book_call') {
+    return {
+      replies    : [bookingConfirm(lang)],
+      updates    : { flow: 'welcome', step: 'waiting_intent' },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_write_here') {
+    return {
+      replies    : [humanEscalate(lang, name)],
+      updates    : { flow: 'human', step: 'escalated', escalated: true },
+      sideEffects: { escalate: true },
+    };
+  }
+
+  // Sensitive-topic detection: escalate immediately if not already in human flow
+  if (!session.escalated && session.flow !== 'human' && hasSensitiveTrigger(msgBody, lang)) {
+    return {
+      replies    : [sensitiveEscalate(lang, name)],
+      updates    : { flow: 'human', step: 'escalated', escalated: true, priority: 'urgent' },
+      sideEffects: { escalate: true, priority: 'urgent' },
     };
   }
 
@@ -587,16 +693,33 @@ export function processKiaStep(
       return { replies: m ? [menuToReply(m)] : [menuToReply(AREA_LIST_MENU[lang])], updates: {}, sideEffects: {} };
     }
 
-    // Auto-escalate
+    // Auto-escalate (complex services → human directly)
     if (AUTO_ESCALATE.has(svcId)) {
       const svc = SERVICES[svcId];
+      const pageUrl = getServicePageUrl(svcId);
       const note = svc
         ? (lang === 'ru' ? `Запрос по *${svc.label.ru}* передаётся специалисту.` : `Tu solicitud de *${svc.label.es}* la revisará un especialista.`)
         : undefined;
+      const replies: KiaReply[] = [humanEscalate(lang, name, note)];
+      if (pageUrl) {
+        const infoNote = lang === 'ru'
+          ? `🌐 *Информация об услуге:* ${pageUrl}`
+          : `🌐 *Más información:* ${pageUrl}`;
+        replies.push({ type: 'text', body: infoNote });
+      }
       return {
-        replies: [humanEscalate(lang, name, note)],
+        replies,
         updates: { flow: 'human', step: 'escalated', escalated: true, service_id: svcId },
         sideEffects: { escalate: true, saveLead: true },
+      };
+    }
+
+    // "No estoy segur@" stubs → 15-min call CTA
+    if (UNSURE_CTA.has(svcId)) {
+      return {
+        replies    : [unsureCta(lang, name)],
+        updates    : { flow: 'consult', step: 'unsure_cta', service_id: svcId },
+        sideEffects: {},
       };
     }
 
@@ -682,9 +805,13 @@ export function processKiaStep(
       ? (lang === 'ru' ? `\n\nТакже отправлю полный список на *${email}*.` : `\n\nTambién te envío el listado completo a *${email}*.`)
       : '';
 
+    const pageUrl = session.service_id ? getServicePageUrl(session.service_id) : null;
+    const pageNote = pageUrl
+      ? (lang === 'ru' ? `\n\n🌐 *Страница услуги:* ${pageUrl}` : `\n\n🌐 *Más información:* ${pageUrl}`)
+      : '';
     const confirmBody = lang === 'ru'
-      ? `✅ *${displayName}*, ваша заявка по *${svcLabel}* принята!\n\n*Документы, которые понадобятся:*\n${topDocs}${emailNote}\n\nЕсли есть вопросы по документам — пишите! EXPERT 💼`
-      : `✅ ¡Perfecto, *${displayName}*! He abierto tu expediente de *${svcLabel}*.\n\n*Documentos que necesitaremos:*\n${topDocs}${emailNote}\n\n¿Tienes dudas sobre algún documento? Estoy aquí. EXPERT 💼`;
+      ? `✅ *${displayName}*, ваша заявка по *${svcLabel}* принята!\n\n*Документы, которые понадобятся:*\n${topDocs}${emailNote}${pageNote}\n\nЕсли есть вопросы — пишите! EXPERT 💼`
+      : `✅ ¡Perfecto, *${displayName}*! He abierto tu expediente de *${svcLabel}*.\n\n*Documentos que necesitaremos:*\n${topDocs}${emailNote}${pageNote}\n\n¿Tienes dudas? Estoy aquí. EXPERT 💼`;
 
     const replies: KiaReply[] = [{ type: 'text', body: confirmBody }];
 
@@ -733,6 +860,14 @@ export function processKiaStep(
       ? `Спасибо, *${name ?? 'клиент'}* 😊 Передаю вас команде EXPERT. Кто-то свяжется с вами в ближайшее время.`
       : `Gracias, *${name ?? 'cliente'}* 😊 Te pongo en contacto con el equipo de EXPERT. Alguien te atenderá cuanto antes.`;
     return { replies: [{ type: 'text', body }], updates: { flow: 'human', step: 'escalated', escalated: true }, sideEffects: { escalate: true } };
+  }
+
+  // ── UNSURE CTA ────────────────────────────────────────────────────────────
+
+  if (step === 'unsure_cta') {
+    // btn_book_call / btn_write_here already handled globally above;
+    // free-text → AI fallback
+    return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 
   // ── CONSULT ───────────────────────────────────────────────────────────────

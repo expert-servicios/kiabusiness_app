@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-  const token         = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const token         = process.env.META_WHATSAPP_ACCESS_TOKEN?.replace(/^﻿/, '').trim();
   const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
   const wabaId        = process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID;
 

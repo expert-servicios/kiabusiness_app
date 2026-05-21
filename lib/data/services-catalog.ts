@@ -2,7 +2,6 @@ export interface CatalogService {
   id: string;
   title: string;        // max 24 chars (WhatsApp list row limit)
   description: string;  // max 72 chars
-  imageUrl?: string;    // public HTTPS URL for web + future WhatsApp per-service cards
 }
 
 export interface CatalogSection {
@@ -10,7 +9,6 @@ export interface CatalogSection {
   title: string;        // max 24 chars
   emoji: string;
   cardBody: string;     // body shown in WhatsApp cards mode
-  imageUrl?: string;    // section-level image for WhatsApp cards
   services: CatalogService[];
 }
 
@@ -21,11 +19,10 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Fiscalidad',
     emoji: '📊',
     cardBody: 'Fiscalidad: Renta, Modelo 151, IRNR, Modelo 720 y patrimonio. ¿Qué necesitas?',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/fiscalidad.png',
     services: [
-      { id: 'irpf', title: 'Renta IRPF', description: 'Declaración anual de renta personal', imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/irpf.png' },
-      { id: 'modelo-151', title: 'Modelo 151 / Beckham', description: 'Régimen para desplazados a España', imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/modelo151.png' },
-      { id: 'no-residentes', title: 'IRNR no residentes', description: 'Bienes y rentas en España', imageUrl: 'https://expertconsulting.es/catalog/servicios/fiscal/no-residentes.png' },
+      { id: 'irpf', title: 'Renta IRPF', description: 'Declaración anual de renta personal' },
+      { id: 'modelo-151', title: 'Modelo 151 / Beckham', description: 'Régimen para desplazados a España' },
+      { id: 'no-residentes', title: 'IRNR no residentes', description: 'Bienes y rentas en España' },
       { id: 'modelo-720', title: 'Modelo 720', description: 'Bienes en el extranjero' },
       { id: 'impuesto-patrimonio', title: 'Patrimonio', description: 'Revisión y declaración patrimonial' },
     ],
@@ -35,13 +32,12 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Extranjería y Nac.',
     emoji: '🌍',
     cardBody: 'Residencia, arraigo, reagrupación y nacionalidad española. ¿Cuál necesitas?',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/extranjeria-nacionalidad.png',
     services: [
       { id: 'arraigo-social', title: 'Arraigo Social', description: 'Residencia por arraigo social' },
       { id: 'arraigo-familiar', title: 'Arraigo Familiar', description: 'Residencia por vínculo familiar' },
-      { id: 'renovacion-residencia', title: 'Renovación Resid.', description: 'Renovación de residencia', imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/residencia.png' },
-      { id: 'nacionalidad-espanola', title: 'Nacionalidad Esp.', description: 'Expediente de nacionalidad', imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/nacionalidad-espanola.png' },
-      { id: 'nacionalidad-espanola-menor-nacido-en-espana', title: 'Nacionalidad Menor', description: 'Menor nacido en España', imageUrl: 'https://expertconsulting.es/catalog/servicios/extranjeria/nacionalidad-menores.png' },
+      { id: 'renovacion-residencia', title: 'Renovación Resid.', description: 'Renovación de residencia' },
+      { id: 'nacionalidad-espanola', title: 'Nacionalidad Esp.', description: 'Expediente de nacionalidad' },
+      { id: 'nacionalidad-espanola-menor-nacido-en-espana', title: 'Nacionalidad Menor', description: 'Menor nacido en España' },
       { id: 'reagrupacion-familiar', title: 'Reagrupación', description: 'Reagrupación familiar' },
       { id: 'permiso-residencia-inicial', title: 'Permiso Inicial', description: 'Primer permiso de residencia' },
     ],
@@ -51,7 +47,6 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Empresas y Autón.',
     emoji: '🏢',
     cardBody: 'Altas, sociedades, planes mensuales con Holded y trámites mercantiles.',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/empresas-autonomos.png',
     services: [
       { id: 'alta-autonomo', title: 'Alta autónomo', description: 'Inicio de actividad' },
       { id: 'constitucion-sl', title: 'Constitución SL', description: 'Creación de sociedad limitada' },
@@ -68,12 +63,11 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Holded',
     emoji: '📈',
     cardBody: 'Implantación, migración y formación práctica en Holded.',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/holded.png',
     services: [
-      { id: 'holded-starter', title: 'Pack Starter', description: 'Onboarding a Holded', imageUrl: 'https://expertconsulting.es/catalog/waba/holded-starter-onboarding.png' },
-      { id: 'holded-migracion-sin-inventario', title: 'Migración sin inv.', description: 'Migración completa sin inventario', imageUrl: 'https://expertconsulting.es/catalog/waba/holded-migracion-sin-inventario.png' },
-      { id: 'holded-migracion-con-inventario', title: 'Migración con inv.', description: 'Migración completa con inventario', imageUrl: 'https://expertconsulting.es/catalog/waba/holded-migracion-con-inventario.png' },
-      { id: 'formacion-holded', title: 'Formación Holded', description: 'Formación en Holded por horas', imageUrl: 'https://expertconsulting.es/catalog/waba/holded-formacion-por-horas.png' },
+      { id: 'holded-starter', title: 'Pack Starter', description: 'Onboarding a Holded' },
+      { id: 'holded-migracion-sin-inventario', title: 'Migración sin inv.', description: 'Migración completa sin inventario' },
+      { id: 'holded-migracion-con-inventario', title: 'Migración con inv.', description: 'Migración completa con inventario' },
+      { id: 'formacion-holded', title: 'Formación Holded', description: 'Formación en Holded por horas' },
     ],
   },
   {
@@ -81,7 +75,6 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Certif. Digital',
     emoji: '🔐',
     cardBody: 'Certificados digitales para persona física, entidad mercantil o entidad sin ánimo de lucro.',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/certificado-digital.png',
     services: [
       { id: 'certificado-digital-persona-fisica', title: 'Persona física', description: 'Certificado digital para particulares' },
       { id: 'certificado-digital-entidad', title: 'Entidad mercantil', description: 'Certificado digital de empresa' },
@@ -93,7 +86,6 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Tráfico y Capitanía',
     emoji: '🚗',
     cardBody: '🚗 Transferencias, matrículas, duplicados y embarcaciones. ¿Qué trámite necesitas?',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/trafico-capitania-maritima.png',
     services: [
       { id: 'transferencia-vehiculo',  title: 'Transferencia Vehículo', description: 'Cambio de titular · DGT · ITP incluido' },
       { id: 'matriculacion',           title: 'Matriculación',          description: 'Primera matrícula · vehículo nuevo o importado' },
@@ -106,7 +98,6 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     title: 'Notaría y Propiedades',
     emoji: '🏠',
     cardBody: '🏠 Compraventas, herencias, donaciones e hipotecas. ¿En qué podemos ayudarte?',
-    imageUrl: 'https://expertconsulting.es/catalog/waba/notaria-propiedades.png',
     services: [
       { id: 'compraventa-inmueble', title: 'Compraventa Inmueble', description: 'Fiscal y documental · ITP o IVA+AJD' },
       { id: 'herencia',             title: 'Herencia y Sucesión',  description: 'Declaración · liquidación · adjudicación' },

@@ -277,11 +277,11 @@ async function generateKiaAiResponse({
     clientContext = 'Número desconocido — no hay cliente registrado con este teléfono.';
   }
 
-  const systemPrompt = `Eres *Kia*, la asistente virtual de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
-Si alguien pregunta quién eres, responde: "Soy Kia, la asistente virtual de EXPERT Asesoría".
+  const systemPrompt = `Eres *Kia*, la asistente virtual IA de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
+*Eres una inteligencia artificial (IA), NO un ser humano.* Si alguien pregunta si eres humano o una persona real, responde siempre con honestidad: "Soy Kia, una IA de EXPERT. No soy una persona, soy un sistema automatizado al servicio de EXPERT Asesoría."
 Nuestra web: https://expertconsulting.es
 
-ÁREAS Y SERVICIOS:
+ÁREAS Y SERVICIOS (único alcance permitido):
 • 💰 Fiscal: IRPF, Autónomo/IVA trimestral, No Residente (IRNR), Modelo 151/Beckham, Modelo 720
 • 🌍 Extranjería: Residencia/TIE, Arraigo, Reagrupación familiar, Nacionalidad española
 • 🏢 Empresa / Autónomo: Alta de autónomo, Constitución SL, Gestión mensual
@@ -296,6 +296,14 @@ PÁGINAS CLAVE (comparte el enlace completo cuando sea relevante):
 • Presupuesto → https://expertconsulting.es/solicitar-presupuesto
 • Cita gratuita → https://expertconsulting.es/cita
 • Holded → https://expertconsulting.es/holded
+
+═══════════════════════════════════════
+ALCANCE ESTRICTO — OBLIGATORIO:
+═══════════════════════════════════════
+1. IDENTIDAD IA: Nunca finjas ser humano. Nunca uses frases como "en mi experiencia personal", "yo personalmente pienso", "como persona". Si preguntan si eres IA o humano, sé siempre honesta.
+2. FUERA DE ALCANCE: Si el cliente hace preguntas de educación/formación fiscal general (¿qué es el IVA?, ¿cómo funciona el IRPF?, ¿qué diferencia hay entre autónomo y empresa?, etc.) que NO buscan contratar un servicio concreto, responde: "Soy un asistente de EXPERT y solo gestiono servicios y consultas específicas. Para orientación detallada, te recomiendo reservar una consulta: https://expertconsulting.es/cita"
+3. URGENCIA LEGAL: Si el cliente menciona requerimiento de Hacienda, sanción fiscal, denegación, recurso, inspección tributaria, embargo, multa fiscal o acta de inspección, responde SIEMPRE y ÚNICAMENTE: [NEEDS_REVIEW]
+4. DATOS MÍNIMOS: Solo pide los datos estrictamente necesarios para identificar el servicio. Nunca solicites información fiscal sensible (números de cuenta, claves de acceso, datos de declaraciones).
 
 ═══════════════════════════════════════
 FORMATO DE RESPUESTA — ELIGE UNO:
@@ -325,11 +333,17 @@ Emojis con moderación: ✅ 👋 📋 📅 💼 🚀
 
 REGLAS:
 - Si requiere decisión profesional compleja → responde EXACTAMENTE: [NEEDS_REVIEW]
+- Urgencia legal detectada (requerimiento, sanción, denegación, recurso, inspección, embargo, multa) → responde EXACTAMENTE: [NEEDS_REVIEW]
 - Nunca inventes plazos, precios exactos ni documentos
-- Máximo 2 preguntas de aclaración antes de enlazar a cita o presupuesto
+- Máximo 2 intercambios de aclaración antes de cerrar con acción concreta
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
 - No digas que has comprobado información oficial si no aparece en FUENTES OFICIALES DISPONIBLES
 - WhatsApp no sustituye el portal: orienta y lleva al cliente a cita, presupuesto o panel seguro
+
+CIERRE OBLIGATORIO — cada respuesta debe terminar con una acción concreta, nunca dejar la conversación abierta:
+• Si necesita presupuesto → https://expertconsulting.es/solicitar-presupuesto
+• Si necesita cita o asesoría → https://expertconsulting.es/cita
+• Si es complejo/urgente → [NEEDS_REVIEW]
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
@@ -474,6 +488,40 @@ export async function POST(request: NextRequest) {
               whatsappMessageId: sentList.messageId,
               aiResponded: false,
               needsReview: false,
+            });
+          }
+          await persistSessionUpdates(admin, from, {});
+          continue;
+        }
+      }
+
+      // ── Catalog: service selection → page link + booking CTA ─────────────
+      if (buttonId?.startsWith('svc_cat_')) {
+        const serviceId = buttonId.slice('svc_cat_'.length);
+        let foundSection: (typeof SERVICES_CATALOG)[number] | null = null;
+        let foundService: (typeof SERVICES_CATALOG)[number]['services'][number] | null = null;
+        for (const section of SERVICES_CATALOG) {
+          const svc = section.services.find((s) => s.id === serviceId);
+          if (svc) { foundSection = section; foundService = svc; break; }
+        }
+        if (foundSection && foundService) {
+          const isRu   = /[А-Яа-яЁё]/.test(msgBody);
+          const pageUrl = `https://expertconsulting.es/servicios/${foundSection.id}/${foundService.id}`;
+          const body = isRu
+            ? `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Información y contratación:*\n${pageUrl}\n\n¿Todavía tienes dudas? Reserva una *llamada informativa gratuita de 15 min* con nuestro equipo.`
+            : `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Más información y contratación:*\n${pageUrl}\n\n¿Todavía tienes dudas? Reserva una *llamada informativa gratuita de 15 min* con nuestro equipo.`;
+          const sentSvc = await sendWhatsAppInteractive({
+            to: from, body, footer: 'EXPERT 💼',
+            buttons: [
+              { id: 'btn_book_call',  title: isRu ? 'Llamada 15 min' : 'Llamada 15 min'  },
+              { id: 'btn_write_here', title: isRu ? 'Tengo más dudas' : 'Tengo más dudas' },
+            ],
+          });
+          if (sentSvc.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: `[Catálogo:svc] ${foundService.title} → ${pageUrl}`,
+              whatsappMessageId: sentSvc.messageId, aiResponded: false, needsReview: false,
             });
           }
           await persistSessionUpdates(admin, from, {});

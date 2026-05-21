@@ -562,7 +562,7 @@ function CatalogModal({ phone, onClose, onSent }: {
           body: JSON.stringify({ phone }),
         });
         const data = await res.json();
-        if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
+        if (!res.ok) { setError(`${data.error ?? 'Error al enviar'}${data.detail ? ` — ${JSON.stringify(data.detail)}` : ''}`); return; }
         onSent('[Catálogo] Menú de 7 categorías');
       } else {
         // Cards mode: sends a button card per selected section
@@ -572,7 +572,7 @@ function CatalogModal({ phone, onClose, onSent }: {
           body: JSON.stringify({ phone, sectionIds: [...selected] }),
         });
         const data = await res.json();
-        if (!res.ok) { setError(data.error ?? 'Error al enviar'); return; }
+        if (!res.ok) { setError(`${data.error ?? 'Error al enviar'}${data.detail ? ` — ${JSON.stringify(data.detail)}` : ''}`); return; }
         const names = SERVICES_CATALOG.filter((s) => selected.has(s.id)).map((s) => `${s.emoji} ${s.title}`).join(', ');
         onSent(`[Tarjetas] ${names}`);
       }

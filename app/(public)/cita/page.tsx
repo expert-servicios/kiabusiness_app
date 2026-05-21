@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Calendar, CheckCircle2, Clock, MapPin, Video } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Phone, Video } from 'lucide-react';
 import { CitaForm } from './CitaForm';
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const BENEFITS = [
   { icon: CheckCircle2, text: 'Consulta inicial completamente gratuita' },
   { icon: Clock, text: 'Confirmación en menos de 24 horas hábiles' },
-  { icon: Video, text: 'Reunión por videollamada o presencial en Mutxamel' },
+  { icon: Phone, text: 'Reunión por teléfono o videollamada — sin desplazamientos' },
   { icon: Calendar, text: 'Disponibilidad de lunes a viernes, mañana y tarde' }
 ];
 
@@ -38,7 +38,7 @@ export default function CitaPage() {
             Reserva una cita con tu asesor
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[#9CA3AF]">
-            Cuéntanos tu caso y te ayudamos a encontrar la solución más adecuada. Sin compromiso, sin letra pequeña. La primera consulta siempre es gratuita.
+            Cuéntanos tu caso y te ayudamos a encontrar la solución más adecuada. Sin compromiso, sin letra pequeña. La primera consulta siempre es gratuita. La reunión se realiza por teléfono o videollamada.
           </p>
         </div>
       </div>
@@ -71,19 +71,6 @@ export default function CitaPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            {/* Oficina */}
-            <div className="border border-[#D4A017]/20 bg-[#0D1B2A] p-6 text-[#F8F6F1]">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Oficina</p>
-              <div className="mt-3 flex items-start gap-3 text-sm">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-                <div>
-                  <p className="font-semibold">EXPERT ESTUDIOS PROFESIONALES</p>
-                  <p className="mt-1 text-[#9CA3AF]">C/ Pintor Agrassot, 19</p>
-                  <p className="text-[#9CA3AF]">03110 Mutxamel (Alicante)</p>
-                </div>
-              </div>
             </div>
 
             {/* Horario */}
