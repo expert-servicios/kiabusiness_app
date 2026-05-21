@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import {
-  BarChart3, Calendar, ChevronDown, ChevronRight, CreditCard, FileText,
-  FolderOpen, LayoutDashboard, LogOut, Mail, Menu, Plug,
-  Sparkles, UserPlus, Users, X, Zap, ShieldCheck
+  ChevronDown, ChevronLeft, ChevronRight, CreditCard,
+  FolderOpen, LayoutDashboard, LogOut, Menu, Plug,
+  UserPlus, Users, X, Zap, ShieldCheck,
 } from 'lucide-react';
 import { PushSubscribeButton } from './PushSubscribeButton';
 
@@ -80,6 +80,20 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [rail, setRail] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('adminSidebarRail');
+    if (saved === 'true') setRail(true);
+  }, []);
+
+  const toggleRail = () => {
+    setRail((prev) => {
+      const next = !prev;
+      localStorage.setItem('adminSidebarRail', String(next));
+      return next;
+    });
+  };
 
   const displayName = userName ?? userEmail.split('@')[0];
 
@@ -97,124 +111,167 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
     router.push('/auth/login');
   };
 
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 border-b border-white/8 px-4 py-4">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#D4A017]">
-          <ShieldCheck className="h-4 w-4 text-[#07111d]" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">Expert</p>
-          <p className="text-[10px] text-white/40">Panel de administración</p>
-        </div>
-      </div>
-
-      {/* Dashboard link */}
-      <div className="px-3 pt-3">
-        <Link
-          href="/admin"
-          onClick={() => setMobileOpen(false)}
-          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-            isActive('/admin')
-              ? 'bg-[#D4A017]/15 text-[#D4A017]'
-              : 'text-white/70 hover:bg-white/6 hover:text-white'
-          }`}
-        >
-          <LayoutDashboard className="h-4 w-4 shrink-0" />
-          Dashboard
-          {urgentCount > 0 && (
-            <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
-              {urgentCount}
-            </span>
-          )}
-        </Link>
-      </div>
-
-      {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
-        {NAV_GROUPS.map((group) => {
-          const isOpen = collapsed[group.label] !== true;
-          const Icon = group.icon;
-          const groupActive = group.items.some((item) => isActive(item.href));
-
-          return (
-            <div key={group.label}>
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                  groupActive ? 'text-white/90' : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="flex-1 text-left">{group.label}</span>
-                {isOpen
-                  ? <ChevronDown className="h-3 w-3" />
-                  : <ChevronRight className="h-3 w-3" />}
-              </button>
-
-              {isOpen && (
-                <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/8 pl-3">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
-                        isActive(item.href)
-                          ? 'bg-[#D4A017]/12 font-semibold text-[#D4A017]'
-                          : 'text-white/60 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      {item.label}
-                      {item.badge ? (
-                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] font-bold text-[#D4A017]">
-                          {item.badge}
-                        </span>
-                      ) : null}
-                    </Link>
-                  ))}
-                </div>
-              )}
+  // SidebarContent renders full or rail mode depending on isRail prop
+  function SidebarContent({ isRail }: { isRail: boolean }) {
+    return (
+      <div className="flex h-full flex-col">
+        {/* Header */}
+        <div className={`flex items-center border-b border-white/8 py-4 ${isRail ? 'justify-center px-2' : 'gap-2.5 px-4'}`}>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#D4A017]">
+            <ShieldCheck className="h-4 w-4 text-[#07111d]" />
+          </div>
+          {!isRail && (
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">Expert</p>
+              <p className="text-[10px] text-white/40">Panel de administración</p>
             </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="border-t border-white/8 px-3 py-3 space-y-1">
-        {/* User info */}
-        <div className="mb-2 rounded-lg bg-white/4 px-3 py-2">
-          <p className="truncate text-xs font-semibold text-white/80">{displayName}</p>
-          <p className="truncate text-[10px] text-white/40">{userEmail}</p>
+          )}
         </div>
 
-        {/* Push notifications toggle */}
-        <PushSubscribeButton />
+        {/* Dashboard link */}
+        <div className={`pt-3 ${isRail ? 'px-2' : 'px-3'}`}>
+          <Link
+            href="/admin"
+            onClick={() => setMobileOpen(false)}
+            title={isRail ? 'Dashboard' : undefined}
+            className={`flex items-center rounded-lg py-2 text-sm font-semibold transition ${
+              isRail ? 'justify-center px-2' : 'gap-2.5 px-3'
+            } ${
+              isActive('/admin')
+                ? 'bg-[#D4A017]/15 text-[#D4A017]'
+                : 'text-white/70 hover:bg-white/6 hover:text-white'
+            }`}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            {!isRail && 'Dashboard'}
+            {!isRail && urgentCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+                {urgentCount}
+              </span>
+            )}
+          </Link>
+        </div>
 
-        {/* Switch to client view */}
-        <Link
-          href="/dashboard"
-          onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 hover:text-white"
-        >
-          <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
-          Vista de cliente
-        </Link>
+        {/* Nav groups */}
+        <nav className={`flex-1 overflow-y-auto py-2 space-y-0.5 ${isRail ? 'px-2' : 'px-3'}`}>
+          {NAV_GROUPS.map((group) => {
+            const Icon = group.icon;
+            const groupActive = group.items.some((item) => isActive(item.href));
 
-        {/* Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white/40 transition hover:bg-white/8 hover:text-red-400"
-        >
-          <LogOut className="h-3.5 w-3.5 shrink-0" />
-          Cerrar sesión
-        </button>
+            if (isRail) {
+              return (
+                <Link
+                  key={group.label}
+                  href={group.items[0].href}
+                  onClick={() => setMobileOpen(false)}
+                  title={group.label}
+                  className={`flex justify-center rounded-lg p-2.5 transition ${
+                    groupActive
+                      ? 'bg-[#D4A017]/12 text-[#D4A017]'
+                      : 'text-white/40 hover:bg-white/6 hover:text-white/80'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </Link>
+              );
+            }
+
+            const isOpen = collapsed[group.label] !== true;
+            return (
+              <div key={group.label}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                    groupActive ? 'text-white/90' : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 text-left">{group.label}</span>
+                  {isOpen
+                    ? <ChevronDown className="h-3 w-3" />
+                    : <ChevronRight className="h-3 w-3" />}
+                </button>
+
+                {isOpen && (
+                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/8 pl-3">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
+                          isActive(item.href)
+                            ? 'bg-[#D4A017]/12 font-semibold text-[#D4A017]'
+                            : 'text-white/60 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        {item.label}
+                        {item.badge ? (
+                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] font-bold text-[#D4A017]">
+                            {item.badge}
+                          </span>
+                        ) : null}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className={`border-t border-white/8 py-3 space-y-1 ${isRail ? 'px-2' : 'px-3'}`}>
+          {!isRail && (
+            <div className="mb-2 rounded-lg bg-white/4 px-3 py-2">
+              <p className="truncate text-xs font-semibold text-white/80">{displayName}</p>
+              <p className="truncate text-[10px] text-white/40">{userEmail}</p>
+            </div>
+          )}
+
+          {!isRail && <PushSubscribeButton />}
+
+          {!isRail && (
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 hover:text-white"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+              Vista de cliente
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            title={isRail ? 'Cerrar sesión' : undefined}
+            className={`flex w-full items-center rounded-lg py-2 text-xs font-semibold text-white/40 transition hover:bg-white/8 hover:text-red-400 ${
+              isRail ? 'justify-center px-2' : 'gap-2 px-3'
+            }`}
+          >
+            <LogOut className="h-3.5 w-3.5 shrink-0" />
+            {!isRail && 'Cerrar sesión'}
+          </button>
+
+          {/* Rail toggle — desktop only (hidden in mobile drawer) */}
+          <button
+            type="button"
+            onClick={toggleRail}
+            title={isRail ? 'Expandir menú' : 'Contraer menú'}
+            className={`hidden lg:flex w-full items-center rounded-lg py-2 text-white/25 transition hover:bg-white/6 hover:text-white/60 ${
+              isRail ? 'justify-center px-2' : 'gap-2 px-3'
+            }`}
+          >
+            {isRail
+              ? <ChevronRight className="h-3.5 w-3.5" />
+              : <><ChevronLeft className="h-3.5 w-3.5" /><span className="text-[11px]">Contraer</span></>}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <>
@@ -238,18 +295,22 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
         </button>
       </div>
 
-      {/* ── MOBILE drawer — full screen ── */}
+      {/* ── MOBILE drawer — full screen, always full (non-rail) ── */}
       <aside
         className={`fixed inset-0 z-50 bg-[#07111d] transition-transform duration-300 lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <SidebarContent />
+        <SidebarContent isRail={false} />
       </aside>
 
-      {/* ── DESKTOP sidebar ── */}
-      <aside className="hidden lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#07111d] lg:sticky lg:top-0 lg:h-screen">
-        <SidebarContent />
+      {/* ── DESKTOP sidebar — width transitions with rail state ── */}
+      <aside
+        className={`hidden lg:flex lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#07111d] lg:sticky lg:top-0 lg:h-screen overflow-hidden transition-[width] duration-200 ease-in-out ${
+          rail ? 'lg:w-14' : 'lg:w-56'
+        }`}
+      >
+        <SidebarContent isRail={rail} />
       </aside>
     </>
   );

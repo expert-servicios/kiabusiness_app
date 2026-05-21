@@ -1226,7 +1226,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   return (
     <>
       {/* Full viewport minus admin chrome: 53px top + ~56px bottom nav on mobile */}
-      <div className="flex h-[calc(100dvh-53px-56px)] overflow-hidden lg:h-screen lg:max-h-screen">
+      <div className="flex h-[calc(100dvh-133px)] overflow-hidden lg:h-screen lg:max-h-screen">
         {ContactList}
         {ThreadPanel}
       </div>

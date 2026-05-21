@@ -53,6 +53,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const supabase = createServerSupabaseClient(_request);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const adminClient = getSupabaseAdmin();
+    const { data: me } = await adminClient.from('profiles').select('role').eq('id', user.id).single();
+    if (me?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
+    const { id } = await params;
+
+    // Guard: do not delete other admins
+    const { data: target } = await adminClient.from('profiles').select('role').eq('id', id).single();
+    if (target?.role === 'admin') {
+      return NextResponse.json({ error: 'No puedes eliminar un administrador' }, { status: 403 });
+    }
+
+    // Soft-delete: set status to inactive and clear sensitive fields
+    const { error } = await adminClient
+      .from('profiles')
+      .update({ status: 'inactive', updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('[admin/clientes/[id] DELETE]', err);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const admin = await requireAdmin(request);

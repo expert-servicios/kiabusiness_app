@@ -76,12 +76,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upsert profile with provided fields
+    // Upsert profile with provided fields (never downgrade role for existing users)
     const profileData: Record<string, unknown> = {
       id: userId,
-      role: 'client',
       updated_at: new Date().toISOString()
     };
+    if (isNewUser) profileData.role = 'client';
     if (fullName) profileData.full_name = fullName;
     if (phone) profileData.phone = phone;
     if (company) profileData.company = company;

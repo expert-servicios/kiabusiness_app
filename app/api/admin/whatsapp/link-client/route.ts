@@ -41,33 +41,57 @@ export async function POST(request: NextRequest) {
       const { phone, full_name, email } = parsed.data;
       const normalized = phone.replace(/\D/g, '');
 
-      // Generate invite link without Supabase sending its own email — we send ours
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
-      const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-        type: 'invite',
-        email,
-        options: {
-          data: { full_name },
-          redirectTo: `${appUrl}/dashboard`,
-        },
-      });
-      if (linkError || !linkData.user) {
-        console.error('[WA create-contact]', linkError);
-        return NextResponse.json({ error: linkError?.message ?? 'Error al crear usuario' }, { status: 400 });
+      // Check if user already exists in auth — generateLink fails for existing emails
+      const { data: listData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+      const existingUser = listData?.users?.find((u) => u.email === email);
+
+      let userId: string;
+      let isNew = false;
+
+      if (existingUser) {
+        // Link existing user to this WhatsApp conversation
+        userId = existingUser.id;
+        await admin.from('profiles').update({
+          ...(full_name ? { full_name } : {}),
+          phone: normalized,
+          email,
+        }).eq('id', userId);
+      } else {
+        isNew = true;
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es';
+        const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+          type: 'invite',
+          email,
+          options: {
+            data: { full_name },
+            redirectTo: `${appUrl}/dashboard`,
+          },
+        });
+        if (linkError || !linkData.user) {
+          console.error('[WA create-contact]', linkError);
+          return NextResponse.json({ error: linkError?.message ?? 'Error al crear usuario' }, { status: 400 });
+        }
+        userId = linkData.user.id;
+        const inviteUrl = linkData.properties?.action_link ?? `${appUrl}/dashboard`;
+
+        await admin.from('profiles').update({
+          full_name,
+          phone: normalized,
+          role: 'client',
+          email,
+        }).eq('id', userId);
+
+        // Send branded onboarding email (fire & forget)
+        const adminEmail = process.env.ADMIN_EMAIL ?? 'info@expertconsulting.es';
+        const inviteTpl = clientInviteEmail(full_name, inviteUrl);
+        const adminTpl  = newClientAdminAlert({ name: full_name, email, phone: normalized || null, source: 'WhatsApp Inbox' });
+        void Promise.all([
+          sendEmail({ to: email, eventType: 'client_invite_wa', subject: inviteTpl.subject, html: inviteTpl.html }),
+          sendEmail({ to: adminEmail, eventType: 'new_client_admin_alert', subject: adminTpl.subject, html: adminTpl.html }),
+        ]);
       }
 
-      const userId = linkData.user.id;
-      const inviteUrl = linkData.properties?.action_link ?? `${appUrl}/dashboard`;
-
-      // Update profile with name, phone, role, email (searchable copy)
-      await admin.from('profiles').update({
-        full_name,
-        phone: normalized,
-        role: 'client',
-        email,
-      }).eq('id', userId);
-
-      // Link conversation
+      // Link all conversations from this phone number to this user
       await admin.from('whatsapp_conversations')
         .update({ client_id: userId })
         .eq('phone_number', normalized);
@@ -78,16 +102,7 @@ export async function POST(request: NextRequest) {
         .eq('id', userId)
         .single();
 
-      // Send branded onboarding email to client + admin notification (fire & forget)
-      const adminEmail = process.env.ADMIN_EMAIL ?? 'info@expertconsulting.es';
-      const inviteTpl = clientInviteEmail(full_name, inviteUrl);
-      const adminTpl  = newClientAdminAlert({ name: full_name, email, phone: normalized || null, source: 'WhatsApp Inbox' });
-      void Promise.all([
-        sendEmail({ to: email, eventType: 'client_invite_wa', subject: inviteTpl.subject, html: inviteTpl.html }),
-        sendEmail({ to: adminEmail, eventType: 'new_client_admin_alert', subject: adminTpl.subject, html: adminTpl.html }),
-      ]);
-
-      return NextResponse.json({ ok: true, client }, { status: 201 });
+      return NextResponse.json({ ok: true, client, isNew }, { status: isNew ? 201 : 200 });
     }
 
     // ── LINK existing contact ─────────────────────────────────────

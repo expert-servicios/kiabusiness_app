@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Building2, Calendar, CheckCheck, CreditCard,
-  Edit2, FileText, FolderOpen, Mail, MessageCircle,
+  Edit2, ExternalLink, FileText, FolderOpen, Mail, MessageCircle,
   Phone, RefreshCw, Save, User, X, Zap
 } from 'lucide-react';
 import { WaTemplateModal } from '@/components/admin/WaTemplateModal';
@@ -219,6 +219,14 @@ export default function ClientePage() {
               >
                 <FolderOpen className="h-3.5 w-3.5" /> Expedientes
               </Link>
+              <a
+                href={`/dashboard?viewAs=${profile.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Ver portal
+              </a>
             </div>
           </div>
         </div>

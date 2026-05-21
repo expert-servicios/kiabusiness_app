@@ -464,7 +464,7 @@ export default function AdminOnboardingPage() {
                     type="text"
                     value={client.fullName}
                     onChange={(e) => setClientField('fullName', e.target.value)}
-                    placeholder="Ilya Ovchinnikov"
+                    placeholder="María García"
                     className={inputCls}
                   />
                 </FieldRow>
@@ -474,7 +474,7 @@ export default function AdminOnboardingPage() {
                     type="text"
                     value={client.company}
                     onChange={(e) => setClientField('company', e.target.value)}
-                    placeholder="INVERSIONES PASO SEGURO, SLU"
+                    placeholder="Empresa Demo, S.L."
                     className={inputCls}
                   />
                 </FieldRow>
