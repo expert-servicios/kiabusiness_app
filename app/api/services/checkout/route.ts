@@ -21,6 +21,16 @@ function parseUnitAmount(price?: string): number | null {
   return Math.round(amount * 100);
 }
 
+function toStripeAscii(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 499);
+}
+
 function buildServiceCheckouts() {
   const checkouts = new Map<string, ServiceCheckout>();
 
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest) {
       ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
       : `${appUrl}/carrito`;
     const serviceSlugs = checkoutServices.map(s => s.slug).join(',').slice(0, 499);
-    const serviceNames = checkoutServices.map(s => s.name).join(', ').slice(0, 499);
+    const serviceNames = toStripeAscii(checkoutServices.map(s => s.name).join(', '));
 
     const session = await stripe.checkout.sessions.create({
       mode      : 'payment',
@@ -84,7 +94,7 @@ export async function POST(request: NextRequest) {
           unit_amount : s.unitAmount,
           tax_behavior: 'exclusive',
           product_data: {
-            name    : s.name,
+            name    : toStripeAscii(s.name),
             metadata: {
               service_slug       : s.slug,
               service_category   : s.category,
@@ -98,7 +108,7 @@ export async function POST(request: NextRequest) {
       metadata   : {
         product_type : checkoutServices.length > 1 ? 'cart' : 'service',
         service_slug : checkoutServices.length === 1 ? checkoutServices[0].slug : '',
-        service_name : checkoutServices.length === 1 ? checkoutServices[0].name.slice(0, 499) : 'Pedido de servicios EXPERT',
+        service_name : checkoutServices.length === 1 ? toStripeAscii(checkoutServices[0].name) : 'Pedido de servicios EXPERT',
         service_slugs: serviceSlugs,
         service_names: serviceNames,
       },
