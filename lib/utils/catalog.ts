@@ -1212,3 +1212,7 @@ export function getService(categoria: CategorySlug, slug: string): Service | und
 export function getCategory(slug: string) {
   return categories.find((c) => c.slug === slug);
 }
+
+export function getCatalogService(slug: string): Service | undefined {
+  return services.find((s) => s.slug === slug);
+}

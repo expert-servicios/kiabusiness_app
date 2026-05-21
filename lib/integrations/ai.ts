@@ -207,6 +207,106 @@ export async function summarizeCaseHistory(caseId: string): Promise<CaseSummary>
   }
 }
 
+export interface ViabilityResult {
+  result: 'viable' | 'parcial' | 'no_viable';
+  emoji: '🟢' | '🟡' | '🔴';
+  summary: string;
+  met: string[];
+  missing: string[];
+  recommendations: string[];
+  nextSteps: string[];
+  escalate: boolean;
+}
+
+export async function evaluateViability(params: {
+  serviceSlug: string;
+  serviceName: string;
+  aiCriteria: string;
+  answers: Record<string, string | boolean>;
+  docStatus: Record<string, 'have' | 'missing' | 'need_help'>;
+  clientName?: string;
+}): Promise<ViabilityResult> {
+  const fallback: ViabilityResult = {
+    result: 'parcial',
+    emoji: '🟡',
+    summary: 'No se pudo evaluar automáticamente. Un asesor revisará tu caso.',
+    met: [],
+    missing: [],
+    recommendations: ['Contacta con nuestro equipo para una evaluación personalizada.'],
+    nextSteps: ['Solicita una consulta gratuita con nuestros asesores.'],
+    escalate: true
+  };
+
+  const client = getClient();
+  if (!client) return fallback;
+
+  const answersText = Object.entries(params.answers)
+    .map(([k, v]) => `- ${k}: ${String(v)}`)
+    .join('\n');
+
+  const docsText = Object.entries(params.docStatus)
+    .map(([k, v]) => `- ${k}: ${v === 'have' ? 'disponible' : v === 'missing' ? 'no disponible' : 'necesita ayuda para obtenerlo'}`)
+    .join('\n');
+
+  const prompt = `Eres un asesor legal y fiscal español experto. Evalúa la viabilidad de tramitar el servicio "${params.serviceName}" para ${params.clientName ? `el cliente ${params.clientName}` : 'este cliente'}.
+
+CRITERIOS LEGALES:
+${params.aiCriteria}
+
+RESPUESTAS DEL CLIENTE:
+${answersText}
+
+DOCUMENTACIÓN:
+${docsText}
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
+{
+  "result": "viable" | "parcial" | "no_viable",
+  "emoji": "🟢" | "🟡" | "🔴",
+  "summary": "máx 150 caracteres explicando el resultado",
+  "met": ["requisito cumplido 1", "requisito cumplido 2"],
+  "missing": ["requisito no cumplido o documentación faltante"],
+  "recommendations": ["acción recomendada 1"],
+  "nextSteps": ["próximo paso concreto"],
+  "escalate": true | false
+}
+
+Reglas:
+- "viable" (🟢): cumple todos los requisitos clave
+- "parcial" (🟡): cumple algunos pero faltan elementos subsanables
+- "no_viable" (🔴): incumple requisitos legales fundamentales
+- escalate=true si hay dudas legales complejas o el resultado es ambiguo`;
+
+  const t0 = Date.now();
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = message.content[0].type === 'text' ? message.content[0].text : '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const result: ViabilityResult = jsonMatch ? JSON.parse(jsonMatch[0]) : fallback;
+
+    await logAiEvent({
+      eventType: 'evaluateViability',
+      input: { serviceSlug: params.serviceSlug, answers: params.answers, docStatus: params.docStatus },
+      output: result,
+      latencyMs: Date.now() - t0
+    });
+    return result;
+  } catch (err) {
+    await logAiEvent({
+      eventType: 'evaluateViability',
+      input: { serviceSlug: params.serviceSlug },
+      error: String(err),
+      latencyMs: Date.now() - t0
+    });
+    return fallback;
+  }
+}
+
 export async function detectMissingDocuments(
   caseId: string,
   serviceType: string

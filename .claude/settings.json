@@ -108,7 +108,15 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\holded\\\\conectores\")",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { $_.FullName })",
       "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1779342105763.txt\" -Raw; $idx = $content.IndexOf\\('\"companies\"'\\); $content.Substring\\([Math]::Max\\(0,$idx-50\\), [Math]::Min\\(2000, $content.Length - [Math]::Max\\(0,$idx-50\\)\\)\\))",
-      "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1779342105763.txt\" -Raw; $idx = $content.IndexOf\\('\"public.companies\"'\\); $content.Substring\\($idx, [Math]::Min\\(3000, $content.Length - $idx\\)\\))"
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\info\\\\.claude\\\\projects\\\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\\\57f60eb8-3cd4-4430-a6fa-e63e6d88f7fb\\\\tool-results\\\\mcp-supabase-list_tables-1779342105763.txt\" -Raw; $idx = $content.IndexOf\\('\"public.companies\"'\\); $content.Substring\\($idx, [Math]::Min\\(3000, $content.Length - $idx\\)\\))",
+      "PowerShell(vercel --prod 2>&1)",
+      "mcp__claude_ai_Stripe__get_stripe_account_info",
+      "mcp__claude_ai_Stripe__fetch_stripe_resources",
+      "mcp__claude_ai_Stripe__stripe_api_execute",
+      "mcp__claude_ai_Stripe__list_payment_intents",
+      "mcp__claude_ai_Stripe__list_customers",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\api\\\\services\\\\viabilidad\")",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $env:NEXT_TELEMETRY_DISABLED=1; npx next build 2>&1 | Select-Object -First 100)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
