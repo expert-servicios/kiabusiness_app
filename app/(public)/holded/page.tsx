@@ -19,7 +19,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
-import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { HoldedPricingSection } from '@/components/holded/HoldedPricingSection';
 import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
 
@@ -73,85 +73,6 @@ const aiCards = [
     desc: 'Flujos automatizados, conectores con herramientas externas y reporting a medida sobre tus datos reales.',
   },
 ] as const;
-
-const PACKAGE_META = [
-  {
-    priceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
-    slug: 'holded-pack-starter',
-    amountCents: 49900,
-    name: 'Pack Starter',
-    subtitle: 'Onboarding a Holded',
-    badge: null,
-    features: [
-      'Configuración inicial de la cuenta',
-      'Setup de empresa, facturación y bancos',
-      'Conexión bancaria (Open Banking)',
-      'Soporte por email durante 30 días',
-    ],
-  },
-  {
-    priceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
-    slug: 'holded-migracion-sin-inventario',
-    amountCents: 89900,
-    name: 'Migración completa',
-    subtitle: 'Sin módulo de inventario',
-    badge: 'Más popular',
-    features: [
-      'Todo lo del Pack Starter',
-      'Migración de clientes y proveedores',
-      'Migración de facturas emitidas y recibidas',
-      'Configuración contable completa (PGC)',
-      'Soporte prioritario durante 60 días',
-    ],
-  },
-  {
-    priceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
-    slug: 'holded-migracion-con-inventario',
-    amountCents: 119900,
-    name: 'Migración completa',
-    subtitle: '+ Módulo de inventario',
-    badge: null,
-    features: [
-      'Todo lo de Migración completa',
-      'Migración de productos y referencias',
-      'Configuración de almacenes y stock inicial',
-      'Integración inventario ↔ facturación',
-      'Soporte prioritario durante 90 días',
-    ],
-  },
-];
-
-const ADDONS = [
-  {
-    priceId: 'price_1TZqKbLeYwwgvux4NHtVCmEV',
-    name: 'Módulo Laboral',
-    slug: 'holded-modulo-laboral',
-    displayPrice: '180 € + IVA',
-    Icon: ClipboardCheck,
-    description: 'Nóminas, contratos, altas y bajas en la Seguridad Social integradas directamente con tu contabilidad en Holded.',
-  },
-  {
-    priceId: 'price_1SyB8ULeYwwgvux4sZbYod1B',
-    name: 'Módulo Formación',
-    slug: 'holded-modulo-formacion',
-    displayPrice: '180 € + IVA',
-    Icon: MonitorCheck,
-    description: 'Sesión práctica de 2 horas por videollamada sobre los módulos de Holded que usas, con grabación incluida.',
-  },
-  {
-    priceId: 'price_1TZqKeLeYwwgvux4pkUNsDms',
-    name: 'Otras Integraciones API',
-    slug: 'holded-integraciones-api',
-    displayPrice: '180 € + IVA',
-    Icon: Layers,
-    description: 'Conecta Holded con tu tienda online, CRM, pasarela de pago u otras herramientas mediante la API oficial.',
-  },
-];
-
-function formatPrice(cents: number | null) {
-  if (cents === null) return '—';
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(cents / 100);
-}
 
 const holdedArticles = articles.filter((a) => a.category === 'Holded');
 
@@ -363,78 +284,8 @@ export default async function HoldedPage() {
         </div>
       </section>
 
-      {/* ── Pricing cards ─────────────────────────────────────────────────── */}
-      <section id="precios" className="bg-white px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Paquetes</p>
-            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Elige el paquete que se adapta a tu situación.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-[#23364D]">
-              Precios fijos, sin sorpresas. Si tu caso es especial,{' '}
-              <Link href="/solicitar-presupuesto?servicio=migracion-holded" className="font-semibold text-[#D4A017] hover:underline">
-                solicita un presupuesto personalizado
-              </Link>.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {PACKAGE_META.map((pkg) => {
-              const isHighlighted = pkg.badge !== null;
-              return (
-                <div
-                  key={pkg.priceId}
-                  className={`relative flex flex-col border ${isHighlighted ? 'border-[#D4A017] shadow-[0_8px_32px_rgba(212,160,23,0.18)]' : 'border-[#D4A017]/25'} bg-white p-7`}
-                >
-                  {pkg.badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4A017] px-4 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#0D1B2A]">
-                      {pkg.badge}
-                    </span>
-                  )}
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">{pkg.name}</p>
-                    <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">{pkg.subtitle}</h3>
-                    <p className="mt-4 font-serif text-4xl font-bold text-[#0D1B2A]">
-                      {formatPrice(pkg.amountCents)}
-                    </p>
-                    <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
-                  </div>
-
-                  <ul className="mt-6 flex-1 space-y-3">
-                    {pkg.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-[#23364D]">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-4 space-y-2">
-                    <AddToCartButton
-                      item={{
-                        priceId: pkg.priceId,
-                        name: `${pkg.name} — ${pkg.subtitle}`,
-                        displayPrice: `${formatPrice(pkg.amountCents)} + IVA`,
-                        slug: pkg.slug,
-                        category: 'holded',
-                      }}
-                      label="Añadir a la cesta"
-                    />
-                    <Link
-                      href={`/solicitar-presupuesto?servicio=${pkg.slug}`}
-                      className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
-                    >
-                      Solicitar información
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* ── Pricing + add-on configurator ─────────────────────────────────── */}
+      <HoldedPricingSection />
 
       {/* ── Process steps ─────────────────────────────────────────────────── */}
       <section className="px-6 py-16 md:py-20">
@@ -518,40 +369,6 @@ export default async function HoldedPage() {
               </HoldedCalendlyButton>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── Módulos adicionales ───────────────────────────────────────────── */}
-      <section id="modulos" className="px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Módulos adicionales</p>
-            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Amplía tu implantación con módulos a medida.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-[#23364D]">
-              Estos módulos se contratan junto a un paquete de implantación. Al añadir un paquete a la cesta, podrás incorporarlos antes de tramitar el pedido.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {ADDONS.map(({ priceId, name, Icon, description, displayPrice }) => (
-              <div key={priceId} className="flex flex-col border border-[#D4A017]/25 bg-white p-7">
-                <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10">
-                  <Icon className="h-6 w-6 text-[#D4A017]" />
-                </div>
-                <h3 className="mt-5 font-serif text-xl font-bold text-[#0D1B2A]">{name}</h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">{description}</p>
-                <p className="mt-5 font-serif text-2xl font-bold text-[#0D1B2A]">{displayPrice}</p>
-                <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-8 text-center text-sm text-[#23364D]/60">
-            <Link href="#precios" className="font-semibold text-[#D4A017] hover:underline">Elige un paquete</Link>
-            {' '}y añádelo a la cesta — los módulos se ofrecen antes de tramitar el pedido.
-          </p>
         </div>
       </section>
 
