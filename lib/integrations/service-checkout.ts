@@ -10,12 +10,16 @@ export type ServiceCheckoutItem = {
 };
 
 function parseUnitAmount(price?: string): number | null {
-  const match = price?.match(/(\d+(?:[.,]\d{1,2})?)/);
+  if (!price) return null;
+  const match = price.match(/[\d.,]+/);
   if (!match) return null;
-
-  const amount = Number.parseFloat(match[1].replace(',', '.'));
+  // Strip Spanish thousands dots (dot followed by exactly 3 digits: "1.199" → "1199")
+  // then normalise decimal comma to dot ("1.199,50" → "1199.50")
+  const cleaned = match[0]
+    .replace(/\.(\d{3})/g, '$1')
+    .replace(',', '.');
+  const amount = Number.parseFloat(cleaned);
   if (!Number.isFinite(amount) || amount <= 0) return null;
-
   return Math.round(amount * 100);
 }
 

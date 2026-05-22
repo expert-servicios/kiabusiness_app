@@ -145,7 +145,8 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (session.mode === 'payment') {
-      const quoteId = session.client_reference_id ?? session.metadata?.quote_id;
+      // client_reference_id is now user.id for catalog payments — use metadata.quote_id only
+      const quoteId = session.metadata?.quote_id ?? null;
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
@@ -316,16 +317,42 @@ export async function POST(req: NextRequest) {
       }
 
       if (customerEmail) {
-        const tpl = servicePaymentConfirmed(customerName, amountEur, serviceName);
-        await sendEmail({
-          to: customerEmail,
-          eventType: 'service.payment.confirmed',
-          ...tpl,
-          metadata: {
-            session_id: session.id,
-            service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null
-          }
-        });
+        const slugsRaw = session.metadata?.service_slugs ?? session.metadata?.service_slug ?? '';
+        const slugList = slugsRaw.split(',').map((s: string) => s.trim());
+        const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
+        const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
+        const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
+        const calendlyFormacion = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+
+        if (isHoldedMigration) {
+          const packageName = serviceName;
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyFormacion);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'holded.migration.confirmed',
+            ...tpl,
+            metadata: { session_id: session.id, package_name: packageName }
+          });
+        } else if (isHoldedFormacion) {
+          const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'holded.formacion.confirmed',
+            ...tpl,
+            metadata: { session_id: session.id }
+          });
+        } else {
+          const tpl = servicePaymentConfirmed(customerName, amountEur, serviceName);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'service.payment.confirmed',
+            ...tpl,
+            metadata: {
+              session_id: session.id,
+              service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null
+            }
+          });
+        }
 
         syncOrderToHolded({
           clientName: customerName,
