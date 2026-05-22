@@ -437,7 +437,7 @@ export async function POST(request: NextRequest) {
       const clientId             = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
       const senderName           = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
 
-      // ── Media: download, store, log, notify — bot stays silent ───────────
+      // ── Media: download, store, log, notify, and ACK ─────────────────
       if (isMedia) {
         const mediaObj      = msg[msgType] as { id?: string; caption?: string; filename?: string } | undefined;
         const mediaId       = mediaObj?.id ?? '';
@@ -455,8 +455,102 @@ export async function POST(request: NextRequest) {
           mediaUrl: storedUrl ?? mediaId ?? undefined, mediaType: msgType,
         });
 
-        const mediaIcon = msgType === 'image' ? '📷' : msgType === 'audio' ? '🎤' : msgType === 'video' ? '🎥' : '📄';
+        const mediaIcon  = msgType === 'image' ? '📷' : msgType === 'audio' ? '🎤' : msgType === 'video' ? '🎥' : '📄';
+        const mediaLabel = msgType === 'document' ? 'documento' : msgType === 'image' ? 'imagen' : msgType === 'audio' ? 'audio' : 'archivo';
         notifyAdmins({ title: `${mediaIcon} Archivo de ${senderName}`, body: caption || `Ha enviado un ${msgType}`, url: '/admin/whatsapp', tag: `wa-${from}` }).catch(() => {});
+
+        // ── Kia response to media ─────────────────────────────────────
+        const mediaSess  = await getOrCreateSession(admin, from, clientId);
+        const docRef     = storedUrl ?? mediaId ?? null;
+        const clientDisplay = mediaSess.name ?? senderName;
+
+        if (!clientId && !mediaSess.name) {
+          // Unknown number — ask for identification first, save pending doc
+          await persistSessionUpdates(admin, from, {
+            flow: 'identify_for_doc',
+            step: 'awaiting_name',
+            data: {
+              ...mediaSess.data,
+              pending_doc_url:      docRef ?? '',
+              pending_doc_type:     msgType,
+              pending_doc_caption:  caption,
+              pending_doc_filename: rawFilename,
+            },
+          });
+          const askMsg = `👋 ¡Hola! Hemos recibido tu ${mediaLabel} y lo hemos guardado de forma segura.\n\nPara vincularlo a tu ficha y darte seguimiento, necesito identificarte. ¿Cuál es tu nombre?`;
+          const sentAsk = await sendWhatsAppMessage({ to: from, body: askMsg });
+          if (sentAsk.success) {
+            await logWhatsAppConversation({
+              clientId: undefined, phoneNumber: from, direction: 'outbound',
+              body: askMsg, whatsappMessageId: sentAsk.messageId, aiResponded: false, needsReview: false,
+            });
+          }
+          continue;
+        }
+
+        // Known number — check open expedientes
+        let openCases: Array<{ id: string; service: string }> = [];
+        if (clientId) {
+          const { data: casesData } = await admin
+            .from('cases')
+            .select('id, service')
+            .eq('client_id', clientId)
+            .neq('state', 'cerrado')
+            .order('opened_at', { ascending: false })
+            .limit(3);
+          openCases = casesData ?? [];
+        }
+
+        let ackBody: string;
+
+        if (openCases.length === 0) {
+          ackBody = `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+        } else if (openCases.length === 1) {
+          ackBody = `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} y lo hemos vinculado al expediente de *${openCases[0].service}* ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+        } else {
+          // Multiple open cases — ask which one, save pending doc in session
+          await persistSessionUpdates(admin, from, {
+            flow: 'doc_case_select',
+            step: 'waiting',
+            data: {
+              ...mediaSess.data,
+              pending_doc_url:      docRef ?? '',
+              pending_doc_type:     msgType,
+              pending_doc_caption:  caption,
+              pending_doc_filename: rawFilename,
+            },
+          });
+          const caseButtons = openCases.slice(0, 3).map((c) => ({ id: `doc_case_${c.id}`, title: c.service.slice(0, 20) }));
+          const sentSelect = await sendWhatsAppInteractive({
+            to: from, body: `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel}. ¿A qué expediente pertenece?`,
+            footer: 'EXPERT 💼', buttons: caseButtons,
+          });
+          if (sentSelect.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: `[Kia:doc_select] ${mediaLabel} → ? | ${openCases.map((c) => c.service).join(' / ')}`,
+              whatsappMessageId: sentSelect.messageId, aiResponded: false, needsReview: false,
+            });
+          }
+          continue;
+        }
+
+        const sentAck = await sendWhatsAppMessage({ to: from, body: ackBody });
+        if (sentAck.success) {
+          await logWhatsAppConversation({
+            clientId, phoneNumber: from, direction: 'outbound',
+            body: ackBody, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
+          });
+        }
+        // Escalate so a human follows up
+        await admin.from('whatsapp_conversations')
+          .update({ needs_review: true })
+          .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
+        notifyAdmins({
+          title: `📎 Doc recibido — ${clientDisplay}`,
+          body:  `${mediaLabel}${caption ? ': ' + caption : ''}${openCases.length === 1 ? ' → ' + openCases[0].service : ''}`,
+          url: '/admin/whatsapp', tag: `wa-doc-${from}`,
+        }).catch(() => {});
         continue;
       }
 
@@ -584,11 +678,127 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // ── Doc case selection (user chose which expediente) ─────────────────
+      if (buttonId?.startsWith('doc_case_')) {
+        const docSess   = await getOrCreateSession(admin, from, clientId);
+        const caseId    = buttonId.slice('doc_case_'.length);
+        const docType   = docSess.data?.pending_doc_type ?? 'document';
+        const docCaption = docSess.data?.pending_doc_caption ?? '';
+        const mediaIcon  = docType === 'image' ? '📷' : docType === 'audio' ? '🎤' : docType === 'video' ? '🎥' : '📄';
+        const mediaLabel = docType === 'document' ? 'documento' : docType === 'image' ? 'imagen' : docType === 'audio' ? 'audio' : 'archivo';
+        const { data: selectedCase } = await admin.from('cases').select('service').eq('id', caseId).single();
+        const serviceName = selectedCase?.service ?? 'tu expediente';
+
+        await persistSessionUpdates(admin, from, {
+          flow: 'welcome',
+          step: 'init',
+          data: { ...docSess.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '' },
+        });
+
+        const ack = `${mediaIcon} Perfecto. Tu ${mediaLabel} ha sido vinculado al expediente de *${serviceName}* ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+        const sentAck = await sendWhatsAppMessage({ to: from, body: ack });
+        if (sentAck.success) {
+          await logWhatsAppConversation({
+            clientId, phoneNumber: from, direction: 'outbound',
+            body: ack, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
+          });
+        }
+        await admin.from('whatsapp_conversations')
+          .update({ needs_review: true })
+          .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
+        notifyAdmins({
+          title: `📎 Doc vinculado — ${docSess.name ?? from}`,
+          body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} → ${serviceName}`,
+          url: '/admin/whatsapp', tag: `wa-doc-${from}`,
+        }).catch(() => {});
+        continue;
+      }
+
       // ── Kia session ────────────────────────────────────────────────────────
       const session  = await getOrCreateSession(admin, from, clientId);
       const clientName = clientId
         ? (profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
+
+      // ── identify_for_doc flow — collect name + email for unknown doc sender ──
+      if (session.flow === 'identify_for_doc') {
+        if (session.step === 'awaiting_name') {
+          const nameInput = msgBody.trim();
+          await persistSessionUpdates(admin, from, { name: nameInput, step: 'awaiting_email' });
+          const askEmail = `Gracias, *${nameInput}*. ¿Cuál es tu dirección de email? La necesitamos para enviarte actualizaciones sobre tu expediente.`;
+          const sentAskEmail = await sendWhatsAppMessage({ to: from, body: askEmail });
+          if (sentAskEmail.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: askEmail, whatsappMessageId: sentAskEmail.messageId, aiResponded: false, needsReview: false,
+            });
+          }
+          continue;
+        }
+
+        if (session.step === 'awaiting_email') {
+          const emailInput = msgBody.trim().toLowerCase();
+          const emailValid  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput);
+          if (!emailValid) {
+            const retry = `Ese email no parece válido. Por favor, escríbelo de nuevo (ej. nombre@ejemplo.com):`;
+            const sentRetry = await sendWhatsAppMessage({ to: from, body: retry });
+            if (sentRetry.success) {
+              await logWhatsAppConversation({
+                clientId, phoneNumber: from, direction: 'outbound',
+                body: retry, whatsappMessageId: sentRetry.messageId, aiResponded: false, needsReview: false,
+              });
+            }
+            continue;
+          }
+
+          await persistSessionUpdates(admin, from, {
+            email: emailInput,
+            flow:  'welcome',
+            step:  'init',
+            data:  { ...session.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '' },
+          });
+          try {
+            await admin.from('leads').upsert(
+              {
+                phone:        from,
+                name:         session.name ?? from,
+                email:        emailInput,
+                client_type:  'particular',
+                category:     'general',
+                service:      'Consulta WhatsApp',
+                source:       'whatsapp',
+                notes:        'Identificado al enviar documento por WhatsApp',
+                updated_at:   new Date().toISOString(),
+              },
+              { onConflict: 'phone' },
+            );
+          } catch (e) {
+            console.error('[Kia identify_for_doc lead]', e);
+          }
+
+          const docType    = session.data?.pending_doc_type ?? 'document';
+          const docCaption = session.data?.pending_doc_caption ?? '';
+          const mediaIcon  = docType === 'image' ? '📷' : docType === 'audio' ? '🎤' : docType === 'video' ? '🎥' : '📄';
+          const mediaLabel = docType === 'document' ? 'documento' : docType === 'image' ? 'imagen' : docType === 'audio' ? 'audio' : 'archivo';
+          const ackDoc = `${mediaIcon} *${session.name ?? from}*, muchas gracias. Hemos guardado tu ${mediaLabel} y registrado tu ficha ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+          const sentAckDoc = await sendWhatsAppMessage({ to: from, body: ackDoc });
+          if (sentAckDoc.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: ackDoc, whatsappMessageId: sentAckDoc.messageId, aiResponded: false, needsReview: false,
+            });
+          }
+          await admin.from('whatsapp_conversations')
+            .update({ needs_review: true })
+            .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
+          notifyAdmins({
+            title: `📎 Doc + ficha nueva — ${session.name ?? from}`,
+            body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} | email: ${emailInput}`,
+            url: '/admin/whatsapp', tag: `wa-doc-${from}`,
+          }).catch(() => {});
+          continue;
+        }
+      }
 
       // Run the Kia state machine (language detection is handled inside)
       const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName);
