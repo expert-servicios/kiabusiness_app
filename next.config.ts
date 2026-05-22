@@ -1,7 +1,5 @@
 import type { NextConfig } from 'next';
 
-const rootDir = process.cwd();
-
 const SECURITY_HEADERS = [
   // Prevent page from being embedded in iframes (clickjacking protection)
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -21,9 +19,6 @@ const nextConfig: NextConfig = {
       allowedOrigins: ['localhost:3000', 'expertconsulting.es', 'www.expertconsulting.es', 'kseniailicheva.com', 'www.kseniailicheva.com'],
       bodySizeLimit: '10mb'
     }
-  },
-  turbopack: {
-    root: rootDir
   },
   async headers() {
     return [
