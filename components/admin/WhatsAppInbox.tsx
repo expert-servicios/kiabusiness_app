@@ -290,17 +290,26 @@ function Avatar({ name, isClient }: { name: string | null; isClient: boolean }) 
   );
 }
 
-function MediaPreview({ url, type }: { url: string; type: string }) {
+function MediaPreview({ url, type }: { url: string | null; type: string }) {
+  if (!url?.startsWith('http')) {
+    const icon = type === 'image' ? '📷' : type === 'audio' ? '🎤' : type === 'video' ? '🎥' : '📄';
+    return (
+      <span className="mt-1 flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-[#fdf6ec]/80 px-3 py-2 text-xs text-[#8a6d3b]">
+        {icon} Archivo no disponible (error al guardar)
+      </span>
+    );
+  }
+  const safeUrl = url as string;
   if (type === 'image') {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer">
+      <a href={safeUrl} target="_blank" rel="noopener noreferrer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt="Imagen adjunta" className="mt-1 max-h-48 max-w-full rounded-xl object-cover" />
+        <img src={safeUrl} alt="Imagen adjunta" className="mt-1 max-h-48 max-w-full rounded-xl object-cover" />
       </a>
     );
   }
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer"
+    <a href={safeUrl} target="_blank" rel="noopener noreferrer"
       className="mt-1 flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-white/80 px-3 py-2 text-xs font-semibold text-[#07111d] hover:bg-white"
     >
       <FileText className="h-4 w-4 text-[#c88b25]" />
@@ -1108,7 +1117,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                           ? 'rounded-tl-sm border border-red-200 bg-red-50 text-[#07111d]'
                           : 'rounded-tl-sm bg-white text-[#07111d]'
                     }`}>
-                      {msg.media_url && msg.media_type && (
+                      {msg.media_type && (
                         <MediaPreview url={msg.media_url} type={msg.media_type} />
                       )}
                       {msg.body && (

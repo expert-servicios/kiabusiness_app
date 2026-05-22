@@ -452,7 +452,7 @@ export async function POST(request: NextRequest) {
         await logWhatsAppConversation({
           clientId, phoneNumber: from, direction: 'inbound',
           body: caption || `[${msgType}]`, whatsappMessageId: messageId,
-          mediaUrl: storedUrl ?? mediaId ?? undefined, mediaType: msgType,
+          mediaUrl: storedUrl ?? undefined, mediaType: msgType,
         });
 
         const mediaIcon  = msgType === 'image' ? '📷' : msgType === 'audio' ? '🎤' : msgType === 'video' ? '🎥' : '📄';
