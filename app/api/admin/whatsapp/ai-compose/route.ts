@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { formatChecklistForPrompt, getChecklistsByCategory, getServiceChecklist } from '@/lib/utils/service-checklists';
+import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { z } from 'zod';
 
 async function requireAdmin(request: NextRequest) {
@@ -21,6 +22,12 @@ const schema = z.object({
   intent:    z.string().max(2000).optional(),
   mode:      z.enum(['compose', 'edit']).default('compose'),
   serviceId: z.string().optional(),
+  replyTo:   z.object({
+    direction : z.enum(['inbound', 'outbound']),
+    body      : z.string().max(500),
+    created_at: z.string().optional(),
+    media_type: z.string().nullable().optional(),
+  }).optional(),
 });
 
 function cleanMarkdownForWhatsApp(text: string): string {
@@ -57,7 +64,12 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
-    const { clientId, history, intent, mode, serviceId } = parsed.data;
+    const { clientId, history, intent, mode, serviceId, replyTo } = parsed.data;
+    const { phone } = parsed.data;
+
+    // Resolve lead/client status
+    const contactCtx = await resolveKiaContactContext(admin, phone);
+    const isClient   = contactCtx.status === 'client';
 
     // ── Checklist context ─────────────────────────────────────────
     let checklistContext = '';
@@ -143,6 +155,21 @@ ${historyText || 'Sin historial previo.'}${checklistContext}`;
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const officialSourceContext = await buildOfficialSourceContext(`${historyText}\n${intent ?? ''}`);
 
+    // Build replyTo context for prompt
+    const replyToBlock = replyTo
+      ? (() => {
+          const who    = replyTo.direction === 'inbound' ? 'Cliente' : 'EXPERT';
+          const mIcon  = replyTo.media_type === 'image' ? '📷 Imagen' : replyTo.media_type === 'audio' ? '🎤 Audio' : replyTo.media_type === 'video' ? '🎥 Vídeo' : replyTo.media_type ? '📎 Documento' : null;
+          const snap   = (mIcon ?? replyTo.body.replace(/\n+/g, ' ').trim()).slice(0, 200);
+          return `\nESTÁS RESPONDIENDO ESPECÍFICAMENTE A ESTE MENSAJE:\n${who}: «${snap}»\nRedacta una respuesta directa a ese punto concreto, sin ignorar el resto del historial.\n`;
+        })()
+      : '';
+
+    // Contact type instruction
+    const contactTypeBlock = isClient
+      ? `\nTIPO DE CONTACTO: CLIENTE\n- Tono de soporte/gestión profesional.\n- Usa contexto de expedientes si disponible.\n- No pidas datos que ya tiene.\n- No uses CTA genérica si tiene expediente activo.\n- Si pide nuevo servicio, trátale como cliente existente.\n`
+      : `\nTIPO DE CONTACTO: LEAD (aún no es cliente)\n- Tono comercial y orientativo.\n- Lleva a viabilidad, llamada 15 min o contratación.\n- Pide solo datos mínimos necesarios.\n- No hables de expedientes salvo que existan.\n- Cierra siempre con acción concreta.\n`;
+
     const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.
 Nuestra web es https://expertconsulting.es
@@ -170,6 +197,7 @@ ACTITUD:
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
+${contactTypeBlock}${replyToBlock}
 CONTEXTO DEL CLIENTE:
 ${clientContext}${intentText}
 ${checklistContext}

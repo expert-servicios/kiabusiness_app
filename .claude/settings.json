@@ -130,7 +130,8 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\contratar\")",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add app/\\(public\\)/holded/page.tsx lib/utils/catalog.ts; git status)",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; git add components/site/WhatsAppChatWidget.tsx app/\\(public\\)/holded/page.tsx lib/utils/catalog.ts app/\\(public\\)/carrito/page.tsx lib/integrations/service-checkout.ts app/api/stripe/webhook/route.ts; git status --short)",
-      "mcp__supabase__get_project_url"
+      "mcp__supabase__get_project_url",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $newFiles = @\\(\"app/api/admin/whatsapp/retry-media/route.ts\"\\); foreach \\($f in $newFiles\\) { if \\(Test-Path $f\\) { Write-Output \"EXISTS: $f\" } else { Write-Output \"MISSING: $f\" } })"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",

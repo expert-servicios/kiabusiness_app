@@ -5,7 +5,7 @@ import {
   Send, Bot, User, AlertTriangle, CheckCheck, Phone, ArrowLeft,
   RefreshCw, Plus, Paperclip, Sparkles, X, FileText, Image as ImageIcon,
   FolderOpen, ChevronDown, Smile, UserPlus, Search, BookMarked, Check,
-  ClipboardList, ShieldCheck, UserCircle2,
+  ClipboardList, ShieldCheck, UserCircle2, CornerUpLeft,
 } from 'lucide-react';
 import { WaServiceWorkflow } from './WaServiceWorkflow';
 import { SERVICES_CATALOG, type CatalogSection } from '@/lib/data/services-catalog';
@@ -40,11 +40,11 @@ function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onC
 }
 
 // ── Client vs Lead badge ──────────────────────────────────────────────────────
-function ContactBadge({ isClient }: { isClient: boolean }) {
+function ContactBadge({ isClient, caseCount }: { isClient: boolean; caseCount?: number }) {
   return isClient ? (
     <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
       <ShieldCheck className="h-2.5 w-2.5" />
-      Cliente
+      Cliente{caseCount ? ` · ${caseCount} exp.` : ''}
     </span>
   ) : (
     <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
@@ -251,6 +251,11 @@ interface WaMessage {
   meta_media_id?: string | null;
   case_id: string | null;
   case: WaCase | null;
+  reply_to_message_id?: string | null;
+  reply_to_whatsapp_message_id?: string | null;
+  quoted_body_snapshot?: string | null;
+  quoted_direction?: 'inbound' | 'outbound' | null;
+  quoted_created_at?: string | null;
 }
 
 interface Conversation {
@@ -732,6 +737,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [showWorkflow, setShowWorkflow] = useState(false);
   const [inboxToast, setInboxToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
+  const [replyTo, setReplyTo] = useState<WaMessage | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -777,6 +783,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setError(null);
     setReply('');
     setPendingFile(null);
+    setReplyTo(null);
     fetch('/api/admin/whatsapp', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -821,6 +828,14 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           history: activeConv.messages.slice(-30).map((m) => ({ direction: m.direction, body: m.body })),
           intent: reply.trim() || undefined,
           mode: reply.trim() ? 'edit' : 'compose',
+          ...(replyTo && {
+            replyTo: {
+              direction:  replyTo.direction,
+              body:       replyTo.body,
+              created_at: replyTo.created_at,
+              media_type: replyTo.media_type ?? null,
+            },
+          }),
         }),
       });
       const data = await res.json();
@@ -839,6 +854,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setError(null);
     try {
       const payload: Record<string, unknown> = { phone: selected };
+      if (replyTo) payload.replyToMessageId = replyTo.id;
       if (pendingFile) {
         payload.mediaUrl  = pendingFile.url;
         payload.mediaType = pendingFile.waType;
@@ -880,6 +896,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       }));
       setReply('');
       setPendingFile(null);
+      setReplyTo(null);
       textareaRef.current?.focus();
     } catch {
       setError('Error de conexión.');
@@ -1006,9 +1023,10 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           </li>
         )}
         {conversations.map((conv) => {
-          const isClient = Boolean(conv.clientId);
-          const lastMsg  = conv.messages.at(-1);
-          const preview  = lastMsg?.body?.replace(/^\[Kia[^\]]*\]\s*/,'').replace(/^\[Catálogo\]\s*/,'').slice(0, 60) ?? '';
+          const isClient  = Boolean(conv.clientId);
+          const caseCount = new Set(conv.messages.map((m) => m.case_id).filter(Boolean)).size || undefined;
+          const lastMsg   = conv.messages.at(-1);
+          const preview   = lastMsg?.body?.replace(/^\[Kia[^\]]*\]\s*/,'').replace(/^\[Catálogo\]\s*/,'').slice(0, 60) ?? '';
           return (
             <li key={conv.phone}>
               <button type="button" onClick={() => handleSelectConversation(conv.phone)}
@@ -1025,7 +1043,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                     <span className="shrink-0 text-[10px] text-[#29384a]/50">{fmtTime(conv.lastAt)}</span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5">
-                    <ContactBadge isClient={isClient} />
+                    <ContactBadge isClient={isClient} caseCount={isClient ? caseCount : undefined} />
                     {conv.clientName && (
                       <span className="truncate text-[10px] text-[#29384a]/50">{conv.phone}</span>
                     )}
@@ -1155,7 +1173,18 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                       </span>
                     </div>
                   )}
-                  <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} mb-[2px]`}>
+                  <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} mb-[2px] group/bubble`}>
+                    {/* Reply button — visible on hover, inbound side */}
+                    {!isOut && (
+                      <button
+                        type="button"
+                        onClick={() => { setReplyTo(msg); setTimeout(() => textareaRef.current?.focus(), 50); }}
+                        className="mr-1 mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/0 text-[#29384a]/30 opacity-0 transition hover:bg-white hover:text-[#c88b25] group-hover/bubble:opacity-100"
+                        aria-label="Responder a este mensaje"
+                      >
+                        <CornerUpLeft className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     <div className={`relative max-w-[88%] sm:max-w-[72%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed shadow-sm ${
                       isOut
                         ? 'rounded-tr-sm bg-[#d9fdd3] text-[#07111d]'
@@ -1163,6 +1192,15 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                           ? 'rounded-tl-sm border border-red-200 bg-red-50 text-[#07111d]'
                           : 'rounded-tl-sm bg-white text-[#07111d]'
                     }`}>
+                      {/* Quote block — shown when this message is a reply */}
+                      {msg.quoted_body_snapshot && (
+                        <div className="mb-2 rounded-lg border-l-4 border-[#D4A017] bg-black/5 px-2.5 py-1.5 text-xs">
+                          <p className="font-semibold text-[#8a6d3b]">
+                            {msg.quoted_direction === 'inbound' ? 'Cliente' : 'EXPERT'}
+                          </p>
+                          <p className="mt-0.5 line-clamp-2 text-[#07111d]/60">{msg.quoted_body_snapshot}</p>
+                        </div>
+                      )}
                       {msg.media_type && (
                         <MediaPreview
                           url={msg.media_url}
@@ -1240,6 +1278,25 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
               <input ref={fileInputRef} type="file" aria-label="Seleccionar archivo adjunto"
                 accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/ogg,audio/mpeg"
                 onChange={handleFileChange} className="hidden" />
+
+              {/* Reply-to preview bar */}
+              {replyTo && (
+                <div className="mb-1 flex items-start gap-2 rounded-xl border-l-4 border-[#D4A017] bg-[#fdf6ec] px-3 py-2 text-xs">
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#8a6d3b]">
+                      Respondiendo a {replyTo.direction === 'inbound' ? 'Cliente' : 'EXPERT'}
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-[#07111d]/70">
+                      {replyTo.media_type
+                        ? (replyTo.media_type === 'image' ? '📷 Imagen' : replyTo.media_type === 'audio' ? '🎤 Audio' : replyTo.media_type === 'video' ? '🎥 Vídeo' : '📎 Documento')
+                        : replyTo.body.slice(0, 120)}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancelar respuesta" className="ml-1 text-[#29384a]/40 hover:text-red-500">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
 
               {/* Textarea + send — full width */}
               <div className="flex items-end gap-1.5">

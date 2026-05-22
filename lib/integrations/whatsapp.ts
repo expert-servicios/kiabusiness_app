@@ -65,6 +65,11 @@ export interface LogConversationParams {
   mediaUrl?: string;
   mediaType?: string;
   metaMediaId?: string;
+  replyToMessageId?: string;
+  replyToWhatsAppMessageId?: string;
+  quotedBodySnapshot?: string;
+  quotedDirection?: string;
+  quotedCreatedAt?: string;
 }
 
 export type WaSendResult = { success: true; messageId: string } | { success: false; error: string; detail?: unknown };
@@ -394,9 +399,14 @@ export async function logWhatsAppConversation(params: LogConversationParams): Pr
       ai_responded:       params.aiResponded ?? false,
       needs_review:       params.needsReview ?? false,
       case_id:            params.caseId ?? null,
-      media_url:          params.mediaUrl ?? null,
-      media_type:         params.mediaType ?? null,
-      meta_media_id:      params.metaMediaId ?? null,
+      media_url:                      params.mediaUrl ?? null,
+      media_type:                     params.mediaType ?? null,
+      meta_media_id:                  params.metaMediaId ?? null,
+      reply_to_message_id:            params.replyToMessageId ?? null,
+      reply_to_whatsapp_message_id:   params.replyToWhatsAppMessageId ?? null,
+      quoted_body_snapshot:           params.quotedBodySnapshot ?? null,
+      quoted_direction:               params.quotedDirection ?? null,
+      quoted_created_at:              params.quotedCreatedAt ?? null,
     });
   } catch (err) {
     console.error('[WhatsApp] logWhatsAppConversation error:', err);

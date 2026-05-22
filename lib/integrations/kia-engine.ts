@@ -732,6 +732,60 @@ const CONSULT_MENU: Record<KiaLang, BtnMenu> = {
   ru: { type: 'buttons', body: 'Чем могу помочь? 😊', buttons: [{ id: 'co_no_se', title: 'Не знаю, что нужно' }, { id: 'co_urgente', title: 'Срочный вопрос' }, { id: 'co_cita', title: 'Записаться на консультацию' }] },
 };
 
+// ── Lead / Client differentiated menus ───────────────────────────────────────
+
+const LEAD_WELCOME_MENU: Record<KiaLang, BtnMenu> = {
+  es: {
+    type: 'buttons',
+    body: '👋 ¡Hola! Soy *Kia*, la asistente virtual de EXPERT Asesoría.\n\nPuedo ayudarte a comprobar si tu trámite es viable, elegir el servicio adecuado o reservar una llamada de 15 min antes de contratar.',
+    buttons: [
+      { id: 'lead_viability', title: 'Comprobar viabilidad' },
+      { id: 'lead_contract',  title: 'Contratar servicio'   },
+      { id: 'lead_call',      title: 'Llamada 15 min'       },
+    ],
+  },
+  ru: {
+    type: 'buttons',
+    body: '👋 Привет! Я *Kia*, виртуальный ассистент EXPERT Asesoría.\n\nМогу помочь проверить, подходит ли ваша ситуация, выбрать нужную услугу или записаться на 15-минутный звонок.',
+    buttons: [
+      { id: 'lead_viability', title: 'Проверить возможность' },
+      { id: 'lead_contract',  title: 'Заказать услугу'       },
+      { id: 'lead_call',      title: 'Звонок 15 мин'         },
+    ],
+  },
+};
+
+const CLIENT_WELCOME_MENU: Record<KiaLang, ListMenu> = {
+  es: {
+    type: 'list',
+    body: '¡Hola! 👋 Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?',
+    buttonText: 'Ver opciones',
+    sections: [{
+      title: 'PANEL DE CLIENTE',
+      rows: [
+        { id: 'cl_case_status', title: '🔍 Estado de expediente', description: 'Consultar el avance de tu trámite' },
+        { id: 'cl_send_docs',   title: '📎 Enviar documentación', description: 'Adjuntar archivos al expediente' },
+        { id: 'cl_human',       title: '💬 Hablar con el equipo', description: 'Conectar con una persona' },
+        { id: 'cl_new_service', title: '➕ Contratar nuevo servicio', description: 'Ampliar o añadir trámite' },
+      ],
+    }],
+  },
+  ru: {
+    type: 'list',
+    body: 'Привет! 👋 Вижу, что вы уже клиент EXPERT. Чем могу помочь?',
+    buttonText: 'Выбрать',
+    sections: [{
+      title: 'ПАНЕЛЬ КЛИЕНТА',
+      rows: [
+        { id: 'cl_case_status', title: '🔍 Статус дела',          description: 'Узнать о ходе вашего дела' },
+        { id: 'cl_send_docs',   title: '📎 Отправить документы',  description: 'Прикрепить файлы к делу' },
+        { id: 'cl_human',       title: '💬 Связаться с командой', description: 'Подключить специалиста' },
+        { id: 'cl_new_service', title: '➕ Новая услуга',          description: 'Добавить или расширить трамит' },
+      ],
+    }],
+  },
+};
+
 // ── Reply types ───────────────────────────────────────────────────────────────
 
 export type KiaReply =
@@ -927,11 +981,21 @@ const COMMANDS = ['/inicio', '/start', '/menu', '/cancelar', '/servicios', '/hum
 
 // ── Main processor ────────────────────────────────────────────────────────────
 
+// Minimal contact info passed from webhook (avoids circular dependency with resolver)
+export interface KiaContactInfo {
+  status         : 'lead' | 'client';
+  openCases      ?: Array<{ id: string; service: string; state: string; opened_at: string }>;
+  profileCompleted  ?: boolean;
+  billingReady      ?: boolean;
+  habitualAddressReady?: boolean;
+}
+
 export function processKiaStep(
-  session    : KiaSession,
-  msgBody    : string,
-  buttonId   : string | null,
-  clientName?: string | null,
+  session      : KiaSession,
+  msgBody      : string,
+  buttonId     : string | null,
+  clientName  ?: string | null,
+  contactInfo ?: KiaContactInfo,
 ): KiaStepResult {
   const lang = session.lang;
   const name = session.name ?? clientName ?? null;
@@ -990,15 +1054,35 @@ export function processKiaStep(
 
   if (flow === 'welcome' && step === 'init') {
     const l = langChanged ? detectedLang : lang;
-    if (name) {
-      // Known contact — skip capture
+
+    // ── Client route — known profile ───────────────────────────────────────
+    if (contactInfo?.status === 'client') {
+      const greeting = name
+        ? (l === 'ru'
+            ? `👋 ¡Hola, *${name}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`
+            : `👋 ¡Hola, *${name}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`)
+        : CLIENT_WELCOME_MENU[l].body;
+      const clientMenu = { ...CLIENT_WELCOME_MENU[l], body: greeting };
       return {
-        replies : [privacyNotice(l), welcome(l, name)],
-        updates : { flow: 'welcome', step: 'waiting_intent', lang: l },
+        replies    : [privacyNotice(l), menuToReply(clientMenu)],
+        updates    : { flow: 'client_start', step: 'waiting_option', lang: l },
         sideEffects: {},
       };
     }
-    // New/unknown contact — ask name first
+
+    // ── Lead route — unknown or not yet a client ────────────────────────────
+    if (name) {
+      const leadBody = l === 'ru'
+        ? `👋 ¡Hola, *${name}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`
+        : `👋 ¡Hola, *${name}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`;
+      const leadMenu = { ...LEAD_WELCOME_MENU[l], body: leadBody };
+      return {
+        replies    : [privacyNotice(l), menuToReply(leadMenu)],
+        updates    : { flow: 'lead_start', step: 'waiting_option', lang: l },
+        sideEffects: {},
+      };
+    }
+    // New unknown contact — ask name first
     const askName: KiaReply = {
       type: 'text',
       body: l === 'ru'
@@ -1327,6 +1411,90 @@ export function processKiaStep(
       ? '😊 Никаких проблем. Расскажите в двух словах, что нужно сделать или какая ситуация, и я помогу найти правильный путь.'
       : '😊 Sin problema. Cuéntame en una frase qué necesitas hacer o qué situación tienes, y te ayudo a encontrar el camino correcto.';
     return { replies: [{ type: 'text', body }], updates: { step: 'free_consult' }, sideEffects: { needsAiFallback: false } };
+  }
+
+  // ── LEAD FLOW ─────────────────────────────────────────────────────────────
+
+  if (flow === 'lead_start' && step === 'waiting_option') {
+    // Button shortcuts from LEAD_WELCOME_MENU
+    if (interaction === 'lead_viability') {
+      const body = lang === 'ru'
+        ? '✅ Perfecto. Cuéntame tu situación en unas pocas palabras y compruebo si el trámite es viable para ti.'
+        : '✅ Perfecto. Cuéntame tu situación en pocas palabras y compruebo si el trámite es viable para ti.';
+      return { replies: [{ type: 'text', body }], updates: { step: 'lead_viability' }, sideEffects: {} };
+    }
+    if (interaction === 'lead_contract') {
+      return { replies: [menuToReply(AREA_LIST_MENU[lang])], updates: { flow: 'new_client', step: 'waiting_area' }, sideEffects: {} };
+    }
+    if (interaction === 'lead_call') {
+      return { replies: [bookingConfirm(lang)], updates: { flow: 'welcome', step: 'waiting_intent' }, sideEffects: {} };
+    }
+    // Free text → AI
+    return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
+  }
+
+  if (flow === 'lead_start' && step === 'lead_viability') {
+    // User described their situation — AI handles viability check
+    return { replies: [], updates: { step: 'lead_viability' }, sideEffects: { needsAiFallback: true } };
+  }
+
+  // ── CLIENT FLOW ───────────────────────────────────────────────────────────
+
+  if (flow === 'client_start' && step === 'waiting_option') {
+    if (interaction === 'cl_case_status') {
+      const openCases = contactInfo?.openCases ?? [];
+      if (openCases.length === 0) {
+        const body = lang === 'ru'
+          ? '📋 No encuentro expedientes activos vinculados a tu número. ¿Quieres abrir un nuevo trámite?'
+          : '📋 No veo expedientes activos vinculados a tu número. ¿Quieres abrir un nuevo trámite?';
+        return { replies: [{ type: 'text', body }], updates: { step: 'client_case_status' }, sideEffects: {} };
+      }
+      if (openCases.length === 1) {
+        const c = openCases[0];
+        const body = lang === 'ru'
+          ? `📋 Tu expediente de *${c.service}* está en estado: *${c.state}*.\n\n¿Necesitas algo más?`
+          : `📋 Tu expediente de *${c.service}* está en estado: *${c.state}*.\n\n¿Necesitas algo más?`;
+        return { replies: [{ type: 'text', body }], updates: { step: 'client_case_status' }, sideEffects: {} };
+      }
+      // Multiple cases → list them
+      const rows = openCases.slice(0, 5).map((c) => ({
+        id: `cl_case_detail_${c.id}`,
+        title: c.service.slice(0, 24),
+        description: c.state.slice(0, 72),
+      }));
+      return {
+        replies: [{
+          type: 'list', body: lang === 'ru' ? 'Tus expedientes activos:' : 'Tus expedientes activos:',
+          footer: FOOTER, buttonText: lang === 'ru' ? 'Ver' : 'Ver',
+          sections: [{ title: lang === 'ru' ? 'EXPEDIENTES' : 'EXPEDIENTES', rows }],
+        }],
+        updates: { step: 'client_case_select' },
+        sideEffects: {},
+      };
+    }
+    if (interaction === 'cl_send_docs') {
+      const body = lang === 'ru'
+        ? '📎 Perfecto. Envíame el documento directamente por este chat y lo asigno a tu expediente.'
+        : '📎 Perfecto. Envíame el documento directamente por este chat y lo asocio a tu expediente.';
+      return { replies: [{ type: 'text', body }], updates: { step: 'client_send_docs' }, sideEffects: {} };
+    }
+    if (interaction === 'cl_human') {
+      return {
+        replies    : [humanEscalate(lang, name)],
+        updates    : { flow: 'human', step: 'escalated', escalated: true },
+        sideEffects: { escalate: true },
+      };
+    }
+    if (interaction === 'cl_new_service') {
+      return { replies: [menuToReply(AREA_LIST_MENU[lang])], updates: { flow: 'new_client', step: 'waiting_area' }, sideEffects: {} };
+    }
+    // Free text → AI with client context
+    return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
+  }
+
+  // client sub-steps → AI handles
+  if (flow === 'client_start' && ['client_case_status', 'client_case_select', 'client_send_docs'].includes(step)) {
+    return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────

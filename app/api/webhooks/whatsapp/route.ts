@@ -20,6 +20,7 @@ import {
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
+import { resolveKiaContactContext, type KiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 import { getService } from '@/lib/services/service-registry';
@@ -201,7 +202,8 @@ async function handleKiaSideEffects({
     }).catch((e: unknown) => console.error('[Kia createCase]', e));
   }
 
-  if (saveLead || (createCase && !clientId)) {
+  if (!clientId && (saveLead || createCase)) {
+    // Only upsert leads when the contact is NOT already a registered client.
     // leads table requires name, email, client_type, category, service (NOT NULL).
     // Provide safe defaults for WhatsApp contacts that may not have shared their email yet.
     await admin.from('leads').upsert(
@@ -266,10 +268,11 @@ interface KiaAiContext {
   admin               : any;
   session             : KiaSession;
   conversationHistory : { direction: string; body: string }[];
+  contactCtx         ?: KiaContactContext;
 }
 
 async function generateKiaAiResponse({
-  clientId, msgBody, admin, session, conversationHistory,
+  clientId, msgBody, admin, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
   const lang               = session.lang;
   const languageInstruction = lang === 'ru'
@@ -371,6 +374,27 @@ CIERRE OBLIGATORIO — cada respuesta debe terminar con una acción concreta, nu
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
+TIPO DE CONTACTO: ${contactCtx?.status === 'client' ? 'CLIENTE' : 'LEAD'}
+${contactCtx?.status === 'client' ? `
+REGLAS PARA CLIENTE:
+- Objetivo: soporte de expediente, documentación, estado, perfil, nuevo servicio o equipo humano.
+- Usa el contexto de expedientes y obligaciones para dar respuestas concretas.
+- NO pidas datos que ya existen (nombre, email, teléfono).
+- Si pregunta por estado, ofrece revisar expediente.
+- Si envía documentos, asocia a expediente.
+- Si pide nuevo servicio, abre flujo de contratación manteniendo tratamiento de cliente.
+- No uses CTA genérica de captación si tiene expediente activo.
+- Perfil completado: ${contactCtx.profileCompleted ? 'Sí' : 'No — recomendar completar en portal'}.
+- Facturación configurada: ${contactCtx.billingReady ? 'Sí' : 'No'}.
+` : `
+REGLAS PARA LEAD:
+- Objetivo: orientar, comprobar viabilidad, captar datos mínimos, llevar a login/registro o llamada preventa.
+- NO hablar de expedientes salvo que el lead haya indicado un trámite concreto.
+- NO afirmar que es cliente ni asumir que tiene cuenta.
+- NO pedir documentación completa antes de contratar.
+- Siempre terminar con acción comercial: viabilidad, llamada 15 min o contratar.
+`}
+
 CONTEXTO DEL CLIENTE:
 ${clientContext}`;
 
@@ -436,6 +460,9 @@ export async function POST(request: NextRequest) {
       const messageId  : string = msg.id;
       const clientId             = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
       const senderName           = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
+
+      // Resolve contact context (lead vs client) — single query, cached per message
+      const contactCtx: KiaContactContext = await resolveKiaContactContext(admin, from);
 
       // ── Media: download, store, log, notify, and ACK ─────────────────
       if (isMedia) {
@@ -802,7 +829,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Run the Kia state machine (language detection is handled inside)
-      const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName);
+      const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName, {
+        status              : contactCtx.status,
+        openCases           : contactCtx.openCases,
+        profileCompleted    : contactCtx.profileCompleted,
+        billingReady        : contactCtx.billingReady,
+        habitualAddressReady: contactCtx.habitualAddressReady,
+      });
       const updatedSession = { ...session, ...updates };
 
       // Send all structured replies
@@ -828,6 +861,7 @@ export async function POST(request: NextRequest) {
           clientId, phone: from, msgBody, admin,
           session: updatedSession,
           conversationHistory,
+          contactCtx,
         });
 
         if (aiResult.interactive) {

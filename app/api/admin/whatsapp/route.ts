@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const base = admin
     .from('whatsapp_conversations')
-    .select('id,phone_number,client_id,case_id,direction,body,media_url,media_type,meta_media_id,created_at,needs_review,ai_responded,read_at')
+    .select('id,phone_number,client_id,case_id,direction,body,media_url,media_type,meta_media_id,created_at,needs_review,ai_responded,read_at,reply_to_message_id,reply_to_whatsapp_message_id,quoted_body_snapshot,quoted_direction,quoted_created_at')
     .order('created_at', { ascending: true });
 
   const { data: msgs, error: qErr } = phone
@@ -108,13 +108,14 @@ export async function GET(request: NextRequest) {
 }
 
 const replySchema = z.object({
-  phone:        z.string().min(1),
-  body:         z.string().max(4096).optional(),
-  mediaUrl:     z.string().url().optional(),
-  mediaType:    z.enum(['image', 'document', 'audio', 'video']).optional(),
-  mediaFilename: z.string().max(255).optional(),
-  caption:      z.string().max(1024).optional(),
-  caseId:       z.string().uuid().optional(),
+  phone:            z.string().min(1),
+  body:             z.string().max(4096).optional(),
+  mediaUrl:         z.string().url().optional(),
+  mediaType:        z.enum(['image', 'document', 'audio', 'video']).optional(),
+  mediaFilename:    z.string().max(255).optional(),
+  caption:          z.string().max(1024).optional(),
+  caseId:           z.string().uuid().optional(),
+  replyToMessageId: z.string().uuid().optional(),
 });
 
 // POST — admin manual reply (text or media)
@@ -128,14 +129,56 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
   }
 
-  const { phone, body, mediaUrl, mediaType, mediaFilename, caption, caseId } = parsed.data;
+  const { phone, body, mediaUrl, mediaType, mediaFilename, caption, caseId, replyToMessageId } = parsed.data;
 
   if (!body && !mediaUrl) {
     return NextResponse.json({ error: 'Se requiere texto o adjunto' }, { status: 400 });
   }
 
-  // Find client_id
   const normalized = phone.replace(/\D/g, '');
+
+  // ── Resolve quote data if replyToMessageId provided ───────────────────────
+  let quotedMsgId: string | undefined;
+  let quotedWaId:  string | undefined;
+  let quotedSnap:  string | undefined;
+  let quotedDir:   string | undefined;
+  let quotedAt:    string | undefined;
+  let finalBody    = body;
+  let finalCaption = caption;
+
+  if (replyToMessageId) {
+    const { data: original, error: origErr } = await admin
+      .from('whatsapp_conversations')
+      .select('id, phone_number, whatsapp_message_id, body, direction, created_at, media_type')
+      .eq('id', replyToMessageId)
+      .single();
+
+    if (origErr || !original) {
+      return NextResponse.json({ error: 'Mensaje original no encontrado' }, { status: 400 });
+    }
+    if (original.phone_number !== normalized) {
+      return NextResponse.json({ error: 'El mensaje seleccionado no pertenece a este hilo' }, { status: 400 });
+    }
+
+    quotedMsgId = original.id as string;
+    quotedWaId  = original.whatsapp_message_id as string | undefined;
+    quotedDir   = original.direction as string;
+    quotedAt    = original.created_at as string;
+
+    const rawBody = original.body as string ?? '';
+    const mediaType_ = original.media_type as string | null;
+    const mediaIcon  = mediaType_ === 'image' ? '📷 Imagen' : mediaType_ === 'audio' ? '🎤 Audio' : mediaType_ === 'video' ? '🎥 Vídeo' : mediaType_ ? '📎 Documento' : null;
+    const snapText   = mediaIcon ?? rawBody.replace(/\n+/g, ' ').trim();
+    quotedSnap       = snapText.slice(0, 120);
+
+    // Prepend visual quote to message body (WhatsApp Cloud API quote reply not always available)
+    const who    = quotedDir === 'inbound' ? 'Cliente' : 'EXPERT';
+    const prefix = `_Respondiendo a ${who}: «${quotedSnap}»_\n\n`;
+    if (finalBody)    finalBody    = prefix + finalBody;
+    if (finalCaption) finalCaption = prefix + finalCaption;
+  }
+
+  // Find client_id
   const { data: profile } = await admin
     .from('profiles')
     .select('id')
@@ -144,11 +187,11 @@ export async function POST(request: NextRequest) {
 
   const result = await sendWhatsAppMessage({
     to: phone,
-    body,
+    body:          finalBody,
     mediaUrl,
     mediaType,
     mediaFilename,
-    caption,
+    caption:       finalCaption,
   });
 
   if (!result.success) {
@@ -156,14 +199,19 @@ export async function POST(request: NextRequest) {
   }
 
   await logWhatsAppConversation({
-    clientId:   profile?.id,
-    phoneNumber: normalized,
-    direction:  'outbound',
-    body:       body ?? caption ?? `[${mediaType}]`,
-    whatsappMessageId: result.messageId,
+    clientId:                   profile?.id,
+    phoneNumber:                normalized,
+    direction:                  'outbound',
+    body:                       finalBody ?? finalCaption ?? `[${mediaType}]`,
+    whatsappMessageId:          result.messageId,
     caseId,
     mediaUrl,
     mediaType,
+    replyToMessageId:           quotedMsgId,
+    replyToWhatsAppMessageId:   quotedWaId,
+    quotedBodySnapshot:         quotedSnap,
+    quotedDirection:            quotedDir,
+    quotedCreatedAt:            quotedAt,
   });
 
   // Mark inbound as read
