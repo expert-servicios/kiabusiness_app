@@ -453,6 +453,7 @@ export async function POST(request: NextRequest) {
           clientId, phoneNumber: from, direction: 'inbound',
           body: caption || `[${msgType}]`, whatsappMessageId: messageId,
           mediaUrl: storedUrl ?? undefined, mediaType: msgType,
+          metaMediaId: mediaId || undefined,
         });
 
         const mediaIcon  = msgType === 'image' ? '📷' : msgType === 'audio' ? '🎤' : msgType === 'video' ? '🎥' : '📄';

@@ -248,6 +248,7 @@ interface WaMessage {
   read_at: string | null;
   media_url: string | null;
   media_type: string | null;
+  meta_media_id?: string | null;
   case_id: string | null;
   case: WaCase | null;
 }
@@ -290,15 +291,60 @@ function Avatar({ name, isClient }: { name: string | null; isClient: boolean }) 
   );
 }
 
-function MediaPreview({ url, type }: { url: string | null; type: string }) {
+function MediaPreview({ url, type, conversationId, canRetry, onRetried }: {
+  url: string | null;
+  type: string;
+  conversationId: string;
+  canRetry: boolean;
+  onRetried: (newUrl: string) => void;
+}) {
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
+  async function handleRetry() {
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      const res = await fetch('/api/admin/whatsapp/retry-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId }),
+      });
+      const data = await res.json() as { ok?: boolean; url?: string; error?: string };
+      if (data.ok && data.url) {
+        onRetried(data.url);
+      } else {
+        setRetryError(data.error ?? 'Error desconocido');
+      }
+    } catch {
+      setRetryError('Error de red');
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   if (!url?.startsWith('http')) {
     const icon = type === 'image' ? '📷' : type === 'audio' ? '🎤' : type === 'video' ? '🎥' : '📄';
     return (
-      <span className="mt-1 flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-[#fdf6ec]/80 px-3 py-2 text-xs text-[#8a6d3b]">
-        {icon} Archivo no disponible (error al guardar)
-      </span>
+      <div className="mt-1 flex flex-col gap-1">
+        <span className="flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-[#fdf6ec]/80 px-3 py-2 text-xs text-[#8a6d3b]">
+          {icon} Archivo no guardado
+          {canRetry && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={retrying}
+              className="ml-auto rounded bg-[#c88b25] px-2 py-0.5 text-[10px] font-bold text-white hover:bg-[#a06e1a] disabled:opacity-50"
+            >
+              {retrying ? '…' : 'Reintentar'}
+            </button>
+          )}
+        </span>
+        {retryError && <span className="text-[10px] text-red-500">{retryError}</span>}
+      </div>
     );
   }
+
   const safeUrl = url as string;
   if (type === 'image') {
     return (
@@ -1118,7 +1164,21 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                           : 'rounded-tl-sm bg-white text-[#07111d]'
                     }`}>
                       {msg.media_type && (
-                        <MediaPreview url={msg.media_url} type={msg.media_type} />
+                        <MediaPreview
+                          url={msg.media_url}
+                          type={msg.media_type}
+                          conversationId={msg.id}
+                          canRetry={!!msg.meta_media_id && !msg.media_url?.startsWith('http')}
+                          onRetried={(newUrl) => {
+                            setConversations((prev) =>
+                              prev.map((c) =>
+                                c.phone === selected
+                                  ? { ...c, messages: c.messages.map((m) => m.id === msg.id ? { ...m, media_url: newUrl } : m) }
+                                  : c
+                              )
+                            );
+                          }}
+                        />
                       )}
                       {msg.body && (
                         <p className="whitespace-pre-wrap break-words">{msg.body}</p>

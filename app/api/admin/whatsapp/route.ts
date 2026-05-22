@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const base = admin
     .from('whatsapp_conversations')
-    .select('id,phone_number,client_id,case_id,direction,body,media_url,media_type,created_at,needs_review,ai_responded,read_at')
+    .select('id,phone_number,client_id,case_id,direction,body,media_url,media_type,meta_media_id,created_at,needs_review,ai_responded,read_at')
     .order('created_at', { ascending: true });
 
   const { data: msgs, error: qErr } = phone

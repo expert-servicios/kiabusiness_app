@@ -64,6 +64,7 @@ export interface LogConversationParams {
   caseId?: string;
   mediaUrl?: string;
   mediaType?: string;
+  metaMediaId?: string;
 }
 
 export type WaSendResult = { success: true; messageId: string } | { success: false; error: string; detail?: unknown };
@@ -395,6 +396,7 @@ export async function logWhatsAppConversation(params: LogConversationParams): Pr
       case_id:            params.caseId ?? null,
       media_url:          params.mediaUrl ?? null,
       media_type:         params.mediaType ?? null,
+      meta_media_id:      params.metaMediaId ?? null,
     });
   } catch (err) {
     console.error('[WhatsApp] logWhatsAppConversation error:', err);
