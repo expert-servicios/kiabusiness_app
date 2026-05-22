@@ -1385,6 +1385,74 @@ export const services: Service[] = [
     ],
   },
 
+  // ── Holded — Módulos adicionales ───────────────────────────────────────────
+  {
+    slug: 'holded-modulo-laboral',
+    categoria: 'holded',
+    name: 'Módulo Laboral Holded',
+    shortDescription: 'Activación y configuración del módulo laboral en Holded: nóminas, contratos y gestión de empleados.',
+    description:
+      'Implantamos el módulo laboral de Holded para que puedas gestionar nóminas, contratos, altas y bajas en la Seguridad Social integradas directamente con tu contabilidad. Incluye configuración inicial, carga de empleados y prueba de funcionamiento.',
+    price: '180 € + IVA',
+    stripePriceId: 'price_1TZqKbLeYwwgvux4NHtVCmEV',
+    duration: '3–5 días hábiles',
+    includes: [
+      'Configuración inicial del módulo laboral',
+      'Carga de empleados y datos de nómina',
+      'Integración con contabilidad y tesorería',
+      'Prueba de generación de nóminas',
+      'Soporte por email durante 15 días',
+    ],
+    faqs: [
+      { q: '¿Incluye la gestión mensual de nóminas?', a: 'No. Este servicio cubre la configuración e implantación del módulo. La gestión mensual de nóminas es un servicio aparte.' },
+      { q: '¿Necesito tener ya el resto de Holded configurado?', a: 'Sí, recomendamos tener al menos la empresa y la contabilidad configuradas antes de activar el módulo laboral.' },
+    ],
+  },
+  {
+    slug: 'holded-modulo-formacion',
+    categoria: 'holded',
+    name: 'Módulo Formación Holded',
+    shortDescription: 'Sesión de 2 horas de formación práctica en Holded adaptada a tu nivel y flujo de trabajo.',
+    description:
+      'Como Holded Solution Partner, impartimos formación específica sobre los módulos de Holded que usas: facturación, contabilidad, inventario, proyectos o CRM. Sesión de 2 horas por videollamada, con grabación incluida.',
+    price: '180 € + IVA',
+    stripePriceId: 'price_1SyB8ULeYwwgvux4sZbYod1B',
+    duration: '2 horas por sesión',
+    includes: [
+      'Sesión práctica de 2 h por videollamada',
+      'Adaptada a los módulos que usas',
+      'Grabación de la sesión incluida',
+      'Soporte post-sesión por email (7 días)',
+      'Reserva de horario tras el pago',
+    ],
+    faqs: [
+      { q: '¿Puedo solicitar un tema concreto?', a: 'Sí. Nos dices en qué módulo necesitas formación y adaptamos el contenido.' },
+      { q: '¿Cuántas sesiones necesito?', a: 'Depende del módulo. Para facturación básica suele bastar 1. Para contabilidad completa, 3–4 bloques.' },
+    ],
+  },
+  {
+    slug: 'holded-integraciones-api',
+    categoria: 'holded',
+    name: 'Otras Integraciones API Holded',
+    shortDescription: 'Integración de Holded con herramientas externas mediante API: ecommerce, CRM y automatizaciones a medida.',
+    description:
+      'Conectamos Holded con tus herramientas externas mediante la API oficial: tienda online, CRM, plataformas de pago, herramientas de BI o cualquier software que uses. Incluye análisis de viabilidad, desarrollo del conector y pruebas de integración.',
+    price: '180 € + IVA',
+    stripePriceId: 'price_1TZqKeLeYwwgvux4pkUNsDms',
+    duration: 'Variable según alcance',
+    includes: [
+      'Análisis de viabilidad de la integración',
+      'Desarrollo del conector o automatización',
+      'Pruebas de funcionamiento en entorno real',
+      'Documentación básica de la integración',
+      'Soporte técnico durante 15 días',
+    ],
+    faqs: [
+      { q: '¿Qué herramientas se pueden integrar?', a: 'Cualquier herramienta con API REST. Las más habituales: WooCommerce, Shopify, Stripe, HubSpot, Zapier, Google Sheets y herramientas de BI.' },
+      { q: '¿El precio es fijo para cualquier integración?', a: 'El precio base es 180 €. Si la integración es especialmente compleja, te presupuestamos el diferencial antes de iniciar.' },
+    ],
+  },
+
   // ── Formación ──────────────────────────────────────────────────────────────
   {
     slug: 'formacion-fiscal-contable',

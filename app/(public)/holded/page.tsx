@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
+import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
 
@@ -77,7 +78,7 @@ const aiCards = [
 const PACKAGE_META = [
   {
     priceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
-    amountCents: 49000,
+    amountCents: 49900,
     name: 'Pack Starter',
     subtitle: 'Onboarding a Holded',
     badge: null,
@@ -85,13 +86,12 @@ const PACKAGE_META = [
       'Configuración inicial de la cuenta',
       'Setup de empresa, facturación y bancos',
       'Conexión bancaria (Open Banking)',
-      '1 sesión de formación de 2 horas',
       'Soporte por email durante 30 días',
     ],
   },
   {
     priceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
-    amountCents: 120000,
+    amountCents: 89900,
     name: 'Migración completa',
     subtitle: 'Sin módulo de inventario',
     badge: 'Más popular',
@@ -100,13 +100,12 @@ const PACKAGE_META = [
       'Migración de clientes y proveedores',
       'Migración de facturas emitidas y recibidas',
       'Configuración contable completa (PGC)',
-      '2 sesiones de formación de 2 horas',
       'Soporte prioritario durante 60 días',
     ],
   },
   {
     priceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
-    amountCents: 240000,
+    amountCents: 119900,
     name: 'Migración completa',
     subtitle: '+ Módulo de inventario',
     badge: null,
@@ -115,14 +114,37 @@ const PACKAGE_META = [
       'Migración de productos y referencias',
       'Configuración de almacenes y stock inicial',
       'Integración inventario ↔ facturación',
-      '3 sesiones de formación de 2 horas',
       'Soporte prioritario durante 90 días',
     ],
   },
 ];
 
-const FORMACION_PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
-const FORMACION_AMOUNT_CENTS = 18000;
+const ADDONS = [
+  {
+    priceId: 'price_1TZqKbLeYwwgvux4NHtVCmEV',
+    name: 'Módulo Laboral',
+    slug: 'holded-modulo-laboral',
+    displayPrice: '180 € + IVA',
+    Icon: ClipboardCheck,
+    description: 'Nóminas, contratos, altas y bajas en la Seguridad Social integradas directamente con tu contabilidad en Holded.',
+  },
+  {
+    priceId: 'price_1SyB8ULeYwwgvux4sZbYod1B',
+    name: 'Módulo Formación',
+    slug: 'holded-modulo-formacion',
+    displayPrice: '180 € + IVA',
+    Icon: MonitorCheck,
+    description: 'Sesión práctica de 2 horas por videollamada sobre los módulos de Holded que usas, con grabación incluida.',
+  },
+  {
+    priceId: 'price_1TZqKeLeYwwgvux4pkUNsDms',
+    name: 'Otras Integraciones API',
+    slug: 'holded-integraciones-api',
+    displayPrice: '180 € + IVA',
+    Icon: Layers,
+    description: 'Conecta Holded con tu tienda online, CRM, pasarela de pago u otras herramientas mediante la API oficial.',
+  },
+];
 
 function formatPrice(cents: number | null) {
   if (cents === null) return '—';
@@ -146,7 +168,7 @@ const holdedFaq = [
   },
   {
     q: '¿La formación está incluida en el precio de migración?',
-    a: 'Sí. Todos los paquetes de migración incluyen horas de formación onboarding para que arranques con seguridad. También ofrecemos sesiones adicionales de formación por horas si necesitas profundizar en algún módulo.',
+    a: 'La formación es un módulo independiente disponible por 180 € + IVA. Puedes añadirla a la cesta junto al paquete de migración o contratarla por separado si ya tienes Holded y quieres mejorar el uso que le das.',
   },
   {
     q: '¿Puedo probar Holded antes de contratar la migración?',
@@ -167,8 +189,6 @@ const holdedFaq = [
 ];
 
 export default async function HoldedPage() {
-  const formacionPrice = FORMACION_AMOUNT_CENTS;
-
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
 
@@ -389,22 +409,6 @@ export default async function HoldedPage() {
                     ))}
                   </ul>
 
-                  <div className="mt-4 flex items-center gap-2 border border-[#D4A017]/40 bg-[#D4A017]/8 px-3 py-2">
-                    <Gift className="h-4 w-4 shrink-0 text-[#D4A017]" />
-                    <p className="text-xs font-bold text-[#0D1B2A]">2 horas de formación onboarding GRATIS</p>
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-2 border border-[#D4A017]/20 bg-[#F8F6F1] px-3 py-2">
-                    <Bot className="h-4 w-4 shrink-0 text-[#D4A017]" />
-                    <p className="text-xs text-[#23364D]">
-                      <span className="font-semibold">Opcional:</span> activar{' '}
-                      <Link href="/holded/conectores" className="font-bold text-[#D4A017] hover:underline">
-                        Conectores e IA
-                      </Link>{' '}
-                      (fase 2)
-                    </p>
-                  </div>
-
                   <div className="mt-4 space-y-2">
                     <HoldedBuyButton priceId={pkg.priceId} packageName={`${pkg.name} ${pkg.subtitle}`} />
                     <Link
@@ -506,44 +510,35 @@ export default async function HoldedPage() {
         </div>
       </section>
 
-      {/* ── Formación por horas — CTA horizontal ─────────────────────────── */}
-      <section id="formacion" className="px-6 py-10 md:py-12">
+      {/* ── Módulos adicionales ───────────────────────────────────────────── */}
+      <section id="modulos" className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
-          <div className="border border-[#D4A017] bg-white p-6 md:p-8">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#D4A017]/10">
-                  <MonitorCheck className="h-7 w-7 text-[#D4A017]" />
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Módulos adicionales</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
+              Amplía tu implantación con módulos independientes.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-[#23364D]">
+              Disponibles de forma independiente. Añádelos a la cesta y tramítalos junto al paquete o por separado.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {ADDONS.map(({ priceId, name, slug, displayPrice, Icon, description }) => (
+              <div key={priceId} className="flex flex-col border border-[#D4A017]/25 bg-white p-7">
+                <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10">
+                  <Icon className="h-6 w-6 text-[#D4A017]" />
                 </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Formación</p>
-                  <h2 className="mt-1 font-serif text-2xl font-bold text-[#0D1B2A]">
-                    Formación en Holded por horas
-                  </h2>
-                  <p className="mt-2 max-w-lg text-sm leading-6 text-[#23364D]">
-                    ¿Ya tienes Holded pero necesitas mejorar el uso que le das? Sesiones de 2 horas por videollamada, adaptadas a tu nivel y flujo de trabajo.
-                  </p>
-                  <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
-                    {[
-                      'Sesión de 2 h por videollamada',
-                      'Contenido adaptado a tu sector',
-                      'Grabación de la sesión incluida',
-                      'Reserva tu horario tras el pago',
-                    ].map((f) => (
-                      <li key={f} className="flex items-center gap-1.5 text-xs text-[#23364D]">
-                        <Check className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <h3 className="mt-5 font-serif text-xl font-bold text-[#0D1B2A]">{name}</h3>
+                <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">{description}</p>
+                <p className="mt-5 font-serif text-3xl font-bold text-[#0D1B2A]">{displayPrice}</p>
+                <p className="mb-5 mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
+                <AddToCartButton
+                  item={{ priceId, name, displayPrice, slug, category: 'holded' }}
+                  label="Añadir a la cesta"
+                />
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <p className="font-serif text-4xl font-bold text-[#0D1B2A]">{formatPrice(formacionPrice)}</p>
-                <p className="mb-4 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
-                <HoldedBuyButton priceId={FORMACION_PRICE_ID} packageName="Formación Holded por horas" />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
