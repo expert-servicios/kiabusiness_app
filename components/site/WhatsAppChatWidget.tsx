@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
-import { X, MessageCircle } from 'lucide-react';
+import { X } from 'lucide-react';
+import { createBrowserClient } from '@supabase/ssr';
 
 const WA_NUMBER = '34696550480';
+const SESSION_KEY = 'kia_bubble_dismissed';
 
-// ── Time-based greeting ───────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -15,86 +18,104 @@ function getGreeting(): string {
   return '¡Buenas noches!';
 }
 
-// ── Fiscal calendar tips (Spain) ──────────────────────────────────────────────
+interface FiscalChip { icon: string; label: string; waMsg: string }
 
-interface FiscalTip { icon: string; text: string }
-
-function getFiscalTip(): FiscalTip | null {
+function getFiscalChip(): FiscalChip | null {
   const now   = new Date();
-  const month = now.getMonth() + 1; // 1-12
+  const month = now.getMonth() + 1;
   const day   = now.getDate();
+  const year  = now.getFullYear();
 
-  // IRPF campaign: 3 April – 30 June
+  // IRPF campaign: 3 Apr – 30 Jun
   if ((month === 4 && day >= 3) || month === 5 || (month === 6 && day <= 30)) {
-    return { icon: '📋', text: `Estamos en campaña de la Renta ${now.getFullYear() - 1} (hasta el 30 de junio). ¿Necesitas ayuda con tu declaración?` };
+    return { icon: '📋', label: `Campaña Renta ${year - 1}`, waMsg: `Hola Kia, quiero consultar sobre la Campaña de la Renta ${year - 1}.` };
   }
-  // Modelo 720: 1 Jan – 31 March
+  // Modelo 720: Jan–Mar
   if (month <= 3) {
-    const daysLeft = Math.round((new Date(now.getFullYear(), 2, 31).getTime() - now.getTime()) / 86400000);
+    const daysLeft = Math.round((new Date(year, 2, 31).getTime() - now.getTime()) / 86400000);
     if (daysLeft <= 15) {
-      return { icon: '⚠️', text: `Quedan ${daysLeft} días para el Modelo 720 (bienes en el extranjero). ¡No dejes que venza!` };
+      return { icon: '⚠️', label: `M720 — ${daysLeft} días`, waMsg: 'Hola Kia, necesito ayuda urgente con el Modelo 720 (bienes en el extranjero).' };
     }
-    return { icon: '🌍', text: 'El Modelo 720 vence el 31 de marzo. ¿Tienes bienes o cuentas en el extranjero?' };
+    return { icon: '🌍', label: 'Modelo 720', waMsg: 'Hola Kia, tengo bienes o cuentas en el extranjero y quiero saber si tengo que presentar el M720.' };
   }
-  // Q1 IVA: 1-20 April
-  if (month === 4 && day <= 2) {
-    return { icon: '📊', text: 'Vencen hoy las declaraciones trimestrales Q1 (IVA, IRPF). ¿Necesitas gestión urgente?' };
+  // Quarterly VAT: Q1 1–20 Apr, Q2 1–20 Jul, Q3 1–20 Oct
+  if ((month === 4 && day <= 2) || (month === 7 && day <= 20) || (month === 10 && day <= 20)) {
+    return { icon: '📊', label: 'Impuestos trimestrales', waMsg: 'Hola Kia, necesito ayuda con las declaraciones trimestrales de IVA e IRPF.' };
   }
-  // Q2 IVA: 1-20 July
-  if (month === 7 && day <= 20) {
-    return { icon: '📊', text: 'Esta semana vencen las declaraciones trimestrales Q2. ¿Eres autónomo? Podemos ayudarte.' };
-  }
-  // Q3 IVA: 1-20 October
-  if (month === 10 && day <= 20) {
-    return { icon: '📊', text: 'Esta semana vencen las declaraciones trimestrales Q3. Autónomos, ¡no os perdáis la fecha!' };
-  }
-  // Q4 / Year-end: November – December
+  // Q4 / year-end
   if (month >= 11) {
-    return { icon: '📅', text: `Fin de año fiscal: buen momento para revisar tu situación tributaria y planificar ${now.getFullYear() + 1}.` };
+    return { icon: '📅', label: `Planificación fiscal ${year + 1}`, waMsg: `Hola Kia, quiero revisar mi situación fiscal antes de que acabe el año y planificar ${year + 1}.` };
   }
   return null;
 }
 
-// ── WhatsApp link ─────────────────────────────────────────────────────────────
-
-function getWaUrl(isReturning: boolean, tip: FiscalTip | null): string {
-  let msg: string;
-  if (isReturning) {
-    msg = tip
-      ? `Hola Kia, soy cliente de EXPERT. Me interesa: ${tip.text}`
-      : 'Hola Kia, soy cliente de EXPERT. ¿Podéis ayudarme?';
-  } else {
-    msg = 'Hola, me gustaría obtener información sobre vuestros servicios de asesoría.';
-  }
+function buildWaUrl(msg: string) {
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
-// ── Widget ────────────────────────────────────────────────────────────────────
+// ── Quick-reply action types ──────────────────────────────────────────────────
 
-const SESSION_KEY = 'kia_bubble_dismissed';
-const VISITED_KEY = 'kia_visited';
+type Action =
+  | { kind: 'link'; href: string; label: string; icon: string; external?: true }
+  | { kind: 'wa';   msg:  string; label: string; icon: string };
+
+const ANON_BASE: Action[] = [
+  { kind: 'link', href: '/servicios',                      label: 'Ver catálogo',    icon: '📋' },
+  { kind: 'link', href: 'https://expertconsulting.es/cita', label: 'Solicitar cita',  icon: '📅', external: true },
+  { kind: 'wa',   msg: 'Hola Kia, tengo una consulta fiscal.',                        label: 'Consulta fiscal', icon: '💬' },
+];
+
+const USER_BASE: Action[] = [
+  { kind: 'link', href: '/dashboard/expedientes', label: 'Mis expedientes',    icon: '📁' },
+  { kind: 'wa',   msg: 'Hola Kia, soy cliente de EXPERT. Tengo una duda sobre mi expediente.', label: 'Duda sobre mi caso', icon: '💬' },
+  { kind: 'link', href: '/servicios',             label: 'Ver catálogo',       icon: '📋' },
+];
+
+function buildActions(loggedIn: boolean, chip: FiscalChip | null): Action[] {
+  const base = [...(loggedIn ? USER_BASE : ANON_BASE)];
+  if (chip) base.push({ kind: 'wa', msg: chip.waMsg, label: chip.label, icon: chip.icon });
+  return base;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function WhatsAppChatWidget() {
-  const [bubbleOpen,  setBubbleOpen]  = useState(false);
-  const [dismissed,   setDismissed]   = useState(false);
-  const [isReturning, setIsReturning] = useState(false);
-  const [greeting,    setGreeting]    = useState('¡Hola!');
-  const [fiscalTip,   setFiscalTip]   = useState<FiscalTip | null>(null);
+  const [bubbleOpen, setBubbleOpen] = useState(false);
+  const [dismissed,  setDismissed]  = useState(false);
+  const [greeting,   setGreeting]   = useState('¡Hola!');
+  const [fiscalChip, setFiscalChip] = useState<FiscalChip | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName,   setUserName]   = useState<string | null>(null);
   const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setGreeting(getGreeting());
-    setFiscalTip(getFiscalTip());
-
-    const alreadyVisited = !!localStorage.getItem(VISITED_KEY);
-    setIsReturning(alreadyVisited);
-    localStorage.setItem(VISITED_KEY, '1');
+    setFiscalChip(getFiscalChip());
 
     if (sessionStorage.getItem(SESSION_KEY)) {
       setDismissed(true);
       return;
     }
+
+    // Auth detection — session cache, no network round-trip
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      setIsLoggedIn(true);
+      supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', session.user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          const first = data?.full_name?.split(' ')[0];
+          if (first) setUserName(first);
+        });
+    });
 
     // Auto-show on desktop after 5 s
     if (window.innerWidth >= 768) {
@@ -115,20 +136,31 @@ export function WhatsAppChatWidget() {
     return () => document.removeEventListener('mousedown', handler);
   }, [bubbleOpen]);
 
-  const dismiss = useCallback(() => {
+  const dismiss     = useCallback(() => {
     setBubbleOpen(false);
     setDismissed(true);
     sessionStorage.setItem(SESSION_KEY, '1');
   }, []);
+  const toggleBubble = useCallback(() => setBubbleOpen(v => !v), []);
 
-  const toggleBubble = useCallback(() => setBubbleOpen((v) => !v), []);
+  const greetingBody = isLoggedIn
+    ? userName
+      ? `Bienvenido/a, ${userName} 😊 ¿En qué puedo ayudarte hoy?`
+      : 'Bienvenido/a de nuevo a EXPERT 😊 ¿En qué puedo ayudarte hoy?'
+    : 'Soy Kia, la asistente de EXPERT. ¿Tienes una consulta sobre fiscalidad, extranjería o empresa?';
 
-  const waUrl = getWaUrl(isReturning, fiscalTip);
+  const actions = buildActions(isLoggedIn, fiscalChip);
+
+  const fallbackWaUrl = buildWaUrl(
+    isLoggedIn
+      ? 'Hola Kia, soy cliente de EXPERT. ¿Podéis ayudarme?'
+      : 'Hola, me gustaría obtener información sobre los servicios de EXPERT.',
+  );
 
   return (
     <div ref={bubbleRef} className="flex flex-col items-end gap-3">
 
-      {/* ── Popup bubble ── */}
+      {/* ── Popup bubble ─────────────────────────────────────────────────── */}
       <div
         className={[
           'w-72 rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-[#D4A017]/20 overflow-hidden',
@@ -137,18 +169,12 @@ export function WhatsAppChatWidget() {
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
         ].join(' ')}
-        aria-hidden={(!bubbleOpen || dismissed) ? 'true' : 'false'}
+        aria-hidden={!bubbleOpen || dismissed}
       >
         {/* Header */}
         <div className="flex items-center gap-3 bg-[#0D1B2A] px-4 py-3">
           <div className="relative h-10 w-10 shrink-0">
-            <Image
-              src="/branding/kia_bot.png"
-              alt="Kia"
-              fill
-              className="rounded-full object-cover"
-              sizes="40px"
-            />
+            <Image src="/branding/kia_bot.png" alt="Kia" fill className="rounded-full object-cover" sizes="40px" />
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#25D366] border-2 border-[#0D1B2A]" aria-label="En línea" />
           </div>
           <div className="min-w-0 flex-1">
@@ -166,45 +192,64 @@ export function WhatsAppChatWidget() {
         </div>
 
         {/* Body */}
-        <div className="px-4 pt-4 pb-3 space-y-2.5">
-          {/* Chat bubble */}
+        <div className="px-4 pt-4 pb-2 space-y-3">
+          {/* Greeting bubble */}
           <div className="rounded-2xl rounded-tl-none bg-[#F8F6F1] px-3.5 py-2.5 text-sm text-[#0D1B2A] leading-relaxed">
-            <span className="font-semibold">{greeting}</span>{' '}
-            {isReturning
-              ? 'Bienvenido/a de nuevo a EXPERT 😊 ¿En qué puedo ayudarte hoy?'
-              : 'Soy Kia, la asistente virtual de EXPERT. ¿Tienes una consulta sobre fiscalidad, extranjería o empresa?'}
+            <span className="font-semibold">{greeting}</span>{' '}{greetingBody}
           </div>
 
-          {/* Fiscal tip */}
-          {fiscalTip && (
-            <div className="rounded-2xl rounded-tl-none bg-[#D4A017]/10 border border-[#D4A017]/25 px-3.5 py-2.5 text-xs text-[#23364D] leading-relaxed">
-              <span className="mr-1">{fiscalTip.icon}</span>
-              <span className="font-medium">{fiscalTip.text}</span>
-            </div>
-          )}
+          {/* Quick-reply chips */}
+          <div className="flex flex-col gap-1.5">
+            {actions.map(action =>
+              action.kind === 'link' ? (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  target={action.external ? '_blank' : undefined}
+                  rel={action.external ? 'noopener noreferrer' : undefined}
+                  onClick={dismiss}
+                  className="flex items-center gap-2.5 rounded-xl border border-[#D4A017]/30 bg-white px-3.5 py-2 text-xs font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                >
+                  <span aria-hidden="true">{action.icon}</span>
+                  {action.label}
+                </Link>
+              ) : (
+                <a
+                  key={action.label}
+                  href={buildWaUrl(action.msg)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={dismiss}
+                  className="flex items-center gap-2.5 rounded-xl border border-[#D4A017]/30 bg-white px-3.5 py-2 text-xs font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                >
+                  <span aria-hidden="true">{action.icon}</span>
+                  {action.label}
+                </a>
+              )
+            )}
+          </div>
         </div>
 
-        {/* CTA */}
-        <div className="px-4 pb-4">
+        {/* Footer — direct WhatsApp fallback */}
+        <div className="px-4 pb-4 pt-2">
           <a
-            href={waUrl}
+            href={fallbackWaUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={dismiss}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1ebe5d] transition-colors"
           >
-            <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Iniciar chat con Kia
+            <WhatsAppIcon className="h-4 w-4" />
+            Chatear con Kia
           </a>
         </div>
       </div>
 
-      {/* ── Floating avatar button — hidden while popup is open ── */}
+      {/* ── Floating avatar button ────────────────────────────────────────── */}
       {(!bubbleOpen || dismissed) && (
         dismissed ? (
-          /* After dismissal: direct WhatsApp link */
           <a
-            href={waUrl}
+            href={fallbackWaUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chatear con Kia en WhatsApp"
@@ -215,11 +260,10 @@ export function WhatsAppChatWidget() {
               <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
-              <WhatsAppIcon />
+              <WhatsAppIcon className="h-3 w-3" />
             </span>
           </a>
         ) : (
-          /* Default: toggle bubble open */
           <button
             type="button"
             onClick={toggleBubble}
@@ -231,7 +275,7 @@ export function WhatsAppChatWidget() {
               <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
-              <WhatsAppIcon />
+              <WhatsAppIcon className="h-3 w-3" />
             </span>
             <span className="absolute inset-0 rounded-full border-2 border-[#25D366]/50 animate-ping" aria-hidden="true" />
           </button>
@@ -241,9 +285,9 @@ export function WhatsAppChatWidget() {
   );
 }
 
-function WhatsAppIcon() {
+function WhatsAppIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-white" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={`${className} fill-white`} aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
     </svg>
   );
