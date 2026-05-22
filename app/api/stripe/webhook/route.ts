@@ -273,6 +273,47 @@ export async function POST(req: NextRequest) {
         session.metadata?.service_names ??
         'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
+      const paymentId  = (session.payment_intent as string) ?? session.id;
+
+      // ── Idempotency: create order record for catalog payment ──
+      const { data: existingCatalogOrder } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('stripe_payment_id', paymentId)
+        .maybeSingle();
+
+      let catalogOrderId: string | undefined;
+      if (!existingCatalogOrder) {
+        const { data: newCatalogOrder, error: catalogOrderError } = await supabaseAdmin
+          .from('orders')
+          .insert({
+            source          : 'catalog',
+            client_id       : session.client_reference_id ?? null,
+            stripe_payment_id: paymentId,
+            amount_eur      : amountEur,
+            currency        : session.currency?.toUpperCase() ?? 'EUR',
+            status          : 'paid',
+            service_slugs   : session.metadata?.service_slugs ?? session.metadata?.service_slug ?? null,
+            metadata        : {
+              checkout_session: {
+                id             : session.id,
+                payment_intent : session.payment_intent,
+                customer_email : customerEmail ?? null,
+                product_type   : productType,
+              },
+            },
+          })
+          .select('id')
+          .single();
+
+        if (catalogOrderError) {
+          console.error('[webhook] catalog order insert failed:', catalogOrderError);
+        } else {
+          catalogOrderId = newCatalogOrder?.id;
+        }
+      } else {
+        catalogOrderId = existingCatalogOrder.id;
+      }
 
       if (customerEmail) {
         const tpl = servicePaymentConfirmed(customerName, amountEur, serviceName);
@@ -291,9 +332,9 @@ export async function POST(req: NextRequest) {
           clientEmail: customerEmail,
           description: serviceName,
           amountEur,
-          orderId: session.id,
-          localEntity: 'stripe_checkout_sessions'
-        }).catch((err) => console.error('[webhook] holded sync (service) failed:', err));
+          orderId: catalogOrderId ?? session.id,
+          localEntity: 'orders'
+        }).catch((err) => console.error('[webhook] holded sync (catalog) failed:', err));
       }
     }
 

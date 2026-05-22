@@ -20,7 +20,11 @@ export default function CarritoPage() {
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
       });
-      const data = await res.json() as { url?: string; error?: string };
+      const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean };
+      if (res.status === 401 || data.requiresAuth) {
+        window.location.href = '/acceso?next=/carrito';
+        return;
+      }
       if (data.url) {
         clearCart();
         window.location.href = data.url;

@@ -7,6 +7,7 @@ import {
   getServiceCheckoutMetadata,
 } from '@/lib/integrations/service-checkout';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 
 // Accept either a single priceId (backwards compat) or an array (cart checkout).
 const checkoutSchema = z.object({
@@ -16,6 +17,13 @@ const checkoutSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication — no anonymous payments (rule: login obligatorio antes de pago).
+    const supabase = createServerSupabaseClient(request);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Debes iniciar sesión para continuar.', requiresAuth: true }, { status: 401 });
+    }
+
     const parseResult = checkoutSchema.safeParse(await request.json());
     if (!parseResult.success) {
       return NextResponse.json({ error: 'Datos de checkout no validos.' }, { status: 400 });
@@ -37,13 +45,14 @@ export async function POST(request: NextRequest) {
       : `${appUrl}/carrito`;
 
     const session = await stripe.checkout.sessions.create({
-      mode      : 'payment',
-      automatic_tax: { enabled: true },
-      line_items: checkoutServices.map(getServiceCheckoutLineItem),
-      success_url: `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
-      cancel_url : cancelUrl,
-      metadata   : getServiceCheckoutMetadata(checkoutServices),
-      locale: 'es',
+      mode                : 'payment',
+      automatic_tax       : { enabled: true },
+      client_reference_id : user.id,
+      line_items          : checkoutServices.map(getServiceCheckoutLineItem),
+      success_url         : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
+      cancel_url          : cancelUrl,
+      metadata            : getServiceCheckoutMetadata(checkoutServices),
+      locale              : 'es',
     });
 
     return NextResponse.json({ url: session.url });
