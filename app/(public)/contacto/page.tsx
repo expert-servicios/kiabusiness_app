@@ -120,9 +120,10 @@ export default function ContactoPage() {
             </a>
 
             <CalendlyButton
-              url={process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa'}
-              title="Reunión informativa gratuita"
-              subtitle="15 minutos · Sin compromiso"
+              url={
+                (process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa') +
+                '?hide_event_type_details=1&hide_gdpr_banner=1&background_color=f8f6f1&text_color=0d1b2a&primary_color=f2c14e'
+              }
               className="flex flex-col border border-[#D4A017] bg-white p-5 text-left transition hover:bg-[#D4A017]/5"
             >
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Gratis · 15 minutos</p>
