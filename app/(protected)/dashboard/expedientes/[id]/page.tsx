@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, FolderOpen, Info } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
@@ -30,6 +30,15 @@ interface Message {
   sender_role: string;
   created_at: string;
   profiles: { full_name: string | null } | null;
+}
+
+interface WaAttachment {
+  id: string;
+  direction: 'inbound' | 'outbound';
+  body: string;
+  media_url: string;
+  media_type: string;
+  created_at: string;
 }
 
 const STATE_COLORS: Record<string, string> = {
@@ -182,10 +191,11 @@ async function fetchWithCookies(path: string) {
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [casesData, docsData, messagesData] = await Promise.all([
+  const [casesData, docsData, messagesData, waData] = await Promise.all([
     fetchWithCookies('/api/cases'),
     fetchWithCookies(`/api/cases/${id}/documents`),
-    fetchWithCookies(`/api/cases/${id}/messages`)
+    fetchWithCookies(`/api/cases/${id}/messages`),
+    fetchWithCookies(`/api/cases/${id}/whatsapp-attachments`),
   ]);
 
   const caseItem = (casesData?.cases as CaseDetail[] | undefined)?.find((c) => c.id === id);
@@ -193,6 +203,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
   const documents: Document[] = docsData?.documents ?? [];
   const messages: Message[] = messagesData?.messages ?? [];
+  const waAttachments: WaAttachment[] = waData?.attachments ?? [];
 
   const guide = STATE_GUIDE[caseItem.state] ?? STATE_GUIDE.en_proceso;
   const progressState = normalizeCaseStateForProgress(caseItem.state);
@@ -317,6 +328,53 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" />
           </div>
         </div>
+
+        {/* WhatsApp attachments */}
+        {waAttachments.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-[#25D366]" />
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">
+                Archivos enviados por WhatsApp
+              </p>
+              <span className="ml-auto rounded-full bg-[#f8f4eb] px-2.5 py-0.5 text-xs font-semibold text-[#29384a]">
+                {waAttachments.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {waAttachments.map((att) => {
+                const isImage = att.media_type === 'image';
+                const isAudio = att.media_type === 'audio';
+                const isVideo = att.media_type === 'video';
+                const Icon = isImage ? ImageIcon : isAudio ? Mic : isVideo ? Video : FileText;
+                const label = isImage ? 'Imagen' : isAudio ? 'Audio' : isVideo ? 'Vídeo' : 'Documento';
+                const caption = att.body.startsWith('[') ? label : att.body;
+                return (
+                  <div key={att.id} className="flex items-center gap-3 rounded-xl border border-[#f0e8d8] bg-[#f8f4eb] px-4 py-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366]/10">
+                      <Icon className="h-4 w-4 text-[#1a9e4a]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[#07111d]">{caption}</p>
+                      <p className="text-[10px] text-[#29384a]/50">
+                        {new Date(att.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}{att.direction === 'inbound' ? 'Enviado por ti' : 'Enviado por EXPERT'}
+                      </p>
+                    </div>
+                    <a
+                      href={att.media_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-semibold text-[#07111d] hover:bg-[#f0e9d8] transition"
+                    >
+                      {isImage ? 'Ver' : 'Descargar'}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </div>
     </main>

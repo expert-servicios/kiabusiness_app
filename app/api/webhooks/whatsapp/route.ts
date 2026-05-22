@@ -535,6 +535,11 @@ export async function POST(request: NextRequest) {
           ackBody = `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
         } else if (openCases.length === 1) {
           ackBody = `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} y lo hemos vinculado al expediente de *${openCases[0].service}* ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+          // Actually link the media message to the case in the DB
+          await admin.from('whatsapp_conversations')
+            .update({ case_id: openCases[0].id })
+            .eq('whatsapp_message_id', messageId)
+            .eq('phone_number', from);
         } else {
           // Multiple open cases — ask which one, save pending doc in session
           await persistSessionUpdates(admin, from, {
