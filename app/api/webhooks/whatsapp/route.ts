@@ -14,7 +14,6 @@ import { sendEmail } from '@/lib/email/send';
 import { documentRequired } from '@/lib/email/templates';
 import {
   processKiaStep,
-  getServicePageUrl,
   type KiaSession,
   type KiaReply,
   type KiaSideEffects,
@@ -163,16 +162,18 @@ async function sendKiaReply(
 // ── Handle Kia side effects ───────────────────────────────────────────────────
 
 async function handleKiaSideEffects({
-  sideEffects, session, phone, clientId, admin,
+  sideEffects, session, phone, clientId, contactCtx, admin,
 }: {
   sideEffects : KiaSideEffects;
   session     : KiaSession;
   phone       : string;
   clientId    : string | undefined;
+  contactCtx ?: KiaContactContext;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin       : any;
 }): Promise<void> {
   const { escalate, createCase, saveLead, sendDocsEmail, sendPaymentLink, priority = 'normal' } = sideEffects;
+  const contactStatus = contactCtx?.status ?? (clientId ? 'client' : 'lead');
 
   if (escalate) {
     await admin
@@ -202,15 +203,14 @@ async function handleKiaSideEffects({
     }).catch((e: unknown) => console.error('[Kia createCase]', e));
   }
 
-  if (!clientId && (saveLead || createCase)) {
-    // Only upsert leads when the contact is NOT already a registered client.
-    // leads table requires name, email, client_type, category, service (NOT NULL).
-    // Provide safe defaults for WhatsApp contacts that may not have shared their email yet.
+  if (contactStatus === 'lead' && !clientId && (saveLead || createCase)) {
+    // Only upsert leads when the contact is not already a registered client.
+    // WhatsApp leads are phone-first; email is nullable after 20260522130000.
     await admin.from('leads').upsert(
       {
         phone,
         name        : session.name ?? phone,
-        email       : session.email ?? `wa.${phone}@noreply.expert`,
+        email       : session.email ?? null,
         client_type : 'particular',
         category    : svc?.category ?? 'general',
         service     : svc?.label.es ?? 'Consulta WhatsApp',
@@ -264,15 +264,13 @@ interface KiaAiContext {
   clientId?           : string;
   phone               : string;
   msgBody             : string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  admin               : any;
   session             : KiaSession;
   conversationHistory : { direction: string; body: string }[];
   contactCtx         ?: KiaContactContext;
 }
 
 async function generateKiaAiResponse({
-  clientId, msgBody, admin, session, conversationHistory, contactCtx,
+  clientId, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
   const lang               = session.lang;
   const languageInstruction = lang === 'ru'
@@ -284,20 +282,31 @@ async function generateKiaAiResponse({
   );
 
   let clientContext = '';
-  if (clientId) {
-    const [{ data: profile }, { data: cases }, { data: obligations }] = await Promise.all([
-      admin.from('profiles').select('full_name, email, phone').eq('id', clientId).single(),
-      admin.from('cases').select('service, category, state, opened_at').eq('client_id', clientId).order('opened_at', { ascending: false }).limit(5),
-      admin.from('fiscal_obligations').select('modelo, description, deadline, status').eq('user_id', clientId).eq('status', 'pending').order('deadline').limit(5),
-    ]);
-    const name     = profile?.full_name ?? session.name ?? 'el cliente';
-    const caseList = (cases ?? []).map((c: { service: string; category: string; state: string; opened_at: string }) =>
-      `- ${c.service} (${c.category}): estado "${c.state}", abierto el ${new Date(c.opened_at).toLocaleDateString('es-ES')}`
+  if (contactCtx) {
+    const caseList = contactCtx.openCases.map((c) =>
+      `- ${c.service} (${c.category ?? 'sin categoría'}): estado "${c.state}", abierto el ${new Date(c.opened_at).toLocaleDateString('es-ES')}`
     ).join('\n');
-    const obList = (obligations ?? []).map((o: { modelo: string; description: string; deadline: string }) =>
-      `- M${o.modelo} ${o.description}: vence ${new Date(o.deadline).toLocaleDateString('es-ES')}`
+    const obList = contactCtx.pendingFiscalObligations.map((o) =>
+      `- M${o.modelo} ${o.description}: vence ${new Date(o.deadline).toLocaleDateString('es-ES')} (${o.status})`
     ).join('\n');
-    clientContext = `Cliente: ${name}\nExpedientes activos:\n${caseList || 'Ninguno'}\nObligaciones fiscales pendientes:\n${obList || 'Ninguna'}`;
+    clientContext = [
+      `Contact status: ${contactCtx.status}`,
+      `Teléfono: ${contactCtx.phone}`,
+      `ClientId: ${contactCtx.clientId ?? 'no'}`,
+      `LeadId: ${contactCtx.leadId ?? 'no'}`,
+      `Nombre: ${contactCtx.name ?? session.name ?? 'desconocido'}`,
+      `Email: ${contactCtx.email ?? session.email ?? 'no disponible'}`,
+      `Rol: ${contactCtx.role ?? 'sin rol'}`,
+      `Perfil completado: ${contactCtx.profileCompleted ? 'sí' : 'no'}`,
+      `Facturación lista: ${contactCtx.billingReady ? 'sí' : 'no'}`,
+      `Dirección habitual lista: ${contactCtx.habitualAddressReady ? 'sí' : 'no'}`,
+      `Último estado lead: ${contactCtx.lastLeadStatus ?? 'no aplica'}`,
+      `Último servicio seleccionado: ${contactCtx.lastSelectedService ?? session.service_id ?? 'no aplica'}`,
+      `Expedientes activos:\n${caseList || 'Ninguno'}`,
+      `Obligaciones fiscales pendientes:\n${obList || 'Ninguna'}`,
+    ].join('\n');
+  } else if (clientId) {
+    clientContext = `Cliente registrado (${clientId}). No se pudo cargar contexto ampliado.`;
   } else if (session.name || session.email) {
     clientContext = `Contacto por WhatsApp: ${session.name ?? 'cliente'}${session.email ? ` · email: ${session.email}` : ''}\nSin cuenta en el portal.`;
   } else {
@@ -395,7 +404,7 @@ REGLAS PARA LEAD:
 - Siempre terminar con acción comercial: viabilidad, llamada 15 min o contratar.
 `}
 
-CONTEXTO DEL CLIENTE:
+CONTEXTO DEL CONTACTO:
 ${clientContext}`;
 
   const messages: WabaAiMessage[] = conversationHistory.map((h) => ({
@@ -458,11 +467,12 @@ export async function POST(request: NextRequest) {
 
       const from       : string = msg.from;
       const messageId  : string = msg.id;
-      const clientId             = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
-      const senderName           = profiles?.find((p) => p.id === clientId)?.full_name ?? from;
 
       // Resolve contact context (lead vs client) — single query, cached per message
       const contactCtx: KiaContactContext = await resolveKiaContactContext(admin, from);
+      const mappedClientId       = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
+      const clientId             = contactCtx.clientId ?? mappedClientId;
+      const senderName           = contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? from;
 
       // ── Media: download, store, log, notify, and ACK ─────────────────
       if (isMedia) {
@@ -490,22 +500,24 @@ export async function POST(request: NextRequest) {
         // ── Kia response to media ─────────────────────────────────────
         const mediaSess  = await getOrCreateSession(admin, from, clientId);
         const docRef     = storedUrl ?? mediaId ?? null;
-        const clientDisplay = mediaSess.name ?? senderName;
+        const clientDisplay = contactCtx.name ?? mediaSess.name ?? senderName;
 
-        if (!clientId && !mediaSess.name) {
-          // Unknown number — ask for identification first, save pending doc
+        if (contactCtx.status === 'lead') {
           await persistSessionUpdates(admin, from, {
-            flow: 'identify_for_doc',
-            step: 'awaiting_name',
+            flow: !contactCtx.name && !mediaSess.name ? 'identify_for_doc' : 'lead_media_followup',
+            step: !contactCtx.name && !mediaSess.name ? 'awaiting_name' : 'awaiting_service',
             data: {
               ...mediaSess.data,
               pending_doc_url:      docRef ?? '',
               pending_doc_type:     msgType,
               pending_doc_caption:  caption,
               pending_doc_filename: rawFilename,
+              pending_doc_message_id: messageId,
             },
           });
-          const askMsg = `👋 ¡Hola! Hemos recibido tu ${mediaLabel} y lo hemos guardado de forma segura.\n\nPara vincularlo a tu ficha y darte seguimiento, necesito identificarte. ¿Cuál es tu nombre?`;
+          const askMsg = !contactCtx.name && !mediaSess.name
+            ? `👋 ¡Hola! Hemos recibido tu ${mediaLabel} y lo hemos guardado de forma segura.\n\nPara vincularlo a tu ficha y darte seguimiento, necesito identificarte. ¿Cuál es tu nombre?`
+            : `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} ✅\n\nPara orientarlo correctamente, dime a qué trámite corresponde o si prefieres reservar una llamada de 15 min antes de contratar.`;
           const sentAsk = await sendWhatsAppMessage({ to: from, body: askMsg });
           if (sentAsk.success) {
             await logWhatsAppConversation({
@@ -513,21 +525,17 @@ export async function POST(request: NextRequest) {
               body: askMsg, whatsappMessageId: sentAsk.messageId, aiResponded: false, needsReview: false,
             });
           }
+          await admin.from('whatsapp_conversations')
+            .update({ needs_review: true })
+            .eq('whatsapp_message_id', messageId)
+            .eq('phone_number', from);
           continue;
         }
 
-        // Known number — check open expedientes
-        let openCases: Array<{ id: string; service: string }> = [];
-        if (clientId) {
-          const { data: casesData } = await admin
-            .from('cases')
-            .select('id, service')
-            .eq('client_id', clientId)
-            .neq('state', 'cerrado')
-            .order('opened_at', { ascending: false })
-            .limit(3);
-          openCases = casesData ?? [];
-        }
+        // Client number — use resolved open expedientes.
+        const openCases: Array<{ id: string; service: string }> = contactCtx.openCases
+          .slice(0, 3)
+          .map((c) => ({ id: c.id, service: c.service }));
 
         let ackBody: string;
 
@@ -551,6 +559,7 @@ export async function POST(request: NextRequest) {
               pending_doc_type:     msgType,
               pending_doc_caption:  caption,
               pending_doc_filename: rawFilename,
+              pending_doc_message_id: messageId,
             },
           });
           const caseButtons = openCases.slice(0, 3).map((c) => ({ id: `doc_case_${c.id}`, title: c.service.slice(0, 20) }));
@@ -719,13 +728,30 @@ export async function POST(request: NextRequest) {
         const docCaption = docSess.data?.pending_doc_caption ?? '';
         const mediaIcon  = docType === 'image' ? '📷' : docType === 'audio' ? '🎤' : docType === 'video' ? '🎥' : '📄';
         const mediaLabel = docType === 'document' ? 'documento' : docType === 'image' ? 'imagen' : docType === 'audio' ? 'audio' : 'archivo';
-        const { data: selectedCase } = await admin.from('cases').select('service').eq('id', caseId).single();
+        const { data: selectedCase } = await admin
+          .from('cases')
+          .select('service')
+          .eq('id', caseId)
+          .eq('client_id', clientId ?? '')
+          .maybeSingle();
+        if (!selectedCase) {
+          const bad = 'No he podido validar ese expediente para este número. Lo dejo para revisión del equipo.';
+          const sentBad = await sendWhatsAppMessage({ to: from, body: bad });
+          if (sentBad.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: bad, whatsappMessageId: sentBad.messageId, aiResponded: false, needsReview: true,
+            });
+          }
+          continue;
+        }
         const serviceName = selectedCase?.service ?? 'tu expediente';
+        const pendingDocMessageId = docSess.data?.pending_doc_message_id;
 
         await persistSessionUpdates(admin, from, {
           flow: 'welcome',
           step: 'init',
-          data: { ...docSess.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '' },
+          data: { ...docSess.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '', pending_doc_message_id: '' },
         });
 
         const ack = `${mediaIcon} Perfecto. Tu ${mediaLabel} ha sido vinculado al expediente de *${serviceName}* ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
@@ -735,6 +761,12 @@ export async function POST(request: NextRequest) {
             clientId, phoneNumber: from, direction: 'outbound',
             body: ack, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
           });
+        }
+        if (pendingDocMessageId) {
+          await admin.from('whatsapp_conversations')
+            .update({ case_id: caseId })
+            .eq('whatsapp_message_id', pendingDocMessageId)
+            .eq('phone_number', from);
         }
         await admin.from('whatsapp_conversations')
           .update({ needs_review: true })
@@ -750,7 +782,7 @@ export async function POST(request: NextRequest) {
       // ── Kia session ────────────────────────────────────────────────────────
       const session  = await getOrCreateSession(admin, from, clientId);
       const clientName = clientId
-        ? (profiles?.find((p) => p.id === clientId)?.full_name ?? null)
+        ? (contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
 
       // ── identify_for_doc flow — collect name + email for unknown doc sender ──
@@ -788,7 +820,7 @@ export async function POST(request: NextRequest) {
             email: emailInput,
             flow:  'welcome',
             step:  'init',
-            data:  { ...session.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '' },
+            data:  { ...session.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '', pending_doc_message_id: '' },
           });
           try {
             await admin.from('leads').upsert(
@@ -849,7 +881,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Handle side effects (createCase, saveLead, sendDocsEmail, escalate)
-      await handleKiaSideEffects({ sideEffects, session: updatedSession, phone: from, clientId, admin });
+      await handleKiaSideEffects({ sideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
 
       // AI fallback when the step delegates to free-form conversation
       if (sideEffects.needsAiFallback) {
@@ -863,7 +895,7 @@ export async function POST(request: NextRequest) {
 
         const conversationHistory = ((history ?? []).reverse()) as { direction: string; body: string }[];
         const aiResult = await generateKiaAiResponse({
-          clientId, phone: from, msgBody, admin,
+          clientId, phone: from, msgBody,
           session: updatedSession,
           conversationHistory,
           contactCtx,

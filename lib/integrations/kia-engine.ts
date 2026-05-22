@@ -1059,7 +1059,7 @@ export function processKiaStep(
     if (contactInfo?.status === 'client') {
       const greeting = name
         ? (l === 'ru'
-            ? `👋 ¡Hola, *${name}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`
+            ? `👋 Привет, *${name}*! Вижу, что вы уже клиент EXPERT. Чем могу помочь сегодня?`
             : `👋 ¡Hola, *${name}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`)
         : CLIENT_WELCOME_MENU[l].body;
       const clientMenu = { ...CLIENT_WELCOME_MENU[l], body: greeting };
@@ -1073,7 +1073,7 @@ export function processKiaStep(
     // ── Lead route — unknown or not yet a client ────────────────────────────
     if (name) {
       const leadBody = l === 'ru'
-        ? `👋 ¡Hola, *${name}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`
+        ? `👋 Привет, *${name}*! Я *Kia*, виртуальный ассистент EXPERT. Чем могу помочь?`
         : `👋 ¡Hola, *${name}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`;
       const leadMenu = { ...LEAD_WELCOME_MENU[l], body: leadBody };
       return {
@@ -1436,6 +1436,18 @@ export function processKiaStep(
   if (flow === 'lead_start' && step === 'lead_viability') {
     // User described their situation — AI handles viability check
     return { replies: [], updates: { step: 'lead_viability' }, sideEffects: { needsAiFallback: true } };
+  }
+
+  if (flow === 'lead_media_followup' && step === 'awaiting_service') {
+    return {
+      replies: [],
+      updates: {
+        flow: 'lead_start',
+        step: 'lead_viability',
+        data: { ...session.data, lead_media_context: msgBody.trim().slice(0, 500) },
+      },
+      sideEffects: { saveLead: true, needsAiFallback: true },
+    };
   }
 
   // ── CLIENT FLOW ───────────────────────────────────────────────────────────

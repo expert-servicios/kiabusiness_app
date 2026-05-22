@@ -43,6 +43,10 @@ function normalize(phone: string): string {
   return phone.replace(/\D/g, '');
 }
 
+function isClosedCase(state: string | null | undefined): boolean {
+  return ['cerrado', 'finalizado', 'entregado'].includes((state ?? '').toLowerCase());
+}
+
 export async function resolveKiaContactContext(
   admin: Admin,
   phone: string,
@@ -53,27 +57,20 @@ export async function resolveKiaContactContext(
   // ── 1. Look up profile ────────────────────────────────────────────────────
   const { data: profile } = await admin
     .from('profiles')
-    .select('id, full_name, email, phone, whatsapp_number, role, stripe_customer_id, address, city, postal_code, country, tax_id, status')
+    .select('id, full_name, email, phone, whatsapp_number, role, stripe_customer_id, country')
     .or(`phone.ilike.%${last9}%,whatsapp_number.ilike.%${last9}%`)
     .maybeSingle();
 
   if (profile) {
     const clientId = profile.id as string;
 
-    // Derive completeness flags from existing columns
-    const profileCompleted     = !!(profile.full_name && profile.email && profile.phone && profile.tax_id);
-    const billingReady         = !!profile.stripe_customer_id;
-    const habitualAddressReady = !!(profile.address && profile.city && profile.postal_code && profile.country);
-
-    // Fetch open expedientes and pending obligations in parallel
-    const [{ data: cases }, { data: obligations }] = await Promise.all([
+    const [{ data: allCases }, { data: obligations }] = await Promise.all([
       admin
         .from('cases')
         .select('id, service, category, state, opened_at')
         .eq('client_id', clientId)
-        .neq('state', 'cerrado')
         .order('opened_at', { ascending: false })
-        .limit(5),
+        .limit(10),
       admin
         .from('fiscal_obligations')
         .select('modelo, description, deadline, status')
@@ -83,10 +80,24 @@ export async function resolveKiaContactContext(
         .limit(5),
     ]);
 
+    const openCases = ((allCases ?? []) as KiaContactContext['openCases'])
+      .filter((c) => !isClosedCase(c.state))
+      .slice(0, 5);
+
+    const hasPortalAccount = Boolean(profile.id && profile.role !== 'admin');
+    const hasCases         = (allCases ?? []).length > 0;
+    const status: KiaContactStatus =
+      profile.role === 'client' || hasPortalAccount || hasCases ? 'client' : 'lead';
+
+    // Derive completeness flags from columns present in the current migrations.
+    const profileCompleted     = !!(profile.full_name && profile.email && (profile.phone || profile.whatsapp_number));
+    const billingReady         = !!profile.stripe_customer_id;
+    const habitualAddressReady = false;
+
     return {
-      status                  : 'client',
+      status,
       phone                   : normalized,
-      clientId,
+      clientId                : status === 'client' ? clientId : null,
       leadId                  : null,
       name                    : profile.full_name ?? null,
       email                   : profile.email ?? null,
@@ -94,8 +105,8 @@ export async function resolveKiaContactContext(
       profileCompleted,
       billingReady,
       habitualAddressReady,
-      openCases               : (cases ?? []) as KiaContactContext['openCases'],
-      pendingFiscalObligations: (obligations ?? []) as KiaContactContext['pendingFiscalObligations'],
+      openCases               : status === 'client' ? openCases : [],
+      pendingFiscalObligations: status === 'client' ? (obligations ?? []) as KiaContactContext['pendingFiscalObligations'] : [],
       lastLeadStatus          : null,
       lastSelectedService     : null,
     };
@@ -104,7 +115,7 @@ export async function resolveKiaContactContext(
   // ── 2. No profile → look up lead ─────────────────────────────────────────
   const { data: lead } = await admin
     .from('leads')
-    .select('id, name, email, service, status')
+    .select('id, name, email, service, state')
     .or(`phone.ilike.%${last9}%`)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -123,7 +134,7 @@ export async function resolveKiaContactContext(
     habitualAddressReady    : false,
     openCases               : [],
     pendingFiscalObligations: [],
-    lastLeadStatus          : lead?.status ?? null,
+    lastLeadStatus          : lead?.state ?? null,
     lastSelectedService     : lead?.service ?? null,
   };
 }

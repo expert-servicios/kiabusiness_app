@@ -85,23 +85,31 @@ export async function POST(request: NextRequest) {
 
     let clientContext = 'No hay datos del cliente registrado con este número.';
 
-    if (clientId) {
-      const [{ data: profile }, { data: cases }] = await Promise.all([
-        admin.from('profiles').select('full_name, email').eq('id', clientId).single(),
-        admin.from('cases').select('service, state, opened_at').eq('client_id', clientId).order('opened_at', { ascending: false }).limit(3),
-      ]);
-
-      const name = profile?.full_name ?? 'el cliente';
-      const caseList = (cases ?? [])
-        .map((c: { service: string; state: string; opened_at: string }) =>
-          `- ${c.service}: estado "${c.state}"`)
+    if (contactCtx) {
+      const caseList = contactCtx.openCases
+        .map((c) => `- ${c.service}: estado "${c.state}", abierto el ${new Date(c.opened_at).toLocaleDateString('es-ES')}`)
+        .join('\n');
+      const obList = contactCtx.pendingFiscalObligations
+        .map((o) => `- M${o.modelo} ${o.description}: vence ${new Date(o.deadline).toLocaleDateString('es-ES')} (${o.status})`)
         .join('\n');
 
-      clientContext = `Cliente: ${name}\nExpedientes:\n${caseList || 'Ninguno'}`;
+      clientContext = [
+        `Tipo de contacto: ${contactCtx.status}`,
+        `Nombre: ${contactCtx.name ?? 'desconocido'}`,
+        `Email: ${contactCtx.email ?? 'no disponible'}`,
+        `ClientId: ${contactCtx.clientId ?? clientId ?? 'no'}`,
+        `LeadId: ${contactCtx.leadId ?? 'no'}`,
+        `Perfil completado: ${contactCtx.profileCompleted ? 'sí' : 'no'}`,
+        `Facturación lista: ${contactCtx.billingReady ? 'sí' : 'no'}`,
+        `Último estado lead: ${contactCtx.lastLeadStatus ?? 'no aplica'}`,
+        `Servicio lead/seleccionado: ${contactCtx.lastSelectedService ?? serviceId ?? 'no aplica'}`,
+        `Expedientes:\n${caseList || 'Ninguno'}`,
+        `Obligaciones fiscales:\n${obList || 'Ninguna'}`,
+      ].join('\n');
 
-      // Infer checklist from most recent case when no explicit serviceId given
-      if (!serviceId && cases && cases.length > 0) {
-        const latestService = cases[0].service as string;
+      // Infer checklist from most recent case when no explicit serviceId given.
+      if (!serviceId && contactCtx.openCases.length > 0) {
+        const latestService = contactCtx.openCases[0].service;
         const inferred = getServiceChecklist(latestService) ?? getChecklistsByCategory(latestService)[0];
         if (inferred) {
           checklistContext = `\nCHECKLIST DEL SERVICIO (inferido del expediente más reciente):\n${formatChecklistForPrompt(inferred)}`;
@@ -115,6 +123,15 @@ export async function POST(request: NextRequest) {
 
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
     const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
+
+    const replyToBlock = replyTo
+      ? (() => {
+          const who    = replyTo.direction === 'inbound' ? 'Cliente' : 'EXPERT';
+          const mIcon  = replyTo.media_type === 'image' ? '📷 Imagen' : replyTo.media_type === 'audio' ? '🎤 Audio' : replyTo.media_type === 'video' ? '🎥 Vídeo' : replyTo.media_type ? '📎 Documento' : null;
+          const snap   = (mIcon ?? replyTo.body.replace(/\n+/g, ' ').trim()).slice(0, 200);
+          return `\nESTÁS RESPONDIENDO ESPECÍFICAMENTE A ESTE MENSAJE:\n${who}: «${snap}»\nRedacta una respuesta directa a ese punto concreto, sin ignorar el resto del historial.\n`;
+        })()
+      : '';
 
     // ── EDIT mode: improve + translate admin's draft ─────────────
     if (mode === 'edit' && intent?.trim()) {
@@ -139,7 +156,7 @@ FORMATO WHATSAPP OBLIGATORIO:
 - NO uses ##, ***, \`código\`, ni guiones de lista. Usa párrafos cortos.
 
 CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
-${historyText || 'Sin historial previo.'}${checklistContext}`;
+${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}`;
 
       const ai = await generateWabaAiText({
         systemPrompt: editPrompt,
@@ -154,16 +171,6 @@ ${historyText || 'Sin historial previo.'}${checklistContext}`;
     // ── COMPOSE mode: generate fresh response ────────────────────
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const officialSourceContext = await buildOfficialSourceContext(`${historyText}\n${intent ?? ''}`);
-
-    // Build replyTo context for prompt
-    const replyToBlock = replyTo
-      ? (() => {
-          const who    = replyTo.direction === 'inbound' ? 'Cliente' : 'EXPERT';
-          const mIcon  = replyTo.media_type === 'image' ? '📷 Imagen' : replyTo.media_type === 'audio' ? '🎤 Audio' : replyTo.media_type === 'video' ? '🎥 Vídeo' : replyTo.media_type ? '📎 Documento' : null;
-          const snap   = (mIcon ?? replyTo.body.replace(/\n+/g, ' ').trim()).slice(0, 200);
-          return `\nESTÁS RESPONDIENDO ESPECÍFICAMENTE A ESTE MENSAJE:\n${who}: «${snap}»\nRedacta una respuesta directa a ese punto concreto, sin ignorar el resto del historial.\n`;
-        })()
-      : '';
 
     // Contact type instruction
     const contactTypeBlock = isClient
