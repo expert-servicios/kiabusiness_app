@@ -82,6 +82,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
         <PwaRegister />
         {children}
+        {/* Calendly popup widget — CSS must load before JS */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css" />
+        <Script src="https://assets.calendly.com/assets/external/widget.js" strategy="lazyOnload" />
       </body>
     </html>
   );

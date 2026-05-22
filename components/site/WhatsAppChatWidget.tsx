@@ -55,14 +55,29 @@ function buildWaUrl(msg: string) {
 
 // ── Quick-reply action types ──────────────────────────────────────────────────
 
+declare global {
+  interface Window {
+    Calendly?: { initPopupWidget: (opts: { url: string }) => void };
+  }
+}
+
+const CALENDLY_DEMO =
+  'https://calendly.com/soy-kseniailicheva/30min' +
+  '?hide_event_type_details=1' +
+  '&hide_gdpr_banner=1' +
+  '&background_color=f8f6f1' +
+  '&text_color=0d1b2a' +
+  '&primary_color=f2c14e';
+
 type Action =
-  | { kind: 'link'; href: string; label: string; icon: string; external?: true }
-  | { kind: 'wa';   msg:  string; label: string; icon: string };
+  | { kind: 'link';     href: string; label: string; icon: string; external?: true }
+  | { kind: 'wa';       msg:  string; label: string; icon: string }
+  | { kind: 'calendly'; url:  string; label: string; icon: string };
 
 const ANON_BASE: Action[] = [
-  { kind: 'link', href: '/servicios',                      label: 'Ver catálogo',    icon: '📋' },
-  { kind: 'link', href: 'https://expertconsulting.es/cita', label: 'Solicitar cita',  icon: '📅', external: true },
-  { kind: 'wa',   msg: 'Hola Kia, tengo una consulta fiscal.',                        label: 'Consulta fiscal', icon: '💬' },
+  { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
+  { kind: 'calendly', url: CALENDLY_DEMO, label: 'Reservar demo Holded', icon: '📅' },
+  { kind: 'wa',       msg: 'Hola Kia, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
 ];
 
 const USER_BASE: Action[] = [
@@ -169,7 +184,7 @@ export function WhatsAppChatWidget() {
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
         ].join(' ')}
-        aria-hidden={!bubbleOpen || dismissed}
+        {...((!bubbleOpen || dismissed) ? { 'aria-hidden': 'true' } : {})}
       >
         {/* Header */}
         <div className="flex items-center gap-3 bg-[#0D1B2A] px-4 py-3">
@@ -200,33 +215,46 @@ export function WhatsAppChatWidget() {
 
           {/* Quick-reply chips */}
           <div className="flex flex-col gap-1.5">
-            {actions.map(action =>
-              action.kind === 'link' ? (
+            {actions.map(action => {
+              const chipClass = 'flex w-full items-center gap-2.5 rounded-xl border border-[#D4A017]/30 bg-white px-3.5 py-2 text-left text-xs font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5';
+              if (action.kind === 'link') return (
                 <Link
                   key={action.label}
                   href={action.href}
                   target={action.external ? '_blank' : undefined}
                   rel={action.external ? 'noopener noreferrer' : undefined}
                   onClick={dismiss}
-                  className="flex items-center gap-2.5 rounded-xl border border-[#D4A017]/30 bg-white px-3.5 py-2 text-xs font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                  className={chipClass}
                 >
                   <span aria-hidden="true">{action.icon}</span>
                   {action.label}
                 </Link>
-              ) : (
+              );
+              if (action.kind === 'calendly') return (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => { window.Calendly?.initPopupWidget({ url: action.url }); dismiss(); }}
+                  className={chipClass}
+                >
+                  <span aria-hidden="true">{action.icon}</span>
+                  {action.label}
+                </button>
+              );
+              return (
                 <a
                   key={action.label}
                   href={buildWaUrl(action.msg)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={dismiss}
-                  className="flex items-center gap-2.5 rounded-xl border border-[#D4A017]/30 bg-white px-3.5 py-2 text-xs font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                  className={chipClass}
                 >
                   <span aria-hidden="true">{action.icon}</span>
                   {action.label}
                 </a>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
 

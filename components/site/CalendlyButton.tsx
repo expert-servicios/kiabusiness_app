@@ -1,35 +1,29 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { CalendlyModal } from './CalendlyModal';
+import { type ReactNode } from 'react';
 
-interface Props {
-  url: string;
-  title: string;
-  subtitle?: string;
-  className?: string;
-  children: ReactNode;
+declare global {
+  interface Window {
+    Calendly?: { initPopupWidget: (opts: { url: string }) => void };
+  }
 }
 
-export function CalendlyButton({ url, title, subtitle, className, children }: Props) {
-  const [open, setOpen] = useState(false);
+interface Props {
+  url       : string;
+  title?    : string;
+  subtitle? : string;
+  className?: string;
+  children  : ReactNode;
+}
 
+export function CalendlyButton({ url, className, children }: Props) {
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={className}
-      >
-        {children}
-      </button>
-      <CalendlyModal
-        url={url}
-        title={title}
-        subtitle={subtitle}
-        isOpen={open}
-        onClose={() => setOpen(false)}
-      />
-    </>
+    <button
+      type="button"
+      onClick={() => window.Calendly?.initPopupWidget({ url })}
+      className={className}
+    >
+      {children}
+    </button>
   );
 }
