@@ -26,7 +26,7 @@ function getFiscalTip(): FiscalTip | null {
 
   // IRPF campaign: 3 April – 30 June
   if ((month === 4 && day >= 3) || month === 5 || (month === 6 && day <= 30)) {
-    return { icon: '📋', text: 'Estamos en campaña de la Renta 2024 (hasta el 30 de junio). ¿Necesitas ayuda con tu declaración?' };
+    return { icon: '📋', text: `Estamos en campaña de la Renta ${now.getFullYear() - 1} (hasta el 30 de junio). ¿Necesitas ayuda con tu declaración?` };
   }
   // Modelo 720: 1 Jan – 31 March
   if (month <= 3) {
@@ -50,7 +50,7 @@ function getFiscalTip(): FiscalTip | null {
   }
   // Q4 / Year-end: November – December
   if (month >= 11) {
-    return { icon: '📅', text: 'Fin de año fiscal: buen momento para revisar tu situación tributaria y planificar 2025.' };
+    return { icon: '📅', text: `Fin de año fiscal: buen momento para revisar tu situación tributaria y planificar ${now.getFullYear() + 1}.` };
   }
   return null;
 }
@@ -137,7 +137,7 @@ export function WhatsAppChatWidget() {
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
         ].join(' ')}
-        aria-hidden={!bubbleOpen || dismissed}
+        aria-hidden={(!bubbleOpen || dismissed) ? 'true' : 'false'}
       >
         {/* Header */}
         <div className="flex items-center gap-3 bg-[#0D1B2A] px-4 py-3">
@@ -199,57 +199,43 @@ export function WhatsAppChatWidget() {
         </div>
       </div>
 
-      {/* ── Floating avatar button ── */}
-      {dismissed ? (
-        /* After dismissal: direct WhatsApp link */
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Chatear con Kia en WhatsApp"
-          title="Chatear con Kia en WhatsApp"
-          className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
-        >
-          <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017]">
-            <Image
-              src="/branding/kia_bot.png"
-              alt="Kia — Asistente EXPERT"
-              fill
-              className="object-cover"
-              sizes="56px"
-            />
-          </div>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
-            <WhatsAppIcon />
-          </span>
-        </a>
-      ) : (
-        /* Default: toggle bubble */
-        <button
-          type="button"
-          onClick={toggleBubble}
-          aria-label={bubbleOpen ? 'Cerrar chat' : 'Chatear con Kia en WhatsApp'}
-          title="Chatear con Kia en WhatsApp"
-          className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
-        >
-          <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017] transition-all">
-            <Image
-              src="/branding/kia_bot.png"
-              alt="Kia — Asistente EXPERT"
-              fill
-              className="object-cover"
-              sizes="56px"
-            />
-          </div>
-          {/* Online dot / WA badge */}
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
-            <WhatsAppIcon />
-          </span>
-          {/* Pulse ring when bubble is closed */}
-          {!bubbleOpen && (
+      {/* ── Floating avatar button — hidden while popup is open ── */}
+      {(!bubbleOpen || dismissed) && (
+        dismissed ? (
+          /* After dismissal: direct WhatsApp link */
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chatear con Kia en WhatsApp"
+            title="Chatear con Kia en WhatsApp"
+            className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
+          >
+            <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017]">
+              <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
+            </div>
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
+              <WhatsAppIcon />
+            </span>
+          </a>
+        ) : (
+          /* Default: toggle bubble open */
+          <button
+            type="button"
+            onClick={toggleBubble}
+            aria-label="Chatear con Kia en WhatsApp"
+            title="Chatear con Kia en WhatsApp"
+            className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
+          >
+            <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017] transition-all">
+              <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
+            </div>
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
+              <WhatsAppIcon />
+            </span>
             <span className="absolute inset-0 rounded-full border-2 border-[#25D366]/50 animate-ping" aria-hidden="true" />
-          )}
-        </button>
+          </button>
+        )
       )}
     </div>
   );

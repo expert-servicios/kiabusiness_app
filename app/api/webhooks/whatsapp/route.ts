@@ -20,13 +20,7 @@ import {
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
-import { getStripeClient } from '@/lib/integrations/stripe';
-import {
-  getServiceCheckoutByPriceId,
-  getServiceCheckoutLineItem,
-  getServiceCheckoutMetadata,
-} from '@/lib/integrations/service-checkout';
-import { absoluteAppUrl, getPublicAppUrl } from '@/lib/utils/app-url';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
@@ -206,21 +200,21 @@ async function handleKiaSideEffects({
     }).catch((e: unknown) => console.error('[Kia createCase]', e));
   }
 
-  if ((saveLead || (createCase && !clientId)) && svc) {
+  if (saveLead || (createCase && !clientId)) {
+    // leads table requires name, email, client_type, category, service (NOT NULL).
+    // Provide safe defaults for WhatsApp contacts that may not have shared their email yet.
     await admin.from('leads').upsert(
       {
         phone,
-        name:        session.name,
-        email:       session.email,
-        source:      'whatsapp',
-        notes:       `Interesado/a en: ${svc.label.es}`,
-        updated_at:  new Date().toISOString(),
+        name        : session.name ?? phone,
+        email       : session.email ?? `wa.${phone}@noreply.expert`,
+        client_type : 'particular',
+        category    : svc?.category ?? 'general',
+        service     : svc?.label.es ?? 'Consulta WhatsApp',
+        source      : 'whatsapp',
+        notes       : svc ? `Interesado/a en: ${svc.label.es}` : 'Consulta por WhatsApp',
+        updated_at  : new Date().toISOString(),
       },
-      { onConflict: 'phone' },
-    ).catch((e: unknown) => console.error('[Kia saveLead]', e));
-  } else if (saveLead && !svc) {
-    await admin.from('leads').upsert(
-      { phone, name: session.name, email: session.email, source: 'whatsapp', updated_at: new Date().toISOString() },
       { onConflict: 'phone' },
     ).catch((e: unknown) => console.error('[Kia saveLead]', e));
   }
@@ -239,46 +233,24 @@ async function handleKiaSideEffects({
     }
   }
 
-  if (sendPaymentLink && svc?.stripePriceId) {
+  if (sendPaymentLink && svc?.id) {
     try {
-      const stripe  = getStripeClient();
-      const appUrl  = getPublicAppUrl();
-      const pageUrl = getServicePageUrl(svc.id) ?? absoluteAppUrl('/servicios');
-      const checkoutService = getServiceCheckoutByPriceId(svc.stripePriceId);
-      if (!checkoutService) {
-        throw new Error(`Servicio no valido para checkout: ${svc.stripePriceId}`);
-      }
-      const metadata = getServiceCheckoutMetadata([checkoutService]);
-      const stripeSession = await stripe.checkout.sessions.create({
-        mode            : 'payment',
-        automatic_tax   : { enabled: true },
-        line_items      : [getServiceCheckoutLineItem(checkoutService)],
-        success_url     : `${appUrl}/gracias/pago?source=whatsapp&service=${svc.id}`,
-        cancel_url      : pageUrl,
-        metadata        : { ...metadata, source: 'whatsapp', whatsapp_phone: phone },
-        locale          : 'es',
-        customer_creation: 'always',
-        phone_number_collection: { enabled: true },
-      });
-      if (stripeSession.url) {
-        const body = session.lang === 'ru'
-          ? `💳 *Enlace de pago seguro — ${svc.label.ru}:*\n${stripeSession.url}\n\nPago 100% seguro con Stripe. Tras confirmarlo, el equipo de EXPERT abrirá tu expediente. EXPERT 💼`
-          : `💳 *Enlace de pago seguro — ${svc.label.es}:*\n${stripeSession.url}\n\nPago 100% seguro con Stripe. Tras confirmarlo, el equipo de EXPERT abrirá tu expediente. EXPERT 💼`;
-        const sent = await sendWhatsAppMessage({ to: phone, body });
-        if (sent.success) {
-          await logWhatsAppConversation({
-            clientId, phoneNumber: phone, direction: 'outbound',
-            body: `[Kia:payment] ${svc.label.es} → ${stripeSession.url?.slice(0, 60)}…`,
-            whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
-          });
-        }
+      // Send /contratar link — user must log in before payment (login obligatorio).
+      // Direct Stripe session creation from WABA bypasses the auth gate.
+      const url = absoluteAppUrl(`/contratar?service=${svc.id}&source=whatsapp`);
+      const body = session.lang === 'ru'
+        ? `🔐 *Para contratar ${svc.label.ru}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`
+        : `🔐 *Para contratar el servicio ${svc.label.es}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`;
+      const sent = await sendWhatsAppMessage({ to: phone, body });
+      if (sent.success) {
+        await logWhatsAppConversation({
+          clientId, phoneNumber: phone, direction: 'outbound',
+          body: `[Kia:contratar] ${svc.label.es} → ${url}`,
+          whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
+        });
       }
     } catch (e) {
       console.error('[Kia sendPaymentLink]', e);
-      const errBody = session.lang === 'ru'
-        ? 'Lo siento, ha habido un error al generar el enlace de pago. Nuestro equipo te contactará en breve. EXPERT 💼'
-        : 'Lo sentimos, ha habido un problema al generar el enlace. Nuestro equipo te contactará enseguida. EXPERT 💼';
-      await sendWhatsAppMessage({ to: phone, body: errBody }).catch(() => {});
     }
   }
 }
