@@ -1,8 +1,6 @@
 import type { NextConfig } from 'next';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const rootDir = dirname(fileURLToPath(import.meta.url));
+const rootDir = process.cwd();
 
 const SECURITY_HEADERS = [
   // Prevent page from being embedded in iframes (clickjacking protection)
