@@ -3,13 +3,11 @@ import Script from 'next/script';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
-import { CalendlyFloatingButton } from '@/components/site/CalendlyFloatingButton';
 import { WhatsAppChatWidget } from '@/components/site/WhatsAppChatWidget';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-const CALENDLY_REUNION = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
@@ -28,7 +26,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <InstallPwaPrompt variant="banner" />
       {/* Floating action buttons */}
       <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
-        <CalendlyFloatingButton url={CALENDLY_REUNION} />
         <WhatsAppChatWidget />
       </div>
       {/* Cart sidebar — rendered above floating buttons */}
