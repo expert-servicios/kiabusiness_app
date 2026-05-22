@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
 import { categories } from '@/lib/utils/catalog';
@@ -23,11 +24,18 @@ const planesLinks = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [planesOpen, setPlanesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const planesDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setServicesOpen(false);
+    setPlanesOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
