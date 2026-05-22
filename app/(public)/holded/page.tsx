@@ -18,7 +18,6 @@ import {
   Clock,
   Zap,
 } from 'lucide-react';
-import { HoldedBuyButton } from '@/components/holded/HoldedBuyButton';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { articles } from '@/lib/utils/blog';
@@ -78,6 +77,7 @@ const aiCards = [
 const PACKAGE_META = [
   {
     priceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
+    slug: 'holded-pack-starter',
     amountCents: 49900,
     name: 'Pack Starter',
     subtitle: 'Onboarding a Holded',
@@ -91,6 +91,7 @@ const PACKAGE_META = [
   },
   {
     priceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
+    slug: 'holded-migracion-sin-inventario',
     amountCents: 89900,
     name: 'Migración completa',
     subtitle: 'Sin módulo de inventario',
@@ -105,6 +106,7 @@ const PACKAGE_META = [
   },
   {
     priceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
+    slug: 'holded-migracion-con-inventario',
     amountCents: 119900,
     name: 'Migración completa',
     subtitle: '+ Módulo de inventario',
@@ -410,9 +412,18 @@ export default async function HoldedPage() {
                   </ul>
 
                   <div className="mt-4 space-y-2">
-                    <HoldedBuyButton priceId={pkg.priceId} packageName={`${pkg.name} ${pkg.subtitle}`} />
+                    <AddToCartButton
+                      item={{
+                        priceId: pkg.priceId,
+                        name: `${pkg.name} — ${pkg.subtitle}`,
+                        displayPrice: `${formatPrice(pkg.amountCents)} + IVA`,
+                        slug: pkg.slug,
+                        category: 'holded',
+                      }}
+                      label="Añadir a la cesta"
+                    />
                     <Link
-                      href={`/solicitar-presupuesto?servicio=holded-${pkg.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/solicitar-presupuesto?servicio=${pkg.slug}`}
                       className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
                     >
                       Solicitar información
@@ -516,30 +527,31 @@ export default async function HoldedPage() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Módulos adicionales</p>
             <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Amplía tu implantación con módulos independientes.
+              Amplía tu implantación con módulos a medida.
             </h2>
             <p className="mt-4 text-sm leading-7 text-[#23364D]">
-              Disponibles de forma independiente. Añádelos a la cesta y tramítalos junto al paquete o por separado.
+              Estos módulos se contratan junto a un paquete de implantación. Al añadir un paquete a la cesta, podrás incorporarlos antes de tramitar el pedido.
             </p>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {ADDONS.map(({ priceId, name, slug, displayPrice, Icon, description }) => (
+            {ADDONS.map(({ priceId, name, Icon, description, displayPrice }) => (
               <div key={priceId} className="flex flex-col border border-[#D4A017]/25 bg-white p-7">
                 <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/10">
                   <Icon className="h-6 w-6 text-[#D4A017]" />
                 </div>
                 <h3 className="mt-5 font-serif text-xl font-bold text-[#0D1B2A]">{name}</h3>
                 <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">{description}</p>
-                <p className="mt-5 font-serif text-3xl font-bold text-[#0D1B2A]">{displayPrice}</p>
-                <p className="mb-5 mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
-                <AddToCartButton
-                  item={{ priceId, name, displayPrice, slug, category: 'holded' }}
-                  label="Añadir a la cesta"
-                />
+                <p className="mt-5 font-serif text-2xl font-bold text-[#0D1B2A]">{displayPrice}</p>
+                <p className="mt-1 text-xs text-[#9CA3AF]">Pago único · IVA no incluido</p>
               </div>
             ))}
           </div>
+
+          <p className="mt-8 text-center text-sm text-[#23364D]/60">
+            <Link href="#precios" className="font-semibold text-[#D4A017] hover:underline">Elige un paquete</Link>
+            {' '}y añádelo a la cesta — los módulos se ofrecen antes de tramitar el pedido.
+          </p>
         </div>
       </section>
 

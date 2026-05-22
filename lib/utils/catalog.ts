@@ -1385,6 +1385,76 @@ export const services: Service[] = [
     ],
   },
 
+  // ── Holded — Paquetes de implantación ─────────────────────────────────────
+  {
+    slug: 'holded-pack-starter',
+    categoria: 'holded',
+    name: 'Pack Starter Holded',
+    shortDescription: 'Onboarding a Holded: configuración inicial de empresa, facturación, bancos y conexión Open Banking.',
+    description:
+      'Dejamos tu cuenta de Holded lista para operar: configuramos empresa, facturación, bancos y conexión Open Banking. Incluye soporte por email durante 30 días. Ideal para autónomos y pymes que empiezan con Holded.',
+    price: '499 € + IVA',
+    stripePriceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
+    checkoutLabel: 'Añadir a la cesta — 499 € + IVA',
+    duration: '1–2 semanas',
+    includes: [
+      'Configuración inicial de la cuenta',
+      'Setup de empresa, facturación y bancos',
+      'Conexión bancaria (Open Banking)',
+      'Soporte por email durante 30 días',
+    ],
+    faqs: [
+      { q: '¿Necesito tener Holded contratado?', a: 'No. Como Holded Solution Partner podemos gestionar tu acceso y activar la prueba gratuita de 14 días antes de la implantación.' },
+      { q: '¿Cuánto tarda el Pack Starter?', a: 'Entre 1 y 2 semanas desde que nos envías la documentación de tu empresa.' },
+    ],
+  },
+  {
+    slug: 'holded-migracion-sin-inventario',
+    categoria: 'holded',
+    name: 'Migración Holded — Sin Inventario',
+    shortDescription: 'Migración completa a Holded sin módulo de inventario: clientes, proveedores, facturas y contabilidad.',
+    description:
+      'Migramos toda tu actividad a Holded: clientes, proveedores, facturas emitidas y recibidas, configuración contable completa (PGC) y soporte prioritario durante 60 días. No incluye módulo de inventario.',
+    price: '899 € + IVA',
+    stripePriceId: 'price_1SxNJcLeYwwgvux42XH9HxiJ',
+    checkoutLabel: 'Añadir a la cesta — 899 € + IVA',
+    duration: '3–5 semanas',
+    includes: [
+      'Todo lo del Pack Starter',
+      'Migración de clientes y proveedores',
+      'Migración de facturas emitidas y recibidas',
+      'Configuración contable completa (PGC)',
+      'Soporte prioritario durante 60 días',
+    ],
+    faqs: [
+      { q: '¿Qué datos se migran?', a: 'Clientes, proveedores, facturas emitidas y recibidas, saldos contables y configuración bancaria. Previamente hacemos un diagnóstico para definir qué se migra y qué se depura.' },
+      { q: '¿Cuánto tarda la migración?', a: 'Entre 3 y 5 semanas dependiendo del volumen de datos.' },
+    ],
+  },
+  {
+    slug: 'holded-migracion-con-inventario',
+    categoria: 'holded',
+    name: 'Migración Holded — Con Inventario',
+    shortDescription: 'Migración completa a Holded incluyendo módulo de inventario: productos, almacenes y stock inicial.',
+    description:
+      'Migración completa a Holded con módulo de inventario: clientes, proveedores, facturas, contabilidad, productos, referencias, almacenes y stock inicial. Incluye integración inventario ↔ facturación y soporte prioritario 90 días.',
+    price: '1.199 € + IVA',
+    stripePriceId: 'price_1SxNLlLeYwwgvux4IjCOgIQl',
+    checkoutLabel: 'Añadir a la cesta — 1.199 € + IVA',
+    duration: '4–6 semanas',
+    includes: [
+      'Todo lo de Migración completa',
+      'Migración de productos y referencias',
+      'Configuración de almacenes y stock inicial',
+      'Integración inventario ↔ facturación',
+      'Soporte prioritario durante 90 días',
+    ],
+    faqs: [
+      { q: '¿Qué es la integración inventario ↔ facturación?', a: 'Configuramos Holded para que al emitir una factura el stock se descuente automáticamente, y al recibir mercancía el stock se actualice.' },
+      { q: '¿Cuánto tarda?', a: 'Entre 4 y 6 semanas. El módulo de inventario requiere más tiempo de carga y validación de datos.' },
+    ],
+  },
+
   // ── Holded — Módulos adicionales ───────────────────────────────────────────
   {
     slug: 'holded-modulo-laboral',

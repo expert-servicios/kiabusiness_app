@@ -2,11 +2,44 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { AddToCartButton } from '@/components/services/AddToCartButton';
+
+const HOLDED_PACKAGE_PRICE_IDS = [
+  'price_1SxNObLeYwwgvux4fLN9k8YG',
+  'price_1SxNJcLeYwwgvux42XH9HxiJ',
+  'price_1SxNLlLeYwwgvux4IjCOgIQl',
+];
+
+const HOLDED_ADDONS = [
+  {
+    priceId: 'price_1TZqKbLeYwwgvux4NHtVCmEV',
+    name: 'Módulo Laboral',
+    slug: 'holded-modulo-laboral',
+    displayPrice: '180 € + IVA',
+    description: 'Nóminas, contratos y gestión de empleados integrados en Holded.',
+  },
+  {
+    priceId: 'price_1SyB8ULeYwwgvux4sZbYod1B',
+    name: 'Módulo Formación',
+    slug: 'holded-modulo-formacion',
+    displayPrice: '180 € + IVA',
+    description: 'Sesión práctica de 2 horas sobre los módulos de Holded que usas.',
+  },
+  {
+    priceId: 'price_1TZqKeLeYwwgvux4pkUNsDms',
+    name: 'Otras Integraciones API',
+    slug: 'holded-integraciones-api',
+    displayPrice: '180 € + IVA',
+    description: 'Conecta Holded con tu tienda online, CRM u otras herramientas.',
+  },
+];
 
 export default function CarritoPage() {
   const { items, removeItem, clearCart } = useCart();
+  const hasHoldedPackage = items.some(i => HOLDED_PACKAGE_PRICE_IDS.includes(i.priceId));
+  const visibleAddons = HOLDED_ADDONS.filter(a => !items.some(i => i.priceId === a.priceId));
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
@@ -117,6 +150,33 @@ export default function CarritoPage() {
               >
                 Vaciar cesta
               </button>
+
+              {/* Upsell: módulos Holded */}
+              {hasHoldedPackage && visibleAddons.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#D4A017]">
+                    <Plus className="h-3.5 w-3.5" />
+                    Módulos adicionales para tu plan Holded
+                  </p>
+                  {visibleAddons.map(addon => (
+                    <div
+                      key={addon.priceId}
+                      className="flex items-center justify-between gap-4 rounded-xl border border-[#D4A017]/20 bg-white px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#0D1B2A]">{addon.name}</p>
+                        <p className="mt-0.5 text-xs text-[#23364D]/60">{addon.description}</p>
+                        <p className="mt-1 text-xs font-bold text-[#D4A017]">{addon.displayPrice}</p>
+                      </div>
+                      <AddToCartButton
+                        item={{ priceId: addon.priceId, name: addon.name, displayPrice: addon.displayPrice, slug: addon.slug, category: 'holded' }}
+                        label="Añadir"
+                        className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#D4A017] px-3 py-1.5 text-xs font-bold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Summary sidebar */}
