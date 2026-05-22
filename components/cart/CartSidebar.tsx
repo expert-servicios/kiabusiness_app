@@ -22,7 +22,7 @@ export function CartSidebar() {
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean };
       if (res.status === 401 || data.requiresAuth) {
-        window.location.href = '/acceso?next=/carrito';
+        window.location.href = '/auth/login?next=/carrito';
         return;
       }
       if (data.url) {
