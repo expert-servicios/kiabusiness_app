@@ -22,6 +22,7 @@ import {
 } from '@/lib/integrations/kia-engine';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
+import { getService } from '@/lib/services/service-registry';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
 
@@ -528,23 +529,54 @@ export async function POST(request: NextRequest) {
           if (svc) { foundSection = section; foundService = svc; break; }
         }
         if (foundSection && foundService) {
-          const isRu   = /[А-Яа-яЁё]/.test(msgBody);
-          const pageUrl = `https://expertconsulting.es/servicios/${foundSection.id}/${foundService.id}`;
+          const isRu       = /[А-Яа-яЁё]/.test(msgBody);
+          const pageUrl    = `https://expertconsulting.es/servicios/${foundSection.id}/${foundService.id}`;
+          const registrySvc = getService(foundService.id);
+          const hasCheckout = registrySvc?.hasCheckout ?? false;
+
           const body = isRu
-            ? `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Información y contratación:*\n${pageUrl}\n\n¿Todavía tienes dudas? Reserva una *llamada informativa gratuita de 15 min* con nuestro equipo.`
-            : `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Más información y contratación:*\n${pageUrl}\n\n¿Todavía tienes dudas? Reserva una *llamada informativa gratuita de 15 min* con nuestro equipo.`;
-          const sentSvc = await sendWhatsAppInteractive({
-            to: from, body, footer: 'EXPERT 💼',
-            buttons: [
-              { id: 'btn_book_call',  title: isRu ? 'Llamada 15 min' : 'Llamada 15 min'  },
-              { id: 'btn_write_here', title: isRu ? 'Tengo más dudas' : 'Tengo más dudas' },
-            ],
-          });
+            ? `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Más información:*\n${pageUrl}`
+            : `*${foundService.title}*\n\n${foundService.description}\n\n🌐 *Más información:*\n${pageUrl}`;
+
+          // Up to 3 buttons: Contratar (if available) + Llamada + Dudas
+          const buttons: { id: string; title: string }[] = [];
+          if (hasCheckout) {
+            buttons.push({ id: `btn_contratar_${foundService.id}`, title: isRu ? 'Contratar online' : 'Contratar online' });
+          }
+          buttons.push({ id: 'btn_book_call',  title: 'Llamada 15 min' });
+          if (!hasCheckout) {
+            buttons.push({ id: 'btn_write_here', title: 'Tengo más dudas' });
+          }
+
+          const sentSvc = await sendWhatsAppInteractive({ to: from, body, footer: 'EXPERT 💼', buttons });
           if (sentSvc.success) {
             await logWhatsAppConversation({
               clientId, phoneNumber: from, direction: 'outbound',
-              body: `[Catálogo:svc] ${foundService.title} → ${pageUrl}`,
+              body: `[Catálogo:svc] ${foundService.title} → ${pageUrl}${hasCheckout ? ' [checkout disponible]' : ''}`,
               whatsappMessageId: sentSvc.messageId, aiResponded: false, needsReview: false,
+            });
+          }
+          await persistSessionUpdates(admin, from, {});
+          continue;
+        }
+      }
+
+      // ── Catalog: "Contratar online" button → send /contratar link ─────────
+      if (buttonId?.startsWith('btn_contratar_')) {
+        const serviceId   = buttonId.slice('btn_contratar_'.length);
+        const registrySvc = getService(serviceId);
+        if (registrySvc?.hasCheckout) {
+          const isRu = /[А-Яа-яЁё]/.test(msgBody);
+          const url  = absoluteAppUrl(`/contratar?service=${serviceId}&source=whatsapp`);
+          const body = isRu
+            ? `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`
+            : `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`;
+          const sent = await sendWhatsAppMessage({ to: from, body });
+          if (sent.success) {
+            await logWhatsAppConversation({
+              clientId, phoneNumber: from, direction: 'outbound',
+              body: `[Catálogo:contratar] ${registrySvc.name} → ${url}`,
+              whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
             });
           }
           await persistSessionUpdates(admin, from, {});
