@@ -134,11 +134,16 @@
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $newFiles = @\\(\"app/api/admin/whatsapp/retry-media/route.ts\"\\); foreach \\($f in $newFiles\\) { if \\(Test-Path $f\\) { Write-Output \"EXISTS: $f\" } else { Write-Output \"MISSING: $f\" } })",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $env:NODE_ENV = \"production\"; npx next build 2>&1 | Select-Object -First 40)",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; \\(Get-Command vercel -ErrorAction SilentlyContinue\\) | Select-Object Source; npx vercel --version 2>&1 | Select-Object -First 3)",
-      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\company\\\\resolve\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\company\\\\resolve\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"d:\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard\\\\integraciones\\\\holded\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\cart\\\\add\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\cart\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\report\\\\generate\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
-      "c:\\Users\\info\\OneDrive\\Documentos\\EXPERT\\Nueva Pagina web\\ksenia_expert\\app\\(protected)\\admin\\clientes"
+      "c:\\Users\\info\\OneDrive\\Documentos\\EXPERT\\Nueva Pagina web\\ksenia_expert\\app\\(protected)\\admin\\clientes",
+      "d:\\ksenia_expert\\app\\(protected)\\dashboard\\informe"
     ]
   }
 }

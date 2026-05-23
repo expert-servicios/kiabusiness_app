@@ -743,6 +743,121 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
   ],
 };
 
+// ── Profile questions (appended after viability precal questions) ─────────────
+// Keys prefixed prof_ to distinguish from viability answers.
+// getProfileQuestionsForService filters out already-answered ones.
+
+const PROFILE_QUESTIONS_BY_AREA: Record<string, PrecalQuestion[]> = {
+  empresa: [
+    {
+      key: 'prof_nombre_empresa',
+      text: {
+        es: '¿Cuál es el nombre de tu empresa o actividad?',
+        ru: 'Как называется ваша компания или вид деятельности?',
+      },
+      type: 'text',
+    },
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es el NIF/CIF de la empresa o el tuyo si eres autónomo?',
+        ru: 'Введите NIF/CIF компании или ваш личный (для самозанятых):',
+      },
+      type: 'text',
+    },
+    {
+      key: 'prof_fecha_inicio',
+      text: {
+        es: '¿Cuándo iniciaste (o planeas iniciar) la actividad? Ej. "enero 2024"',
+        ru: 'Когда вы начали (или планируете начать) деятельность? Напр. «январь 2024»',
+      },
+      type: 'text',
+    },
+    {
+      key: 'prof_direccion_fiscal',
+      text: {
+        es: '¿Cuál es tu dirección fiscal? (calle, ciudad, código postal)',
+        ru: 'Укажите юридический адрес (улица, город, индекс):',
+      },
+      type: 'text',
+    },
+  ],
+  fiscal: [
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es tu NIF o NIE?',
+        ru: 'Ваш NIF или NIE:',
+      },
+      type: 'text',
+    },
+  ],
+  extranjeria: [
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es tu número de NIE o pasaporte?',
+        ru: 'Ваш номер NIE или паспорта:',
+      },
+      type: 'text',
+    },
+    {
+      key: 'prof_pais_origen',
+      text: {
+        es: '¿Cuál es tu país de origen?',
+        ru: 'Ваша страна происхождения:',
+      },
+      type: 'text',
+    },
+    {
+      key: 'prof_fecha_llegada',
+      text: {
+        es: '¿Cuándo llegaste a España? (mes y año aproximado, ej. "marzo 2021")',
+        ru: 'Когда вы приехали в Испанию? (приблизительно, напр. «март 2021»)',
+      },
+      type: 'text',
+    },
+  ],
+  certificado: [
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es tu NIF/NIE (persona física) o CIF (empresa)?',
+        ru: 'Ваш NIF/NIE (физлицо) или CIF (компания):',
+      },
+      type: 'text',
+    },
+  ],
+  notaria: [
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es tu NIF o NIE?',
+        ru: 'Ваш NIF или NIE:',
+      },
+      type: 'text',
+    },
+  ],
+  trafico: [
+    {
+      key: 'prof_nif',
+      text: {
+        es: '¿Cuál es tu NIF o NIE?',
+        ru: 'Ваш NIF или NIE:',
+      },
+      type: 'text',
+    },
+  ],
+  holded: [],
+};
+
+/** Returns profile questions for svcId that haven't been answered yet. */
+export function getProfileQuestionsForService(svcId: string, existingData: Record<string, string>): PrecalQuestion[] {
+  const area = SERVICES[svcId]?.area ?? '';
+  const questions = PROFILE_QUESTIONS_BY_AREA[area] ?? [];
+  return questions.filter((q) => !existingData[q.key]);
+}
+
 // ── Menus ─────────────────────────────────────────────────────────────────────
 
 const FOOTER = 'EXPERT Asesoría 💼';
@@ -919,6 +1034,10 @@ export interface KiaSideEffects {
   sendPaymentLink?: boolean;
   /** When set and saveLead fires, also writes this value to leads.state */
   leadState      ?: string;
+  /** Add current service to kia_cart_items (webhook handles the DB write) */
+  addToCart      ?: boolean;
+  /** Trigger AI report generation in kia_reports (webhook handles the AI call) */
+  generateReport ?: boolean;
 }
 
 export interface KiaStepResult {
@@ -1120,20 +1239,20 @@ function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply 
   const svcLabel = svc?.label[lang] ?? '';
   const named    = firstName(name) ? `, *${firstName(name)}*` : '';
   const body     = lang === 'ru'
-    ? `✅ Отлично${named}! *${svcLabel}* подходит под вашу ситуацию.\n\nЧто хотите сделать?`
-    : `✅ ¡Perfecto${named}! *${svcLabel}* encaja con tu situación.\n\n¿Qué quieres hacer ahora?`;
+    ? `✅ Отлично${named}! *${svcLabel}* подходит под вашу ситуацию. Informe de viabilidad listo.\n\n¿Qué quieres hacer?`
+    : `✅ ¡Perfecto${named}! *${svcLabel}* encaja con tu situación. Informe de viabilidad listo.\n\n¿Qué quieres hacer ahora?`;
   return {
     type: 'buttons', body, footer: FOOTER,
     buttons: svc?.stripePriceId
       ? [
-          { id: 'btn_pay_now',   title: 'Contratar ahora' },
-          { id: 'btn_book_call', title: 'Llamada 15 min'  },
-          { id: 'btn_write_here', title: 'Tengo dudas'    },
+          { id: 'btn_add_to_cart', title: '🛒 Añadir a cesta' },
+          { id: 'btn_pay_now',     title: 'Contratar ahora'   },
+          { id: 'btn_book_call',   title: 'Llamada 15 min'    },
         ]
       : [
-          { id: 'btn_check_viability', title: 'Viabilidad'      },
-          { id: 'btn_book_call',       title: 'Llamada 15 min'  },
-          { id: 'btn_write_here',      title: 'Tengo dudas'     },
+          { id: 'btn_add_to_cart', title: '🛒 Añadir a cesta' },
+          { id: 'btn_book_call',   title: 'Llamada 15 min'    },
+          { id: 'btn_write_here',  title: 'Tengo dudas'       },
         ],
   };
 }
@@ -1326,6 +1445,20 @@ export function processKiaStep(
       replies    : [freeConsultPrompt(lang)],
       updates    : { flow: 'consult', step: 'free_consult', escalated: false },
       sideEffects: { needsAiFallback: true },
+    };
+  }
+  if (interaction === 'btn_add_to_cart') {
+    const svcId = session.service_id ?? '';
+    const svc   = SERVICES[svcId];
+    const cartUrl = 'https://expertconsulting.es/contratar?from=cart';
+    const svcName = svc?.label[lang] ?? (lang === 'ru' ? 'servicio' : 'servicio');
+    const body = lang === 'ru'
+      ? `🛒 *${svcName}* añadido a tu cesta. Disponible 48 h.\n\nRevisa y finaliza tu pedido aquí:\n${cartUrl}`
+      : `🛒 *${svcName}* añadido a tu cesta. Disponible durante 48 h.\n\nRevisa y finaliza tu pedido aquí:\n${cartUrl}`;
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { step: 'cart_added' },
+      sideEffects: { addToCart: true },
     };
   }
   if (interaction === 'btn_holded_prepare') {
@@ -1628,21 +1761,40 @@ export function processKiaStep(
       return { replies: [reply], updates: { step: 'precal', service_id: svcId, precal_step: 0 }, sideEffects: {} };
     }
 
-    // No precal → formalize via secure portal, not by collecting email in WhatsApp.
+    // No viability precal — but still collect profile data before formalizing.
+    const profileQsNoPrecal = getProfileQuestionsForService(svcId, session.data);
+    if (profileQsNoPrecal.length > 0) {
+      const introBody = lang === 'ru'
+        ? `¡Perfecto! Para prepararte un informe personalizado de *${svc.label.ru}* y agilizar el trámite, te haré unas preguntas rápidas (1 min):`
+        : `¡Perfecto! Para prepararte un informe personalizado de *${svc.label.es}* y agilizar el trámite, te haré unas preguntas rápidas (1 min):`;
+      const firstQ = profileQsNoPrecal[0];
+      const firstReply: KiaReply = { type: 'text', body: firstQ.text[lang] };
+      return {
+        replies: [{ type: 'text', body: introBody }, firstReply],
+        updates: { step: 'precal', service_id: svcId, precal_step: 0 },
+        sideEffects: {},
+      };
+    }
+
+    // No precal questions at all → formalize via secure portal.
     return { replies: [formalizeInterestCta(lang, name, svcId)], updates: { step: 'login_recommended', service_id: svcId }, sideEffects: {} };
   }
 
   // ── PRECALIFICATION ───────────────────────────────────────────────────────
 
   if (flow === 'new_client' && step === 'precal') {
-    const svcId = session.service_id ?? '';
-    const svc = SERVICES[svcId];
-    const questions = svc?.precalFlow ? (PRECAL_FLOWS[svc.precalFlow] ?? []) : [];
-    const qi = session.precal_step;
-    const currentQ = questions[qi];
+    const svcId          = session.service_id ?? '';
+    const svc            = SERVICES[svcId];
+    const viabilityQs    = svc?.precalFlow ? (PRECAL_FLOWS[svc.precalFlow] ?? []) : [];
+    // Profile questions filtered to those not yet answered
+    const profileQs      = getProfileQuestionsForService(svcId, session.data);
+    const allQuestions   = [...viabilityQs, ...profileQs];
+    const qi             = session.precal_step;
+    const currentQ       = allQuestions[qi];
 
     if (!currentQ) {
-      return { replies: [formalizeInterestCta(lang, name, session.service_id)], updates: { step: 'login_recommended' }, sideEffects: {} };
+      // Safety fallback: all questions already answered — show CTA.
+      return { replies: [precalCta(lang, name, svcId)], updates: { step: 'precal_cta' }, sideEffects: { generateReport: true } };
     }
 
     const answer = interaction || msgBody.trim();
@@ -1679,16 +1831,34 @@ export function processKiaStep(
     }
 
     const nextQi = qi + 1;
-    if (nextQi < questions.length) {
-      const nextQ = questions[nextQi];
+
+    if (nextQi < allQuestions.length) {
+      const nextQ    = allQuestions[nextQi];
       const nextBody = nextQ.text[lang];
       const nextReply: KiaReply = nextQ.type === 'text'
         ? { type: 'text', body: nextBody }
         : { type: 'buttons', body: nextBody, footer: FOOTER, buttons: (nextQ.options ?? []).map((o) => ({ id: o.id, title: o.label[lang].slice(0, 20) })) };
-      return { replies: [nextReply], updates: { precal_step: nextQi, data: newData, priority: newPriority }, sideEffects: {} };
+
+      // Show an intro message when transitioning from viability → profile questions.
+      const transitioningToProfile = nextQi === viabilityQs.length && profileQs.length > 0;
+      const replies: KiaReply[] = [];
+      if (transitioningToProfile) {
+        const introBody = lang === 'ru'
+          ? '¡Perfecto! Ahora unas preguntas rápidas más para tu informe personalizado (1 min):'
+          : '¡Perfecto! Ahora te haré unas preguntas rápidas para preparar tu informe de viabilidad personalizado (1 min):';
+        replies.push({ type: 'text', body: introBody });
+      }
+      replies.push(nextReply);
+
+      return { replies, updates: { precal_step: nextQi, data: newData, priority: newPriority }, sideEffects: {} };
     }
 
-    return { replies: [precalCta(lang, name, svcId)], updates: { step: 'precal_cta', data: newData, priority: newPriority }, sideEffects: {} };
+    // All questions answered → show CTA and trigger report generation.
+    return {
+      replies    : [precalCta(lang, name, svcId)],
+      updates    : { step: 'precal_cta', data: newData, priority: newPriority },
+      sideEffects: { generateReport: true },
+    };
   }
 
   // ── LEAD CAPTURE ─────────────────────────────────────────────────────────
@@ -1928,7 +2098,7 @@ export function processKiaStep(
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────
 
-  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment'].includes(step)) {
+  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment', 'cart_added'].includes(step)) {
     return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 

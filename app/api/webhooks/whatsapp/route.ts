@@ -1002,6 +1002,87 @@ export async function POST(request: NextRequest) {
         : sideEffects;
       await handleKiaSideEffects({ sideEffects: effectiveSideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
 
+      // ── Cart: add service to kia_cart_items ──────────────────────────────────
+      if (!isTestNumber && sideEffects.addToCart && updatedSession.service_id) {
+        const cartSvc = SERVICES[updatedSession.service_id];
+        if (cartSvc) {
+          const { error: cartErr } = await admin.from('kia_cart_items').insert({
+            phone_number    : from,
+            client_id       : clientId ?? null,
+            service_id      : cartSvc.id,
+            service_label   : cartSvc.label.es,
+            service_area    : cartSvc.area,
+            stripe_price_id : cartSvc.stripePriceId ?? null,
+            expires_at      : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+          });
+          if (cartErr) console.error('[Kia addToCart]', cartErr.message);
+        }
+      }
+
+      // ── Report: trigger AI report generation (fire-and-forget) ───────────────
+      if (!isTestNumber && sideEffects.generateReport && updatedSession.service_id) {
+        void fetch(absoluteAppUrl('/api/kia/report/generate'), {
+          method : 'POST',
+          headers: {
+            'Content-Type'     : 'application/json',
+            'x-internal-secret': process.env.INTERNAL_API_SECRET ?? '',
+          },
+          body: JSON.stringify({
+            phone_number: from,
+            service_id  : updatedSession.service_id,
+            lang        : updatedSession.lang,
+            precal_data : updatedSession.data,
+            client_id   : clientId ?? null,
+            generated_by: 'kia',
+          }),
+        }).catch((e: unknown) => console.error('[Kia generateReport fire-and-forget]', e));
+      }
+
+      // ── CIF scraping: if prof_nif was just set and matches a company CIF ──────
+      const CIF_PATTERN = /^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/i;
+      const newNif = updates.data?.prof_nif;
+      const oldNif = session.data?.prof_nif;
+      if (!isTestNumber && newNif && newNif !== oldNif && CIF_PATTERN.test(newNif.trim())) {
+        try {
+          const { resolveCompanyData } = await import('@/lib/integrations/company-data-resolver');
+          const resolved = await resolveCompanyData({ taxId: newNif.trim().toUpperCase(), country: 'ES' });
+          const best = resolved.bestSuggestion;
+          if (best) {
+            const scrapedData: Record<string, string> = {};
+            if (best.name && !updatedSession.data.prof_nombre_empresa) {
+              scrapedData.prof_nombre_empresa = best.name;
+            }
+            const fullAddress = [best.registeredAddress, best.city, best.province].filter(Boolean).join(', ');
+            if (fullAddress && !updatedSession.data.prof_direccion_fiscal) {
+              scrapedData.prof_direccion_fiscal = fullAddress;
+            }
+            if (best.incorporationDate && !updatedSession.data.prof_fecha_inicio) {
+              scrapedData.prof_fecha_inicio = best.incorporationDate;
+            }
+            if (Object.keys(scrapedData).length > 0) {
+              await persistSessionUpdates(admin, from, { data: { ...updatedSession.data, ...scrapedData } });
+              const infoLines = [
+                best.name            ? `🏢 *Empresa:* ${best.name}` : null,
+                fullAddress          ? `📍 *Dirección:* ${fullAddress}` : null,
+                best.incorporationDate ? `📅 *Constitución:* ${best.incorporationDate}` : null,
+              ].filter(Boolean).join('\n');
+              const infoBody = updatedSession.lang === 'ru'
+                ? `✅ Данные из публичных источников для CIF *${newNif}*:\n\n${infoLines}\n\nПроверьте, всё ли верно, и сообщите если что-то изменилось.`
+                : `✅ He encontrado datos públicos para el CIF *${newNif}*:\n\n${infoLines}\n\nConfirma que son correctos o dime si algo ha cambiado.`;
+              const sentInfo = await sendWhatsAppMessage({ to: from, body: infoBody });
+              if (sentInfo.success) {
+                await logWhatsAppConversation({
+                  clientId, phoneNumber: from, direction: 'outbound',
+                  body: infoBody, whatsappMessageId: sentInfo.messageId, aiResponded: false, needsReview: false,
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Kia CIF scraping]', e);
+        }
+      }
+
       // AI fallback when the step delegates to free-form conversation
       if (sideEffects.needsAiFallback) {
         const { data: history } = await admin
