@@ -72,16 +72,16 @@ export default function CitaPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
 
-          {/* ── Calendly inline widget ── */}
-          {/*
-            Uses Calendly's div-based inline widget (loaded by the global script in layout.tsx).
-            data-resize lets Calendly auto-adjust height — works better on mobile than a fixed iframe.
-          */}
+          {/* ── Calendly inline embed (iframe) ── */}
           <div className="overflow-hidden rounded-xl border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
-            <div
-              className="calendly-inline-widget min-w-[320px] h-[700px]"
-              data-url={CALENDLY_URL}
-              data-resize="true"
+            <iframe
+              src={CALENDLY_URL}
+              width="100%"
+              height="700"
+              frameBorder="0"
+              title="Reservar cita con EXPERT"
+              loading="lazy"
+              className="block min-w-[320px]"
             />
           </div>
 

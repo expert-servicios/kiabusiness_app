@@ -8,6 +8,7 @@ import {
 import { FaqSection } from '@/components/site/FaqSection';
 import { RelatedArticles } from '@/components/site/RelatedArticles';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { PlanCtaButton } from '@/components/planes/PlanCtaButton';
 
 export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded | EXPERT',
@@ -315,13 +316,11 @@ export default function PlanesPage() {
                   </ul>
 
                   <div className="mt-7 space-y-3">
-                    <Link
-                      href={isFree ? '/planes/gratuito' : '/auth/login'}
-                      className="inline-flex w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-                    >
-                      {isFree && <Gift className="h-4 w-4" />}
-                      {plan.ctaLabel}
-                    </Link>
+                    <PlanCtaButton
+                      planSlug={plan.slug}
+                      ctaLabel={plan.ctaLabel}
+                      isFree={isFree}
+                    />
                     {!isFree && (
                       <Link
                         href="/planes/gratuito"

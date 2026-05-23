@@ -194,7 +194,7 @@ async function handleKiaSideEffects({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin       : any;
 }): Promise<void> {
-  const { escalate, createCase, saveLead, sendDocsEmail, sendPaymentLink, priority = 'normal' } = sideEffects;
+  const { escalate, createCase, saveLead, sendDocsEmail, sendPaymentLink, priority = 'normal', leadState } = sideEffects;
   const contactStatus = contactCtx?.status ?? (clientId ? 'client' : 'lead');
 
   if (escalate) {
@@ -239,6 +239,7 @@ async function handleKiaSideEffects({
         source      : 'whatsapp',
         notes       : svc ? `Interesado/a en: ${svc.label.es}` : 'Consulta por WhatsApp',
         updated_at  : new Date().toISOString(),
+        ...(leadState ? { state: leadState } : {}),
       },
       { onConflict: 'phone' },
     ).catch((e: unknown) => console.error('[Kia saveLead]', e));

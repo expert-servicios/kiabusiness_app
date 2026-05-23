@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -12,6 +12,11 @@ import {
   X as XIcon,
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { getReadinessCheck } from '@/lib/data/service-readiness-checks';
+
+const ReadinessModal = lazy(() =>
+  import('@/components/services/ReadinessModal').then(m => ({ default: m.ReadinessModal }))
+);
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -124,14 +129,16 @@ function formatPrice(cents: number) {
 
 export function HoldedPricingSection() {
   const { addItem } = useCart();
-  const [selectedPkgId,   setSelectedPkgId]   = useState<string | null>(null);
+  const [selectedPkgId,    setSelectedPkgId]    = useState<string | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<Set<string>>(new Set());
-  const [added, setAdded] = useState(false);
+  const [added,            setAdded]            = useState(false);
+  const [readinessOpen,    setReadinessOpen]    = useState(false);
   const configuratorRef = useRef<HTMLDivElement>(null);
 
-  const selectedPkg  = PACKAGES.find((p) => p.priceId === selectedPkgId) ?? null;
-  const addonTotal   = selectedAddonIds.size * 18000;
-  const total        = selectedPkg ? selectedPkg.amountCents + addonTotal : 0;
+  const selectedPkg     = PACKAGES.find((p) => p.priceId === selectedPkgId) ?? null;
+  const addonTotal      = selectedAddonIds.size * 18000;
+  const total           = selectedPkg ? selectedPkg.amountCents + addonTotal : 0;
+  const readinessCheck  = selectedPkg ? getReadinessCheck(selectedPkg.slug) ?? null : null;
 
   function handleSelectPkg(priceId: string) {
     if (selectedPkgId === priceId) return;
@@ -149,7 +156,7 @@ export function HoldedPricingSection() {
     });
   }
 
-  function handleAddToCart() {
+  function doAddToCart() {
     if (!selectedPkg) return;
 
     addItem({
@@ -177,7 +184,27 @@ export function HoldedPricingSection() {
     setTimeout(() => setAdded(false), 3000);
   }
 
+  function handleAddToCart() {
+    if (!selectedPkg) return;
+    if (readinessCheck) {
+      setReadinessOpen(true);
+    } else {
+      doAddToCart();
+    }
+  }
+
   return (
+    <>
+    {readinessOpen && readinessCheck && selectedPkg && (
+      <Suspense fallback={null}>
+        <ReadinessModal
+          check={readinessCheck}
+          serviceSlug={selectedPkg.slug}
+          onApproved={doAddToCart}
+          onClose={() => setReadinessOpen(false)}
+        />
+      </Suspense>
+    )}
     <section id="precios" className="bg-white px-6 py-16 md:py-20">
       <div className="mx-auto max-w-7xl">
 
@@ -388,5 +415,6 @@ export function HoldedPricingSection() {
         </p>
       </div>
     </section>
+    </>
   );
 }

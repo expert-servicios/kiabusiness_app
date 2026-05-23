@@ -6,7 +6,7 @@ import { AlertCircle, BookOpen, Check, CheckCircle2, Clock, FileText, ListChecks
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { ViabilityButton } from '@/components/services/ViabilityButton';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
-import { getViabilityCheck } from '@/lib/data/viability-checks';
+import { getViabilityCheck, hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
@@ -84,7 +84,8 @@ export default async function ServicioDetallePage({
   if (!service) return notFound();
 
   const category = getCategory(categoria);
-  const viabilityCheck = getViabilityCheck(servicio);
+  const showViability   = hasSpecificViabilityCheck(servicio);
+  const viabilityCheck  = showViability ? getViabilityCheck(servicio) : null;
   const relatedServices = getServicesByCategory(categoria as CategorySlug).filter((s) => s.slug !== servicio).slice(0, 3);
   const relatedDocs = getDocsForService(service.slug);
   const relatedArticles = getArticlesForService(service.slug);
@@ -180,13 +181,15 @@ export default async function ServicioDetallePage({
             </a>
           </div>
 
-          {/* Viability check button — separate from Contratar */}
-          <div className="mt-4">
-            <ViabilityButton
-              check={viabilityCheck}
-              serviceSlug={servicio}
-            />
-          </div>
+          {/* Viability check button — only for services with specific checks */}
+          {showViability && viabilityCheck && (
+            <div className="mt-4">
+              <ViabilityButton
+                check={viabilityCheck}
+                serviceSlug={servicio}
+              />
+            </div>
+          )}
         </div>
 
         {/* Gold accent line */}

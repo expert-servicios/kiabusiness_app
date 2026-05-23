@@ -812,6 +812,8 @@ export interface KiaSideEffects {
   aiResponded    ?: boolean;
   needsAiFallback?: boolean;
   sendPaymentLink?: boolean;
+  /** When set and saveLead fires, also writes this value to leads.state */
+  leadState      ?: string;
 }
 
 export interface KiaStepResult {
@@ -928,9 +930,14 @@ function shouldRestartKiaFromHuman(text: string): boolean {
 const COMPLEX_SERVICE_REVIEW = new Set([
   'svc_modelo_151', 'svc_modelo_720',
   'svc_constitucion_sl', 'svc_gestion_mensual',
-  'svc_holded_migracion',
   'svc_nacionalidad',
   'svc_notaria_compraventa', 'svc_notaria_herencia',
+]);
+
+const HOLDED_SERVICES = new Set([
+  'svc_holded_starter',
+  'svc_holded_migracion',
+  'svc_holded_formacion',
 ]);
 
 // "No sé / No estoy segur@" stubs — offer 15-min call instead of blind escalation
@@ -1035,6 +1042,23 @@ function meetingRecommended(lang: KiaLang, name: string | null, svcId?: string |
   return { type: 'buttons', body, footer: FOOTER, buttons: buttons.slice(0, 3) };
 }
 
+function holdedReadinessCta(lang: KiaLang, name: string | null, svcId: string): KiaReply {
+  const svc   = SERVICES[svcId];
+  const named = name ? `, *${name}*` : '';
+  const label = svc?.label[lang] ?? (lang === 'ru' ? 'Holded' : 'Holded');
+  const body  = lang === 'ru'
+    ? `👋 Отлично${named}! *${label}* — отличный выбор.\n\nПрежде чем перейти к оплате, рекомендуем пройти быстрый тест готовности (2 мин). Это поможет убедиться, что всё готово.\n\nТакже можно попробовать Holded *бесплатно 14 дней* или сначала записаться на звонок 15 минут.`
+    : `👋 ¡Genial${named}! *${label}* es una gran elección.\n\nAntes de contratar, te recomendamos hacer un rápido test de preparación (2 min). Así nos aseguramos de que todo está listo.\n\nTambién puedes probar Holded *gratis 14 días* o reservar una llamada de 15 min primero.`;
+  return {
+    type: 'buttons', body, footer: FOOTER,
+    buttons: [
+      { id: 'btn_holded_prepare', title: 'Preparar contratación' },
+      { id: 'btn_holded_trial',   title: 'Prueba 14 días gratis' },
+      { id: 'btn_book_call',      title: 'Llamada 15 min'        },
+    ],
+  };
+}
+
 // ── Sensitive-topic keywords — recommend call before checkout ─────────────────
 
 const SENSITIVE_KEYWORDS_ES = [
@@ -1110,7 +1134,7 @@ export function processKiaStep(
       return {
         replies : [meetingRecommended(lang, name, session.service_id, 'Si prefieres hablar con una persona, la via mas rapida es reservar una llamada de 15 minutos.')],
         updates : { flow: 'consult', step: 'call_recommended', escalated: false },
-        sideEffects: {},
+        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'call_recommended' },
       };
     }
     // All other commands → restart
@@ -1168,6 +1192,30 @@ export function processKiaStep(
     return {
       replies    : [freeConsultPrompt(lang)],
       updates    : { flow: 'consult', step: 'free_consult', escalated: false },
+      sideEffects: { needsAiFallback: true },
+    };
+  }
+  if (interaction === 'btn_holded_prepare') {
+    const svcId  = session.service_id ?? '';
+    const pageUrl = svcId ? getServicePageUrl(svcId) : null;
+    const url     = pageUrl ?? 'https://expertconsulting.es/holded#precios';
+    const body    = lang === 'ru'
+      ? `✅ *Подготовка к подключению Holded:*\n\nПройдите быстрый тест готовности (2 мин) на нашем сайте. Если всё готово — сможете оплатить напрямую:\n${url}\n\nЕсли есть вопросы, напишите здесь и помогу.`
+      : `✅ *Preparación para contratar Holded:*\n\nRealiza el test de preparación rápido (2 min) en nuestra web. Si todo está listo, podrás contratar directamente:\n${url}\n\nSi tienes dudas, escríbeme aquí y te ayudo.`;
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { step: 'holded_readiness_sent', service_id: svcId || session.service_id },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_holded_trial') {
+    const trialUrl = process.env.NEXT_PUBLIC_HOLDED_TRIAL_URL ?? 'https://www.holded.com/es';
+    const body     = lang === 'ru'
+      ? `🚀 *Попробуй Holded бесплатно 14 дней:*\n\n${trialUrl}\n\nЗарегистрируйся, а мы как *официальный партнёр Holded* поможем с настройкой и обучением. Потом можешь контрактовать любой пакет.`
+      : `🚀 *Prueba Holded gratis 14 días:*\n\n${trialUrl}\n\nRegístrate y nosotros, como *Partner Oficial de Holded*, te ayudamos con la configuración y la formación. Después ya puedes contratar el paquete que necesites.`;
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { step: 'holded_trial_sent', service_id: session.service_id },
       sideEffects: {},
     };
   }
@@ -1183,7 +1231,7 @@ export function processKiaStep(
         priority: 'high',
         data: { ...session.data, sensitive_case: 'true' },
       },
-      sideEffects: { saveLead: contactInfo?.status !== 'client', priority: 'high' },
+      sideEffects: { saveLead: contactInfo?.status !== 'client', priority: 'high', leadState: 'call_recommended' },
     };
   }
 
@@ -1385,7 +1433,7 @@ export function processKiaStep(
       return {
         replies,
         updates: { flow: 'consult', step: 'meeting_recommended', escalated: false, service_id: svcId, data: { ...session.data, complex_service: 'true' } },
-        sideEffects: { saveLead: contactInfo?.status !== 'client' },
+        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'meeting_recommended' },
       };
     }
 
@@ -1400,6 +1448,15 @@ export function processKiaStep(
 
     const svc = SERVICES[svcId];
     if (!svc) return { replies: [freeConsultPrompt(lang)], updates: { flow: 'consult', step: 'free_consult' }, sideEffects: { needsAiFallback: true } };
+
+    // Holded services → readiness CTA (not viability, not standard lead capture)
+    if (HOLDED_SERVICES.has(svcId)) {
+      return {
+        replies    : [holdedReadinessCta(lang, name, svcId)],
+        updates    : { step: 'holded_readiness_cta', service_id: svcId },
+        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'holded_readiness' },
+      };
+    }
 
     // Has precal flow?
     if (svc.precalFlow && PRECAL_FLOWS[svc.precalFlow]?.length) {
@@ -1457,7 +1514,7 @@ export function processKiaStep(
           data: { ...newData, risk_or_complexity: 'true' },
           priority: newPriority,
         },
-        sideEffects: { saveLead: contactInfo?.status !== 'client', priority: newPriority },
+        sideEffects: { saveLead: contactInfo?.status !== 'client', priority: newPriority, leadState: 'call_recommended' },
       };
     }
 
