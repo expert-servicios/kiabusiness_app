@@ -14,9 +14,6 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: process.cwd(),
-  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'expertconsulting.es', 'www.expertconsulting.es', 'kseniailicheva.com', 'www.kseniailicheva.com'],

@@ -873,6 +873,63 @@ function privacyNotice(lang: KiaLang): KiaReply {
 
 // ── Auto-escalate service IDs ─────────────────────────────────────────────────
 
+function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaContactInfo): KiaStepResult {
+  if (contactInfo?.status === 'client') {
+    const greeting = name
+      ? `Hola, *${name}*. Veo que ya eres cliente de EXPERT. Que necesitas hoy?`
+      : CLIENT_WELCOME_MENU[lang].body;
+    const clientMenu = { ...CLIENT_WELCOME_MENU[lang], body: greeting };
+    return {
+      replies    : [privacyNotice(lang), menuToReply(clientMenu)],
+      updates    : { flow: 'client_start', step: 'waiting_option', lang, escalated: false },
+      sideEffects: {},
+    };
+  }
+
+  if (name) {
+    const leadBody = `Hola, *${name}*. Soy *Kia*, asistente virtual de EXPERT. En que puedo ayudarte?`;
+    const leadMenu = { ...LEAD_WELCOME_MENU[lang], body: leadBody };
+    return {
+      replies    : [privacyNotice(lang), menuToReply(leadMenu)],
+      updates    : { flow: 'lead_start', step: 'waiting_option', lang, escalated: false },
+      sideEffects: {},
+    };
+  }
+
+  const askName: KiaReply = {
+    type: 'text',
+    body: 'Como te llamas? Escribenos tu nombre y apellido, por favor.',
+  };
+  return {
+    replies    : [privacyNotice(lang), askName],
+    updates    : { flow: 'welcome', step: 'asking_name', lang, escalated: false },
+    sideEffects: {},
+  };
+}
+
+function shouldRestartKiaFromHuman(text: string): boolean {
+  const normalized = text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  return [
+    'hola',
+    'buenas',
+    'buenos dias',
+    'buenas tardes',
+    'buenas noches',
+    'menu',
+    'inicio',
+    'ayuda',
+    'servicios',
+    'catalogo',
+  ].some((prefix) => normalized.startsWith(prefix))
+    || normalized.includes('que servicios')
+    || normalized.includes('no respondes');
+}
+
 const AUTO_ESCALATE = new Set([
   'svc_modelo_151', 'svc_modelo_720',
   'svc_constitucion_sl', 'svc_gestion_mensual',
@@ -1049,6 +1106,50 @@ export function processKiaStep(
   const langChanged  = detectedLang !== lang;
 
   const { flow, step } = session;
+
+  if (interaction === 'resume_kia_menu') {
+    const l = langChanged ? detectedLang : lang;
+    return contactStart(l, name, contactInfo);
+  }
+
+  if (flow === 'human' || session.escalated) {
+    const l = langChanged ? detectedLang : lang;
+    const selectedService = interaction ? SERVICES[interaction] : null;
+
+    if (selectedService) {
+      const pageUrl = getServicePageUrl(selectedService.id);
+      const body = [
+        `Perfecto${name ? `, *${name}*` : ''}. He anotado tu interes en *${selectedService.label.es}*.`,
+        pageUrl ? `Mas informacion: ${pageUrl}` : null,
+        'Si quieres que Kia siga con el menu automatico, escribe "menu". Si prefieres equipo humano, ya queda visible para EXPERT.',
+      ].filter(Boolean).join('\n\n');
+      return {
+        replies    : [{ type: 'text', body }],
+        updates    : {
+          flow      : 'welcome',
+          step      : 'waiting_intent',
+          service_id: selectedService.id,
+          lang      : l,
+          escalated : false,
+          data      : { ...session.data, area: selectedService.area },
+        },
+        sideEffects: contactInfo?.status === 'client' ? {} : { saveLead: true },
+      };
+    }
+
+    if (shouldRestartKiaFromHuman(msgBody)) {
+      return contactStart(l, name, contactInfo);
+    }
+
+    const body = contactInfo?.status === 'client'
+      ? 'Te leo. Esta conversacion esta derivada al equipo de EXPERT, y tu mensaje queda registrado para seguimiento. Si quieres volver al menu automatico de Kia, escribe "menu".'
+      : 'Te leo. Esta consulta esta derivada al equipo de EXPERT, y tu mensaje queda registrado para seguimiento. Si quieres que Kia te atienda de nuevo, escribe "menu".';
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { lang: l },
+      sideEffects: { escalate: true, priority: session.priority ?? 'normal' },
+    };
+  }
 
   // ── WELCOME ───────────────────────────────────────────────────────────────
 

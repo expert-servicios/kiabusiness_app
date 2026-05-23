@@ -131,6 +131,13 @@ async function sendKiaReply(
         body: reply.body, whatsappMessageId: sent.messageId,
         aiResponded, needsReview: false,
       });
+    } else {
+      console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
+      await admin.from('whatsapp_conversations')
+        .update({ needs_review: true })
+        .eq('phone_number', phone)
+        .eq('direction', 'inbound')
+        .is('read_at', null);
     }
   } else if (reply.type === 'buttons') {
     const sent = await sendWhatsAppInteractive({
@@ -143,6 +150,13 @@ async function sendKiaReply(
         body: `[Kia] ${reply.body} | ${reply.buttons.map((b) => b.title).join(' / ')}`,
         whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
       });
+    } else {
+      console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
+      await admin.from('whatsapp_conversations')
+        .update({ needs_review: true })
+        .eq('phone_number', phone)
+        .eq('direction', 'inbound')
+        .is('read_at', null);
     }
   } else if (reply.type === 'list') {
     const sent = await sendWhatsAppInteractive({
@@ -155,6 +169,13 @@ async function sendKiaReply(
         body: `[Kia:list] ${reply.body}`,
         whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
       });
+    } else {
+      console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
+      await admin.from('whatsapp_conversations')
+        .update({ needs_review: true })
+        .eq('phone_number', phone)
+        .eq('direction', 'inbound')
+        .is('read_at', null);
     }
   }
 }
