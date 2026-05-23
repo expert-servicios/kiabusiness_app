@@ -65,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sistema',
     icon: Plug,
     items: [
+      { label: 'Panel Gerente', href: '/admin/executive' },
       { label: 'Integraciones', href: '/admin/integraciones' },
       { label: 'Reportes', href: '/admin/reportes' },
     ]
