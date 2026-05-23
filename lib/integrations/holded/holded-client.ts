@@ -158,15 +158,10 @@ export interface HoldedClient {
   getContact(contactId: string): Promise<HoldedContact | null>;
 }
 
-/**
- * Creates a Holded HTTP client bound to a specific integration.
- *
- * @param integrationId - UUID of client_integrations row, or null for the EXPERT global account.
- */
-export async function createHoldedClient(integrationId: string | null): Promise<HoldedClient> {
-  const auth = await resolveHoldedAuth(integrationId);
-  const { apiKey, baseUrl } = auth;
+const INVOICING_BASE = 'https://api.holded.com/api/invoicing/v1';
 
+/** Shared factory — builds a HoldedClient from a resolved API key + base URL. */
+function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
   const get  = <T>(path: string) => holdedFetch<T>(apiKey, 'GET', `${baseUrl}${path}`);
 
   // ── Permission detection ────────────────────────────────────────────────────
@@ -291,6 +286,25 @@ export async function createHoldedClient(integrationId: string | null): Promise<
       }
     },
   };
+}
+
+/**
+ * Creates a Holded HTTP client bound to a specific integration.
+ *
+ * @param integrationId - UUID of client_integrations row, or null for the EXPERT global account.
+ */
+export async function createHoldedClient(integrationId: string | null): Promise<HoldedClient> {
+  const auth = await resolveHoldedAuth(integrationId);
+  return buildHoldedClient(auth.apiKey, auth.baseUrl);
+}
+
+/**
+ * Creates a Holded client from a raw API key (no DB lookup).
+ * Used only in the /api/integrations/holded/test route to verify a key before saving.
+ * The raw key is NEVER logged or stored here.
+ */
+export function createHoldedClientFromRawKey(rawApiKey: string): HoldedClient {
+  return buildHoldedClient(rawApiKey.trim(), INVOICING_BASE);
 }
 
 /**
