@@ -15,11 +15,15 @@ import { sendEmail } from '@/lib/email/send';
 import { documentRequired } from '@/lib/email/templates';
 import {
   processKiaStep,
+  detectLanguage,
   type KiaSession,
   type KiaReply,
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
+
+// Numbers used internally for testing — no lead creation, no session persistence.
+const TEST_PHONE_NUMBERS = new Set(['34669045528']);
 import { resolveKiaContactContext, type KiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
@@ -375,10 +379,11 @@ interface KiaAiContext {
 async function generateKiaAiResponse({
   clientId, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
-  const lang               = session.lang;
+  // Always detect lang from the current message — session.lang may be stale mid-conversation.
+  const lang = msgBody ? detectLanguage(msgBody) : session.lang;
   const languageInstruction = lang === 'ru'
-    ? 'ruso. Responde ÚNICAMENTE en ruso con alfabeto cirílico. No uses español salvo que el cliente lo pida explícitamente.'
-    : 'español. Responde en español.';
+    ? 'ruso. Responde ÚNICAMENTE en ruso con alfabeto cirílico. NUNCA uses español ni otro idioma en la misma respuesta.'
+    : 'español. Responde ÚNICAMENTE en español. NUNCA uses ruso ni otro idioma en la misma respuesta.';
 
   const officialSourceContext = await buildOfficialSourceContext(
     [...conversationHistory.slice(-3).map((h) => `${h.direction}: ${h.body}`), `inbound: ${msgBody}`].join('\n'),
@@ -493,7 +498,8 @@ REGLAS:
 - Si requiere decision profesional compleja, da primero orientacion util y despues ofrece reserva de llamada/reunion: https://expertconsulting.es/auth/login?next=%2Fcita
 - Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), da pasos iniciales prudentes y recomienda llamada/reunion de 15 minutos.
 - [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
-- Nunca inventes plazos, precios exactos ni documentos
+- PRECIOS: NUNCA des precios, rangos ni estimaciones (ni exactos ni aproximados). Todos los precios de EXPERT son fijos y exactos, disponibles en https://expertconsulting.es/planes. Ante cualquier pregunta de precio, indica esa URL. Si el servicio no aparece en planes, envía a https://expertconsulting.es/auth/login?next=%2Fsolicitar-presupuesto
+- Nunca inventes plazos ni documentos
 - Máximo 2 intercambios de aclaración antes de cerrar con acción concreta
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
 - No digas que has comprobado información oficial si no aparece en FUENTES OFICIALES DISPONIBLES
@@ -909,7 +915,23 @@ export async function POST(request: NextRequest) {
       }
 
       // ── Kia session ────────────────────────────────────────────────────────
-      const session  = await getOrCreateSession(admin, from, clientId);
+      const isTestNumber = TEST_PHONE_NUMBERS.has(from);
+      const session  = isTestNumber
+        ? ({
+            phone_number: from,
+            client_id   : null,
+            lang        : msgBody ? detectLanguage(msgBody) : 'es',
+            flow        : 'welcome',
+            step        : 'init',
+            service_id  : null,
+            precal_step : 0,
+            data        : {},
+            name        : null,
+            email       : null,
+            priority    : 'normal',
+            escalated   : false,
+          } as KiaSession)
+        : await getOrCreateSession(admin, from, clientId);
       const clientName = clientId
         ? (contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
@@ -974,8 +996,11 @@ export async function POST(request: NextRequest) {
         await sendKiaReply(reply, from, clientId, admin);
       }
 
-      // Handle side effects (createCase, saveLead, sendDocsEmail, escalate)
-      await handleKiaSideEffects({ sideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
+      // Handle side effects (test numbers skip lead/case creation)
+      const effectiveSideEffects: KiaSideEffects = isTestNumber
+        ? { ...sideEffects, saveLead: false, createCase: false }
+        : sideEffects;
+      await handleKiaSideEffects({ sideEffects: effectiveSideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
 
       // AI fallback when the step delegates to free-form conversation
       if (sideEffects.needsAiFallback) {
@@ -1041,8 +1066,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Persist session state changes
-      await persistSessionUpdates(admin, from, updates);
+      // Persist session state changes (skipped for test numbers)
+      if (!isTestNumber) {
+        await persistSessionUpdates(admin, from, updates);
+      }
     }
 
     return NextResponse.json({ received: true });

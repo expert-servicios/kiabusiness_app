@@ -42,6 +42,44 @@ function firstName(name: string | null | undefined): string | null {
   return name.trim().split(/\s+/)[0] ?? null;
 }
 
+/**
+ * Words that are NOT valid names on their own.
+ * "Soy Katia" → only "Katia" is kept. "Hola si" → null → re-ask.
+ */
+const NAME_STOP_WORDS = new Set([
+  'soy', 'hola', 'si', 'sí', 'no', 'mi', 'nombre', 'es', 'llamar', 'me', 'llamo',
+  'buenas', 'buenos', 'dias', 'tardes', 'noches', 'ok', 'okey', 'vale', 'bien',
+  'quiero', 'necesito', 'gracias', 'adios', 'hey', 'ola', 'eh', 'pues', 'que',
+  'un', 'una', 'el', 'la', 'de', 'en', 'por', 'para', 'con', 'y', 'o',
+  'привет', 'меня', 'зовут', 'я', 'мое', 'имя', 'да', 'нет', 'ок', 'окей',
+]);
+
+function normalizeWord(w: string): string {
+  return w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+/**
+ * Strips stop words from the user's answer and returns a clean name,
+ * or null if nothing meaningful remains.
+ *
+ * Examples:
+ *   "Soy Katia"         → "Katia"
+ *   "Me llamo Juan"     → "Juan"
+ *   "Mi nombre es Ana"  → "Ana"
+ *   "Hola si"           → null (re-ask)
+ *   "Katia"             → "Katia"
+ */
+export function extractValidName(text: string): string | null {
+  const cleaned = text.replace(/[^\w\sáéíóúÁÉÍÓÚüÜñÑА-Яа-яЁё.'-]/g, ' ').trim();
+  if (cleaned.length < 2 || cleaned.length > 80) return null;
+
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const meaningful = words.filter((w) => !NAME_STOP_WORDS.has(normalizeWord(w)));
+  if (meaningful.length === 0) return null;
+
+  return meaningful.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 function normalizeIntentText(text: string): string {
   return text
     .normalize('NFD')
@@ -1462,17 +1500,19 @@ export function processKiaStep(
 
   if (flow === 'welcome' && step === 'asking_name') {
     const l = langChanged ? detectedLang : lang;
-    const rawName = msgBody.replace(/[^\w\sáéíóúÁÉÍÓÚüÜñÑА-Яа-яЁё.'-]/g, ' ').trim().slice(0, 80);
-    if (rawName.length < 2) {
-      return {
-        replies : [{ type: 'text', body: l === 'ru' ? '😊 ¡No te preocupes! ¿Cómo quieres que te llame? Solo escríbeme tu nombre.' : '😊 ¡No te preocupes! ¿Cómo quieres que te llame? Solo escríbeme tu nombre.' }],
-        updates : { lang: l },
-        sideEffects: {},
+    const validName = extractValidName(msgBody);
+    if (!validName) {
+      const retry: KiaReply = {
+        type: 'text',
+        body: l === 'ru'
+          ? '😊 ¿Cómo quieres que te llame? Escríbeme solo tu nombre (ej. "María" o "Juan García").'
+          : '😊 ¿Cómo quieres que te llame? Escríbeme solo tu nombre (ej. "María" o "Juan García").',
       };
+      return { replies: [retry], updates: { lang: l }, sideEffects: {} };
     }
     return {
-      replies : [welcome(l, rawName)],
-      updates : { flow: 'welcome', step: 'waiting_intent', name: rawName, lang: l },
+      replies    : [welcome(l, validName)],
+      updates    : { flow: 'welcome', step: 'waiting_intent', name: validName, lang: l },
       sideEffects: {},
     };
   }
