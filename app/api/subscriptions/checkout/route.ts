@@ -42,9 +42,22 @@ export async function POST(request: NextRequest) {
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase
       .from('profiles')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, profile_completed, billing_ready')
       .eq('id', user.id)
       .single();
+
+    if (!profile?.profile_completed) {
+      return NextResponse.json(
+        { error: 'Completa tu perfil antes de suscribirte.', code: 'profile_required' },
+        { status: 409 }
+      );
+    }
+    if (!profile?.billing_ready) {
+      return NextResponse.json(
+        { error: 'Completa tus datos fiscales antes de suscribirte.', code: 'billing_required' },
+        { status: 409 }
+      );
+    }
 
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();

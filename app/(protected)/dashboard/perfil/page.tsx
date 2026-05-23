@@ -7,9 +7,9 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 
 const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  collaborator: 'Colaborador',
-  client: 'Cliente'
+  admin        : 'Administrador',
+  collaborator : 'Colaborador',
+  client       : 'Cliente',
 };
 
 export default async function ProfilePage() {
@@ -18,12 +18,7 @@ export default async function ProfilePage() {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {}
-      }
-    }
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -31,14 +26,19 @@ export default async function ProfilePage() {
 
   const { data: profile } = await getSupabaseAdmin()
     .from('profiles')
-    .select('id,role,full_name,phone,whatsapp_number,whatsapp_consent,avatar_url')
+    .select(`
+      id, role, full_name, phone, whatsapp_number, whatsapp_consent, avatar_url,
+      client_type, company, tax_id, address, city, postal_code, province, billing_country,
+      habitual_address, habitual_city, habitual_postal_code, habitual_province, habitual_country,
+      profile_completed, billing_ready, habitual_address_ready
+    `)
     .eq('id', user.id)
     .single();
 
-  const identities = user.identities ?? [];
-  const hasGoogle = identities.some((i) => i.provider === 'google');
+  const identities    = user.identities ?? [];
+  const hasGoogle     = identities.some((i) => i.provider === 'google');
   const hasEmailPassword = identities.some((i) => i.provider === 'email');
-  const role = profile?.role ?? 'client';
+  const role          = profile?.role ?? 'client';
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-10">
@@ -54,7 +54,6 @@ export default async function ProfilePage() {
         {/* Identity card */}
         <div className="rounded-3xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            {/* Avatar initials */}
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#c88b25]/15 text-xl font-bold text-[#c88b25]">
               {(profile?.full_name ?? user.email ?? '?').charAt(0).toUpperCase()}
             </div>
@@ -64,22 +63,17 @@ export default async function ProfilePage() {
               </p>
               <p className="truncate text-sm text-[#29384a]">{user.email}</p>
               <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                role === 'admin'
-                  ? 'bg-[#d7a33a]/15 text-[#c88b25]'
-                  : role === 'collaborator'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'bg-[#f8f4eb] text-[#29384a]'
+                role === 'admin'       ? 'bg-[#d7a33a]/15 text-[#c88b25]'
+                : role === 'collaborator' ? 'bg-blue-50 text-blue-700'
+                : 'bg-[#f8f4eb] text-[#29384a]'
               }`}>
                 {ROLE_LABELS[role] ?? role}
               </span>
             </div>
           </div>
 
-          {/* Connected identity providers */}
           <div className="mt-5 flex flex-wrap gap-2 border-t border-[#f0e8d8] pt-5">
-            <p className="w-full text-xs font-semibold uppercase tracking-widest text-[#29384a]">
-              Acceso con
-            </p>
+            <p className="w-full text-xs font-semibold uppercase tracking-widest text-[#29384a]">Acceso con</p>
             {hasGoogle && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-semibold text-[#07111d]">
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
@@ -102,7 +96,7 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Editable profile form */}
+        {/* Extended profile form */}
         <ProfileForm
           email={user.email ?? ''}
           role={role}
@@ -111,6 +105,22 @@ export default async function ProfilePage() {
           initialWhatsappNumber={profile?.whatsapp_number ?? ''}
           initialWhatsappConsent={profile?.whatsapp_consent ?? false}
           hasEmailPassword={hasEmailPassword}
+          initialClientType={profile?.client_type ?? ''}
+          initialCompany={profile?.company ?? ''}
+          initialTaxId={profile?.tax_id ?? ''}
+          initialAddress={profile?.address ?? ''}
+          initialCity={profile?.city ?? ''}
+          initialPostalCode={profile?.postal_code ?? ''}
+          initialProvince={profile?.province ?? ''}
+          initialBillingCountry={profile?.billing_country ?? 'ES'}
+          initialHabitualAddress={profile?.habitual_address ?? ''}
+          initialHabitualCity={profile?.habitual_city ?? ''}
+          initialHabitualPostalCode={profile?.habitual_postal_code ?? ''}
+          initialHabitualProvince={profile?.habitual_province ?? ''}
+          initialHabitualCountry={profile?.habitual_country ?? 'ES'}
+          profileCompleted={profile?.profile_completed ?? false}
+          billingReady={profile?.billing_ready ?? false}
+          habitualAddressReady={profile?.habitual_address_ready ?? false}
         />
 
       </div>

@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, ShoppingBag, ExternalLink } from 'lucide-react';
+import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { categories, services } from '@/lib/utils/catalog';
+import { getService } from '@/lib/services/service-registry';
+import { ServiceCatalogCtaButtons } from '@/components/dashboard/ServiceCatalogCtaButtons';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'declaraciones-impuestos': '📊',
@@ -85,31 +87,11 @@ export default function DashboardServiciosPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {/* Direct checkout if stripePriceId exists */}
-                      {service.stripePriceId ? (
-                        <Link
-                          href={`/servicios/${service.categoria}/${service.slug}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#d7a33a] px-3.5 py-2 text-xs font-bold text-[#061321] transition hover:bg-[#f0bf54]"
-                        >
-                          {service.checkoutLabel ?? 'Contratar'} <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/solicitar-presupuesto?servicio=${encodeURIComponent(service.name)}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#d7a33a] px-3.5 py-2 text-xs font-bold text-[#061321] transition hover:bg-[#f0bf54]"
-                        >
-                          Solicitar presupuesto <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      )}
-                      {/* Ver detalle */}
-                      <Link
-                        href={`/servicios/${service.categoria}/${service.slug}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3.5 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#d7a33a] hover:text-[#07111d]"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Ver detalle <ExternalLink className="h-3 w-3" />
-                      </Link>
+                      <ServiceCatalogCtaButtons
+                        flowType={getService(service.slug)?.flowType ?? 'direct_checkout'}
+                        slug={service.slug}
+                        categoria={service.categoria}
+                      />
                     </div>
                   </div>
                 ))}

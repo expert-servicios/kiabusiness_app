@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { CustomerPortalButton } from '@/components/subscriptions/CustomerPortalButton';
-import { SubscriptionCheckoutButton } from '@/components/subscriptions/SubscriptionCheckoutButton';
+import { SubscriptionPlanCards } from '@/components/subscriptions/SubscriptionPlanCards';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SubscriptionRecord {
@@ -14,27 +14,6 @@ interface SubscriptionRecord {
   canceled_at: string | null;
   created_at: string;
 }
-
-const plans = [
-  {
-    name: 'Plan Básico',
-    price: '€99/mes',
-    envKey: 'STRIPE_PLAN_MONTHLY_99',
-    features: ['Asesoría fiscal básica', 'Hasta 2 trámites/mes', 'Soporte por email']
-  },
-  {
-    name: 'Plan Estándar',
-    price: '€199/mes',
-    envKey: 'STRIPE_PLAN_MONTHLY_199',
-    features: ['Asesoría fiscal y laboral', 'Hasta 5 trámites/mes', 'Soporte prioritario']
-  },
-  {
-    name: 'Plan Premium',
-    price: '€349/mes',
-    envKey: 'STRIPE_PLAN_MONTHLY_349',
-    features: ['Asesoría integral', 'Trámites ilimitados', 'Gestor dedicado', 'WhatsApp directo']
-  }
-];
 
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   active: { label: 'Activa', icon: <CheckCircle2 className="h-4 w-4" />, color: 'bg-green-100 text-green-800' },
@@ -120,35 +99,10 @@ export default async function SubscriptionsPage() {
                   ? 'Tu suscripción ha finalizado. Elige un plan para retomar el servicio.'
                   : 'Elige un plan mensual y deja que nos ocupemos de tus trámites.'}
               </p>
-              <div className="grid gap-6 md:grid-cols-3">
-                {plans.map((plan) => {
-                  const priceId = process.env[plan.envKey as keyof typeof process.env] ?? '';
-                  return (
-                    <div
-                      key={plan.name}
-                      className="flex flex-col rounded-3xl border border-[#d8cbb5] bg-[#f8f4eb] p-6"
-                    >
-                      <p className="text-sm uppercase tracking-[0.2em] text-[#c88b25]">{plan.name}</p>
-                      <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{plan.price}</p>
-                      <ul className="mt-4 flex-1 space-y-2">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-center gap-2 text-sm text-[#29384a]">
-                            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-[#c88b25]" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-6">
-                        {priceId ? (
-                          <SubscriptionCheckoutButton priceId={priceId} label="Suscribirse" />
-                        ) : (
-                          <p className="text-xs text-[#29384a]">Plan no disponible aún</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <SubscriptionPlanCards
+                planAvanzadoPriceId={process.env.STRIPE_PLAN_MONTHLY_99 ?? ''}
+                planColaborativoPriceId={process.env.STRIPE_PLAN_MONTHLY_199 ?? ''}
+              />
             </div>
           ) : null}
         </div>
