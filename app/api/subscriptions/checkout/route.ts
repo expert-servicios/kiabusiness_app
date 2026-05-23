@@ -33,11 +33,19 @@ export async function POST(request: NextRequest) {
 
     const { priceId } = parseResult.data;
 
-    if (VALID_PLAN_IDS.length > 0 && !VALID_PLAN_IDS.includes(priceId)) {
+    if (VALID_PLAN_IDS.length === 0) {
+      console.error('[subscriptions/checkout] no STRIPE_PLAN_MONTHLY_* price IDs configured');
+      return NextResponse.json({ error: 'Planes de suscripcion no configurados' }, { status: 500 });
+    }
+
+    if (!VALID_PLAN_IDS.includes(priceId)) {
       return NextResponse.json({ error: 'Plan no valido' }, { status: 400 });
     }
 
     const configuredPlan = PLAN_CHECKOUTS.find((plan) => plan.priceId === priceId);
+    if (!configuredPlan) {
+      return NextResponse.json({ error: 'Plan no valido' }, { status: 400 });
+    }
 
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase
@@ -67,29 +75,27 @@ export async function POST(request: NextRequest) {
       customer: profile?.stripe_customer_id ?? undefined,
       customer_email: profile?.stripe_customer_id ? undefined : user.email,
       client_reference_id: user.id,
-      metadata: { user_id: user.id, plan_name: configuredPlan?.name ?? 'Suscripcion' },
+      metadata: { user_id: user.id, plan_name: configuredPlan.name },
       subscription_data: {
         metadata: {
           user_id: user.id,
-          plan_name: configuredPlan?.name ?? 'Suscripcion',
+          plan_name: configuredPlan.name,
           configured_price_id: priceId
         }
       },
       line_items: [
-        configuredPlan
-          ? {
-              quantity: 1,
-              price_data: {
-                currency: 'eur',
-                unit_amount: Math.round(configuredPlan.amountEur * 100),
-                recurring: { interval: 'month' },
-                product_data: {
-                  name: toStripeAscii(configuredPlan.name),
-                  metadata: { configured_price_id: priceId },
-                },
-              },
-            }
-          : { price: priceId, quantity: 1 }
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'eur',
+            unit_amount: Math.round(configuredPlan.amountEur * 100),
+            recurring: { interval: 'month' },
+            product_data: {
+              name: toStripeAscii(configuredPlan.name),
+              metadata: { configured_price_id: priceId },
+            },
+          },
+        }
       ],
       success_url: `${appUrl}/gracias/pago?type=subscription`,
       cancel_url: `${appUrl}/dashboard/suscripciones`

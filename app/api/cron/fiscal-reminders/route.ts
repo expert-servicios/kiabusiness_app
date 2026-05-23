@@ -7,7 +7,14 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 // Protected by CRON_SECRET header (set in Vercel env vars)
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET?.trim();
+
+  if (!cronSecret) {
+    console.error('[cron/fiscal-reminders] CRON_SECRET not configured');
+    return NextResponse.json({ error: 'Cron not configured' }, { status: 500 });
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   logWhatsAppConversation,
@@ -26,6 +27,48 @@ import { getService } from '@/lib/services/service-registry';
 import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
+
+const META_SIGNATURE_HEADER = 'x-hub-signature-256';
+const META_SIGNATURE_PREFIX = 'sha256=';
+
+type WhatsAppWebhookBody = {
+  entry?: Array<{
+    changes?: Array<{
+      value?: {
+        messages?: Array<Record<string, unknown>>;
+      };
+    }>;
+  }>;
+};
+
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null): boolean {
+  const appSecret = process.env.META_APP_SECRET?.trim();
+
+  if (!appSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[WhatsApp webhook] META_APP_SECRET not configured');
+      return false;
+    }
+    return true;
+  }
+
+  if (!signatureHeader?.startsWith(META_SIGNATURE_PREFIX)) {
+    return false;
+  }
+
+  const receivedSignature = signatureHeader.slice(META_SIGNATURE_PREFIX.length);
+  if (!/^[a-f0-9]{64}$/i.test(receivedSignature)) {
+    return false;
+  }
+
+  const expectedSignature = createHmac('sha256', appSecret)
+    .update(rawBody, 'utf8')
+    .digest('hex');
+
+  const expected = Buffer.from(expectedSignature, 'hex');
+  const received = Buffer.from(receivedSignature, 'hex');
+  return expected.length === received.length && timingSafeEqual(expected, received);
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -61,6 +104,23 @@ function extractButtonId(msg: Record<string, unknown>): string | null {
   if (interactive?.type === 'button_reply') return (interactive.button_reply as { id?: string })?.id?.trim() || null;
   if (interactive?.type === 'list_reply')   return (interactive.list_reply   as { id?: string })?.id?.trim() || null;
   return null;
+}
+
+function hasReliableLeadIdentity(session: KiaSession): boolean {
+  const fullName = session.name?.trim() ?? '';
+  const hasNameAndSurname = fullName.split(/\s+/).filter(Boolean).length >= 2;
+  const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(session.email?.trim() ?? '');
+  return hasNameAndSurname && hasValidEmail;
+}
+
+function safeLeadState(state: string | undefined): 'new' | 'contacted' | 'quoted' | 'converted' | undefined {
+  return state === 'new' || state === 'contacted' || state === 'quoted' || state === 'converted'
+    ? state
+    : undefined;
+}
+
+function secureLoginUrl(nextPath: string): string {
+  return absoluteAppUrl(`/auth/login?next=${encodeURIComponent(nextPath)}`);
 }
 
 // ── Kia session helpers ───────────────────────────────────────────────────────
@@ -225,21 +285,20 @@ async function handleKiaSideEffects({
     }).catch((e: unknown) => console.error('[Kia createCase]', e));
   }
 
-  if (contactStatus === 'lead' && !clientId && (saveLead || createCase)) {
-    // Only upsert leads when the contact is not already a registered client.
-    // WhatsApp leads are phone-first; email is nullable after 20260522130000.
+  if (contactStatus === 'lead' && !clientId && (saveLead || createCase) && hasReliableLeadIdentity(session)) {
+    const state = safeLeadState(leadState);
     await admin.from('leads').upsert(
       {
         phone,
-        name        : session.name ?? phone,
-        email       : session.email ?? null,
+        name        : session.name,
+        email       : session.email,
         client_type : 'particular',
         category    : svc?.category ?? 'general',
         service     : svc?.label.es ?? 'Consulta WhatsApp',
         source      : 'whatsapp',
         notes       : svc ? `Interesado/a en: ${svc.label.es}` : 'Consulta por WhatsApp',
         updated_at  : new Date().toISOString(),
-        ...(leadState ? { state: leadState } : {}),
+        ...(state ? { state } : {}),
       },
       { onConflict: 'phone' },
     ).catch((e: unknown) => console.error('[Kia saveLead]', e));
@@ -275,8 +334,8 @@ async function handleKiaSideEffects({
       }
       const url = absoluteAppUrl(`/contratar?service=${checkoutSlug}&source=whatsapp`);
       const body = session.lang === 'ru'
-        ? `🔐 *Para contratar ${svc.label.ru}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`
-        : `🔐 *Para contratar el servicio ${svc.label.es}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`;
+        ? `🔐 *Para contratar ${svc.label.ru}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`
+        : `🔐 *Para contratar el servicio ${svc.label.es}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`;
       const sent = await sendWhatsAppMessage({ to: phone, body });
       if (sent.success) {
         await logWhatsAppConversation({
@@ -357,6 +416,23 @@ async function generateKiaAiResponse({
     clientContext = 'Número desconocido — no hay cliente registrado con este teléfono.';
   }
 
+  const kiaDisposition = session.data?.kia_contact_disposition;
+  if (kiaDisposition === 'low_intent') {
+    clientContext += [
+      '',
+      'Memoria Kia: este contacto fue marcado internamente como bajo interes/diversion.',
+      `Motivo: ${session.data?.kia_low_intent_reason ?? 'no especificado'}.`,
+      `Veces detectado: ${session.data?.kia_low_intent_count ?? '1'}.`,
+      'Actua con tono amable y breve. Si ahora trae una consulta real de EXPERT, ayudale con normalidad; si sigue en entretenimiento, cierra sin venta.',
+    ].join('\n');
+  } else if (kiaDisposition === 'reactivated_after_low_intent') {
+    clientContext += [
+      '',
+      'Memoria Kia: este contacto tuvo uso de bajo interes/diversion antes, pero ahora parece haber vuelto con una consulta util.',
+      'Ayuda con normalidad, manteniendo respuestas concretas y evitando insistir en captacion innecesaria.',
+    ].join('\n');
+  }
+
   const systemPrompt = `Eres *Kia*, la asistente virtual IA de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 *Eres una inteligencia artificial (IA), NO un ser humano.* Si alguien pregunta si eres humano o una persona real, responde siempre con honestidad: "Soy Kia, una IA de EXPERT. No soy una persona, soy un sistema automatizado al servicio de EXPERT Asesoría."
 Nuestra web: https://expertconsulting.es
@@ -381,9 +457,9 @@ PÁGINAS CLAVE (comparte el enlace completo cuando sea relevante):
 ALCANCE ESTRICTO — OBLIGATORIO:
 ═══════════════════════════════════════
 1. IDENTIDAD IA: Nunca finjas ser humano. Nunca uses frases como "en mi experiencia personal", "yo personalmente pienso", "como persona". Si preguntan si eres IA o humano, sé siempre honesta.
-2. FUERA DE ALCANCE: Si el cliente hace preguntas de educación/formación fiscal general (¿qué es el IVA?, ¿cómo funciona el IRPF?, ¿qué diferencia hay entre autónomo y empresa?, etc.) que NO buscan contratar un servicio concreto, responde: "Soy un asistente de EXPERT y solo gestiono servicios y consultas específicas. Para orientación detallada, te recomiendo reservar una consulta: https://expertconsulting.es/cita"
-3. REVISION PROFESIONAL: Si el cliente menciona requerimiento de Hacienda, sancion fiscal, denegacion, recurso, inspeccion tributaria, embargo, multa fiscal o acta de inspeccion, orienta a reservar llamada/reunion de 15 minutos. No uses [NEEDS_REVIEW] por complejidad comercial o urgencia del servicio.
-4. DATOS MÍNIMOS: Solo pide los datos estrictamente necesarios para identificar el servicio. Nunca solicites información fiscal sensible (números de cuenta, claves de acceso, datos de declaraciones).
+2. ASESORAMIENTO PERMITIDO: Puedes orientar como asesora profesional en fiscal, laboral, mercantil, juridico, extranjeria, empresa, autonomos y gestion documental. Da pasos, guias, tramites, checklist y enlaces oficiales cuando existan, incluso si la persona no es cliente ni pide contratar.
+3. REVISION PROFESIONAL: Puedes revisar el contenido que el usuario aporte de documentos empresariales, fiscales, laborales o juridicos y señalar riesgos, pasos y dudas a confirmar. Si falta el documento o no puedes verlo, dilo y pide que pegue el texto o suba una captura legible. Para requerimientos, sanciones, denegaciones, recursos, inspecciones, embargos, multas o actas, ofrece orientacion inicial y recomienda cita/revision profesional.
+4. DATOS MÍNIMOS: No pidas email por WhatsApp al inicio ni para orientar. Usa solo el nombre de trato si ya existe. Cuando haya interes real en presupuesto, cita, contratacion, expediente o seguimiento formal, envia al portal/login seguro para recoger datos fiables. Nunca solicites claves de acceso, numeros completos de cuenta, certificados o informacion sensible innecesaria por WhatsApp.
 
 ═══════════════════════════════════════
 FORMATO DE RESPUESTA — ELIGE UNO:
@@ -391,7 +467,7 @@ FORMATO DE RESPUESTA — ELIGE UNO:
 
 OPCIÓN A — TEXTO (la mayoría de casos):
 Responde directamente con texto claro y conciso. Máximo 3 párrafos cortos.
-Termina con una CTA natural con enlace. Firma: "EXPERT 💼"
+Termina con un siguiente paso natural solo si encaja con el contexto. Firma: "EXPERT 💼"
 
 OPCIÓN B — BOTONES INTERACTIVOS (solo cuando necesitas contexto antes de responder):
 Responde ÚNICAMENTE con este JSON exacto, sin texto antes ni después:
@@ -401,6 +477,7 @@ Reglas: mínimo 2, máximo 3 botones. Cada botón ≤ 20 caracteres, sin emojis 
 CUÁNDO usar botones:
 ✓ Consulta muy vaga sin contexto ("necesito ayuda", "¿qué servicios tenéis?")
 ✓ Pregunta de precio sin especificar servicio ("¿cuánto cuesta?")
+✓ Si detectas interes real pero faltan datos fiables, ofrece login/registro, presupuesto o cita en el portal seguro
 
 CUÁNDO NO usar botones:
 ✗ Si el historial ya muestra "[Kia]" o "[Kia:list]" — el cliente ya navegó el menú; responde con texto
@@ -412,19 +489,24 @@ NEGRITA en WhatsApp: *texto* (UN asterisco, NO **texto**)
 Emojis con moderación: ✅ 👋 📋 📅 💼 🚀
 
 REGLAS:
-- Si requiere decision profesional compleja, dirige a reserva de llamada/reunion: https://expertconsulting.es/cita
-- Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), recomienda llamada/reunion de 15 minutos.
+- Varía la redacción segun historial y contexto; evita repetir la misma frase si ya la has dicho.
+- Si requiere decision profesional compleja, da primero orientacion util y despues ofrece reserva de llamada/reunion: https://expertconsulting.es/auth/login?next=%2Fcita
+- Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), da pasos iniciales prudentes y recomienda llamada/reunion de 15 minutos.
 - [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
 - Nunca inventes plazos, precios exactos ni documentos
 - Máximo 2 intercambios de aclaración antes de cerrar con acción concreta
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
 - No digas que has comprobado información oficial si no aparece en FUENTES OFICIALES DISPONIBLES
-- WhatsApp no sustituye el portal: orienta y lleva al cliente a cita, presupuesto o panel seguro
+- Si la conversacion es solo entretenimiento, pruebas, flirteo, insultos o bromas sin relacion con EXPERT, responde una vez con tono amable, marca limite sutil y cierra sin empujar venta.
+- No crees friccion pidiendo correo o apellidos por WhatsApp; para formalizar usa https://expertconsulting.es/auth/login
+- WhatsApp puede orientar; para tramitar, contratar, compartir datos sensibles o hacer seguimiento de expediente, lleva al cliente a cita, presupuesto o panel seguro
 
-CIERRE OBLIGATORIO — cada respuesta debe terminar con una acción concreta, nunca dejar la conversación abierta:
-• Si necesita presupuesto → https://expertconsulting.es/solicitar-presupuesto
-• Si necesita cita o asesoría → https://expertconsulting.es/cita
-• Si es complejo/urgente → reserva llamada/reunion: https://expertconsulting.es/cita
+CIERRE CONTEXTUAL:
+• Si pide informacion general → resume pasos y enlaza 1-2 fuentes oficiales si existen.
+• Si necesita presupuesto → https://expertconsulting.es/auth/login?next=%2Fsolicitar-presupuesto
+• Si necesita cita o asesoría → https://expertconsulting.es/auth/login?next=%2Fcita
+• Si es complejo/urgente → orientacion inicial + reserva llamada/reunion: https://expertconsulting.es/auth/login?next=%2Fcita
+• Si es entretenimiento o uso negativo → cierre amable y breve, sin CTA comercial.
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
@@ -442,11 +524,12 @@ REGLAS PARA CLIENTE:
 - Facturación configurada: ${contactCtx.billingReady ? 'Sí' : 'No'}.
 ` : `
 REGLAS PARA LEAD:
-- Objetivo: orientar, comprobar viabilidad, captar datos mínimos, llevar a login/registro o llamada preventa.
+- Objetivo: orientar de forma util, comprobar viabilidad cuando proceda y llevar a login/registro, presupuesto o llamada solo cuando haya interes real.
 - NO hablar de expedientes salvo que el lead haya indicado un trámite concreto.
 - NO afirmar que es cliente ni asumir que tiene cuenta.
 - NO pedir documentación completa antes de contratar.
-- Siempre terminar con acción comercial: viabilidad, llamada 15 min o contratar.
+- NO pedir email por WhatsApp; si hace falta identificarlo formalmente, envia al portal seguro.
+- No fuerces una accion comercial si solo necesita informacion general o si el uso es claramente de diversion/bajo interes.
 `}
 
 CONTEXTO DEL CONTACTO:
@@ -495,7 +578,18 @@ ${clientContext}`;
 
 export async function POST(request: NextRequest) {
   try {
-    const body     = await request.json();
+    const rawBody = await request.text();
+    if (!verifyMetaSignature(rawBody, request.headers.get(META_SIGNATURE_HEADER))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    let body: WhatsAppWebhookBody;
+    try {
+      body = JSON.parse(rawBody) as WhatsAppWebhookBody;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+
     const messages = body?.entry?.[0]?.changes?.[0]?.value?.messages;
     if (!messages || messages.length === 0) return NextResponse.json({ received: true });
 
@@ -510,8 +604,9 @@ export async function POST(request: NextRequest) {
       const isMedia = ['image', 'document', 'audio', 'video'].includes(msgType);
       if (!['text', 'interactive'].includes(msgType) && !isMedia) continue;
 
-      const from       : string = msg.from;
-      const messageId  : string = msg.id;
+      const from       = String(msg.from ?? '');
+      const messageId  = String(msg.id ?? '');
+      if (!from || !messageId) continue;
 
       // Resolve contact context (lead vs client) — single query, cached per message
       const contactCtx: KiaContactContext = await resolveKiaContactContext(admin, from);
@@ -742,8 +837,8 @@ export async function POST(request: NextRequest) {
           const isRu = /[А-Яа-яЁё]/.test(msgBody);
           const url  = absoluteAppUrl(`/contratar?service=${serviceId}&source=whatsapp`);
           const body = isRu
-            ? `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`
-            : `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`;
+            ? `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`
+            : `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`;
           const sent = await sendWhatsAppMessage({ to: from, body });
           if (sent.success) {
             await logWhatsAppConversation({
@@ -819,67 +914,35 @@ export async function POST(request: NextRequest) {
         ? (contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
 
-      // ── identify_for_doc flow — collect name + email for unknown doc sender ──
+      // ── identify_for_doc flow — keep lightweight memory; formal follow-up goes through login ──
       if (session.flow === 'identify_for_doc') {
         if (session.step === 'awaiting_name') {
           const nameInput = msgBody.trim();
-          await persistSessionUpdates(admin, from, { name: nameInput, step: 'awaiting_email' });
-          const askEmail = `Gracias, *${nameInput}*. ¿Cuál es tu dirección de email? La necesitamos para enviarte actualizaciones sobre tu expediente.`;
-          const sentAskEmail = await sendWhatsAppMessage({ to: from, body: askEmail });
-          if (sentAskEmail.success) {
+          await persistSessionUpdates(admin, from, { name: nameInput, flow: 'lead_media_followup', step: 'awaiting_service' });
+          const loginUrl = secureLoginUrl('/solicitar-presupuesto');
+          const askService = `Gracias, *${nameInput}*. Ya tengo tu nombre para esta conversacion.\n\nPara vincular el documento a una ficha o expediente con datos correctos, hazlo desde el portal seguro:\n${loginUrl}\n\nMientras tanto, dime a que tramite corresponde y te oriento por aqui sin pedirte email.`;
+          const sentAskService = await sendWhatsAppMessage({ to: from, body: askService });
+          if (sentAskService.success) {
             await logWhatsAppConversation({
               clientId, phoneNumber: from, direction: 'outbound',
-              body: askEmail, whatsappMessageId: sentAskEmail.messageId, aiResponded: false, needsReview: false,
+              body: askService, whatsappMessageId: sentAskService.messageId, aiResponded: false, needsReview: false,
             });
           }
           continue;
         }
 
         if (session.step === 'awaiting_email') {
-          const emailInput = msgBody.trim().toLowerCase();
-          const emailValid  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput);
-          if (!emailValid) {
-            const retry = `Ese email no parece válido. Por favor, escríbelo de nuevo (ej. nombre@ejemplo.com):`;
-            const sentRetry = await sendWhatsAppMessage({ to: from, body: retry });
-            if (sentRetry.success) {
-              await logWhatsAppConversation({
-                clientId, phoneNumber: from, direction: 'outbound',
-                body: retry, whatsappMessageId: sentRetry.messageId, aiResponded: false, needsReview: false,
-              });
-            }
-            continue;
-          }
-
           await persistSessionUpdates(admin, from, {
-            email: emailInput,
-            flow:  'welcome',
-            step:  'init',
-            data:  { ...session.data, pending_doc_url: '', pending_doc_type: '', pending_doc_caption: '', pending_doc_filename: '', pending_doc_message_id: '' },
+            flow: 'lead_media_followup',
+            step: 'awaiting_service',
           });
-          try {
-            await admin.from('leads').upsert(
-              {
-                phone:        from,
-                name:         session.name ?? from,
-                email:        emailInput,
-                client_type:  'particular',
-                category:     'general',
-                service:      'Consulta WhatsApp',
-                source:       'whatsapp',
-                notes:        'Identificado al enviar documento por WhatsApp',
-                updated_at:   new Date().toISOString(),
-              },
-              { onConflict: 'phone' },
-            );
-          } catch (e) {
-            console.error('[Kia identify_for_doc lead]', e);
-          }
 
           const docType    = session.data?.pending_doc_type ?? 'document';
           const docCaption = session.data?.pending_doc_caption ?? '';
           const mediaIcon  = docType === 'image' ? '📷' : docType === 'audio' ? '🎤' : docType === 'video' ? '🎥' : '📄';
           const mediaLabel = docType === 'document' ? 'documento' : docType === 'image' ? 'imagen' : docType === 'audio' ? 'audio' : 'archivo';
-          const ackDoc = `${mediaIcon} *${session.name ?? from}*, muchas gracias. Hemos guardado tu ${mediaLabel} y registrado tu ficha ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
+          const loginUrl = secureLoginUrl('/solicitar-presupuesto');
+          const ackDoc = `${mediaIcon} *${session.name ?? from}*, muchas gracias. Hemos guardado tu ${mediaLabel} ✅\n\nPara seguimiento formal o expediente, entra desde el portal seguro:\n${loginUrl}\n\nSi quieres, dime a que tramite corresponde y te oriento por aqui. EXPERT 💼`;
           const sentAckDoc = await sendWhatsAppMessage({ to: from, body: ackDoc });
           if (sentAckDoc.success) {
             await logWhatsAppConversation({
@@ -888,8 +951,8 @@ export async function POST(request: NextRequest) {
             });
           }
           notifyAdmins({
-            title: `📎 Doc + ficha nueva — ${session.name ?? from}`,
-            body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} | email: ${emailInput}`,
+            title: `📎 Doc lead sin ficha — ${session.name ?? from}`,
+            body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} | seguimiento por portal`,
             url: '/admin/whatsapp', tag: `wa-doc-${from}`,
           }).catch(() => {});
           continue;

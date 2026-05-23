@@ -30,10 +30,19 @@ const OFFICIAL_DOMAINS = [
   'www.clave.gob.es',
   'administracion.gob.es',
   'sede.administracionespublicas.gob.es',
+  'administraciondejusticia.gob.es',
+  'www.administraciondejusticia.gob.es',
   'interior.gob.es',
   'www.interior.gob.es',
+  'mjusticia.gob.es',
+  'www.mjusticia.gob.es',
+  'sede.mjusticia.gob.es',
+  'justicia.es',
+  'sedejudicial.justicia.es',
   'mpt.gob.es',
   'www.mpt.gob.es',
+  'poderjudicial.es',
+  'www.poderjudicial.es',
   'registradores.org',
   'www.registradores.org',
 ];
@@ -44,7 +53,8 @@ const OFFICIAL_SOURCE_TRIGGERS = [
   /\b(extranjer[ií]a|nie|tie|arraigo|residencia|nacionalidad|reagrupaci[oó]n|asilo|visado)\b/i,
   /\b(sepe|paro|desempleo|prestaci[oó]n|subsidio|erte)\b/i,
   /\b(certificado digital|cl@ve|clave pin|sede electr[oó]nica|notificaci[oó]n electr[oó]nica|dehu)\b/i,
-  /\b(boe|real decreto|ley|orden ministerial|normativa)\b/i,
+  /\b(boe|real decreto|ley|orden ministerial|normativa|recurso|sanci[oó]n|denegaci[oó]n|demanda|juzgado|justicia|notificaci[oó]n judicial)\b/i,
+  /\b(mercantil|registro mercantil|sociedad limitada|constituci[oó]n de sociedad|estatutos|escritura|poder notarial|apoderado|notar[ií]a|herencia|sucesi[oó]n|compraventa)\b/i,
   /[А-Яа-яЁё].*(налог|деклара|доход|рента|ипрф|ндфл|автоном|социал|страх|резиден|внж|ниэ|nie)/i,
   /\b(tax|income|tax return|social security|residence permit|digital certificate)\b/i,
 ];
@@ -90,7 +100,25 @@ const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
     title: 'BOE - Busqueda legislativa',
     url: 'https://www.boe.es/buscar/',
     snippet: 'Busqueda oficial de leyes, reales decretos, ordenes y normativa publicada.',
-    keywords: [/boe|real decreto|ley|orden ministerial|normativa|reglamento/i],
+    keywords: [/boe|real decreto|ley|orden ministerial|normativa|reglamento|sanci|recurso|denegaci|mercantil|laboral|juridic/i],
+  },
+  {
+    title: 'Ministerio de Justicia',
+    url: 'https://www.mjusticia.gob.es/',
+    snippet: 'Informacion oficial sobre tramites de justicia, registros, certificados y servicios al ciudadano.',
+    keywords: [/justicia|registro civil|certificado|recurso|juzgado|demanda|herencia|sucesi|notar/i],
+  },
+  {
+    title: 'Administracion de Justicia - Sede judicial electronica',
+    url: 'https://sedejudicial.justicia.es/',
+    snippet: 'Acceso oficial a tramites y servicios de la Administracion de Justicia.',
+    keywords: [/juzgado|demanda|notificaci|justicia|procedimiento judicial|expediente judicial/i],
+  },
+  {
+    title: 'Registradores de Espana',
+    url: 'https://www.registradores.org/',
+    snippet: 'Informacion y servicios oficiales de Registro Mercantil, Propiedad y Bienes Muebles.',
+    keywords: [/registradores|registro mercantil|mercantil|sociedad limitada|sl|propiedad|bien inmueble|nota simple|compraventa/i],
   },
   {
     title: 'Cl@ve - Identidad electronica',
@@ -131,10 +159,10 @@ Enlaces oficiales:
 ${sourceLines}
 
 Reglas de uso de fuentes:
-- Usa estas fuentes solo como orientacion complementaria, no como asesoramiento personalizado definitivo.
+- Usa estas fuentes como apoyo para orientar con pasos practicos y criterio profesional.
 - Si das informacion administrativa, incluye 1 o 2 enlaces oficiales relevantes.
 - No inventes plazos, importes, requisitos ni documentos si no aparecen en el contexto oficial.
-- Si la consulta exige decision profesional o revisar documentos concretos, deriva a revision humana o cita.`;
+- Si la consulta exige presentar escritos, representar al usuario o revisar documentacion sensible, recomienda cita o revision profesional.`;
 }
 
 async function lookupOfficialSources(query: string): Promise<OfficialSourceLookup | null> {

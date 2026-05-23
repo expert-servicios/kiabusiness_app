@@ -23,6 +23,7 @@ Estados:
 - [x] Eliminar rutas duplicadas `app/(app)` frente a `app/(protected)`.
 - [x] Fijar `turbopack.root` para evitar que Next use un lockfile externo.
 - [x] Centralizar reCAPTCHA v3 y proteccion anti-spam para formularios publicos.
+- [x] Crear `docs/improvement-plan.md` como plan vivo de mejoras priorizadas.
 - [~] Limpiar documentacion principal. `roadmap`, `checklist` y `architecture` quedan normalizados; README puede revisarse despues.
 
 ## 1. Vision EXPERT
@@ -166,10 +167,10 @@ Toda funcionalidad nueva debe clasificarse como una o varias de estas categorias
 
 ## Siguiente bloque recomendado
 
-Ejecutar el siguiente tramo operativo:
+Ejecutar `docs/improvement-plan.md` como fuente principal del siguiente tramo operativo:
 
-1. Aplicar migraciones P0 y `external_mappings` en Supabase remoto.
-2. Mostrar badges de sincronizacion Holded en leads, presupuestos y expedientes.
-3. Crear reintento manual de sincronizaciones fallidas desde `/admin/integraciones`.
-4. Completar automatizaciones por estado: emails, recordatorios y seguimiento de presupuestos.
-5. Estandarizar paginas de categoria y servicio.
+1. Cerrar P0 seguridad: firma WhatsApp, redirect auth, fail-closed de secretos obligatorios.
+2. Blindar secretos de `client_integrations` en Supabase.
+3. Proteger endpoints publicos con coste o enriquecimiento externo.
+4. Hacer webhooks Stripe y sincronizaciones Holded idempotentes y durables.
+5. Recuperar `npm run lint` y actualizar dependencias auditadas.

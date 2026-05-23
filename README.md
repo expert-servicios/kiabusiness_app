@@ -33,6 +33,7 @@ EXPERT es una plataforma operativa digital construida primero para la asesoria p
 - `docs/roadmap.md`: roadmap maestro.
 - `docs/master-checklist.md`: checklist de cumplimiento.
 - `docs/architecture.md`: arquitectura operativa.
+- `docs/improvement-plan.md`: plan vivo de mejoras tecnicas priorizadas.
 
 ## Flujo operativo core
 
@@ -101,4 +102,4 @@ ADMIN_EMAILS=soy@kseniailicheva.com
 
 Fase 0 completada: el proyecto compila, las migraciones locales se validaron con Supabase local y el panel admin ya funciona como bandeja operativa.
 
-Bloque actual: cerrar P0 remoto, consolidar sincronizacion Holded desde admin, reforzar automatizaciones por estado y mantener la arquitectura preparada para multi-tenant futuro.
+Bloque actual: ejecutar `docs/improvement-plan.md`, empezando por seguridad de webhooks/auth, secretos Supabase, anti-abuso en endpoints publicos y robustez Stripe/Holded.

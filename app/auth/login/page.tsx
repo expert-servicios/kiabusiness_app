@@ -14,9 +14,25 @@ function getSupabaseClient() {
   return createBrowserClient(url, key);
 }
 
+function safeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+    return '/dashboard';
+  }
+
+  try {
+    const parsed = new URL(value, 'https://expert.local');
+    if (parsed.origin !== 'https://expert.local') {
+      return '/dashboard';
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/dashboard';
+  }
+}
+
 function LoginForm() {
   const searchParams  = useSearchParams();
-  const next          = searchParams.get('next') ?? '/dashboard';
+  const next          = safeNextPath(searchParams.get('next'));
   const callbackUrl   = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(next)}`;
 
   const [email,     setEmail]     = useState('');

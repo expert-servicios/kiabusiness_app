@@ -42,15 +42,74 @@ function firstName(name: string | null | undefined): string | null {
   return name.trim().split(/\s+/)[0] ?? null;
 }
 
-// ── Lead extraction ───────────────────────────────────────────────────────────
+function normalizeIntentText(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
 
-export function extractLeadInfo(text: string): { name: string | null; email: string | null } {
-  const emailMatch = text.match(/[\w.+%-]+@[\w-]+\.[a-zA-Z]{2,}/);
-  const email      = emailMatch?.[0] ?? null;
-  const cleaned    = text.replace(email ?? '', '').replace(/[,;|]/g, ' ').trim();
-  const words      = cleaned.split(/\s+/).filter((w) => w.length > 1 && !/^[\d+()]+$/.test(w)).slice(0, 5);
-  const name       = words.length >= 1 ? words.join(' ').slice(0, 80) : null;
-  return { name, email };
+function shouldAnswerInsteadOfRetryingEmail(msgBody: string): boolean {
+  const text = normalizeIntentText(msgBody);
+  if (text.length < 12) return false;
+  if (/[?¿]/.test(msgBody)) return true;
+
+  return /\b(analiza|analizar|captura|documento|empresa|fiscal|legal|laboral|mercantil|asesor|asesoria|consulta|tramite|hacienda|seguridad social|autonomo|irpf|iva|holded|quiero|necesito|puedes|puedo|ayuda)\b/i.test(text);
+}
+
+function isBusinessOrAdviceIntent(msgBody: string): boolean {
+  const text = normalizeIntentText(msgBody);
+  return /\b(fiscal|legal|laboral|mercantil|juridic|empresa|autonomo|autonomos|hacienda|aeat|seguridad social|sepe|registro mercantil|sociedad|sl|irpf|iva|modelo|nomina|contrato|despido|baja|alta|extranjeria|nie|tie|residencia|nacionalidad|certificado digital|holded|factura|contabilidad|tramite|recurso|sancion|multa|denegacion|embargo|documento|captura|analiza|asesor|consulta|presupuesto|cita|servicio|contratar)\b/i.test(text);
+}
+
+function detectLowIntentReason(msgBody: string): string | null {
+  const text = normalizeIntentText(msgBody);
+  if (text.length < 3 || isBusinessOrAdviceIntent(msgBody)) return null;
+
+  if (/\b(chiste|cuentame algo gracioso|hazme reir|poema|cancion|adivinanza|juego|jugar|rolplay|roleplay|aburrid[oa]|entret[eé]nme|divierteme)\b/i.test(text)) {
+    return 'entertainment';
+  }
+
+  if (/\b(guapa|guapo|preciosa|precioso|sexy|te amo|te quiero|ligar|novia|novio|casate conmigo|sal conmigo|beso|besame)\b/i.test(text)) {
+    return 'flirt';
+  }
+
+  if (/\b(tonta|tonto|idiota|imbecil|estupida|estupido|callate|puta|puto|mierda|joder|vete a la mierda)\b/i.test(text)) {
+    return 'abuse';
+  }
+
+  if (/^(jaja+|jeje+|xd|lol|test|probando|asdf|hola bot|robot)$/i.test(text)) {
+    return 'test';
+  }
+
+  return null;
+}
+
+function lowIntentData(session: KiaSession, reason: string): Record<string, string> {
+  const count = Number.parseInt(session.data?.kia_low_intent_count ?? '0', 10);
+  return {
+    ...session.data,
+    kia_contact_disposition: 'low_intent',
+    kia_low_intent_reason: reason,
+    kia_low_intent_count: String(Number.isFinite(count) ? count + 1 : 1),
+  };
+}
+
+function clearLowIntentForBusiness(session: KiaSession): Record<string, string> {
+  return {
+    ...session.data,
+    kia_contact_disposition: 'reactivated_after_low_intent',
+    kia_reactivated_after_low_intent: 'true',
+  };
+}
+
+function lowIntentBoundaryReply(lang: KiaLang, alreadyKnown: boolean): KiaReply {
+  const body = alreadyKnown
+    ? 'Sigo por aquí si necesitas algo de EXPERT: fiscal, legal, laboral, empresa, extranjería o documentos. Para conversación de entretenimiento no voy a alargar el hilo. EXPERT 💼'
+    : 'Te leo 😊 Para bromas, pruebas o conversación de entretenimiento no quiero hacerte perder tiempo ni quedarme en bucle. Si tienes una duda fiscal, legal, laboral, de empresa o documentos, escríbemela y te ayudo. EXPERT 💼';
+
+  return { type: 'text', body: lang === 'ru' ? body : body };
 }
 
 // ── Service definitions ───────────────────────────────────────────────────────
@@ -841,12 +900,32 @@ function welcome(lang: KiaLang, name?: string | null): KiaReply {
   return { type: 'buttons', body, footer: FOOTER, buttons: m.buttons };
 }
 
-function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
+function loginUrl(nextPath: string): string {
+  return `https://expertconsulting.es/auth/login?next=${encodeURIComponent(nextPath)}`;
+}
+
+function formalizeInterestCta(lang: KiaLang, name?: string | null, svcId?: string | null): KiaReply {
   const named = firstName(name) ? `, *${firstName(name)}*` : '';
+  const svc = svcId ? SERVICES[svcId] : null;
+  const serviceLine = svc
+    ? (lang === 'ru' ? `\n\nServicio: *${svc.label.ru}*.` : `\n\nServicio: *${svc.label.es}*.`)
+    : '';
+  const budgetUrl = loginUrl('/solicitar-presupuesto');
   const body = lang === 'ru'
-    ? `¡Casi listo${named}! 🎉 Ya estamos en la recta final 😊\n\nPara formalizar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*. ¡Un pequeño paso y lo tenemos! ✨`
-    : `¡Casi listo${named}! 🎉 Ya estamos en la recta final 😊\n\nPara formalizar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*. ¡Un pequeño paso y lo tenemos! ✨`;
-  return { type: 'text', body };
+    ? `Perfecto${named}. Para avanzar sin errores con datos ni correos, lo hacemos desde el portal seguro de EXPERT.${serviceLine}\n\nSi quieres presupuesto o seguimiento, entra aqui:\n${budgetUrl}\n\nTambien puedo seguir orientandote por aqui sin pedirte email.`
+    : `Perfecto${named}. Para avanzar sin errores con datos ni correos, lo hacemos desde el portal seguro de EXPERT.${serviceLine}\n\nSi quieres presupuesto o seguimiento, entra aqui:\n${budgetUrl}\n\nTambien puedo seguir orientandote por aqui sin pedirte email.`;
+  const buttons: { id: string; title: string }[] = svc?.stripePriceId
+    ? [
+        { id: 'btn_pay_now', title: 'Contratar ahora' },
+        { id: 'btn_book_call', title: 'Llamada 15 min' },
+        { id: 'btn_write_here', title: 'Tengo dudas' },
+      ]
+    : [
+        { id: 'btn_book_call', title: 'Llamada 15 min' },
+        { id: 'btn_write_here', title: 'Tengo dudas' },
+      ];
+
+  return { type: 'buttons', body, footer: FOOTER, buttons };
 }
 
 function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
@@ -864,9 +943,10 @@ function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
 }
 
 function bookingConfirm(lang: KiaLang): KiaReply {
+  const url = loginUrl('/cita');
   const body = lang === 'ru'
-    ? `📅✨ *Reserva tu llamada gratuita de 15 min aquí:*\nhttps://expertconsulting.es/cita\n\n¡El equipo de EXPERT te atenderá con mucho gusto! 😊💼 ¡Hasta pronto!`
-    : `📅✨ *Reserva tu llamada gratuita de 15 min aquí:*\nhttps://expertconsulting.es/cita\n\n¡El equipo de EXPERT te atenderá con mucho gusto! 😊💼 ¡Hasta pronto!`;
+    ? `📅✨ *Reserva tu llamada gratuita de 15 min desde el portal seguro:*\n${url}\n\nAsi evitamos correos incorrectos y el equipo de EXPERT tendra tus datos bien vinculados. 💼`
+    : `📅✨ *Reserva tu llamada gratuita de 15 min desde el portal seguro:*\n${url}\n\nAsi evitamos correos incorrectos y el equipo de EXPERT tendra tus datos bien vinculados. 💼`;
   return { type: 'text', body };
 }
 
@@ -1139,6 +1219,8 @@ export function processKiaStep(
   const lang = session.lang;
   const name = session.name ?? clientName ?? null;
   const interaction = buttonId ?? '';
+  const detectedLang = msgBody.length >= 4 ? detectLanguage(msgBody) : lang;
+  const langChanged  = detectedLang !== lang;
 
   // Commands — any point in the conversation
   const cmd = COMMANDS.find((c) => msgBody.toLowerCase().trim() === c || msgBody.toLowerCase().trim().startsWith(c + ' '));
@@ -1147,7 +1229,7 @@ export function processKiaStep(
       return {
         replies : [meetingRecommended(lang, name, session.service_id, 'Si prefieres hablar con una persona, la via mas rapida es reservar una llamada de 15 minutos.')],
         updates : { flow: 'consult', step: 'call_recommended', escalated: false },
-        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'call_recommended' },
+        sideEffects: {},
       };
     }
     // All other commands → restart
@@ -1198,7 +1280,7 @@ export function processKiaStep(
     return {
       replies    : [{ type: 'text', body }],
       updates    : { step: 'payment_pending', service_id: svcId },
-      sideEffects: { sendPaymentLink: true, saveLead: contactInfo?.status !== 'client' },
+      sideEffects: { sendPaymentLink: true },
     };
   }
   if (interaction === 'btn_write_here') {
@@ -1233,6 +1315,32 @@ export function processKiaStep(
     };
   }
 
+  const lowIntentReason = detectLowIntentReason(msgBody);
+  const knownLowIntent  = session.data?.kia_contact_disposition === 'low_intent';
+  if (knownLowIntent && isBusinessOrAdviceIntent(msgBody)) {
+    const l = langChanged ? detectedLang : lang;
+    return {
+      replies    : [],
+      updates    : { lang: l, data: clearLowIntentForBusiness(session) },
+      sideEffects: { needsAiFallback: true },
+    };
+  }
+
+  if (lowIntentReason || knownLowIntent) {
+    const l = langChanged ? detectedLang : lang;
+    const reason = lowIntentReason ?? session.data?.kia_low_intent_reason ?? 'low_intent';
+    return {
+      replies    : [lowIntentBoundaryReply(l, knownLowIntent)],
+      updates    : {
+        flow: 'welcome',
+        step: 'low_intent',
+        lang: l,
+        data: lowIntentData(session, reason),
+      },
+      sideEffects: {},
+    };
+  }
+
   // Sensitive-topic detection: recommend a call, never automatic human escalation.
   if (!session.escalated && session.flow !== 'human' && hasSensitiveTrigger(msgBody, lang)) {
     return {
@@ -1244,13 +1352,9 @@ export function processKiaStep(
         priority: 'high',
         data: { ...session.data, sensitive_case: 'true' },
       },
-      sideEffects: { saveLead: contactInfo?.status !== 'client', priority: 'high', leadState: 'call_recommended' },
+      sideEffects: { priority: 'high' },
     };
   }
-
-  // Language update from typed text (≥4 chars)
-  const detectedLang = msgBody.length >= 4 ? detectLanguage(msgBody) : lang;
-  const langChanged  = detectedLang !== lang;
 
   const { flow, step } = session;
 
@@ -1280,7 +1384,7 @@ export function processKiaStep(
           escalated : false,
           data      : { ...session.data, area: selectedService.area },
         },
-        sideEffects: contactInfo?.status === 'client' ? {} : { saveLead: true },
+        sideEffects: {},
       };
     }
 
@@ -1367,8 +1471,8 @@ export function processKiaStep(
       };
     }
     return {
-      replies : [{ type: 'text', body: l === 'ru' ? `¡Encantada, *${rawName}*! 🎉😊 ¿Y tu email? Así puedo enviarte información útil si la necesitas.\nO escribe "omitir" para continuar.` : `¡Encantada, *${rawName}*! 🎉😊 ¿Y tu email? Así puedo enviarte información útil si la necesitas.\nO escribe "omitir" para continuar.` }],
-      updates : { step: 'asking_email', name: rawName, lang: l },
+      replies : [welcome(l, rawName)],
+      updates : { flow: 'welcome', step: 'waiting_intent', name: rawName, lang: l },
       sideEffects: {},
     };
   }
@@ -1378,18 +1482,19 @@ export function processKiaStep(
     const currentName = session.name ?? name;
     const emailMatch  = msgBody.match(/[\w.+%-]+@[\w-]+\.[a-zA-Z]{2,}/);
     const capturedEmail = emailMatch?.[0] ?? null;
-    const wantsSkip = /^(no|sin|omit|skip|пропустить|нет|no\s+tengo|не\s+даю)$/i.test(msgBody.trim());
-    if (!capturedEmail && !wantsSkip) {
+
+    if (!capturedEmail && shouldAnswerInsteadOfRetryingEmail(msgBody)) {
       return {
-        replies : [{ type: 'text', body: l === 'ru' ? '📧😊 ¡Casi! No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' : '📧😊 ¡Casi! No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' }],
-        updates : { lang: l },
-        sideEffects: {},
+        replies    : [],
+        updates    : { flow: 'welcome', step: 'waiting_intent', lang: l },
+        sideEffects: { needsAiFallback: true },
       };
     }
+
     return {
       replies    : [welcome(l, currentName)],
-      updates    : { flow: 'welcome', step: 'waiting_intent', email: capturedEmail, lang: l },
-      sideEffects: { saveLead: true },
+      updates    : { flow: 'welcome', step: 'waiting_intent', email: capturedEmail ?? session.email, lang: l },
+      sideEffects: {},
     };
   }
 
@@ -1448,7 +1553,7 @@ export function processKiaStep(
       return {
         replies,
         updates: { flow: 'consult', step: 'meeting_recommended', escalated: false, service_id: svcId, data: { ...session.data, complex_service: 'true' } },
-        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'meeting_recommended' },
+        sideEffects: {},
       };
     }
 
@@ -1469,7 +1574,7 @@ export function processKiaStep(
       return {
         replies    : [holdedReadinessCta(lang, name, svcId)],
         updates    : { step: 'holded_readiness_cta', service_id: svcId },
-        sideEffects: { saveLead: contactInfo?.status !== 'client', leadState: 'holded_readiness' },
+        sideEffects: {},
       };
     }
 
@@ -1483,8 +1588,8 @@ export function processKiaStep(
       return { replies: [reply], updates: { step: 'precal', service_id: svcId, precal_step: 0 }, sideEffects: {} };
     }
 
-    // No precal → lead capture
-    return { replies: [leadCapture(lang, name)], updates: { step: 'lead_capture', service_id: svcId }, sideEffects: {} };
+    // No precal → formalize via secure portal, not by collecting email in WhatsApp.
+    return { replies: [formalizeInterestCta(lang, name, svcId)], updates: { step: 'login_recommended', service_id: svcId }, sideEffects: {} };
   }
 
   // ── PRECALIFICATION ───────────────────────────────────────────────────────
@@ -1497,7 +1602,7 @@ export function processKiaStep(
     const currentQ = questions[qi];
 
     if (!currentQ) {
-      return { replies: [leadCapture(lang, name)], updates: { step: 'lead_capture' }, sideEffects: {} };
+      return { replies: [formalizeInterestCta(lang, name, session.service_id)], updates: { step: 'login_recommended' }, sideEffects: {} };
     }
 
     const answer = interaction || msgBody.trim();
@@ -1529,7 +1634,7 @@ export function processKiaStep(
           data: { ...newData, risk_or_complexity: 'true' },
           priority: newPriority,
         },
-        sideEffects: { saveLead: contactInfo?.status !== 'client', priority: newPriority, leadState: 'call_recommended' },
+        sideEffects: { priority: newPriority },
       };
     }
 
@@ -1549,37 +1654,8 @@ export function processKiaStep(
   // ── LEAD CAPTURE ─────────────────────────────────────────────────────────
 
   if (flow === 'new_client' && step === 'lead_capture') {
-    const { name: n, email } = extractLeadInfo(msgBody);
-    const finalName   = n ?? name;
-    const displayName = firstName(finalName) ?? (lang === 'ru' ? 'клиент' : 'cliente');
     const svc = session.service_id ? SERVICES[session.service_id] : null;
-    const svcLabel = svc ? svc.label[lang] : (lang === 'ru' ? 'ваш запрос' : 'tu consulta');
-    const topDocs = svc?.docs.slice(0, 5).map((d) => `• ${d}`).join('\n') ?? '';
-    const emailNote = email
-      ? (lang === 'ru' ? `\n\nТакже отправлю полный список на *${email}*.` : `\n\nTambién te envío el listado completo a *${email}*.`)
-      : '';
-
-    const pageUrl = session.service_id ? getServicePageUrl(session.service_id) : null;
-    const pageNote = pageUrl
-      ? (lang === 'ru' ? `\n\n🌐 *Страница услуги:* ${pageUrl}` : `\n\n🌐 *Más información:* ${pageUrl}`)
-      : '';
-    const docsBlock = topDocs
-      ? (lang === 'ru'
-          ? `\n\n*Документы, которые могут понадобиться позже:*\n${topDocs}`
-          : `\n\n*Documentos que pueden hacer falta más adelante:*\n${topDocs}`)
-      : '';
-    const checkoutNote = svc?.stripePriceId
-      ? (lang === 'ru'
-          ? '\n\nTe envio ahora el enlace para contratar de forma segura. Si tienes dudas, puedes reservar una llamada de 15 minutos.'
-          : '\n\nTe envio ahora el enlace para contratar de forma segura. Si tienes dudas, puedes reservar una llamada de 15 minutos.')
-      : (lang === 'ru'
-          ? '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.'
-          : '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.');
-    const confirmBody = lang === 'ru'
-      ? `✅🎉 ¡*${displayName}*, tu solicitud para *${svcLabel}* ha quedado registrada! 😊${docsBlock}${emailNote}${pageNote}${checkoutNote} ¡Gracias por confiar en EXPERT! 💼✨`
-      : `✅🎉 ¡*${displayName}*, tu solicitud para *${svcLabel}* ha quedado registrada! 😊${docsBlock}${emailNote}${pageNote}${checkoutNote} ¡Gracias por confiar en EXPERT! 💼✨`;
-
-    const replies: KiaReply[] = [{ type: 'text', body: confirmBody }];
+    const replies: KiaReply[] = [formalizeInterestCta(lang, name, session.service_id)];
 
     // Suggest cert digital if needed
     if (session.service_id === 'svc_alta_autonomo' && session.data['_flag_needs_cert_digital'] === 'true') {
@@ -1591,12 +1667,8 @@ export function processKiaStep(
 
     return {
       replies,
-      updates: { step: 'done', name: finalName ?? session.name, email: email ?? session.email },
-      sideEffects: {
-        saveLead     : contactInfo?.status !== 'client',
-        sendPaymentLink: Boolean(svc?.stripePriceId),
-        sendDocsEmail: !!email && contactInfo?.status === 'client',
-      },
+      updates: { step: svc?.stripePriceId ? 'login_recommended' : 'budget_login_recommended' },
+      sideEffects: {},
     };
   }
 
@@ -1631,7 +1703,7 @@ export function processKiaStep(
       ? `¡Gracias, *${firstName(name) ?? 'cliente'}*! 😊💼 Te pongo ahora mismo en contacto con el equipo de EXPERT. ¡Te atenderán cuanto antes! ✨`
       : `¡Gracias, *${firstName(name) ?? 'cliente'}*! 😊💼 Te pongo ahora mismo en contacto con el equipo de EXPERT. ¡Te atenderán cuanto antes! ✨`;
     if (interaction === 'ex_factura') {
-      const invoiceBody = '🧾😊 ¡Claro! Dime a qué pago o servicio corresponde la factura y lo reviso enseguida. Si prefieres, también puedes reservar una llamada de 15 min: https://expertconsulting.es/cita ✨';
+      const invoiceBody = `🧾😊 ¡Claro! Dime a qué pago o servicio corresponde la factura y lo reviso enseguida. Si prefieres, también puedes reservar una llamada de 15 min desde el portal: ${loginUrl('/cita')} ✨`;
       return { replies: [{ type: 'text', body: invoiceBody }], updates: { step: 'client_invoice_payment' }, sideEffects: {} };
     }
     void body;
@@ -1675,12 +1747,12 @@ export function processKiaStep(
       return {
         replies    : [{ type: 'text', body }],
         updates    : { step: 'payment_pending' },
-        sideEffects: { sendPaymentLink: true, saveLead: contactInfo?.status !== 'client' },
+        sideEffects: { sendPaymentLink: true },
       };
     }
 
-    // Free text → lead capture
-    return { replies: [leadCapture(lang, name)], updates: { step: 'lead_capture' }, sideEffects: {} };
+    // Free text after precal → keep helping, then formalize via secure portal when ready.
+    return { replies: [formalizeInterestCta(lang, name, session.service_id)], updates: { step: 'login_recommended' }, sideEffects: {} };
   }
 
   // ── UNSURE CTA ────────────────────────────────────────────────────────────
@@ -1707,8 +1779,8 @@ export function processKiaStep(
     }
     if (interaction === 'co_cita') {
       const body = lang === 'ru'
-        ? '📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min aquí:\nhttps://expertconsulting.es/cita\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊'
-        : '📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min aquí:\nhttps://expertconsulting.es/cita\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊';
+        ? `📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min desde el portal seguro:\n${loginUrl('/cita')}\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊`
+        : `📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min desde el portal seguro:\n${loginUrl('/cita')}\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊`;
       return { replies: [{ type: 'text', body }], updates: { step: 'done' }, sideEffects: {} };
     }
     // co_no_se → hand off to AI
@@ -1751,7 +1823,7 @@ export function processKiaStep(
         step: 'lead_viability',
         data: { ...session.data, lead_media_context: msgBody.trim().slice(0, 500) },
       },
-      sideEffects: { saveLead: true, needsAiFallback: true },
+      sideEffects: { needsAiFallback: true },
     };
   }
 

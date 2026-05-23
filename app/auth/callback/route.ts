@@ -4,10 +4,26 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { welcomeEmail } from '@/lib/email/templates';
 
+function safeRedirectPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+    return '/dashboard';
+  }
+
+  try {
+    const parsed = new URL(value, 'https://expert.local');
+    if (parsed.origin !== 'https://expert.local') {
+      return '/dashboard';
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/dashboard';
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = safeRedirectPath(searchParams.get('next'));
 
   if (!code) {
     return NextResponse.redirect(new URL('/auth/login?error=auth_failed', origin));
@@ -86,7 +102,7 @@ export async function GET(request: NextRequest) {
     console.error('[auth/callback] welcome email error:', emailError);
   }
 
-  const redirectUrl = new URL(redirectPath.startsWith('/') ? redirectPath : '/dashboard', origin);
+  const redirectUrl = new URL(safeRedirectPath(redirectPath), origin);
   const response = NextResponse.redirect(redirectUrl);
 
   // Apply session cookies to the final redirect response
