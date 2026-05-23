@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: FolderOpen,
     items: [
       { label: 'Expedientes', href: '/admin/expedientes' },
+      { label: 'Documentos', href: '/admin/documentos' },
       { label: 'Citas', href: '/admin/citas' },
       { label: 'Presupuestos', href: '/admin/presupuestos' },
       { label: 'WhatsApp', href: '/admin/whatsapp' },

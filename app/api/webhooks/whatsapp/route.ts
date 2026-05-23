@@ -643,6 +643,22 @@ export async function POST(request: NextRequest) {
         const mediaLabel = msgType === 'document' ? 'documento' : msgType === 'image' ? 'imagen' : msgType === 'audio' ? 'audio' : 'archivo';
         notifyAdmins({ title: `${mediaIcon} Archivo de ${senderName}`, body: caption || `Ha enviado un ${msgType}`, url: '/admin/whatsapp', tag: `wa-${from}` }).catch(() => {});
 
+        // ── Document classification (fire-and-forget) ─────────────────
+        if (!TEST_PHONE_NUMBERS.has(from) && storedUrl && (msgType === 'document' || msgType === 'image')) {
+          void import('@/lib/documents/document-router')
+            .then(({ routeIncomingDocument }) =>
+              routeIncomingDocument({
+                fileName:  rawFilename,
+                mimeType:  msgType === 'image' ? 'image/jpeg' : 'application/octet-stream',
+                caption:   caption || undefined,
+                source:    'whatsapp',
+                clientId:  clientId ?? undefined,
+                sourceUrl: storedUrl,
+              })
+            )
+            .catch(() => {});
+        }
+
         // ── Kia response to media ─────────────────────────────────────
         const mediaSess  = await getOrCreateSession(admin, from, clientId);
         const docRef     = storedUrl ?? mediaId ?? null;
