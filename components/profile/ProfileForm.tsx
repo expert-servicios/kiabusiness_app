@@ -6,6 +6,7 @@ import {
   Save, CheckCircle2, MessageCircle, KeyRound,
   Mail, AlertCircle, FileText, MapPin,
 } from 'lucide-react';
+import { CompanyDataLookup } from './CompanyDataLookup';
 
 interface Props {
   email               : string;
@@ -299,6 +300,25 @@ export function ProfileForm({
             placeholder={isEmpresa ? 'B12345678' : 'X1234567A'}
             hint="Se usará en las facturas y trámites"
           />
+
+          {isEmpresa && (
+            <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-[#c88b25]">Autocompletar desde fuentes públicas</p>
+              <CompanyDataLookup
+                company={company}
+                taxId={taxId}
+                onApply={(data) => {
+                  if (data.company)    setCompany(data.company);
+                  if (data.taxId)      setTaxId(data.taxId);
+                  if (data.address)    setAddress(data.address);
+                  if (data.city)       setCity(data.city);
+                  if (data.postalCode) setPostalCode(data.postalCode);
+                  if (data.province)   setProvince(data.province);
+                }}
+              />
+            </div>
+          )}
+
           <FieldInput label="Dirección de facturación" value={address} onChange={setAddress} placeholder="Calle, número, piso" />
 
           <div className="grid grid-cols-2 gap-3">

@@ -133,7 +133,8 @@
       "mcp__supabase__get_project_url",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $newFiles = @\\(\"app/api/admin/whatsapp/retry-media/route.ts\"\\); foreach \\($f in $newFiles\\) { if \\(Test-Path $f\\) { Write-Output \"EXISTS: $f\" } else { Write-Output \"MISSING: $f\" } })",
       "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; $env:NODE_ENV = \"production\"; npx next build 2>&1 | Select-Object -First 40)",
-      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; \\(Get-Command vercel -ErrorAction SilentlyContinue\\) | Select-Object Source; npx vercel --version 2>&1 | Select-Object -First 3)"
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\OneDrive\\\\Documentos\\\\EXPERT\\\\Nueva Pagina web\\\\ksenia_expert\"; \\(Get-Command vercel -ErrorAction SilentlyContinue\\) | Select-Object Source; npx vercel --version 2>&1 | Select-Object -First 3)",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\company\\\\resolve\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
