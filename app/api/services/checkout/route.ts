@@ -7,7 +7,7 @@ import {
   getServiceCheckoutMetadata,
 } from '@/lib/integrations/service-checkout';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
-import { createServerSupabaseClient } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 // Accept either a single priceId (backwards compat) or an array (cart checkout).
 const checkoutSchema = z.object({
@@ -22,6 +22,36 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Debes iniciar sesión para continuar.', requiresAuth: true }, { status: 401 });
+    }
+
+    const { data: profile, error: profileError } = await getSupabaseAdmin()
+      .from('profiles')
+      .select('id,full_name,phone,email,stripe_customer_id,profile_completed,billing_ready,client_type,tax_id,address,city,postal_code')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      return NextResponse.json({
+        error: 'Completa tu perfil antes de contratar.',
+        code: 'profile_required',
+        profileRequired: true,
+      }, { status: 409 });
+    }
+
+    if (!profile.profile_completed) {
+      return NextResponse.json({
+        error: 'Completa nombre y telefono antes de contratar.',
+        code: 'profile_required',
+        profileRequired: true,
+      }, { status: 409 });
+    }
+
+    if (!profile.billing_ready) {
+      return NextResponse.json({
+        error: 'Completa los datos de facturacion antes de contratar.',
+        code: 'billing_required',
+        billingRequired: true,
+      }, { status: 409 });
     }
 
     const parseResult = checkoutSchema.safeParse(await request.json());
@@ -48,10 +78,15 @@ export async function POST(request: NextRequest) {
       mode                : 'payment',
       automatic_tax       : { enabled: true },
       client_reference_id : user.id,
+      customer            : profile.stripe_customer_id ?? undefined,
+      customer_email      : profile.stripe_customer_id ? undefined : user.email,
       line_items          : checkoutServices.map(getServiceCheckoutLineItem),
       success_url         : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
       cancel_url          : cancelUrl,
-      metadata            : getServiceCheckoutMetadata(checkoutServices),
+      metadata            : {
+        ...getServiceCheckoutMetadata(checkoutServices),
+        user_id: user.id,
+      },
       locale              : 'es',
     });
 

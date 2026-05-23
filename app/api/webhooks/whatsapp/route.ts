@@ -23,6 +23,7 @@ import { resolveKiaContactContext, type KiaContactContext } from '@/lib/integrat
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 import { getService } from '@/lib/services/service-registry';
+import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
 
@@ -261,7 +262,17 @@ async function handleKiaSideEffects({
     try {
       // Send /contratar link — user must log in before payment (login obligatorio).
       // Direct Stripe session creation from WABA bypasses the auth gate.
-      const url = absoluteAppUrl(`/contratar?service=${svc.id}&source=whatsapp`);
+      const checkoutSlug = svc.stripePriceId ? getServiceCheckoutByPriceId(svc.stripePriceId)?.slug : null;
+      if (!checkoutSlug) {
+        console.warn('[Kia sendPaymentLink] checkout slug not found', { serviceId: svc.id, stripePriceId: svc.stripePriceId });
+        await admin.from('whatsapp_conversations')
+          .update({ needs_review: true })
+          .eq('phone_number', phone)
+          .eq('direction', 'inbound')
+          .is('read_at', null);
+        return;
+      }
+      const url = absoluteAppUrl(`/contratar?service=${checkoutSlug}&source=whatsapp`);
       const body = session.lang === 'ru'
         ? `🔐 *Para contratar ${svc.label.ru}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`
         : `🔐 *Para contratar el servicio ${svc.label.es}:*\n\n${url}\n\nAccede con tu email, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`;
@@ -272,9 +283,20 @@ async function handleKiaSideEffects({
           body: `[Kia:contratar] ${svc.label.es} → ${url}`,
           whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
         });
+      } else {
+        await admin.from('whatsapp_conversations')
+          .update({ needs_review: true })
+          .eq('phone_number', phone)
+          .eq('direction', 'inbound')
+          .is('read_at', null);
       }
     } catch (e) {
       console.error('[Kia sendPaymentLink]', e);
+      await admin.from('whatsapp_conversations')
+        .update({ needs_review: true })
+        .eq('phone_number', phone)
+        .eq('direction', 'inbound')
+        .is('read_at', null);
     }
   }
 }
@@ -359,7 +381,7 @@ ALCANCE ESTRICTO — OBLIGATORIO:
 ═══════════════════════════════════════
 1. IDENTIDAD IA: Nunca finjas ser humano. Nunca uses frases como "en mi experiencia personal", "yo personalmente pienso", "como persona". Si preguntan si eres IA o humano, sé siempre honesta.
 2. FUERA DE ALCANCE: Si el cliente hace preguntas de educación/formación fiscal general (¿qué es el IVA?, ¿cómo funciona el IRPF?, ¿qué diferencia hay entre autónomo y empresa?, etc.) que NO buscan contratar un servicio concreto, responde: "Soy un asistente de EXPERT y solo gestiono servicios y consultas específicas. Para orientación detallada, te recomiendo reservar una consulta: https://expertconsulting.es/cita"
-3. URGENCIA LEGAL: Si el cliente menciona requerimiento de Hacienda, sanción fiscal, denegación, recurso, inspección tributaria, embargo, multa fiscal o acta de inspección, responde SIEMPRE y ÚNICAMENTE: [NEEDS_REVIEW]
+3. REVISION PROFESIONAL: Si el cliente menciona requerimiento de Hacienda, sancion fiscal, denegacion, recurso, inspeccion tributaria, embargo, multa fiscal o acta de inspeccion, orienta a reservar llamada/reunion de 15 minutos. No uses [NEEDS_REVIEW] por complejidad comercial o urgencia del servicio.
 4. DATOS MÍNIMOS: Solo pide los datos estrictamente necesarios para identificar el servicio. Nunca solicites información fiscal sensible (números de cuenta, claves de acceso, datos de declaraciones).
 
 ═══════════════════════════════════════
@@ -389,8 +411,9 @@ NEGRITA en WhatsApp: *texto* (UN asterisco, NO **texto**)
 Emojis con moderación: ✅ 👋 📋 📅 💼 🚀
 
 REGLAS:
-- Si requiere decisión profesional compleja → responde EXACTAMENTE: [NEEDS_REVIEW]
-- Urgencia legal detectada (requerimiento, sanción, denegación, recurso, inspección, embargo, multa) → responde EXACTAMENTE: [NEEDS_REVIEW]
+- Si requiere decision profesional compleja, dirige a reserva de llamada/reunion: https://expertconsulting.es/cita
+- Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), recomienda llamada/reunion de 15 minutos.
+- [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
 - Nunca inventes plazos, precios exactos ni documentos
 - Máximo 2 intercambios de aclaración antes de cerrar con acción concreta
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
@@ -400,7 +423,7 @@ REGLAS:
 CIERRE OBLIGATORIO — cada respuesta debe terminar con una acción concreta, nunca dejar la conversación abierta:
 • Si necesita presupuesto → https://expertconsulting.es/solicitar-presupuesto
 • Si necesita cita o asesoría → https://expertconsulting.es/cita
-• Si es complejo/urgente → [NEEDS_REVIEW]
+• Si es complejo/urgente → reserva llamada/reunion: https://expertconsulting.es/cita
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 
@@ -546,10 +569,6 @@ export async function POST(request: NextRequest) {
               body: askMsg, whatsappMessageId: sentAsk.messageId, aiResponded: false, needsReview: false,
             });
           }
-          await admin.from('whatsapp_conversations')
-            .update({ needs_review: true })
-            .eq('whatsapp_message_id', messageId)
-            .eq('phone_number', from);
           continue;
         }
 
@@ -605,10 +624,6 @@ export async function POST(request: NextRequest) {
             body: ackBody, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
           });
         }
-        // Escalate so a human follows up
-        await admin.from('whatsapp_conversations')
-          .update({ needs_review: true })
-          .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
         notifyAdmins({
           title: `📎 Doc recibido — ${clientDisplay}`,
           body:  `${mediaLabel}${caption ? ': ' + caption : ''}${openCases.length === 1 ? ' → ' + openCases[0].service : ''}`,
@@ -701,8 +716,8 @@ export async function POST(request: NextRequest) {
             buttons.push({ id: `btn_contratar_${foundService.id}`, title: isRu ? 'Contratar online' : 'Contratar online' });
           }
           buttons.push({ id: 'btn_book_call',  title: 'Llamada 15 min' });
-          if (!hasCheckout) {
-            buttons.push({ id: 'btn_write_here', title: 'Tengo más dudas' });
+          if (buttons.length < 3) {
+            buttons.push({ id: 'btn_write_here', title: 'Tengo dudas' });
           }
 
           const sentSvc = await sendWhatsAppInteractive({ to: from, body, footer: 'EXPERT 💼', buttons });
@@ -789,9 +804,6 @@ export async function POST(request: NextRequest) {
             .eq('whatsapp_message_id', pendingDocMessageId)
             .eq('phone_number', from);
         }
-        await admin.from('whatsapp_conversations')
-          .update({ needs_review: true })
-          .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
         notifyAdmins({
           title: `📎 Doc vinculado — ${docSess.name ?? from}`,
           body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} → ${serviceName}`,
@@ -874,9 +886,6 @@ export async function POST(request: NextRequest) {
               body: ackDoc, whatsappMessageId: sentAckDoc.messageId, aiResponded: false, needsReview: false,
             });
           }
-          await admin.from('whatsapp_conversations')
-            .update({ needs_review: true })
-            .eq('phone_number', from).eq('direction', 'inbound').is('read_at', null);
           notifyAdmins({
             title: `📎 Doc + ficha nueva — ${session.name ?? from}`,
             body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} | email: ${emailInput}`,
@@ -933,6 +942,14 @@ export async function POST(request: NextRequest) {
               body: `[Kia:AI] ${aiResult.interactive.body} | ${aiResult.interactive.buttons.map((b) => b.title).join(' / ')}`,
               whatsappMessageId: sent.messageId, aiResponded: true, needsReview: false,
             });
+          } else {
+            console.error('[Kia AI interactive send failed]', { phone: from, error: sent.error, detail: sent.detail });
+            await admin
+              .from('whatsapp_conversations')
+              .update({ needs_review: true })
+              .eq('phone_number', from)
+              .eq('direction', 'inbound')
+              .is('read_at', null);
           }
         } else if (aiResult.reply) {
           const sent = await sendWhatsAppMessage({ to: from, body: aiResult.reply });
@@ -941,6 +958,14 @@ export async function POST(request: NextRequest) {
               clientId, phoneNumber: from, direction: 'outbound',
               body: aiResult.reply, whatsappMessageId: sent.messageId, aiResponded: true, needsReview: false,
             });
+          } else {
+            console.error('[Kia AI text send failed]', { phone: from, error: sent.error, detail: sent.detail });
+            await admin
+              .from('whatsapp_conversations')
+              .update({ needs_review: true })
+              .eq('phone_number', from)
+              .eq('direction', 'inbound')
+              .is('read_at', null);
           }
         } else {
           await admin

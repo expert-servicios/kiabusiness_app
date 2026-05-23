@@ -36,7 +36,7 @@ export default async function ContratarPage({ searchParams }: Props) {
   // ── Load profile ──
   const { data: profile } = await getSupabaseAdmin()
     .from('profiles')
-    .select('full_name,phone')
+    .select('full_name,phone,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed,billing_ready,habitual_address_ready')
     .eq('id', user.id)
     .single();
 
@@ -94,7 +94,6 @@ export default async function ContratarPage({ searchParams }: Props) {
 
       <div className="mx-auto max-w-lg px-6 py-10">
         <ProfileCompletionWizard
-          userId  ={user.id}
           profile ={profile ?? null}
           service ={serviceInfo}
         />

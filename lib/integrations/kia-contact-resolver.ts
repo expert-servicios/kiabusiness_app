@@ -57,7 +57,7 @@ export async function resolveKiaContactContext(
   // ── 1. Look up profile ────────────────────────────────────────────────────
   const { data: profile } = await admin
     .from('profiles')
-    .select('id, full_name, email, phone, whatsapp_number, role, stripe_customer_id, country')
+    .select('id, full_name, email, phone, whatsapp_number, role, stripe_customer_id, country, client_type, tax_id, address, city, postal_code, habitual_address, habitual_city, habitual_postal_code, profile_completed, billing_ready, habitual_address_ready')
     .or(`phone.ilike.%${last9}%,whatsapp_number.ilike.%${last9}%`)
     .maybeSingle();
 
@@ -89,10 +89,19 @@ export async function resolveKiaContactContext(
     const status: KiaContactStatus =
       profile.role === 'client' || hasPortalAccount || hasCases ? 'client' : 'lead';
 
-    // Derive completeness flags from columns present in the current migrations.
-    const profileCompleted     = !!(profile.full_name && profile.email && (profile.phone || profile.whatsapp_number));
-    const billingReady         = !!profile.stripe_customer_id;
-    const habitualAddressReady = false;
+    const derivedProfileCompleted = !!(profile.full_name && (profile.phone || profile.whatsapp_number));
+    const derivedBillingReady = !!(profile.client_type && profile.tax_id && profile.address && profile.city && profile.postal_code);
+    const derivedHabitualAddressReady = profile.client_type === 'empresa'
+      || !!(profile.habitual_address && profile.habitual_city && profile.habitual_postal_code);
+    const profileCompleted = typeof profile.profile_completed === 'boolean'
+      ? profile.profile_completed
+      : derivedProfileCompleted;
+    const billingReady = typeof profile.billing_ready === 'boolean'
+      ? profile.billing_ready
+      : derivedBillingReady;
+    const habitualAddressReady = typeof profile.habitual_address_ready === 'boolean'
+      ? profile.habitual_address_ready
+      : derivedHabitualAddressReady;
 
     return {
       status,

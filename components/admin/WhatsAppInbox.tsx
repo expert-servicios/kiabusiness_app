@@ -52,6 +52,9 @@ function leadStatusLabel(status?: string | null) {
     lead_profile_required: 'pend. perfil',
     lead_ready_to_contract: 'listo',
     lead_human_review: 'rev. humana',
+    call_recommended: 'llamada',
+    meeting_recommended: 'reunion',
+    free_consult: 'consulta',
   };
   return status ? (map[status] ?? status.replace(/_/g, ' ')) : 'nuevo';
 }
@@ -1160,7 +1163,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             className="shrink-0 rounded-full border border-[#d8cbb5] bg-white px-3 py-1.5 text-[11px] font-bold text-[#29384a] hover:bg-[#faf8f2]">
             Nuevo servicio
           </button>
-          <button type="button" onClick={() => insertQuickReply('Te paso con el equipo de EXPERT para que puedan revisar tu caso personalmente.')}
+          <button type="button" onClick={() => insertQuickReply(`Para revisarlo con el equipo de EXPERT, puedes reservar una llamada de 15 min aqui: ${appUrl('/cita')}`)}
             className="shrink-0 rounded-full border border-[#d8cbb5] bg-white px-3 py-1.5 text-[11px] font-bold text-[#29384a] hover:bg-[#faf8f2]">
             Hablar equipo
           </button>
@@ -1238,7 +1241,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             {/* Actions */}
             <div className="flex shrink-0 items-center gap-1">
               {activeConv.needsReview && (
-                <span title="Necesita revisión"><AlertTriangle className="h-4 w-4 text-red-300" /></span>
+                <span title="Kia no pudo resolver / atencion manual real"><AlertTriangle className="h-4 w-4 text-red-300" /></span>
               )}
               {!activeConv.clientId ? (
                 <button type="button" onClick={() => setShowLinkClient(true)}

@@ -174,8 +174,8 @@ ${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}`;
 
     // Contact type instruction
     const contactTypeBlock = isClient
-      ? `\nTIPO DE CONTACTO: CLIENTE\n- Tono de soporte/gestión profesional.\n- Usa contexto de expedientes si disponible.\n- No pidas datos que ya tiene.\n- No uses CTA genérica si tiene expediente activo.\n- Si pide nuevo servicio, trátale como cliente existente.\n`
-      : `\nTIPO DE CONTACTO: LEAD (aún no es cliente)\n- Tono comercial y orientativo.\n- Lleva a viabilidad, llamada 15 min o contratación.\n- Pide solo datos mínimos necesarios.\n- No hables de expedientes salvo que existan.\n- Cierra siempre con acción concreta.\n`;
+      ? `\nTIPO DE CONTACTO: CLIENTE\n- Tono de soporte/gestion profesional.\n- Usa contexto de expedientes si disponible.\n- No pidas datos que ya tiene.\n- No uses CTA generica si tiene expediente activo.\n- Si pide nuevo servicio, tratale como cliente existente.\n- Si hay dudas o complejidad, ofrece llamada/reunion; no plantees escalacion como salida normal.\n`
+      : `\nTIPO DE CONTACTO: LEAD (aun no es cliente)\n- Tono comercial y orientativo.\n- Lleva a viabilidad, llamada 15 min o contratacion.\n- Pide solo datos minimos necesarios.\n- No hables de expedientes salvo que existan.\n- Cierra siempre con accion concreta.\n- Si hay riesgo, dudas o servicio complejo, recomienda llamada de 15 min antes de contratar.\n`;
 
     const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.

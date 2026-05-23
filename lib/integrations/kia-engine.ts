@@ -54,7 +54,6 @@ export interface KiaServiceDef {
   category     : string;
   docs         : string[];
   precalFlow  ?: string;
-  autoEscalate?: boolean;
   stripePriceId?: string;
 }
 
@@ -95,11 +94,13 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_modelo_151: {
     id: 'svc_modelo_151', label: { es: 'Modelo 151 / Ley Beckham', ru: 'Модель 151 / Закон Бекхэма' },
-    area: 'fiscal', category: 'declaraciones-impuestos', docs: [], autoEscalate: true,
+    area: 'fiscal', category: 'declaraciones-impuestos', docs: [],
   },
   svc_modelo_720: {
     id: 'svc_modelo_720', label: { es: 'Modelo 720 (bienes en extranjero)', ru: 'Модель 720 (имущество за рубежом)' },
-    area: 'fiscal', category: 'declaraciones-impuestos', docs: [], autoEscalate: true,
+    area: 'fiscal', category: 'declaraciones-impuestos',
+    stripePriceId: 'price_1TXMmVLeYwwgvux4e9hXI90o',
+    docs: [],
   },
 
   // EMPRESA
@@ -116,7 +117,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_constitucion_sl: {
     id: 'svc_constitucion_sl', label: { es: 'Constitución de SL', ru: 'Открытие SL' },
-    area: 'empresa', category: 'empresas-autonomos', autoEscalate: true,
+    area: 'empresa', category: 'empresas-autonomos',
+    stripePriceId: 'price_1TXMmNLeYwwgvux4hIk84Aug',
     docs: [
       'DNI / NIE de todos los socios',
       '3 opciones de nombre para la sociedad',
@@ -127,13 +129,14 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_gestion_mensual: {
     id: 'svc_gestion_mensual', label: { es: 'Gestión mensual empresa', ru: 'Ежемесячное бухгалтерское обслуживание' },
-    area: 'empresa', category: 'empresas-autonomos', docs: [], autoEscalate: true,
+    area: 'empresa', category: 'empresas-autonomos', docs: [],
   },
 
   // HOLDED
   svc_holded_starter: {
     id: 'svc_holded_starter', label: { es: 'Pack Starter / Onboarding Holded', ru: 'Стартовый пакет Holded' },
     area: 'holded', category: 'holded',
+    stripePriceId: 'price_1SxNObLeYwwgvux4fLN9k8YG',
     docs: [
       'Acceso a tu cuenta de Holded (o la creamos nueva)',
       'Datos fiscales de la empresa (NIF, razón social, actividad)',
@@ -142,7 +145,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_holded_migracion: {
     id: 'svc_holded_migracion', label: { es: 'Migración completa a Holded', ru: 'Полная миграция на Holded' },
-    area: 'holded', category: 'holded', docs: [], autoEscalate: true,
+    area: 'holded', category: 'holded', docs: [],
   },
   svc_holded_formacion: {
     id: 'svc_holded_formacion', label: { es: 'Formación Holded (por horas)', ru: 'Обучение Holded (почасово)' },
@@ -208,7 +211,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_nacionalidad: {
     id: 'svc_nacionalidad', label: { es: 'Nacionalidad Española', ru: 'Испанское гражданство' },
-    area: 'extranjeria', category: 'extranjeria-nacionalidad', autoEscalate: true,
+    area: 'extranjeria', category: 'extranjeria-nacionalidad',
     docs: [
       'Pasaporte en vigor',
       'TIE / NIE vigente',
@@ -221,7 +224,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   // NOTARÍA
   svc_notaria_compraventa: {
     id: 'svc_notaria_compraventa', label: { es: 'Compraventa de inmueble', ru: 'Купля-продажа недвижимости' },
-    area: 'notaria', category: 'notaria-propiedades', autoEscalate: true,
+    area: 'notaria', category: 'notaria-propiedades',
     docs: [
       'DNI / NIE de todos los intervinientes',
       'Escritura de propiedad actual',
@@ -231,33 +234,33 @@ export const SERVICES: Record<string, KiaServiceDef> = {
   },
   svc_notaria_herencia: {
     id: 'svc_notaria_herencia', label: { es: 'Herencia / Sucesión', ru: 'Наследство / Наследование' },
-    area: 'notaria', category: 'notaria-propiedades', docs: [], autoEscalate: true,
+    area: 'notaria', category: 'notaria-propiedades', docs: [],
   },
 
-  // ── Escalate-only catch-all stubs (appear in menus, always go to human) ──────
+  // ── Unsure catch-all stubs (appear in menus, route to Kia/call) ──────────────
   svc_fiscal_no_se: {
     id: 'svc_fiscal_no_se', label: { es: 'No sé qué necesito (fiscal)', ru: 'Не знаю, что нужно (налоги)' },
-    area: 'fiscal', category: 'declaraciones-impuestos', docs: [], autoEscalate: true,
+    area: 'fiscal', category: 'declaraciones-impuestos', docs: [],
   },
   svc_extranjeria_no_se: {
     id: 'svc_extranjeria_no_se', label: { es: 'No sé qué necesito (extranjería)', ru: 'Не знаю, что нужно (ВНЖ)' },
-    area: 'extranjeria', category: 'extranjeria-nacionalidad', docs: [], autoEscalate: true,
+    area: 'extranjeria', category: 'extranjeria-nacionalidad', docs: [],
   },
   svc_empresa_no_se: {
     id: 'svc_empresa_no_se', label: { es: 'No sé qué necesito (empresa)', ru: 'Не знаю, что нужно (бизнес)' },
-    area: 'empresa', category: 'empresas-autonomos', docs: [], autoEscalate: true,
+    area: 'empresa', category: 'empresas-autonomos', docs: [],
   },
   svc_trafico_maritimo: {
     id: 'svc_trafico_maritimo', label: { es: 'Embarcación / Capitanía', ru: 'Судно / Капитанство' },
-    area: 'trafico', category: 'trafico-capitania-maritima', docs: [], autoEscalate: true,
+    area: 'trafico', category: 'trafico-capitania-maritima', docs: [],
   },
   svc_trafico_no_se: {
     id: 'svc_trafico_no_se', label: { es: 'No sé / Otro (tráfico)', ru: 'Не знаю / Другое (транспорт)' },
-    area: 'trafico', category: 'trafico-capitania-maritima', docs: [], autoEscalate: true,
+    area: 'trafico', category: 'trafico-capitania-maritima', docs: [],
   },
   svc_notaria_no_se: {
     id: 'svc_notaria_no_se', label: { es: 'Otro trámite notarial', ru: 'Другой нотариальный вопрос' },
-    area: 'notaria', category: 'notaria-propiedades', docs: [], autoEscalate: true,
+    area: 'notaria', category: 'notaria-propiedades', docs: [],
   },
 
   // EXTRANJERÍA — servicios granulares con flujo de precalificación
@@ -827,14 +830,6 @@ function welcome(lang: KiaLang, name?: string | null): KiaReply {
   return { type: 'buttons', body, footer: FOOTER, buttons: m.buttons };
 }
 
-function humanEscalate(lang: KiaLang, name?: string | null, reason?: string): KiaReply {
-  const named = name ? `, *${name}*` : '';
-  const body = lang === 'ru'
-    ? `Спасибо${named} 😊 Судя по ситуации, лучше всего это рассмотрит команда EXPERT, чтобы дать вам правильный ответ. Передаю ваше дело специалисту.${reason ? `\n\n_${reason}_` : ''}`
-    : `Gracias${named} 😊 Con lo que me indicas, es mejor que lo revise el equipo de EXPERT para darte la respuesta correcta. Dejo tu caso preparado.${reason ? `\n\n_${reason}_` : ''}`;
-  return { type: 'text', body };
-}
-
 function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
   const named = name ? `, *${name}*` : '';
   const body = lang === 'ru'
@@ -871,7 +866,7 @@ function privacyNotice(lang: KiaLang): KiaReply {
   return { type: 'text', body };
 }
 
-// ── Auto-escalate service IDs ─────────────────────────────────────────────────
+// ── Services that need commercial review before checkout ──────────────────────
 
 function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaContactInfo): KiaStepResult {
   if (contactInfo?.status === 'client') {
@@ -930,7 +925,7 @@ function shouldRestartKiaFromHuman(text: string): boolean {
     || normalized.includes('no respondes');
 }
 
-const AUTO_ESCALATE = new Set([
+const COMPLEX_SERVICE_REVIEW = new Set([
   'svc_modelo_151', 'svc_modelo_720',
   'svc_constitucion_sl', 'svc_gestion_mensual',
   'svc_holded_migracion',
@@ -991,15 +986,56 @@ function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply 
     : `✅ ¡Perfecto${named}! *${svcLabel}* encaja con tu situación.\n\n¿Qué quieres hacer ahora?`;
   return {
     type: 'buttons', body, footer: FOOTER,
-    buttons: [
-      { id: 'btn_check_viability', title: 'Comprobar viabilidad' },
-      { id: 'btn_pay_now',         title: 'Contratar ahora'      },
-      { id: 'btn_book_call',       title: 'Llamada 15 min'       },
-    ],
+    buttons: svc?.stripePriceId
+      ? [
+          { id: 'btn_pay_now',   title: 'Contratar ahora' },
+          { id: 'btn_book_call', title: 'Llamada 15 min'  },
+          { id: 'btn_write_here', title: 'Tengo dudas'    },
+        ]
+      : [
+          { id: 'btn_check_viability', title: 'Viabilidad'      },
+          { id: 'btn_book_call',       title: 'Llamada 15 min'  },
+          { id: 'btn_write_here',      title: 'Tengo dudas'     },
+        ],
   };
 }
 
-// ── Sensitive-topic keywords — trigger immediate escalation ───────────────────
+function freeConsultPrompt(lang: KiaLang): KiaReply {
+  const body = lang === 'ru'
+    ? 'Расскажите коротко ваш вопрос, и я подскажу следующий шаг. Если нужно проверить детали, предложу записаться на звонок 15 минут.'
+    : 'Cuentame brevemente tu duda y te oriento. Si hace falta revisar el caso, te ofrecere reservar una llamada de 15 minutos.';
+  return { type: 'text', body };
+}
+
+function serviceInfoReply(lang: KiaLang, svcId: string): KiaReply {
+  const svc = SERVICES[svcId];
+  const url = getServicePageUrl(svcId) ?? 'https://expertconsulting.es/servicios';
+  const label = svc?.label[lang] ?? (lang === 'ru' ? 'servicio' : 'servicio');
+  const body = lang === 'ru'
+    ? `Informacion de *${label}*:\n${url}\n\nSi quieres, puedo ayudarte a comprobar viabilidad, contratar online si esta disponible o reservar una llamada.`
+    : `Informacion de *${label}*:\n${url}\n\nSi quieres, puedo ayudarte a comprobar viabilidad, contratar online si esta disponible o reservar una llamada.`;
+  return { type: 'text', body };
+}
+
+function meetingRecommended(lang: KiaLang, name: string | null, svcId?: string | null, reason?: string): KiaReply {
+  const svc = svcId ? SERVICES[svcId] : null;
+  const named = name ? `, *${name}*` : '';
+  const serviceLine = svc
+    ? (lang === 'ru' ? `\n\nServicio: *${svc.label.ru}*.` : `\n\nServicio: *${svc.label.es}*.`)
+    : '';
+  const body = lang === 'ru'
+    ? `Entendido${named}. Este caso conviene revisarlo antes de decidir el siguiente paso.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\nPuedes reservar una llamada de 15 minutos, comprobar viabilidad o ver la informacion del servicio.`
+    : `Entendido${named}. Este caso conviene revisarlo antes de decidir el siguiente paso.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\nPuedes reservar una llamada de 15 minutos, comprobar viabilidad o ver la informacion del servicio.`;
+  const buttons: { id: string; title: string }[] = [
+    { id: 'btn_book_call', title: 'Llamada 15 min' },
+  ];
+  if (svc?.stripePriceId) buttons.push({ id: 'btn_pay_now', title: 'Contratar ahora' });
+  buttons.push({ id: 'btn_write_here', title: 'Tengo dudas' });
+  if (buttons.length < 3 && svcId) buttons.push({ id: 'btn_service_info', title: 'Ver servicio' });
+  return { type: 'buttons', body, footer: FOOTER, buttons: buttons.slice(0, 3) };
+}
+
+// ── Sensitive-topic keywords — recommend call before checkout ─────────────────
 
 const SENSITIVE_KEYWORDS_ES = [
   'requerimiento', 'requerida por hacienda', 'acta de inspección', 'expediente sancionador',
@@ -1020,12 +1056,21 @@ function hasSensitiveTrigger(text: string, lang: KiaLang): boolean {
   return keywords.some((kw) => lower.includes(kw));
 }
 
-function sensitiveEscalate(lang: KiaLang, name?: string | null): KiaReply {
+function sensitiveCallRecommended(lang: KiaLang, name?: string | null): KiaReply {
   const named = name ? `, *${name}*` : '';
   const body = lang === 'ru'
-    ? `⚠️ Понимаю${named}. Эта ситуация требует срочного внимания специалиста. Немедленно передаю ваш случай команде EXPERT — кто-то свяжется с вами как можно скорее.`
-    : `⚠️ Entendido${named}. Esta situación requiere atención urgente de un especialista. Dejo tu caso preparado para el equipo de EXPERT, que se pondrá en contacto contigo cuanto antes.`;
-  return { type: 'text', body };
+    ? `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`
+    : `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`;
+  return {
+    type: 'buttons',
+    body,
+    footer: FOOTER,
+    buttons: [
+      { id: 'btn_book_call', title: 'Reservar llamada' },
+      { id: 'btn_pay_now', title: 'Contratar servicio' },
+      { id: 'btn_write_here', title: 'Tengo dudas' },
+    ],
+  };
 }
 
 const AREA_MAP: Record<string, string> = {
@@ -1063,9 +1108,9 @@ export function processKiaStep(
   if (cmd) {
     if (cmd === '/humano') {
       return {
-        replies : [humanEscalate(lang, name)],
-        updates : { flow: 'human', step: 'escalated', escalated: true },
-        sideEffects: { escalate: true },
+        replies : [meetingRecommended(lang, name, session.service_id, 'Si prefieres hablar con una persona, la via mas rapida es reservar una llamada de 15 minutos.')],
+        updates : { flow: 'consult', step: 'call_recommended', escalated: false },
+        sideEffects: {},
       };
     }
     // All other commands → restart
@@ -1084,20 +1129,61 @@ export function processKiaStep(
       sideEffects: {},
     };
   }
+  if (interaction === 'btn_service_info' && session.service_id) {
+    return {
+      replies    : [serviceInfoReply(lang, session.service_id)],
+      updates    : { flow: 'consult', step: 'service_info', service_id: session.service_id },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_check_viability') {
+    const svcId = session.service_id ?? '';
+    const pageUrl = svcId ? getServicePageUrl(svcId) : null;
+    const url = pageUrl ?? 'https://expertconsulting.es/servicios';
+    const body = `Puedes comprobar la viabilidad desde aqui:\n${url}\n\nSi tienes dudas, cuentame el caso y te oriento antes de contratar.`;
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { flow: 'consult', step: 'viability_sent', service_id: svcId || session.service_id },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_pay_now') {
+    const svcId = session.service_id ?? '';
+    const svc = SERVICES[svcId];
+    if (!svc?.stripePriceId) {
+      return {
+        replies    : [svcId ? serviceInfoReply(lang, svcId) : freeConsultPrompt(lang), meetingRecommended(lang, name, svcId || null, 'Este servicio requiere confirmar alcance antes de pagar.')],
+        updates    : { flow: 'consult', step: 'call_recommended', service_id: svcId || session.service_id },
+        sideEffects: {},
+      };
+    }
+    const body = `Preparando tu enlace de contratacion segura para *${svc.label[lang]}*.\n\nEn un momento lo recibiras.`;
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { step: 'payment_pending', service_id: svcId },
+      sideEffects: { sendPaymentLink: true, saveLead: contactInfo?.status !== 'client' },
+    };
+  }
   if (interaction === 'btn_write_here') {
     return {
-      replies    : [humanEscalate(lang, name)],
-      updates    : { flow: 'human', step: 'escalated', escalated: true },
-      sideEffects: { escalate: true },
+      replies    : [freeConsultPrompt(lang)],
+      updates    : { flow: 'consult', step: 'free_consult', escalated: false },
+      sideEffects: {},
     };
   }
 
-  // Sensitive-topic detection: escalate immediately if not already in human flow
+  // Sensitive-topic detection: recommend a call, never automatic human escalation.
   if (!session.escalated && session.flow !== 'human' && hasSensitiveTrigger(msgBody, lang)) {
     return {
-      replies    : [sensitiveEscalate(lang, name)],
-      updates    : { flow: 'human', step: 'escalated', escalated: true, priority: 'urgent' },
-      sideEffects: { escalate: true, priority: 'urgent' },
+      replies    : [sensitiveCallRecommended(lang, name)],
+      updates    : {
+        flow: 'consult',
+        step: 'call_recommended',
+        escalated: false,
+        priority: 'high',
+        data: { ...session.data, sensitive_case: 'true' },
+      },
+      sideEffects: { saveLead: contactInfo?.status !== 'client', priority: 'high' },
     };
   }
 
@@ -1280,14 +1366,16 @@ export function processKiaStep(
       return { replies: m ? [menuToReply(m)] : [menuToReply(AREA_LIST_MENU[lang])], updates: {}, sideEffects: {} };
     }
 
-    // Auto-escalate (complex services → human directly)
-    if (AUTO_ESCALATE.has(svcId)) {
+    // Complex services → call/meeting recommended, not automatic human escalation.
+    if (COMPLEX_SERVICE_REVIEW.has(svcId)) {
       const svc = SERVICES[svcId];
       const pageUrl = getServicePageUrl(svcId);
       const note = svc
-        ? (lang === 'ru' ? `Запрос по *${svc.label.ru}* передаётся специалисту.` : `Tu solicitud de *${svc.label.es}* la revisará un especialista.`)
+        ? (lang === 'ru'
+            ? `Conviene confirmar el alcance de *${svc.label.ru}* antes de contratar.`
+            : `Conviene confirmar el alcance de *${svc.label.es}* antes de contratar.`)
         : undefined;
-      const replies: KiaReply[] = [humanEscalate(lang, name, note)];
+      const replies: KiaReply[] = [meetingRecommended(lang, name, svcId, note)];
       if (pageUrl) {
         const infoNote = lang === 'ru'
           ? `🌐 *Информация об услуге:* ${pageUrl}`
@@ -1296,8 +1384,8 @@ export function processKiaStep(
       }
       return {
         replies,
-        updates: { flow: 'human', step: 'escalated', escalated: true, service_id: svcId },
-        sideEffects: { escalate: true, saveLead: true },
+        updates: { flow: 'consult', step: 'meeting_recommended', escalated: false, service_id: svcId, data: { ...session.data, complex_service: 'true' } },
+        sideEffects: { saveLead: contactInfo?.status !== 'client' },
       };
     }
 
@@ -1311,7 +1399,7 @@ export function processKiaStep(
     }
 
     const svc = SERVICES[svcId];
-    if (!svc) return { replies: [humanEscalate(lang, name)], updates: { flow: 'human', step: 'escalated', escalated: true }, sideEffects: { escalate: true } };
+    if (!svc) return { replies: [freeConsultPrompt(lang)], updates: { flow: 'consult', step: 'free_consult' }, sideEffects: { needsAiFallback: true } };
 
     // Has precal flow?
     if (svc.precalFlow && PRECAL_FLOWS[svc.precalFlow]?.length) {
@@ -1343,26 +1431,33 @@ export function processKiaStep(
     const answer = interaction || msgBody.trim();
     const newData: Record<string, string> = { ...session.data, [currentQ.key]: answer };
     let newPriority: KiaPriority = session.priority;
-    let shouldEscalate = false;
-    let escalateNote = '';
+    let shouldRecommendCall = false;
+    let callNote = '';
 
     if (currentQ.type === 'buttons') {
       const opt = (currentQ.options ?? []).find((o) => o.id === interaction);
       if (opt?.escalate) {
-        shouldEscalate = true;
-        escalateNote = lang === 'ru'
-          ? `Ситуация требует консультации специалиста (${svc?.label.ru ?? ''}).`
-          : `Situación que requiere revisión del equipo (${svc?.label.es ?? ''}).`;
+        shouldRecommendCall = true;
+        callNote = lang === 'ru'
+          ? `Conviene confirmar este punto en una llamada antes de contratar (${svc?.label.ru ?? ''}).`
+          : `Conviene confirmar este punto en una llamada antes de contratar (${svc?.label.es ?? ''}).`;
       }
       if (opt?.priority) newPriority = opt.priority;
       if (opt?.noteForData) newData[`_flag_${opt.noteForData}`] = 'true';
     }
 
-    if (shouldEscalate) {
+    if (shouldRecommendCall) {
       return {
-        replies: [humanEscalate(lang, name, escalateNote)],
-        updates: { flow: 'human', step: 'escalated', escalated: true, data: newData, priority: newPriority },
-        sideEffects: { escalate: true, saveLead: true, priority: newPriority },
+        replies: [meetingRecommended(lang, name, svcId, callNote)],
+        updates: {
+          flow: 'consult',
+          step: 'call_recommended',
+          escalated: false,
+          service_id: svcId,
+          data: { ...newData, risk_or_complexity: 'true' },
+          priority: newPriority,
+        },
+        sideEffects: { saveLead: contactInfo?.status !== 'client', priority: newPriority },
       };
     }
 
@@ -1401,9 +1496,16 @@ export function processKiaStep(
           ? `\n\n*Документы, которые могут понадобиться позже:*\n${topDocs}`
           : `\n\n*Documentos que pueden hacer falta más adelante:*\n${topDocs}`)
       : '';
+    const checkoutNote = svc?.stripePriceId
+      ? (lang === 'ru'
+          ? '\n\nTe envio ahora el enlace para contratar de forma segura. Si tienes dudas, puedes reservar una llamada de 15 minutos.'
+          : '\n\nTe envio ahora el enlace para contratar de forma segura. Si tienes dudas, puedes reservar una llamada de 15 minutos.')
+      : (lang === 'ru'
+          ? '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.'
+          : '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.');
     const confirmBody = lang === 'ru'
-      ? `✅ *${displayName}*, я зарегистрировала вашу заявку по *${svcLabel}*.${docsBlock}${emailNote}${pageNote}\n\nСледующий шаг: войдите или зарегистрируйтесь, чтобы безопасно оформить услугу. Если есть вопросы — пишите. EXPERT 💼`
-      : `✅ ¡Perfecto, *${displayName}*! He registrado tu solicitud para *${svcLabel}*.${docsBlock}${emailNote}${pageNote}\n\nSiguiente paso: entra o regístrate para contratar el servicio de forma segura. Si tienes dudas, estoy aquí. EXPERT 💼`;
+      ? `✅ *${displayName}*, я зарегистрировала вашу заявку по *${svcLabel}*.${docsBlock}${emailNote}${pageNote}${checkoutNote} EXPERT 💼`
+      : `✅ ¡Perfecto, *${displayName}*! He registrado tu solicitud para *${svcLabel}*.${docsBlock}${emailNote}${pageNote}${checkoutNote} EXPERT 💼`;
 
     const replies: KiaReply[] = [{ type: 'text', body: confirmBody }];
 
@@ -1419,8 +1521,8 @@ export function processKiaStep(
       replies,
       updates: { step: 'done', name: finalName ?? session.name, email: email ?? session.email },
       sideEffects: {
-        createCase   : contactInfo?.status === 'client',
-        saveLead     : true,
+        saveLead     : contactInfo?.status !== 'client',
+        sendPaymentLink: Boolean(svc?.stripePriceId),
         sendDocsEmail: !!email && contactInfo?.status === 'client',
       },
     };
@@ -1439,23 +1541,33 @@ export function processKiaStep(
       const body = lang === 'ru'
         ? '🔍 ¿Por qué trámite consultas? Indica el servicio o tu número de expediente.'
         : '🔍 ¿Sobre qué trámite quieres consultar? Indícame el nombre del servicio o tu número de expediente.';
-      return { replies: [{ type: 'text', body }], updates: { flow: 'human', step: 'awaiting_estado' }, sideEffects: { escalate: false } };
+      return { replies: [{ type: 'text', body }], updates: { step: 'awaiting_estado' }, sideEffects: {} };
     }
     if (interaction === 'ex_requerimiento') {
       const body = lang === 'ru'
         ? '⚠️ Спасибо, что сообщили! Пожалуйста, отправьте требование в PDF или фото. Особо обратим внимание на дату уведомления и срок ответа.'
         : '⚠️ Gracias por avisar. Envíame el requerimiento en PDF o foto. Revisaremos especialmente la fecha de notificación y el plazo para responder.';
+      void body;
       return {
-        replies: [{ type: 'text', body }],
-        updates: { flow: 'human', step: 'escalated', escalated: true, priority: 'urgent' },
-        sideEffects: { escalate: true, priority: 'urgent' },
+        replies: [sensitiveCallRecommended(lang, name)],
+        updates: { flow: 'consult', step: 'call_recommended', escalated: false, priority: 'high', data: { ...session.data, sensitive_case: 'true' } },
+        sideEffects: { priority: 'high' },
       };
     }
     // ex_factura, ex_humano
     const body = lang === 'ru'
       ? `Спасибо, *${name ?? 'клиент'}* 😊 Передаю вас команде EXPERT. Кто-то свяжется с вами в ближайшее время.`
       : `Gracias, *${name ?? 'cliente'}* 😊 Te pongo en contacto con el equipo de EXPERT. Alguien te atenderá cuanto antes.`;
-    return { replies: [{ type: 'text', body }], updates: { flow: 'human', step: 'escalated', escalated: true }, sideEffects: { escalate: true } };
+    if (interaction === 'ex_factura') {
+      const invoiceBody = 'Claro. Dime a que pago o servicio corresponde la factura y reviso el siguiente paso. Si prefieres, tambien puedes reservar una llamada de 15 min: https://expertconsulting.es/cita';
+      return { replies: [{ type: 'text', body: invoiceBody }], updates: { step: 'client_invoice_payment' }, sideEffects: {} };
+    }
+    void body;
+    return {
+      replies: [meetingRecommended(lang, name, session.service_id, 'La forma mas rapida de que el equipo comercial te atienda es reservar una llamada.')],
+      updates: { flow: 'consult', step: 'call_recommended', escalated: false },
+      sideEffects: {},
+    };
   }
 
   // ── PRECAL CTA — after successful precalification ─────────────────────────
@@ -1480,9 +1592,9 @@ export function processKiaStep(
       const svc   = SERVICES[svcId];
       if (!svc?.stripePriceId) {
         return {
-          replies    : [humanEscalate(lang, name)],
-          updates    : { flow: 'human', step: 'escalated', escalated: true },
-          sideEffects: { escalate: true },
+          replies    : [meetingRecommended(lang, name, svcId, 'Este servicio requiere confirmar alcance antes de pagar.')],
+          updates    : { flow: 'consult', step: 'call_recommended', escalated: false },
+          sideEffects: {},
         };
       }
       const body = lang === 'ru'
@@ -1491,7 +1603,7 @@ export function processKiaStep(
       return {
         replies    : [{ type: 'text', body }],
         updates    : { step: 'payment_pending' },
-        sideEffects: { sendPaymentLink: true, saveLead: true },
+        sideEffects: { sendPaymentLink: true, saveLead: contactInfo?.status !== 'client' },
       };
     }
 
@@ -1514,10 +1626,11 @@ export function processKiaStep(
       const body = lang === 'ru'
         ? '⚠️ Понял! Расскажите кратко: что произошло и какой срок? Передаю команде немедленно.'
         : '⚠️ Entendido. Cuéntame brevemente qué ha pasado y qué plazo tienes. Lo paso al equipo enseguida.';
+      void body;
       return {
-        replies: [{ type: 'text', body }],
-        updates: { flow: 'human', step: 'escalated', escalated: true, priority: 'urgent' },
-        sideEffects: { escalate: true, priority: 'urgent' },
+        replies: [sensitiveCallRecommended(lang, name)],
+        updates: { flow: 'consult', step: 'call_recommended', escalated: false, priority: 'high', data: { ...session.data, sensitive_case: 'true' } },
+        sideEffects: { priority: 'high' },
       };
     }
     if (interaction === 'co_cita') {
@@ -1612,9 +1725,9 @@ export function processKiaStep(
     }
     if (interaction === 'cl_human') {
       return {
-        replies    : [humanEscalate(lang, name)],
-        updates    : { flow: 'human', step: 'escalated', escalated: true },
-        sideEffects: { escalate: true },
+        replies    : [meetingRecommended(lang, name, session.service_id, 'Si tienes dudas, reservamos una llamada y te atendemos con contexto de cliente.')],
+        updates    : { flow: 'consult', step: 'call_recommended', escalated: false },
+        sideEffects: {},
       };
     }
     if (interaction === 'cl_new_service') {
@@ -1631,7 +1744,7 @@ export function processKiaStep(
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────
 
-  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending'].includes(step)) {
+  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment'].includes(step)) {
     return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 

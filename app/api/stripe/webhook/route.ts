@@ -122,6 +122,38 @@ async function getClientEmail(userId: string): Promise<{ email: string; name: st
   return { email, name: profile?.full_name ?? email.split('@')[0] };
 }
 
+async function updateOrderHoldedResult(
+  supabaseAdmin: SupabaseAdmin,
+  orderId: string | undefined,
+  result: { contactId: string | null; invoiceId: string | null; syncEventId: string | null; error?: string },
+  baseMetadata: Record<string, unknown> = {}
+) {
+  if (!orderId) return;
+
+  const holded = {
+    contact_id: result.contactId,
+    invoice_id: result.invoiceId,
+    sync_event_id: result.syncEventId,
+    error: result.error ?? null
+  };
+
+  const { error } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: result.invoiceId ? 'paid' : 'paid_invoice_error',
+      holded_invoice_id: result.invoiceId,
+      holded_sync_event_id: result.syncEventId,
+      holded_sync_error: result.error ?? null,
+      holded_synced_at: new Date().toISOString(),
+      metadata: { ...baseMetadata, holded }
+    })
+    .eq('id', orderId);
+
+  if (error) {
+    console.error('[webhook] holded order trace update failed:', error);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripeClient();
   const body = await req.text();
@@ -177,6 +209,14 @@ export async function POST(req: NextRequest) {
               .eq('id', quoteId);
 
             // ── Insert order ──
+            const orderMetadata = {
+              checkout_session: {
+                id: session.id,
+                payment_intent: session.payment_intent,
+                customer_email: session.customer_email
+              }
+            };
+
             const { data: newOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
               quote_id: quoteId,
               client_id: quote.client_id,
@@ -184,13 +224,7 @@ export async function POST(req: NextRequest) {
               amount_eur: amountEur,
               currency,
               status: 'paid',
-              metadata: {
-                checkout_session: {
-                  id: session.id,
-                  payment_intent: session.payment_intent,
-                  customer_email: session.customer_email
-                }
-              }
+              metadata: orderMetadata
             }).select('id').single();
 
             if (orderError) {
@@ -243,19 +277,18 @@ export async function POST(req: NextRequest) {
                 orderId: newOrder?.id,
                 localEntity: 'orders'
               }).then((result) => {
-                if (result.invoiceId && newOrder?.id) {
-                  supabaseAdmin.from('orders').update({
-                    metadata: {
-                      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: session.customer_email },
-                      holded: {
-                        contact_id: result.contactId,
-                        invoice_id: result.invoiceId,
-                        sync_event_id: result.syncEventId
-                      }
-                    }
-                  }).eq('id', newOrder.id).then(() => {});
-                }
-              }).catch((err) => console.error('[webhook] holded sync failed:', err));
+                updateOrderHoldedResult(supabaseAdmin, newOrder?.id, result, orderMetadata).catch((err) => {
+                  console.error('[webhook] holded trace update failed:', err);
+                });
+              }).catch((err) => {
+                console.error('[webhook] holded sync failed:', err);
+                updateOrderHoldedResult(
+                  supabaseAdmin,
+                  newOrder?.id,
+                  { contactId: null, invoiceId: null, syncEventId: null, error: err instanceof Error ? err.message : String(err) },
+                  orderMetadata
+                ).catch(() => {});
+              });
             }
           }
         }
@@ -275,11 +308,19 @@ export async function POST(req: NextRequest) {
         'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
       const paymentId  = (session.payment_intent as string) ?? session.id;
+      let catalogOrderMetadata: Record<string, unknown> = {
+        checkout_session: {
+          id             : session.id,
+          payment_intent : session.payment_intent,
+          customer_email : customerEmail ?? null,
+          product_type   : productType,
+        },
+      };
 
       // ── Idempotency: create order record for catalog payment ──
       const { data: existingCatalogOrder } = await supabaseAdmin
         .from('orders')
-        .select('id')
+        .select('id,metadata')
         .eq('stripe_payment_id', paymentId)
         .maybeSingle();
 
@@ -295,14 +336,7 @@ export async function POST(req: NextRequest) {
             currency        : session.currency?.toUpperCase() ?? 'EUR',
             status          : 'paid',
             service_slugs   : session.metadata?.service_slugs ?? session.metadata?.service_slug ?? null,
-            metadata        : {
-              checkout_session: {
-                id             : session.id,
-                payment_intent : session.payment_intent,
-                customer_email : customerEmail ?? null,
-                product_type   : productType,
-              },
-            },
+            metadata        : catalogOrderMetadata,
           })
           .select('id')
           .single();
@@ -314,6 +348,7 @@ export async function POST(req: NextRequest) {
         }
       } else {
         catalogOrderId = existingCatalogOrder.id;
+        catalogOrderMetadata = (existingCatalogOrder.metadata ?? catalogOrderMetadata) as Record<string, unknown>;
       }
 
       if (customerEmail) {
@@ -361,7 +396,19 @@ export async function POST(req: NextRequest) {
           amountEur,
           orderId: catalogOrderId ?? session.id,
           localEntity: 'orders'
-        }).catch((err) => console.error('[webhook] holded sync (catalog) failed:', err));
+        }).then((result) => {
+          updateOrderHoldedResult(supabaseAdmin, catalogOrderId, result, catalogOrderMetadata).catch((err) => {
+            console.error('[webhook] holded trace update (catalog) failed:', err);
+          });
+        }).catch((err) => {
+          console.error('[webhook] holded sync (catalog) failed:', err);
+          updateOrderHoldedResult(
+            supabaseAdmin,
+            catalogOrderId,
+            { contactId: null, invoiceId: null, syncEventId: null, error: err instanceof Error ? err.message : String(err) },
+            catalogOrderMetadata
+          ).catch(() => {});
+        });
       }
     }
 

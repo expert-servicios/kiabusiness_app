@@ -1,6 +1,6 @@
 # Kia Commercial Flow — Audit de arquitectura
 
-Ultima revision: 2026-05-22
+Ultima revision: 2026-05-23
 
 ---
 
@@ -9,6 +9,24 @@ Ultima revision: 2026-05-22
 Kia es el asistente conversacional de EXPERT integrado en WhatsApp Business (WABA v20). El motor corre en `lib/integrations/kia-engine.ts` (~1 200 lineas) como maquina de estados pura en TypeScript. La API recibe mensajes WABA, los pasa al motor y devuelve respuestas interactivas (botones, listas). El webhook esta en produccion y funciona.
 
 Este documento recoge el estado actual del flujo comercial de Kia, los gaps criticos encontrados y las decisiones de arquitectura que deben mantenerse.
+
+---
+
+## Actualizacion 2026-05-23
+
+Estado aplicado:
+
+- Kia ya no usa la escalacion humana como salida comercial normal. Servicios complejos, respuestas de riesgo, requerimientos, sanciones, denegaciones o dudas llevan a llamada/reunion de 15 minutos, viabilidad, informacion del servicio o checkout.
+- `needs_review` queda reservado para fallo tecnico, fallo/vacio de IA, ambiguedad extrema, conversaciones ya tomadas por humano/admin o errores de validacion que requieren atencion manual real.
+- `btn_write_here` abre `flow='consult'` / `step='free_consult'` y permite que Kia aclare antes de recomendar llamada.
+- Cuando el servicio tiene checkout, Kia envia enlace a `/contratar?service={catalogSlug}&source=whatsapp`; el slug se resuelve desde `stripePriceId` para no enviar IDs internos tipo `svc_irpf`.
+- `/contratar` exige login y muestra `ProfileCompletionWizard`.
+- `POST /api/services/checkout` exige sesion backend, `profile_completed=true` y `billing_ready=true` antes de crear Stripe Checkout.
+- `ProfileCompletionWizard` recoge nombre, telefono, NIF/NIE/CIF, tipo de cliente, direccion de facturacion y domicilio habitual cuando aplica.
+- El webhook de Stripe conserva el pago aunque Holded falle: registra `paid_invoice_error`, `holded_sync_error`, `holded_sync_event_id` y `holded_invoice_id` cuando existe factura.
+- `commercial review` de Kia no implica `flow='human'`; la reunion/cita es la via humana comercial.
+
+Los apartados historicos siguientes se mantienen como auditoria original; cuando contradigan esta actualizacion, prevalece el estado 2026-05-23.
 
 ---
 
