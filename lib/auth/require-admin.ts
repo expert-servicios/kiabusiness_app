@@ -15,5 +15,5 @@ export async function requireAdminClient(request: NextRequest): Promise<Supabase
     .eq('id', user.id)
     .single();
 
-  return profile?.role === 'admin' ? admin : null;
+  return profile?.role === 'admin' || profile?.role === 'owner' ? admin : null;
 }
