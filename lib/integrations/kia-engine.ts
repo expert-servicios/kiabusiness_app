@@ -839,7 +839,7 @@ function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
   const named = name ? `, *${name}*` : '';
   const body = lang === 'ru'
     ? `Почти готово${named}! 😊 Чтобы оформить заявку, укажи своё *полное имя* и *электронную почту*.`
-    : `¡Casi listo${named}! 😊 Para abrir tu expediente, indícame tu *nombre completo* y tu *correo electrónico*.`;
+    : `¡Casi listo${named}! 😊 Para preparar tu solicitud, indícame tu *nombre completo* y tu *correo electrónico*.`;
   return { type: 'text', body };
 }
 
@@ -1151,6 +1151,16 @@ export function processKiaStep(
     };
   }
 
+  if (contactInfo?.status === 'client' && (flow === 'lead_start' || flow === 'lead_media_followup' || (flow === 'welcome' && ['asking_name', 'asking_email'].includes(step)))) {
+    const l = langChanged ? detectedLang : lang;
+    return contactStart(l, name, contactInfo);
+  }
+
+  if (contactInfo?.status === 'lead' && flow === 'client_start') {
+    const l = langChanged ? detectedLang : lang;
+    return contactStart(l, name, contactInfo);
+  }
+
   // ── WELCOME ───────────────────────────────────────────────────────────────
 
   if (flow === 'welcome' && step === 'init') {
@@ -1386,9 +1396,14 @@ export function processKiaStep(
     const pageNote = pageUrl
       ? (lang === 'ru' ? `\n\n🌐 *Страница услуги:* ${pageUrl}` : `\n\n🌐 *Más información:* ${pageUrl}`)
       : '';
+    const docsBlock = topDocs
+      ? (lang === 'ru'
+          ? `\n\n*Документы, которые могут понадобиться позже:*\n${topDocs}`
+          : `\n\n*Documentos que pueden hacer falta más adelante:*\n${topDocs}`)
+      : '';
     const confirmBody = lang === 'ru'
-      ? `✅ *${displayName}*, ваша заявка по *${svcLabel}* принята!\n\n*Документы, которые понадобятся:*\n${topDocs}${emailNote}${pageNote}\n\nЕсли есть вопросы — пишите! EXPERT 💼`
-      : `✅ ¡Perfecto, *${displayName}*! He abierto tu expediente de *${svcLabel}*.\n\n*Documentos que necesitaremos:*\n${topDocs}${emailNote}${pageNote}\n\n¿Tienes dudas? Estoy aquí. EXPERT 💼`;
+      ? `✅ *${displayName}*, я зарегистрировала вашу заявку по *${svcLabel}*.${docsBlock}${emailNote}${pageNote}\n\nСледующий шаг: войдите или зарегистрируйтесь, чтобы безопасно оформить услугу. Если есть вопросы — пишите. EXPERT 💼`
+      : `✅ ¡Perfecto, *${displayName}*! He registrado tu solicitud para *${svcLabel}*.${docsBlock}${emailNote}${pageNote}\n\nSiguiente paso: entra o regístrate para contratar el servicio de forma segura. Si tienes dudas, estoy aquí. EXPERT 💼`;
 
     const replies: KiaReply[] = [{ type: 'text', body: confirmBody }];
 
@@ -1403,7 +1418,11 @@ export function processKiaStep(
     return {
       replies,
       updates: { step: 'done', name: finalName ?? session.name, email: email ?? session.email },
-      sideEffects: { createCase: true, saveLead: true, sendDocsEmail: !!email },
+      sideEffects: {
+        createCase   : contactInfo?.status === 'client',
+        saveLead     : true,
+        sendDocsEmail: !!email && contactInfo?.status === 'client',
+      },
     };
   }
 
