@@ -1,5 +1,12 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
+// ── Architecture note ─────────────────────────────────────────────────────────
+// EXPERT is the operational source of truth for clients, cases, communications,
+// and documents. Holded is the source of truth for accounting, invoicing, taxes,
+// and banking. Functions marked LEGACY should not be called from new flows.
+// See docs/holded-accounting-integration-audit.md for the full architecture.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const HOLDED_BASE = 'https://api.holded.com/api/invoicing/v1';
 const HOLDED_CRM_BASE = 'https://api.holded.com/api/crm/v1';
 const HOLDED_PROJECTS_BASE = 'https://api.holded.com/api/projects/v1';
@@ -119,14 +126,20 @@ async function holdedFetch<T>(
 
 export function getHoldedRuntimeConfig() {
   return {
-    configured: isConfigured(),
-    syncEnabled: process.env.HOLDED_SYNC_ENABLED === 'true',
-    dryRun: process.env.HOLDED_SYNC_DRY_RUN === 'true',
-    syncQuotes: process.env.HOLDED_SYNC_QUOTES === 'true',
-    createInvoicesFromStripe: process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true',
-    crmFunnelId: process.env.HOLDED_CRM_FUNNEL_ID ?? null,
-    crmDefaultStageId: process.env.HOLDED_CRM_DEFAULT_STAGE_ID ?? null,
-    projectDefaultListId: process.env.HOLDED_PROJECT_DEFAULT_LIST_ID ?? null
+    configured                : isConfigured(),
+    syncEnabled               : process.env.HOLDED_SYNC_ENABLED === 'true',
+    dryRun                    : process.env.HOLDED_SYNC_DRY_RUN === 'true',
+    syncQuotes                : process.env.HOLDED_SYNC_QUOTES === 'true',
+    createInvoicesFromStripe  : process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true',
+    // Feature flags for new architecture (default OFF for CRM/Projects, ON for accounting)
+    syncCrmEnabled            : process.env.HOLDED_SYNC_CRM_ENABLED === 'true',
+    syncProjectsEnabled       : process.env.HOLDED_SYNC_PROJECTS_ENABLED === 'true',
+    syncAccountingEnabled     : process.env.HOLDED_SYNC_ACCOUNTING_ENABLED !== 'false',
+    syncFinanceEnabled        : process.env.HOLDED_SYNC_FINANCE_ENABLED !== 'false',
+    // Legacy config keys — kept for EXPERT global account
+    crmFunnelId               : process.env.HOLDED_CRM_FUNNEL_ID ?? null,
+    crmDefaultStageId         : process.env.HOLDED_CRM_DEFAULT_STAGE_ID ?? null,
+    projectDefaultListId      : process.env.HOLDED_PROJECT_DEFAULT_LIST_ID ?? null,
   };
 }
 
@@ -144,16 +157,19 @@ export async function listDocuments(
   return Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
 }
 
+// LEGACY — admin status probe only. Not used in operational flows.
 export async function listFunnels(): Promise<unknown[]> {
   const data = await holdedFetch<unknown[] | { data?: unknown[] }>('GET', '/funnels', undefined, HOLDED_CRM_BASE);
   return Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
 }
 
+// LEGACY — admin status probe only. Not used in operational flows.
 export async function listProjects(): Promise<unknown[]> {
   const data = await holdedFetch<unknown[] | { data?: unknown[] }>('GET', '/projects', undefined, HOLDED_PROJECTS_BASE);
   return Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
 }
 
+// LEGACY — admin status probe only. Not used in operational flows.
 export async function listTasks(): Promise<unknown[]> {
   const data = await holdedFetch<unknown[] | { data?: unknown[] }>('GET', '/tasks', undefined, HOLDED_PROJECTS_BASE);
   return Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
@@ -278,12 +294,25 @@ export async function syncSubscriptionToHolded(params: {
     return { contactId: null, invoiceId: null, syncEventId, error };
   }
 
+  // Guard: Holded may already receive Stripe invoices via its native Stripe integration.
+  // Creating invoices here would duplicate them. Default HOLDED_CREATE_INVOICES_FROM_STRIPE=false.
+  const createInvoices = process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true';
+
   try {
     const contactId = await upsertContact({
       name: params.clientName,
       email: params.clientEmail,
       phone: params.clientPhone
     });
+
+    if (!createInvoices) {
+      await updateSyncEvent(syncEventId, {
+        status: 'skipped',
+        externalId: undefined,
+        responsePayload: { contactId, invoiceId: null, reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false' }
+      });
+      return { contactId, invoiceId: null, syncEventId };
+    }
 
     const invoiceId = await createInvoice({
       contactId,
@@ -370,6 +399,9 @@ export async function syncOrderToHolded(params: {
 // to syncOrderToHolded — upsert contact + create estimate in Holded invoicing.
 export const syncQuoteToHolded = syncOrderToHolded;
 
+// LEGACY — Only used for saas_leads B2B funnel from /admin/saas-leads.
+// Do NOT call from new lead capture flows. EXPERT is the CRM; Holded CRM is not
+// the operational source of truth. Gated by HOLDED_SYNC_CRM_ENABLED.
 export async function syncLeadToHolded(params: {
   leadId: string;
   name: string;
@@ -416,6 +448,11 @@ export async function syncLeadToHolded(params: {
   }
 }
 
+// LEGACY — Admin-triggered only from expediente detail page.
+// Do NOT call from automated flows. EXPERT cases are the source of truth for
+// expedientes; Holded Projects does not govern case state.
+// Gated by HOLDED_SYNC_PROJECTS_ENABLED. Checks external_mappings before
+// creating to avoid duplicates on retry.
 export async function syncProjectToHolded(params: {
   caseId: string;
   service: string;
@@ -442,6 +479,26 @@ export async function syncProjectToHolded(params: {
   }
 
   try {
+    // Idempotency: check external_mappings before creating to avoid duplicates on retry
+    const supabase = getSupabaseAdmin();
+    const { data: existingMapping } = await supabase
+      .from('external_mappings')
+      .select('external_id')
+      .eq('provider', 'holded')
+      .eq('local_entity', 'cases')
+      .eq('local_id', params.caseId)
+      .eq('external_entity', 'holded_project')
+      .maybeSingle();
+
+    if (existingMapping?.external_id) {
+      await updateSyncEvent(syncEventId, {
+        status: 'skipped',
+        externalId: existingMapping.external_id,
+        responsePayload: { reason: 'already_mapped', projectId: existingMapping.external_id }
+      });
+      return { contactId: null, invoiceId: null, syncEventId };
+    }
+
     let contactId: string | null = null;
     if (params.clientEmail) {
       contactId = await upsertContact({
@@ -461,6 +518,15 @@ export async function syncProjectToHolded(params: {
     const projectData = await holdedFetch<{ id: string }>(
       'POST', '/projects', projectBody, HOLDED_PROJECTS_BASE
     );
+
+    // Save mapping to prevent future duplicates
+    await supabase.from('external_mappings').insert({
+      provider       : 'holded',
+      local_entity   : 'cases',
+      local_id       : params.caseId,
+      external_entity: 'holded_project',
+      external_id    : projectData.id,
+    }).then(() => null, () => null); // best-effort
 
     await updateSyncEvent(syncEventId, {
       status: 'success',
