@@ -34,6 +34,14 @@ export function detectLanguage(text: string): KiaLang {
   return 'es';
 }
 
+// ── Name helpers ─────────────────────────────────────────────────────────────
+
+/** Returns only the first word of a full name — used for casual address. */
+function firstName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  return name.trim().split(/\s+/)[0] ?? null;
+}
+
 // ── Lead extraction ───────────────────────────────────────────────────────────
 
 export function extractLeadInfo(text: string): { name: string | null; email: string | null } {
@@ -825,23 +833,24 @@ export interface KiaStepResult {
 // ── Helper builders ───────────────────────────────────────────────────────────
 
 function welcome(lang: KiaLang, name?: string | null): KiaReply {
-  const m = WELCOME_MENU[lang];
-  const body = name
-    ? m.body.replace('¿Qué necesitas', `Encantada de verte de nuevo, *${name}* 😊\n\n¿Qué necesitas`).replace('Чем могу помочь?', `Рада вас видеть снова, *${name}* 😊\n\nЧем могу помочь?`)
+  const m    = WELCOME_MENU[lang];
+  const fn   = firstName(name);
+  const body = fn
+    ? m.body.replace('¿Qué necesitas', `Encantada de verte de nuevo, *${fn}* 😊\n\n¿Qué necesitas`).replace('Чем могу помочь?', `Рада вас видеть снова, *${fn}* 😊\n\nЧем могу помочь?`)
     : m.body;
   return { type: 'buttons', body, footer: FOOTER, buttons: m.buttons };
 }
 
 function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
-  const named = name ? `, *${name}*` : '';
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const body = lang === 'ru'
-    ? `Почти готово${named}! 😊 Чтобы оформить заявку, укажи своё *полное имя* и *электронную почту*.`
-    : `¡Casi listo${named}! 😊 Para preparar tu solicitud, indícame tu *nombre completo* y tu *correo electrónico*.`;
+    ? `Почти готово${named}! 😊 Para completar la solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*.`
+    : `¡Casi listo${named}! 😊 Para preparar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*.`;
   return { type: 'text', body };
 }
 
 function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
-  const named = name ? `, *${name}*` : '';
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const body = lang === 'ru'
     ? `Не переживайте${named}! 😊 Иногда сложно сразу определиться. Можно записаться на *бесплатный звонок 15 мин* — команда EXPERT разберётся вместе с вами.`
     : `¡No te preocupes${named}! 😊 A veces es difícil saber por dónde empezar. Puedes reservar una *llamada gratuita de 15 min* con el equipo de EXPERT y te orientamos sin compromiso.`;
@@ -872,8 +881,9 @@ function privacyNotice(lang: KiaLang): KiaReply {
 
 function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaContactInfo): KiaStepResult {
   if (contactInfo?.status === 'client') {
-    const greeting = name
-      ? `Hola, *${name}*. Veo que ya eres cliente de EXPERT. Que necesitas hoy?`
+    const fn = firstName(name);
+    const greeting = fn
+      ? `Hola, *${fn}*. Veo que ya eres cliente de EXPERT. Que necesitas hoy?`
       : CLIENT_WELCOME_MENU[lang].body;
     const clientMenu = { ...CLIENT_WELCOME_MENU[lang], body: greeting };
     return {
@@ -884,7 +894,8 @@ function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaConta
   }
 
   if (name) {
-    const leadBody = `Hola, *${name}*. Soy *Kia*, asistente virtual de EXPERT. En que puedo ayudarte?`;
+    const fn       = firstName(name);
+    const leadBody = `Hola, *${fn}*. Soy *Kia*, asistente virtual de EXPERT. En que puedo ayudarte?`;
     const leadMenu = { ...LEAD_WELCOME_MENU[lang], body: leadBody };
     return {
       replies    : [privacyNotice(lang), menuToReply(leadMenu)],
@@ -895,7 +906,9 @@ function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaConta
 
   const askName: KiaReply = {
     type: 'text',
-    body: 'Como te llamas? Escribenos tu nombre y apellido, por favor.',
+    body: lang === 'ru'
+      ? '🙋 Как вас зовут? Escríbenos tu nombre.'
+      : '🙋 ¿Cómo te llamas? Escríbenos tu nombre.',
   };
   return {
     replies    : [privacyNotice(lang), askName],
@@ -987,7 +1000,7 @@ export function getServicePageUrl(svcId: string): string | null {
 function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply {
   const svc      = SERVICES[svcId];
   const svcLabel = svc?.label[lang] ?? '';
-  const named    = name ? `, *${name}*` : '';
+  const named    = firstName(name) ? `, *${firstName(name)}*` : '';
   const body     = lang === 'ru'
     ? `✅ Отлично${named}! *${svcLabel}* подходит под вашу ситуацию.\n\nЧто хотите сделать?`
     : `✅ ¡Perfecto${named}! *${svcLabel}* encaja con tu situación.\n\n¿Qué quieres hacer ahora?`;
@@ -1025,8 +1038,8 @@ function serviceInfoReply(lang: KiaLang, svcId: string): KiaReply {
 }
 
 function meetingRecommended(lang: KiaLang, name: string | null, svcId?: string | null, reason?: string): KiaReply {
-  const svc = svcId ? SERVICES[svcId] : null;
-  const named = name ? `, *${name}*` : '';
+  const svc   = svcId ? SERVICES[svcId] : null;
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const serviceLine = svc
     ? (lang === 'ru' ? `\n\nServicio: *${svc.label.ru}*.` : `\n\nServicio: *${svc.label.es}*.`)
     : '';
@@ -1044,7 +1057,7 @@ function meetingRecommended(lang: KiaLang, name: string | null, svcId?: string |
 
 function holdedReadinessCta(lang: KiaLang, name: string | null, svcId: string): KiaReply {
   const svc   = SERVICES[svcId];
-  const named = name ? `, *${name}*` : '';
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const label = svc?.label[lang] ?? (lang === 'ru' ? 'Holded' : 'Holded');
   const body  = lang === 'ru'
     ? `👋 Отлично${named}! *${label}* — отличный выбор.\n\nПрежде чем перейти к оплате, рекомендуем пройти быстрый тест готовности (2 мин). Это поможет убедиться, что всё готово.\n\nТакже можно попробовать Holded *бесплатно 14 дней* или сначала записаться на звонок 15 минут.`
@@ -1081,7 +1094,7 @@ function hasSensitiveTrigger(text: string, lang: KiaLang): boolean {
 }
 
 function sensitiveCallRecommended(lang: KiaLang, name?: string | null): KiaReply {
-  const named = name ? `, *${name}*` : '';
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const body = lang === 'ru'
     ? `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`
     : `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`;
@@ -1253,7 +1266,7 @@ export function processKiaStep(
     if (selectedService) {
       const pageUrl = getServicePageUrl(selectedService.id);
       const body = [
-        `Perfecto${name ? `, *${name}*` : ''}. He anotado tu interes en *${selectedService.label.es}*.`,
+        `Perfecto${firstName(name) ? `, *${firstName(name)}*` : ''}. He anotado tu interes en *${selectedService.label.es}*.`,
         pageUrl ? `Mas informacion: ${pageUrl}` : null,
         'Si quieres que Kia siga con el menu automatico, escribe "menu". Si prefieres equipo humano, ya queda visible para EXPERT.',
       ].filter(Boolean).join('\n\n');
@@ -1302,10 +1315,11 @@ export function processKiaStep(
 
     // ── Client route — known profile ───────────────────────────────────────
     if (contactInfo?.status === 'client') {
-      const greeting = name
+      const fn      = firstName(name);
+      const greeting = fn
         ? (l === 'ru'
-            ? `👋 Привет, *${name}*! Вижу, что вы уже клиент EXPERT. Чем могу помочь сегодня?`
-            : `👋 ¡Hola, *${name}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`)
+            ? `👋 Привет, *${fn}*! Вижу, что вы уже клиент EXPERT. Чем могу помочь сегодня?`
+            : `👋 ¡Hola, *${fn}*! Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?`)
         : CLIENT_WELCOME_MENU[l].body;
       const clientMenu = { ...CLIENT_WELCOME_MENU[l], body: greeting };
       return {
@@ -1317,9 +1331,10 @@ export function processKiaStep(
 
     // ── Lead route — unknown or not yet a client ────────────────────────────
     if (name) {
+      const fn2     = firstName(name);
       const leadBody = l === 'ru'
-        ? `👋 Привет, *${name}*! Я *Kia*, виртуальный ассистент EXPERT. Чем могу помочь?`
-        : `👋 ¡Hola, *${name}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`;
+        ? `👋 Привет, *${fn2}*! Я *Kia*, виртуальный ассистент EXPERT. Чем могу помочь?`
+        : `👋 ¡Hola, *${fn2}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`;
       const leadMenu = { ...LEAD_WELCOME_MENU[l], body: leadBody };
       return {
         replies    : [privacyNotice(l), menuToReply(leadMenu)],
@@ -1327,12 +1342,12 @@ export function processKiaStep(
         sideEffects: {},
       };
     }
-    // New unknown contact — ask name first
+    // New unknown contact — ask first name only (full name requested later at purchase)
     const askName: KiaReply = {
       type: 'text',
       body: l === 'ru'
-        ? '🙋 Как вас зовут? Напишите, пожалуйста, имя и фамилию.'
-        : '🙋 ¿Cómo te llamas? Escríbenos tu nombre y apellido.',
+        ? '🙋 Как вас зовут? Escríbenos tu nombre.'
+        : '🙋 ¿Cómo te llamas? Escríbenos tu nombre.',
     };
     return {
       replies : [privacyNotice(l), askName],
@@ -1535,8 +1550,8 @@ export function processKiaStep(
 
   if (flow === 'new_client' && step === 'lead_capture') {
     const { name: n, email } = extractLeadInfo(msgBody);
-    const finalName = n ?? name;
-    const displayName = finalName ?? (lang === 'ru' ? 'клиент' : 'cliente');
+    const finalName   = n ?? name;
+    const displayName = firstName(finalName) ?? (lang === 'ru' ? 'клиент' : 'cliente');
     const svc = session.service_id ? SERVICES[session.service_id] : null;
     const svcLabel = svc ? svc.label[lang] : (lang === 'ru' ? 'ваш запрос' : 'tu consulta');
     const topDocs = svc?.docs.slice(0, 5).map((d) => `• ${d}`).join('\n') ?? '';
@@ -1613,8 +1628,8 @@ export function processKiaStep(
     }
     // ex_factura, ex_humano
     const body = lang === 'ru'
-      ? `Спасибо, *${name ?? 'клиент'}* 😊 Передаю вас команде EXPERT. Кто-то свяжется с вами в ближайшее время.`
-      : `Gracias, *${name ?? 'cliente'}* 😊 Te pongo en contacto con el equipo de EXPERT. Alguien te atenderá cuanto antes.`;
+      ? `Спасибо, *${firstName(name) ?? 'клиент'}* 😊 Передаю вас команде EXPERT. Кто-то свяжется с вами в ближайшее время.`
+      : `Gracias, *${firstName(name) ?? 'cliente'}* 😊 Te pongo en contacto con el equipo de EXPERT. Alguien te atenderá cuanto antes.`;
     if (interaction === 'ex_factura') {
       const invoiceBody = 'Claro. Dime a que pago o servicio corresponde la factura y reviso el siguiente paso. Si prefieres, tambien puedes reservar una llamada de 15 min: https://expertconsulting.es/cita';
       return { replies: [{ type: 'text', body: invoiceBody }], updates: { step: 'client_invoice_payment' }, sideEffects: {} };
