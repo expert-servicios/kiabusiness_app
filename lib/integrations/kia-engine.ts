@@ -655,23 +655,23 @@ interface ListMenu { type: 'list'; body: string; buttonText: string; sections: {
 type AnyMenu = BtnMenu | ListMenu;
 
 const WELCOME_MENU: Record<KiaLang, BtnMenu> = {
-  es: { type: 'buttons', body: '¡Hola! 👋 Soy *Kia*, el asistente virtual de EXPERT.\n\n¿Qué necesitas hacer hoy?', buttons: [{ id: 'btn_new', title: 'Contratar servicio' }, { id: 'btn_existing', title: 'Ya soy cliente' }, { id: 'btn_consult', title: 'Consulta / Presupuesto' }] },
-  ru: { type: 'buttons', body: 'Привет! 👋 Я *Kia*, виртуальный помощник EXPERT.\n\nЧем могу помочь?', buttons: [{ id: 'btn_new', title: 'Нужна услуга' }, { id: 'btn_existing', title: 'Я клиент' }, { id: 'btn_consult', title: 'Консультация' }] },
+  es: { type: 'buttons', body: '¡Hola! 👋✨ Soy *Kia*, la asistente virtual de EXPERT Asesoría.\n\n¡Estoy aquí para ayudarte con lo que necesites! 😊 ¿Por dónde empezamos?', buttons: [{ id: 'btn_new', title: 'Contratar servicio' }, { id: 'btn_existing', title: 'Ya soy cliente' }, { id: 'btn_consult', title: 'Consulta / Presupuesto' }] },
+  ru: { type: 'buttons', body: 'Привет! 👋✨ Я *Kia*, виртуальный ассистент EXPERT Asesoría.\n\nЯ здесь, чтобы помочь вам! 😊 С чего начнём?', buttons: [{ id: 'btn_new', title: 'Нужна услуга' }, { id: 'btn_existing', title: 'Я клиент' }, { id: 'btn_consult', title: 'Консультация' }] },
 };
 
 const AREA_LIST_MENU: Record<KiaLang, ListMenu> = {
-  es: { type: 'list', body: '¿Qué área te interesa? 👇', buttonText: 'Ver áreas', sections: [{ title: 'ÁREAS DE SERVICIO', rows: [{ id: 'area_fiscal', title: '💰 Fiscalidad', description: 'IRPF, autónomo, no residente…' }, { id: 'area_extranjeria', title: '🌍 Extranjería', description: 'Residencia, arraigo, nacionalidad…' }, { id: 'area_empresa', title: '🏢 Empresa / Autónomo', description: 'Altas, SL, gestión mensual…' }, { id: 'area_holded', title: '⚡ Holded ERP', description: 'Onboarding, formación, migración…' }, { id: 'area_certificado', title: '🔐 Certificado Digital', description: 'Persona física o empresa' }, { id: 'area_trafico', title: '🚗 Tráfico / Capitanía', description: 'Transferencias, trámites…' }, { id: 'area_notaria', title: '🏠 Notaría / Propiedades', description: 'Compraventa, herencia…' }] }] },
+  es: { type: 'list', body: '¡Genial! 🎉 ¿En qué área puedo ayudarte hoy? 👇', buttonText: 'Ver áreas', sections: [{ title: 'ÁREAS DE SERVICIO', rows: [{ id: 'area_fiscal', title: '💰 Fiscalidad', description: 'IRPF, autónomo, no residente…' }, { id: 'area_extranjeria', title: '🌍 Extranjería', description: 'Residencia, arraigo, nacionalidad…' }, { id: 'area_empresa', title: '🏢 Empresa / Autónomo', description: 'Altas, SL, gestión mensual…' }, { id: 'area_holded', title: '⚡ Holded ERP', description: 'Onboarding, formación, migración…' }, { id: 'area_certificado', title: '🔐 Certificado Digital', description: 'Persona física o empresa' }, { id: 'area_trafico', title: '🚗 Tráfico / Capitanía', description: 'Transferencias, trámites…' }, { id: 'area_notaria', title: '🏠 Notaría / Propiedades', description: 'Compraventa, herencia…' }] }] },
   ru: { type: 'list', body: 'Какое направление вас интересует? 👇', buttonText: 'Выбрать', sections: [{ title: 'НАПРАВЛЕНИЯ', rows: [{ id: 'area_fiscal', title: '💰 Налоги', description: 'НДФЛ, НДС, нерезиденты…' }, { id: 'area_extranjeria', title: '🌍 ВНЖ и гражданство', description: 'Разрешение, укоренение…' }, { id: 'area_empresa', title: '🏢 Бизнес / Самозанятый', description: 'Регистрация, обслуживание…' }, { id: 'area_holded', title: '⚡ Holded ERP', description: 'Настройка, обучение, миграция…' }, { id: 'area_certificado', title: '🔐 ЭЦП', description: 'Физлицо или юрлицо' }, { id: 'area_trafico', title: '🚗 ГИБДД / Капитанство', description: 'Оформление, переводы…' }, { id: 'area_notaria', title: '🏠 Нотариат / Недвижимость', description: 'Купля-продажа, наследство…' }] }] },
 };
 
 const SERVICE_MENUS: Record<string, Record<KiaLang, AnyMenu>> = {
   fiscal: {
-    es: { type: 'list', body: '¿Qué trámite fiscal necesitas?', buttonText: 'Ver servicios', sections: [{ title: 'FISCAL', rows: [{ id: 'svc_irpf', title: '📋 Renta (IRPF)', description: 'Declaración anual personal' }, { id: 'svc_autonomo_gestion', title: '📊 Autónomo / IVA trimestral', description: 'Gestión trimestral' }, { id: 'svc_no_residente', title: '🌐 No Residente (IRNR)', description: 'Inmuebles en España' }, { id: 'svc_modelo_151', title: '⭐ Modelo 151 / Beckham', description: 'Régimen especial' }, { id: 'svc_modelo_720', title: '🌍 Modelo 720', description: 'Bienes en extranjero' }, { id: 'svc_fiscal_no_se', title: '❓ No sé cuál necesito', description: 'Te orientamos sin compromiso' }] }] },
+    es: { type: 'list', body: '💰 ¡Perfecto! ¿Qué trámite fiscal necesitas? Te ayudo a elegir el mejor camino 😊', buttonText: 'Ver servicios', sections: [{ title: 'FISCAL', rows: [{ id: 'svc_irpf', title: '📋 Renta (IRPF)', description: 'Declaración anual personal' }, { id: 'svc_autonomo_gestion', title: '📊 Autónomo / IVA trimestral', description: 'Gestión trimestral' }, { id: 'svc_no_residente', title: '🌐 No Residente (IRNR)', description: 'Inmuebles en España' }, { id: 'svc_modelo_151', title: '⭐ Modelo 151 / Beckham', description: 'Régimen especial' }, { id: 'svc_modelo_720', title: '🌍 Modelo 720', description: 'Bienes en extranjero' }, { id: 'svc_fiscal_no_se', title: '❓ No sé cuál necesito', description: 'Te orientamos sin compromiso' }] }] },
     ru: { type: 'list', body: 'Какой налоговый вопрос вас интересует?', buttonText: 'Выбрать', sections: [{ title: 'НАЛОГИ', rows: [{ id: 'svc_irpf', title: '📋 Декларация НДФЛ (IRPF)', description: 'Годовая личная декларация' }, { id: 'svc_autonomo_gestion', title: '📊 Самозанятый / НДС', description: 'Квартальные налоги' }, { id: 'svc_no_residente', title: '🌐 Нерезидент (IRNR)', description: 'Недвижимость в Испании' }, { id: 'svc_modelo_151', title: '⭐ Модель 151 / Бекхэм', description: 'Специальный налоговый режим' }, { id: 'svc_modelo_720', title: '🌍 Модель 720', description: 'Имущество за рубежом' }, { id: 'svc_fiscal_no_se', title: '❓ Не знаю, что нужно', description: 'Бесплатная ориентация' }] }] },
   },
   extranjeria: {
     es: {
-      type: 'list', body: '¿Qué trámite de extranjería necesitas?', buttonText: 'Ver servicios',
+      type: 'list', body: '🌍 ¡Cuéntame! ¿Qué trámite de extranjería necesitas? Estoy aquí para orientarte paso a paso 😊', buttonText: 'Ver servicios',
       sections: [
         { title: 'PERMISOS DE RESIDENCIA', rows: [
           { id: 'svc_permiso_inicial',       title: '📄 Permiso Inicial',     description: 'Primera autorización de residencia y trabajo' },
@@ -712,23 +712,23 @@ const SERVICE_MENUS: Record<string, Record<KiaLang, AnyMenu>> = {
     },
   },
   empresa: {
-    es: { type: 'list', body: '¿Qué necesitas para tu empresa o actividad?', buttonText: 'Ver opciones', sections: [{ title: 'INICIO DE ACTIVIDAD', rows: [{ id: 'svc_alta_autonomo', title: '👤 Alta de Autónomo', description: 'Hacienda + RETA' }, { id: 'svc_constitucion_sl', title: '🏢 Constituir una SL', description: 'Sociedad Limitada desde 3.000 €' }] }, { title: 'GESTIÓN CONTINUA', rows: [{ id: 'svc_gestion_mensual', title: '📅 Gestión mensual', description: 'Contabilidad, impuestos, laboral' }] }, { title: 'OTROS', rows: [{ id: 'svc_empresa_no_se', title: '❓ No sé qué necesito', description: 'Te orientamos sin compromiso' }] }] },
+    es: { type: 'list', body: '🏢 ¡Me encanta ayudar a emprendedores! ¿Qué necesitas para tu empresa o actividad? 🚀', buttonText: 'Ver opciones', sections: [{ title: 'INICIO DE ACTIVIDAD', rows: [{ id: 'svc_alta_autonomo', title: '👤 Alta de Autónomo', description: 'Hacienda + RETA' }, { id: 'svc_constitucion_sl', title: '🏢 Constituir una SL', description: 'Sociedad Limitada desde 3.000 €' }] }, { title: 'GESTIÓN CONTINUA', rows: [{ id: 'svc_gestion_mensual', title: '📅 Gestión mensual', description: 'Contabilidad, impuestos, laboral' }] }, { title: 'OTROS', rows: [{ id: 'svc_empresa_no_se', title: '❓ No sé qué necesito', description: 'Te orientamos sin compromiso' }] }] },
     ru: { type: 'list', body: 'Что нужно для вашего бизнеса?', buttonText: 'Выбрать', sections: [{ title: 'НАЧАЛО ДЕЯТЕЛЬНОСТИ', rows: [{ id: 'svc_alta_autonomo', title: '👤 Регистрация самозанятого', description: 'Hacienda + RETA' }, { id: 'svc_constitucion_sl', title: '🏢 Открытие SL', description: 'ООО от 3.000 €' }] }, { title: 'ПОСТОЯННОЕ ОБСЛУЖИВАНИЕ', rows: [{ id: 'svc_gestion_mensual', title: '📅 Бухгалтерское обслуживание', description: 'Учёт, налоги, зарплаты' }] }, { title: 'ПРОЧЕЕ', rows: [{ id: 'svc_empresa_no_se', title: '❓ Не знаю, что нужно', description: 'Бесплатная ориентация' }] }] },
   },
   holded: {
-    es: { type: 'buttons', body: 'Somos *Partner Oficial de Holded* ⚡\n\n¿Qué necesitas?', buttons: [{ id: 'svc_holded_starter', title: 'Pack Starter' }, { id: 'svc_holded_formacion', title: 'Formación por horas' }, { id: 'svc_holded_migracion', title: 'Migración completa' }] },
+    es: { type: 'buttons', body: '⚡ ¡Somos *Partner Oficial de Holded*! 🎉\n\n¿Qué necesitas? ¡Con mucho gusto te ayudo! 😊', buttons: [{ id: 'svc_holded_starter', title: 'Pack Starter' }, { id: 'svc_holded_formacion', title: 'Formación por horas' }, { id: 'svc_holded_migracion', title: 'Migración completa' }] },
     ru: { type: 'buttons', body: 'Мы *официальный партнёр Holded* ⚡\n\nЧто нужно?', buttons: [{ id: 'svc_holded_starter', title: 'Стартовый пакет' }, { id: 'svc_holded_formacion', title: 'Обучение (почасово)' }, { id: 'svc_holded_migracion', title: 'Полная миграция' }] },
   },
   certificado: {
-    es: { type: 'buttons', body: '¿El certificado digital es para ti o para tu empresa?', buttons: [{ id: 'svc_certificado_fisica', title: 'Para mí (persona)' }, { id: 'svc_certificado_empresa', title: 'Para mi empresa' }] },
+    es: { type: 'buttons', body: '🔐 ¡Buena elección! El certificado digital es clave para tus trámites online 😊\n\n¿Es para ti o para tu empresa?', buttons: [{ id: 'svc_certificado_fisica', title: 'Para mí (persona)' }, { id: 'svc_certificado_empresa', title: 'Para mi empresa' }] },
     ru: { type: 'buttons', body: 'ЭЦП для кого?', buttons: [{ id: 'svc_certificado_fisica', title: 'Для меня (физлицо)' }, { id: 'svc_certificado_empresa', title: 'Для моей компании' }] },
   },
   trafico: {
-    es: { type: 'buttons', body: '¿Qué gestión de tráfico o capitanía necesitas?', buttons: [{ id: 'svc_trafico', title: 'Vehículo / Matric.' }, { id: 'svc_trafico_maritimo', title: 'Embarcación' }, { id: 'svc_trafico_no_se', title: 'No sé / Otro' }] },
+    es: { type: 'buttons', body: '🚗 ¡Cuéntame! ¿Qué gestión de tráfico o capitanía necesitas? Te lo resuelvo 😊', buttons: [{ id: 'svc_trafico', title: 'Vehículo / Matric.' }, { id: 'svc_trafico_maritimo', title: 'Embarcación' }, { id: 'svc_trafico_no_se', title: 'No sé / Otro' }] },
     ru: { type: 'buttons', body: 'Какое оформление нужно?', buttons: [{ id: 'svc_trafico', title: 'Транспортное средство' }, { id: 'svc_trafico_maritimo', title: 'Судно / Яхта' }, { id: 'svc_trafico_no_se', title: 'Не знаю / Другое' }] },
   },
   notaria: {
-    es: { type: 'buttons', body: '¿Qué trámite de notaría necesitas?', buttons: [{ id: 'svc_notaria_compraventa', title: 'Compraventa inmueble' }, { id: 'svc_notaria_herencia', title: 'Herencia / Sucesión' }, { id: 'svc_notaria_no_se', title: 'Otro / No sé' }] },
+    es: { type: 'buttons', body: '🏠 ¡Cuéntame! ¿Qué trámite de notaría o propiedades necesitas? Estoy aquí para ayudarte 😊', buttons: [{ id: 'svc_notaria_compraventa', title: 'Compraventa inmueble' }, { id: 'svc_notaria_herencia', title: 'Herencia / Sucesión' }, { id: 'svc_notaria_no_se', title: 'Otro / No sé' }] },
     ru: { type: 'buttons', body: 'Какой нотариальный вопрос?', buttons: [{ id: 'svc_notaria_compraventa', title: 'Купля-продажа' }, { id: 'svc_notaria_herencia', title: 'Наследство' }, { id: 'svc_notaria_no_se', title: 'Другое / Не знаю' }] },
   },
 };
@@ -739,7 +739,7 @@ const EXISTING_MENU: Record<KiaLang, ListMenu> = {
 };
 
 const CONSULT_MENU: Record<KiaLang, BtnMenu> = {
-  es: { type: 'buttons', body: '¿En qué podemos ayudarte? 😊', buttons: [{ id: 'co_no_se', title: 'No sé qué necesito' }, { id: 'co_urgente', title: 'Caso urgente' }, { id: 'co_cita', title: 'Reservar consulta' }] },
+  es: { type: 'buttons', body: '💬 ¡Claro que sí! ¿En qué puedo ayudarte hoy? 😊✨', buttons: [{ id: 'co_no_se', title: 'No sé qué necesito' }, { id: 'co_urgente', title: 'Caso urgente' }, { id: 'co_cita', title: 'Reservar consulta' }] },
   ru: { type: 'buttons', body: 'Чем могу помочь? 😊', buttons: [{ id: 'co_no_se', title: 'Не знаю, что нужно' }, { id: 'co_urgente', title: 'Срочный вопрос' }, { id: 'co_cita', title: 'Записаться на консультацию' }] },
 };
 
@@ -748,7 +748,7 @@ const CONSULT_MENU: Record<KiaLang, BtnMenu> = {
 const LEAD_WELCOME_MENU: Record<KiaLang, BtnMenu> = {
   es: {
     type: 'buttons',
-    body: '👋 ¡Hola! Soy *Kia*, la asistente virtual de EXPERT Asesoría.\n\nPuedo ayudarte a comprobar si tu trámite es viable, elegir el servicio adecuado o reservar una llamada de 15 min antes de contratar.',
+    body: '👋✨ ¡Hola! Soy *Kia*, la asistente virtual de EXPERT Asesoría.\n\n¡Estoy encantada de ayudarte! 😊 Puedo orientarte sobre tu trámite, ayudarte a elegir el servicio ideal o reservar una llamada gratuita de 15 min.',
     buttons: [
       { id: 'lead_viability', title: 'Comprobar viabilidad' },
       { id: 'lead_contract',  title: 'Contratar servicio'   },
@@ -769,7 +769,7 @@ const LEAD_WELCOME_MENU: Record<KiaLang, BtnMenu> = {
 const CLIENT_WELCOME_MENU: Record<KiaLang, ListMenu> = {
   es: {
     type: 'list',
-    body: '¡Hola! 👋 Veo que ya eres cliente de EXPERT. ¿Qué necesitas hoy?',
+    body: '¡Hola de nuevo! 👋🌟 ¡Qué alegría verte! Veo que ya eres parte de la familia EXPERT. ¿En qué puedo ayudarte hoy? 😊',
     buttonText: 'Ver opciones',
     sections: [{
       title: 'PANEL DE CLIENTE',
@@ -836,7 +836,7 @@ function welcome(lang: KiaLang, name?: string | null): KiaReply {
   const m    = WELCOME_MENU[lang];
   const fn   = firstName(name);
   const body = fn
-    ? m.body.replace('¿Qué necesitas', `Encantada de verte de nuevo, *${fn}* 😊\n\n¿Qué necesitas`).replace('Чем могу помочь?', `Рада вас видеть снова, *${fn}* 😊\n\nЧем могу помочь?`)
+    ? m.body.replace('¡Estoy aquí para ayudarte con lo que necesites! 😊 ¿Por dónde empezamos?', `¡Qué alegría verte de nuevo, *${fn}*! 🎉😊\n\n¿En qué puedo ayudarte hoy?`).replace('Я здесь, чтобы помочь вам! 😊 С чего начнём?', `Как хорошо снова вас видеть, *${fn}*! 🎉😊\n\nЧем могу помочь сегодня?`)
     : m.body;
   return { type: 'buttons', body, footer: FOOTER, buttons: m.buttons };
 }
@@ -844,8 +844,8 @@ function welcome(lang: KiaLang, name?: string | null): KiaReply {
 function leadCapture(lang: KiaLang, name?: string | null): KiaReply {
   const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const body = lang === 'ru'
-    ? `Почти готово${named}! 😊 Para completar la solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*.`
-    : `¡Casi listo${named}! 😊 Para preparar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*.`;
+    ? `¡Casi listo${named}! 🎉 Ya estamos en la recta final 😊\n\nPara formalizar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*. ¡Un pequeño paso y lo tenemos! ✨`
+    : `¡Casi listo${named}! 🎉 Ya estamos en la recta final 😊\n\nPara formalizar tu solicitud necesito tu *nombre y apellidos completos* y tu *correo electrónico*. ¡Un pequeño paso y lo tenemos! ✨`;
   return { type: 'text', body };
 }
 
@@ -865,15 +865,15 @@ function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
 
 function bookingConfirm(lang: KiaLang): KiaReply {
   const body = lang === 'ru'
-    ? `📅 *Записаться на звонок 15 мин (бесплатно):*\nhttps://expertconsulting.es/cita\n\nКоманда EXPERT свяжется с вами лично. ¡До встречи! 💼`
-    : `📅 *Reservar llamada gratuita de 15 min:*\nhttps://expertconsulting.es/cita\n\nEl equipo de EXPERT te atenderá personalmente. ¡Hasta pronto! 💼`;
+    ? `📅✨ *Reserva tu llamada gratuita de 15 min aquí:*\nhttps://expertconsulting.es/cita\n\n¡El equipo de EXPERT te atenderá con mucho gusto! 😊💼 ¡Hasta pronto!`
+    : `📅✨ *Reserva tu llamada gratuita de 15 min aquí:*\nhttps://expertconsulting.es/cita\n\n¡El equipo de EXPERT te atenderá con mucho gusto! 😊💼 ¡Hasta pronto!`;
   return { type: 'text', body };
 }
 
 function privacyNotice(lang: KiaLang): KiaReply {
   const body = lang === 'ru'
-    ? '👋 Привет! Я *Kia* — виртуальный ИИ-ассистент EXPERT Asesoría. Я автоматизированная система, *не живой сотрудник*.\n\n🔒 *Ваши данные под защитой.* Используем только предоставленные данные для обработки вашего запроса. Подробнее: https://expertconsulting.es/privacidad'
-    : '👋 ¡Hola! Soy *Kia*, la asistente virtual IA de EXPERT Asesoría. Soy un sistema automatizado, *no una persona*.\n\n🔒 *Tus datos, protegidos.* Solo usaremos los que compartas para gestionar tu consulta o trámite. Más info: https://expertconsulting.es/privacidad';
+    ? '👋✨ Привет! Я *Kia* — виртуальный ИИ-ассистент EXPERT Asesoría. Я автоматизированная система, *не живой сотрудник*, но дам всё от себя чтобы помочь! 😊\n\n🔒 *Ваши данные под защитой.* Используем только предоставленные данные для обработки вашего запроса. Подробнее: https://expertconsulting.es/privacidad'
+    : '👋✨ ¡Hola! Soy *Kia*, la asistente virtual IA de EXPERT Asesoría. Soy un sistema automatizado, *no una persona*, ¡pero daré lo mejor de mí para ayudarte! 😊\n\n🔒 *Tus datos, siempre protegidos.* Solo usaremos los que compartas para gestionar tu consulta o trámite. Más info: https://expertconsulting.es/privacidad';
   return { type: 'text', body };
 }
 
@@ -907,8 +907,8 @@ function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaConta
   const askName: KiaReply = {
     type: 'text',
     body: lang === 'ru'
-      ? '🙋 Как вас зовут? Escríbenos tu nombre.'
-      : '🙋 ¿Cómo te llamas? Escríbenos tu nombre.',
+      ? '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?'
+      : '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?',
   };
   return {
     replies    : [privacyNotice(lang), askName],
@@ -1022,18 +1022,18 @@ function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply 
 
 function freeConsultPrompt(lang: KiaLang): KiaReply {
   const body = lang === 'ru'
-    ? 'Расскажите коротко ваш вопрос, и я подскажу следующий шаг. Если нужно проверить детали, предложу записаться на звонок 15 минут.'
-    : 'Cuentame brevemente tu duda y te oriento. Si hace falta revisar el caso, te ofrecere reservar una llamada de 15 minutos.';
+    ? '💬 ¡Cuéntame! Describe brevemente tu situación y te oriento con mucho gusto 😊\n\nSi hace falta revisar el caso en detalle, te propongo una llamada gratuita de 15 min. ¡Estoy aquí para ayudarte! ✨'
+    : '💬 ¡Cuéntame! Descríbeme brevemente tu situación y te oriento con mucho gusto 😊\n\nSi hace falta revisar el caso en detalle, te propongo una llamada gratuita de 15 min. ¡Estoy aquí para ayudarte! ✨';
   return { type: 'text', body };
 }
 
 function serviceInfoReply(lang: KiaLang, svcId: string): KiaReply {
-  const svc = SERVICES[svcId];
-  const url = getServicePageUrl(svcId) ?? 'https://expertconsulting.es/servicios';
+  const svc   = SERVICES[svcId];
+  const url   = getServicePageUrl(svcId) ?? 'https://expertconsulting.es/servicios';
   const label = svc?.label[lang] ?? (lang === 'ru' ? 'servicio' : 'servicio');
-  const body = lang === 'ru'
-    ? `Informacion de *${label}*:\n${url}\n\nSi quieres, puedo ayudarte a comprobar viabilidad, contratar online si esta disponible o reservar una llamada.`
-    : `Informacion de *${label}*:\n${url}\n\nSi quieres, puedo ayudarte a comprobar viabilidad, contratar online si esta disponible o reservar una llamada.`;
+  const body  = lang === 'ru'
+    ? `✨ Aquí tienes toda la información sobre *${label}*:\n${url}\n\n¡Con mucho gusto te ayudo a comprobar viabilidad, contratar online o reservar una llamada! 😊`
+    : `✨ Aquí tienes toda la información sobre *${label}*:\n${url}\n\n¡Con mucho gusto te ayudo a comprobar viabilidad, contratar online o reservar una llamada! 😊`;
   return { type: 'text', body };
 }
 
@@ -1044,8 +1044,8 @@ function meetingRecommended(lang: KiaLang, name: string | null, svcId?: string |
     ? (lang === 'ru' ? `\n\nServicio: *${svc.label.ru}*.` : `\n\nServicio: *${svc.label.es}*.`)
     : '';
   const body = lang === 'ru'
-    ? `Entendido${named}. Este caso conviene revisarlo antes de decidir el siguiente paso.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\nPuedes reservar una llamada de 15 minutos, comprobar viabilidad o ver la informacion del servicio.`
-    : `Entendido${named}. Este caso conviene revisarlo antes de decidir el siguiente paso.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\nPuedes reservar una llamada de 15 minutos, comprobar viabilidad o ver la informacion del servicio.`;
+    ? `¡Entendido${named}! 😊 Para darte la mejor orientación posible, lo ideal es revisar este caso juntos.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\n¡No te preocupes! 💪 Puedes reservar una llamada gratuita de 15 min, comprobar la viabilidad sin compromiso o ver más información del servicio. ✨`
+    : `¡Entendido${named}! 😊 Para darte la mejor orientación posible, lo ideal es revisar este caso juntos.${serviceLine}${reason ? `\n\n${reason}` : ''}\n\n¡No te preocupes! 💪 Puedes reservar una llamada gratuita de 15 min, comprobar la viabilidad sin compromiso o ver más información del servicio. ✨`;
   const buttons: { id: string; title: string }[] = [
     { id: 'btn_book_call', title: 'Llamada 15 min' },
   ];
@@ -1096,8 +1096,8 @@ function hasSensitiveTrigger(text: string, lang: KiaLang): boolean {
 function sensitiveCallRecommended(lang: KiaLang, name?: string | null): KiaReply {
   const named = firstName(name) ? `, *${firstName(name)}*` : '';
   const body = lang === 'ru'
-    ? `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`
-    : `Entendido${named}. Este caso puede tener plazos o consecuencias importantes. Lo mas prudente es reservar una llamada para revisar el alcance antes de contratar o preparar respuesta.`;
+    ? `¡Entendido${named}! 😊 Gracias por contarme — aquí estoy para ayudarte. 💪\n\nEste tipo de casos tiene plazos importantes, así que lo más aconsejable es revisarlo juntos antes de actuar. ¡No te preocupes, lo resolveremos! ✨`
+    : `¡Entendido${named}! 😊 Gracias por contarme — aquí estoy para ayudarte. 💪\n\nEste tipo de casos tiene plazos importantes, así que lo más aconsejable es revisarlo juntos antes de actuar. ¡No te preocupes, lo resolveremos! ✨`;
   return {
     type: 'buttons',
     body,
@@ -1177,7 +1177,7 @@ export function processKiaStep(
     const svcId = session.service_id ?? '';
     const pageUrl = svcId ? getServicePageUrl(svcId) : null;
     const url = pageUrl ?? 'https://expertconsulting.es/servicios';
-    const body = `Puedes comprobar la viabilidad desde aqui:\n${url}\n\nSi tienes dudas, cuentame el caso y te oriento antes de contratar.`;
+    const body = `✅😊 ¡Genial! Puedes comprobar tu viabilidad gratis aquí:\n${url}\n\nSi tienes alguna duda, cuéntame y te oriento antes de contratar. ¡Estoy aquí para lo que necesites! 💪`;
     return {
       replies    : [{ type: 'text', body }],
       updates    : { flow: 'consult', step: 'viability_sent', service_id: svcId || session.service_id },
@@ -1194,7 +1194,7 @@ export function processKiaStep(
         sideEffects: {},
       };
     }
-    const body = `Preparando tu enlace de contratacion segura para *${svc.label[lang]}*.\n\nEn un momento lo recibiras.`;
+    const body = `🔒✨ ¡Perfecto! Preparando tu enlace de contratación segura para *${svc.label[lang]}*.\n\n¡En un momento lo recibirás! 🎉 ¡Gracias por confiar en EXPERT! 💼`;
     return {
       replies    : [{ type: 'text', body }],
       updates    : { step: 'payment_pending', service_id: svcId },
@@ -1346,8 +1346,8 @@ export function processKiaStep(
     const askName: KiaReply = {
       type: 'text',
       body: l === 'ru'
-        ? '🙋 Как вас зовут? Escríbenos tu nombre.'
-        : '🙋 ¿Cómo te llamas? Escríbenos tu nombre.',
+        ? '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?'
+        : '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?',
     };
     return {
       replies : [privacyNotice(l), askName],
@@ -1361,13 +1361,13 @@ export function processKiaStep(
     const rawName = msgBody.replace(/[^\w\sáéíóúÁÉÍÓÚüÜñÑА-Яа-яЁё.'-]/g, ' ').trim().slice(0, 80);
     if (rawName.length < 2) {
       return {
-        replies : [{ type: 'text', body: l === 'ru' ? 'Повторите, пожалуйста, только текстом 🙂' : 'Disculpa, ¿cómo te llamas? Solo escríbenos tu nombre 🙂' }],
+        replies : [{ type: 'text', body: l === 'ru' ? '😊 ¡No te preocupes! ¿Cómo quieres que te llame? Solo escríbeme tu nombre.' : '😊 ¡No te preocupes! ¿Cómo quieres que te llame? Solo escríbeme tu nombre.' }],
         updates : { lang: l },
         sideEffects: {},
       };
     }
     return {
-      replies : [{ type: 'text', body: l === 'ru' ? `Encantados, *${rawName}* 😊 ¿Y su email? (para enviarte información si la necesitas)\nO responde "пропустить" para continuar.` : `Encantado/a, *${rawName}* 😊 ¿Y tu email? (para enviarte información si la necesitas)\nO escribe "omitir" para continuar.` }],
+      replies : [{ type: 'text', body: l === 'ru' ? `¡Encantada, *${rawName}*! 🎉😊 ¿Y tu email? Así puedo enviarte información útil si la necesitas.\nO escribe "omitir" para continuar.` : `¡Encantada, *${rawName}*! 🎉😊 ¿Y tu email? Así puedo enviarte información útil si la necesitas.\nO escribe "omitir" para continuar.` }],
       updates : { step: 'asking_email', name: rawName, lang: l },
       sideEffects: {},
     };
@@ -1381,7 +1381,7 @@ export function processKiaStep(
     const wantsSkip = /^(no|sin|omit|skip|пропустить|нет|no\s+tengo|не\s+даю)$/i.test(msgBody.trim());
     if (!capturedEmail && !wantsSkip) {
       return {
-        replies : [{ type: 'text', body: l === 'ru' ? 'No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO "пропустить" para continuar.' : 'No veo un email válido. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' }],
+        replies : [{ type: 'text', body: l === 'ru' ? '📧😊 ¡Casi! No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' : '📧😊 ¡Casi! No encuentro el email. Escríbelo así: nombre@ejemplo.com\nO escribe "omitir" para continuar.' }],
         updates : { lang: l },
         sideEffects: {},
       };
@@ -1576,8 +1576,8 @@ export function processKiaStep(
           ? '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.'
           : '\n\nSi tienes dudas, puedes escribir aqui o reservar una llamada de 15 minutos antes de avanzar.');
     const confirmBody = lang === 'ru'
-      ? `✅ *${displayName}*, я зарегистрировала вашу заявку по *${svcLabel}*.${docsBlock}${emailNote}${pageNote}${checkoutNote} EXPERT 💼`
-      : `✅ ¡Perfecto, *${displayName}*! He registrado tu solicitud para *${svcLabel}*.${docsBlock}${emailNote}${pageNote}${checkoutNote} EXPERT 💼`;
+      ? `✅🎉 ¡*${displayName}*, tu solicitud para *${svcLabel}* ha quedado registrada! 😊${docsBlock}${emailNote}${pageNote}${checkoutNote} ¡Gracias por confiar en EXPERT! 💼✨`
+      : `✅🎉 ¡*${displayName}*, tu solicitud para *${svcLabel}* ha quedado registrada! 😊${docsBlock}${emailNote}${pageNote}${checkoutNote} ¡Gracias por confiar en EXPERT! 💼✨`;
 
     const replies: KiaReply[] = [{ type: 'text', body: confirmBody }];
 
@@ -1605,14 +1605,14 @@ export function processKiaStep(
   if (flow === 'existing' && step === 'waiting_option') {
     if (interaction === 'ex_docs') {
       const body = lang === 'ru'
-        ? '📎 Отлично! Отправьте документы прямо в этот чат. Пожалуйста, укажите, к какому делу они относятся.'
-        : '📎 Perfecto. Envíame los documentos por aquí. Indica también a qué trámite corresponden para ubicarlos correctamente.';
+        ? '📎✨ ¡Perfecto! Envíame los documentos directamente por aquí 😊\n\nIndícame también a qué trámite corresponden para que los ubique correctamente.'
+        : '📎✨ ¡Perfecto! Envíame los documentos directamente por aquí 😊\n\nIndícame también a qué trámite corresponden para que los ubique correctamente.';
       return { replies: [{ type: 'text', body }], updates: { step: 'awaiting_docs' }, sideEffects: {} };
     }
     if (interaction === 'ex_estado') {
       const body = lang === 'ru'
-        ? '🔍 ¿Por qué trámite consultas? Indica el servicio o tu número de expediente.'
-        : '🔍 ¿Sobre qué trámite quieres consultar? Indícame el nombre del servicio o tu número de expediente.';
+        ? '🔍😊 ¡Claro! ¿Sobre qué trámite quieres consultar? Indícame el nombre del servicio o tu número de expediente y lo compruebo enseguida.'
+        : '🔍😊 ¡Claro! ¿Sobre qué trámite quieres consultar? Indícame el nombre del servicio o tu número de expediente y lo compruebo enseguida.';
       return { replies: [{ type: 'text', body }], updates: { step: 'awaiting_estado' }, sideEffects: {} };
     }
     if (interaction === 'ex_requerimiento') {
@@ -1628,10 +1628,10 @@ export function processKiaStep(
     }
     // ex_factura, ex_humano
     const body = lang === 'ru'
-      ? `Спасибо, *${firstName(name) ?? 'клиент'}* 😊 Передаю вас команде EXPERT. Кто-то свяжется с вами в ближайшее время.`
-      : `Gracias, *${firstName(name) ?? 'cliente'}* 😊 Te pongo en contacto con el equipo de EXPERT. Alguien te atenderá cuanto antes.`;
+      ? `¡Gracias, *${firstName(name) ?? 'cliente'}*! 😊💼 Te pongo ahora mismo en contacto con el equipo de EXPERT. ¡Te atenderán cuanto antes! ✨`
+      : `¡Gracias, *${firstName(name) ?? 'cliente'}*! 😊💼 Te pongo ahora mismo en contacto con el equipo de EXPERT. ¡Te atenderán cuanto antes! ✨`;
     if (interaction === 'ex_factura') {
-      const invoiceBody = 'Claro. Dime a que pago o servicio corresponde la factura y reviso el siguiente paso. Si prefieres, tambien puedes reservar una llamada de 15 min: https://expertconsulting.es/cita';
+      const invoiceBody = '🧾😊 ¡Claro! Dime a qué pago o servicio corresponde la factura y lo reviso enseguida. Si prefieres, también puedes reservar una llamada de 15 min: https://expertconsulting.es/cita ✨';
       return { replies: [{ type: 'text', body: invoiceBody }], updates: { step: 'client_invoice_payment' }, sideEffects: {} };
     }
     void body;
@@ -1670,8 +1670,8 @@ export function processKiaStep(
         };
       }
       const body = lang === 'ru'
-        ? `🔒 Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\nEn un momento lo recibirás. ¡Gracias por confiar en EXPERT! 💼`
-        : `🔒 Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\nEn un momento lo recibirás. ¡Gracias por confiar en EXPERT! 💼`;
+        ? `🔒🎉 ¡Perfecto! Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\n¡En un momento lo recibirás! 😊 ¡Muchas gracias por confiar en EXPERT! 💼✨`
+        : `🔒🎉 ¡Perfecto! Preparando tu enlace de pago seguro para *${svc.label[lang]}*…\n\n¡En un momento lo recibirás! 😊 ¡Muchas gracias por confiar en EXPERT! 💼✨`;
       return {
         replies    : [{ type: 'text', body }],
         updates    : { step: 'payment_pending' },
@@ -1696,8 +1696,8 @@ export function processKiaStep(
   if (flow === 'consult' && step === 'waiting_option') {
     if (interaction === 'co_urgente') {
       const body = lang === 'ru'
-        ? '⚠️ Понял! Расскажите кратко: что произошло и какой срок? Передаю команде немедленно.'
-        : '⚠️ Entendido. Cuéntame brevemente qué ha pasado y qué plazo tienes. Lo paso al equipo enseguida.';
+        ? '⚠️💪 ¡Entendido! Cuéntame brevemente qué ha pasado y qué plazo tienes. ¡Lo gestionamos enseguida! 😊'
+        : '⚠️💪 ¡Entendido! Cuéntame brevemente qué ha pasado y qué plazo tienes. ¡Lo gestionamos enseguida! 😊';
       void body;
       return {
         replies: [sensitiveCallRecommended(lang, name)],
@@ -1707,14 +1707,14 @@ export function processKiaStep(
     }
     if (interaction === 'co_cita') {
       const body = lang === 'ru'
-        ? '📅 Para reservar tu consulta entra en: https://expertconsulting.es/cita\n\nO cuéntame el tema y te ayudo a preparar la sesión.'
-        : '📅 Para reservar tu consulta entra en: https://expertconsulting.es/cita\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión.';
+        ? '📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min aquí:\nhttps://expertconsulting.es/cita\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊'
+        : '📅✨ ¡Genial! Reserva tu consulta gratuita de 15 min aquí:\nhttps://expertconsulting.es/cita\n\nO si prefieres, cuéntame el tema y te ayudo a preparar la sesión 😊';
       return { replies: [{ type: 'text', body }], updates: { step: 'done' }, sideEffects: {} };
     }
     // co_no_se → hand off to AI
     const body = lang === 'ru'
-      ? '😊 Никаких проблем. Расскажите в двух словах, что нужно сделать или какая ситуация, и я помогу найти правильный путь.'
-      : '😊 Sin problema. Cuéntame en una frase qué necesitas hacer o qué situación tienes, y te ayudo a encontrar el camino correcto.';
+      ? '😊✨ ¡Sin problema! Cuéntame en pocas palabras qué necesitas o qué situación tienes, y juntos encontramos el mejor camino. ¡Para eso estoy aquí! 💪'
+      : '😊✨ ¡Sin problema! Cuéntame en pocas palabras qué necesitas o qué situación tienes, y juntos encontramos el mejor camino. ¡Para eso estoy aquí! 💪';
     return { replies: [{ type: 'text', body }], updates: { step: 'free_consult' }, sideEffects: { needsAiFallback: false } };
   }
 
