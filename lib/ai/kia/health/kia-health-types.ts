@@ -93,7 +93,8 @@ export type KiaAnomalyType =
   | 'provider_failure'
   | 'unsafe_accounting_action'
   | 'tax_presentation_claim'
-  | 'repeated_answer_loop';
+  | 'repeated_answer_loop'
+  | 'auditor_rule_failure';
 
 export interface KiaBehaviorAnomalyInput {
   source: 'canary' | 'production' | 'admin_review' | 'eval';

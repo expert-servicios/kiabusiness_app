@@ -126,7 +126,7 @@ async function handleCriticalFailSideEffects(review: KiaAuditorReview, ruleResul
   await saveKiaBehaviorAnomalies(criticalFailed.map((r) => ({
     source:      'admin_review' as const,
     severity:    'critical' as const,
-    anomalyType: r.ruleId as never,
+    anomalyType: 'auditor_rule_failure' as const,
     title:       `Auditoría Kia: fallo crítico — ${r.ruleId}`,
     description: r.explanation ?? `La regla ${r.ruleId} ha fallado en auditoría`,
     relatedDecisionLogId: review.decisionLogId ?? null,

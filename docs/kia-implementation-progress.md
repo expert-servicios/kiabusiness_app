@@ -15,6 +15,7 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Kia Health con canaries, grader determinista, runner, summary, alertas, API admin, cron protegido y panel `/admin/kia-health`.
 - Badge/resumen de Kia Health en Panel Gerente.
 - Kia Auditor con reglas, grader determinista, APIs y panel admin.
+- Migracion de persistencia de Kia Auditor con `kia_auditor_reviews` y `kia_auditor_rule_results`.
 - Clasificador documental conectado a `runKiaDecision` cuando el flag lo permite.
 - Anti-repeticion conversacional: Kia revisa historial antes de responder, evita repetir frases/CTA/estructura y reintenta una vez si detecta respuesta demasiado parecida.
 - Deteccion de anomalia `repeated_answer_loop` para respuestas repetitivas.
@@ -35,6 +36,8 @@ Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build
 - Aplicar migraciones en Supabase remoto:
   - `20260523171440_kia_decision_logs.sql`
   - `20260523182625_kia_health_check.sql`
+  - `20260524060850_kia_auditor_reviews.sql`
+- Bloqueo actual para aplicar desde este entorno: `.env.local` usa la connection string directa `db.<project-ref>.supabase.co`, que resuelve solo por IPv6. Esta maquina no puede abrir esa ruta; usar la connection string de Supavisor Session Pooler/Transaction Pooler del Dashboard o enlazar el proyecto con una red compatible.
 - Verificar RLS, grants y exposicion via Data API para las tablas nuevas.
 - Configurar feature flags de produccion segun el nivel de prueba deseado.
 - Ejecutar un canary manual desde `/admin/kia-health`.
