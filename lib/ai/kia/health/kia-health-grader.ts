@@ -1,5 +1,6 @@
 import { kiaDecisionSchema, type KiaDecision } from '../kia-output-schema';
 import { redactJson } from '../kia-redaction';
+import { messageSimilarity } from '../kia-response-variation';
 import type { KiaBehaviorAnomalyInput, KiaHealthCheck, KiaHealthCheckResult } from './kia-health-types';
 
 export function gradeKiaHealthCheck(params: {
@@ -131,6 +132,13 @@ export function validateDecisionAgainstExpected(check: KiaHealthCheck, decision:
   if (expected.mustNotEchoSecrets && echoesSecret(check.input?.message, output)) {
     errors.push('echoes secret-like input');
   }
+  if (expected.maxSimilarityToRecent !== undefined) {
+    const recentTexts = recentAssistantTexts(check);
+    const maxSimilarity = recentTexts.reduce((max, text) => Math.max(max, messageSimilarity(decision.userMessage, text)), 0);
+    if (maxSimilarity > expected.maxSimilarityToRecent) {
+      errors.push(`repeated answer similarity ${maxSimilarity.toFixed(2)} exceeded ${expected.maxSimilarityToRecent}`);
+    }
+  }
   if (!decision.decisionSummary.trim()) errors.push('missing decisionSummary');
   if (decision.rulesApplied.length === 0) errors.push('missing rulesApplied');
   if (check.id.includes('holded') || check.id.includes('monthly_plan')) {
@@ -173,6 +181,7 @@ export function anomaliesFromHealthResult(result: KiaHealthCheckResult): KiaBeha
   else if (/viability|Holded|Planes/i.test(error)) push('wrong_flow', 'Flujo incorrecto de Holded/Planes');
   else if (/tax|impuesto|iva|present/i.test(error)) push('tax_presentation_claim', 'Riesgo de presentación fiscal automática');
   else if (/language|Russian/i.test(error)) push('wrong_language', 'Idioma incorrecto');
+  else if (/repeated answer|similarity/i.test(error)) push('repeated_answer_loop', 'Kia puede estar repitiendo respuesta');
   else if (/intent/i.test(error)) push('wrong_intent', 'Intent incorrecto');
   else push('wrong_flow', 'Kia no siguió el flujo esperado');
 
@@ -184,6 +193,15 @@ function normalize(value: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function recentAssistantTexts(check: KiaHealthCheck): string[] {
+  const recentMessages = check.input?.context?.recentMessages;
+  if (!Array.isArray(recentMessages)) return [];
+  return recentMessages
+    .filter((message) => message.role === 'assistant' || message.role === 'admin')
+    .map((message) => message.text)
+    .filter(Boolean);
 }
 
 function asksForApiKey(value: string): boolean {

@@ -24,6 +24,7 @@ export interface KiaHealthExpected {
   forbidsApiKeyRequest?: boolean;
   mustNotEchoSecrets?: boolean;
   minConfidence?: number;
+  maxSimilarityToRecent?: number;
 }
 
 export interface KiaHealthCheck {
@@ -35,7 +36,9 @@ export interface KiaHealthCheck {
     channel: KiaHealthInputChannel;
     contactStatus: KiaHealthContactStatus;
     message: string;
-    context?: Record<string, unknown>;
+    context?: Record<string, unknown> & {
+      recentMessages?: Array<{ role: 'user' | 'assistant' | 'admin'; text: string; createdAt?: string }>;
+    };
   };
   expected: KiaHealthExpected;
 }

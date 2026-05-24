@@ -19,6 +19,7 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Clasificador documental conectado a `runKiaDecision` cuando el flag lo permite.
 - Anti-repeticion conversacional: Kia revisa historial antes de responder, evita repetir frases/CTA/estructura y reintenta una vez si detecta respuesta demasiado parecida.
 - Deteccion de anomalia `repeated_answer_loop` para respuestas repetitivas.
+- Canary anti-repeticion con historial sintetico y umbral de similitud.
 
 ## Verificado
 
@@ -47,7 +48,6 @@ Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build
   - Holded/planes con readiness, no viabilidad,
   - dudas complejas con llamada de 15 minutos, no `needs_review`,
   - respuestas no repetitivas.
-- Anadir un canary especifico de repeticion con dos mensajes consecutivos parecidos.
 - Conectar automaticamente `detectKiaProductionAnomalies()` al guardado de `kia_decision_logs` si se quiere crear anomalias en caliente desde produccion.
 
 ## Flags recomendados para pruebas con amigos

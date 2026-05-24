@@ -175,4 +175,34 @@ export const KIA_HEALTH_CANARY_TESTS: KiaHealthCheck[] = [
       requiresManualReview: false,
     },
   },
+  {
+    id: 'no_repeated_reply_loop',
+    category: 'behavioral',
+    severity: 'warning',
+    title: 'Kia no repite la misma frase si ya la dijo en el hilo',
+    input: {
+      channel: 'waba',
+      contactStatus: 'lead',
+      message: 'Vale, pero quiero saber el precio del Plan Avanzado',
+      context: {
+        serviceSlug: 'plan-avanzado',
+        recentMessages: [
+          {
+            role: 'assistant',
+            text: 'Para avanzar con el Plan Avanzado, entra en el portal seguro y completa tu perfil. Si tienes dudas, puedes reservar una llamada de 15 minutos.',
+          },
+          {
+            role: 'user',
+            text: 'Vale, pero quiero saber el precio del Plan Avanzado',
+          },
+        ],
+      },
+    },
+    expected: {
+      intentAny: ['checkout', 'readiness', 'connect_holded', 'service_selection'],
+      mustNotContain: ['Para avanzar con el Plan Avanzado, entra en el portal seguro y completa tu perfil'],
+      maxSimilarityToRecent: 0.72,
+      requiresManualReview: false,
+    },
+  },
 ];

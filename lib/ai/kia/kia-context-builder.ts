@@ -14,6 +14,8 @@ export interface KiaContextInput {
   serviceSlug?: string;
   latestMessage?: string;
   selectedMessageId?: string;
+  syntheticRecentMessages?: KiaContext['conversation']['recentMessages'];
+  syntheticSelectedMessage?: KiaContext['conversation']['selectedMessage'];
 }
 
 export interface KiaContext {
@@ -119,8 +121,8 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     documents,
     accounting,
     conversation: {
-      recentMessages: conversation,
-      selectedMessage,
+      recentMessages: input.syntheticRecentMessages?.length ? input.syntheticRecentMessages : conversation,
+      selectedMessage: input.syntheticSelectedMessage ?? selectedMessage,
     },
   };
 }

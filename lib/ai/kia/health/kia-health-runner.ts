@@ -167,12 +167,20 @@ async function runCanaryCheck(check: KiaHealthCheck): Promise<KiaHealthCheckResu
 function contextInputForCheck(check: KiaHealthCheck): KiaContextInput {
   const context = check.input?.context ?? {};
   const contactStatus = check.input?.contactStatus ?? 'unknown';
+  const syntheticRecentMessages = Array.isArray(context.recentMessages)
+    ? context.recentMessages.map((message, index) => ({
+      role: message.role,
+      text: message.text,
+      createdAt: message.createdAt ?? new Date(Date.now() - (context.recentMessages!.length - index) * 60_000).toISOString(),
+    }))
+    : undefined;
   return {
     channel: check.input?.channel ?? 'waba',
     clientId: contactStatus === 'client' ? SYNTHETIC_CLIENT_ID : undefined,
     leadId: contactStatus === 'lead' ? SYNTHETIC_LEAD_ID : undefined,
     serviceSlug: typeof context.serviceSlug === 'string' ? context.serviceSlug : undefined,
     latestMessage: check.input?.message,
+    syntheticRecentMessages,
   };
 }
 
