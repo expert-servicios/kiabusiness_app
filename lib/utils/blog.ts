@@ -739,6 +739,300 @@ Si tienes dudas, podemos hacer una valoración gratuita de tu situación y recom
     `
   },
   {
+    slug: 'como-empezar-con-holded',
+    category: 'Holded',
+    title: 'Cómo empezar con Holded sin configurar mal tu empresa desde el primer día',
+    excerpt:
+      'Guía práctica para autónomos y sociedades que empiezan con Holded y quieren evitar los errores más comunes en datos fiscales, facturación, bancos e impuestos.',
+    date: '24 may 2026',
+    readTime: '7 min',
+    tags: ['Holded', 'configuración inicial', 'facturación', 'datos fiscales', 'onboarding'],
+    relatedServiceSlugs: ['holded-pack-starter'],
+    body: `
+## Por qué la configuración inicial importa
+
+Holded es una herramienta potente. Pero si los datos fiscales de la empresa están mal desde el principio, o si la facturación no está bien estructurada, empezar con el pie derecho puede ser bastante más difícil de lo necesario.
+
+Los problemas que vemos habitualmente no son errores de Holded. Son errores de configuración inicial: datos fiscales incompletos, series de facturación sin definir, impuestos sin revisar o bancos sin conectar correctamente. Y todos son evitables con un poco de orden al principio.
+
+## Datos fiscales básicos: la base de todo
+
+Antes de emitir la primera factura, conviene tener claros:
+
+- **Nombre o razón social exacta**: tal y como aparece en el certificado de alta censal.
+- **NIF / CIF**: sin errores tipográficos, ya que aparecerá en todas las facturas.
+- **Dirección fiscal**: la que usas ante Hacienda, no necesariamente la de trabajo.
+- **Actividad económica**: el epígrafe IAE o una descripción clara de qué haces.
+
+En Holded, estos datos se configuran en *Empresa* → *Configuración* y afectan a todos los documentos que emitas. Mejor que estén correctos desde el primer día.
+
+## Facturación y series
+
+Holded permite crear varias series de facturación. Muchos usuarios empiezan sin pensar en esto y luego tienen facturas con numeración desorganizada.
+
+Una práctica habitual:
+- Serie general: **F-2025-001**, F-2025-002, etc.
+- Serie de proformas si las usas.
+- Serie de rectificativas.
+
+La numeración debe ser correlativa y sin saltos. Holded lo gestiona automáticamente si configuras bien la serie desde el inicio.
+
+## Impuestos básicos: no asumir, revisar
+
+El IVA que aparece por defecto en Holded puede no ser el que necesitas. Según tu actividad y régimen:
+
+- **Régimen general**: IVA al 21 % (tipo general), 10 % o 4 % según lo que vendas.
+- **Régimen de recargo de equivalencia**: tipos distintos y configuración específica.
+- **Actividades exentas de IVA**: educación, sanidad, servicios financieros, etc.
+
+Si no revisas esto al principio, puedes acabar emitiendo facturas con el IVA incorrecto.
+
+## Bancos y conciliación
+
+Holded permite conectar cuentas bancarias mediante Open Banking. Esta conexión automatiza la conciliación de movimientos con facturas, lo que ahorra mucho tiempo a final de mes.
+
+Para conectar el banco necesitas:
+- Credenciales de tu banca online.
+- Autorizar la conexión desde la plataforma del banco.
+- Verificar que el banco es compatible con Holded (la mayoría de los principales bancos españoles lo son).
+
+Si no quieres conectar el banco todavía, también puedes importar extractos manualmente en CSV. Es más laborioso pero válido para empezar.
+
+## Errores frecuentes en la configuración inicial
+
+Los más comunes que vemos al revisar cuentas:
+
+1. **NIF del cliente en las facturas emitidas**: Holded valida el NIF. Si un cliente tiene el NIF mal en su ficha, la factura no queda bien vinculada.
+2. **Usar la cuenta como borrador sin configurar el plan contable**: si quieres usar contabilidad, el PGC debe estar configurado antes de empezar a registrar movimientos.
+3. **No revisar los tipos de retención**: si eres profesional o artista, tus facturas pueden llevar retención de IRPF del 15 %. Hay que configurarlo explícitamente.
+4. **Ignorar el cierre de ejercicio**: Holded gestiona ejercicios fiscales. Si no defines bien el inicio del ejercicio, los informes pueden quedar descuadrados.
+
+## Cuándo pedir ayuda
+
+Un Pack Starter de configuración inicial tiene sentido cuando:
+
+- Nunca has usado Holded antes y quieres empezar bien.
+- Tienes una cuenta creada pero no sabes si está bien configurada.
+- Quieres preparar la cuenta antes de empezar a facturar en serio.
+- Sabes que vas a contratar gestión mensual y quieres que los datos ya estén en orden.
+
+La alternativa es configurar a prueba y error, que también funciona, pero suele llevar a correcciones que cuestan más tiempo que haberlo hecho bien al principio.
+
+## Qué incluye un servicio de configuración inicial
+
+Con nuestro **Pack Starter Holded** dejamos la cuenta preparada para operar: datos fiscales, facturación, series, impuestos, orientación bancaria, permisos y una guía de primeros pasos. Más 30 días de soporte por email para resolver dudas.
+
+[Preparar contratación Pack Starter →](https://expertconsulting.es/holded/pack-starter)
+
+O si tienes dudas sobre qué necesitas exactamente: [Llamada de 15 minutos sin coste →](https://expertconsulting.es/cita)
+    `
+  },
+  {
+    slug: 'holded-autonomos-pequenas-empresas',
+    category: 'Holded',
+    title: 'Holded para autónomos y pequeñas empresas: qué preparar antes de empezar',
+    excerpt:
+      'Lo que conviene tener listo antes de configurar Holded — y lo que no necesitas desde el primer día. Una guía práctica sin complicaciones.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'autónomos', 'pequeñas empresas', 'preparación', 'configuración'],
+    relatedServiceSlugs: ['holded-pack-starter'],
+    body: `
+## Holded puede hacer muchas cosas. Pero no hace falta que las haga todas desde el día uno.
+
+Uno de los errores más comunes al empezar con Holded es intentar configurar todo a la vez: facturación, contabilidad, inventario, CRM, proyectos y bancos. El resultado suele ser una cuenta a medias, con datos incompletos y una sensación de que "Holded es muy complicado".
+
+En realidad, Holded no es complicado. Lo que complica las cosas es intentar hacer todo a la vez sin un orden claro.
+
+## Qué puede centralizar Holded
+
+Para un autónomo o pequeña empresa, los módulos más útiles desde el principio son:
+
+- **Facturación**: crear y enviar facturas, gestionar cobros, generar presupuestos.
+- **Contabilidad básica**: asientos automáticos desde facturas, conexión bancaria, conciliación.
+- **CRM básico**: ficha de clientes y proveedores con historial.
+- **Bancos**: conectar una o varias cuentas para ver movimientos y conciliar automáticamente.
+
+Los módulos de inventario, proyectos avanzados y nóminas pueden añadirse después, cuando ya tienes la base funcionando bien.
+
+## Qué datos conviene tener preparados
+
+Para empezar con Holded sin interrupciones, estos son los datos que necesitas tener a mano:
+
+**De la empresa o autónomo:**
+- Nombre o razón social exacta.
+- NIF / CIF.
+- Dirección fiscal.
+- Actividad económica (epígrafe IAE o descripción).
+- Régimen de IVA (general, recargo de equivalencia, exento...).
+
+**De la facturación:**
+- Si ya has emitido facturas anteriormente: cuál fue el último número y qué serie usas.
+- Si tienes clientes habituales: sus datos fiscales (NIF, nombre, dirección).
+
+**Del banco:**
+- Credenciales de tu banca online si quieres conectar la cuenta desde el principio.
+
+## Qué documentos no son necesarios al principio
+
+Para una configuración inicial básica, no necesitas:
+
+- Escritura de constitución de la sociedad (salvo que quieras cargarla en Holded como documento adjunto).
+- Facturas históricas en PDF (a menos que quieras migrarlas, que es un servicio diferente).
+- Inventario completo de productos (si no usas el módulo de inventario).
+- Nóminas anteriores (el módulo laboral se configura aparte).
+
+La regla básica: empieza con lo que vas a usar ahora, no con lo que quizá uses en el futuro.
+
+## Cómo organizar clientes y proveedores
+
+Holded permite importar contactos desde Excel o CSV. Si tienes una lista de clientes, lo más eficiente es:
+
+1. Preparar un Excel con: nombre, NIF, email, dirección.
+2. Importar desde *Contactos* → *Importar*.
+3. Revisar que los NIF estén correctos (Holded los valida).
+
+Si empiezas de cero, también puedes crear los contactos manualmente a medida que los necesites. No hace falta cargar toda la base de datos antes de emitir la primera factura.
+
+## Cuándo basta el Pack Starter
+
+El Pack Starter es suficiente cuando:
+
+- Quieres configurar la cuenta correctamente desde el inicio.
+- No tienes datos históricos que migrar (o la cantidad es pequeña y manejable).
+- No tienes inventario de productos.
+- Quieres que la facturación, los impuestos básicos y los bancos estén listos para usar.
+
+En resumen: si empiezas de cero o tienes una cuenta sin terminar de configurar, Pack Starter es el punto de entrada natural.
+
+## Cuándo hace falta migración
+
+Si tienes datos históricos que quieres trasladar a Holded, la cosa cambia:
+
+- **Migración sin inventario**: si tienes clientes, proveedores, facturas y contabilidad de ejercicios anteriores que quieres trasladar.
+- **Migración con inventario**: si además tienes un catálogo de productos con referencias y stock.
+
+La migración es un proceso más laborioso que un Pack Starter, y tiene un coste diferente. La ventaja es que al terminar tienes el histórico completo en Holded.
+
+## El siguiente paso
+
+Si ya sabes que quieres empezar con Holded y solo necesitas que alguien lo configure bien por ti:
+
+[Preparar contratación Pack Starter →](https://expertconsulting.es/holded/pack-starter)
+
+Si no tienes claro qué necesitas exactamente:
+
+[Reservar llamada de 15 minutos →](https://expertconsulting.es/cita)
+    `
+  },
+  {
+    slug: 'pack-starter-holded-vs-migracion',
+    category: 'Holded',
+    title: 'Pack Starter Holded vs migración completa: cuál necesitas',
+    excerpt:
+      'Cómo elegir entre configuración inicial y migración completa en Holded — diferencias clave, cuándo aplica cada servicio y qué pasa si tienes inventario.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'Pack Starter', 'migración', 'configuración', 'inventario'],
+    relatedServiceSlugs: ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    body: `
+## La pregunta más habitual: ¿qué necesito realmente?
+
+Cuando alguien decide empezar con Holded, la primera duda suele ser si necesita un servicio de configuración básica o una migración completa. Son servicios distintos, con alcances distintos y costes distintos.
+
+Aquí explicamos las diferencias para que puedas elegir sin adivinar.
+
+## Qué es el Pack Starter
+
+El Pack Starter es un servicio de **configuración inicial**: dejamos la cuenta de Holded preparada para empezar a trabajar desde hoy.
+
+Incluye:
+- Configuración de datos fiscales de la empresa o autónomo.
+- Setup de facturación, series y tipos de IVA.
+- Orientación sobre conexión bancaria.
+- Revisión de permisos y accesos.
+- Guía de primeros pasos.
+- Soporte por email 30 días.
+
+**No incluye** traslado de datos históricos. Si necesitas que las facturas del año pasado estén en Holded, o que tus 500 clientes ya estén cargados con su historial completo, eso es migración, no Pack Starter.
+
+**Precio:** 499 € + IVA. Pago único.
+
+## Qué es la migración completa (sin inventario)
+
+La migración completa es un servicio más amplio. Trasladamos tu actividad desde el sistema anterior a Holded:
+
+- Todo lo del Pack Starter.
+- Migración de clientes y proveedores con sus datos fiscales.
+- Migración de facturas emitidas y recibidas.
+- Configuración contable completa (Plan General Contable).
+- Soporte prioritario durante 60 días.
+
+Es el servicio adecuado si tienes datos en otro programa (ContaPlus, Sage, Excel, Quipu, etc.) y quieres que tu historial esté disponible en Holded desde el primer día.
+
+**Precio:** 899 € + IVA.
+
+## Qué es la migración con inventario
+
+Si además de clientes, proveedores y facturas tienes un **catálogo de productos con referencias, precios y stock**, necesitas la migración con inventario:
+
+- Todo lo de la migración sin inventario.
+- Migración de productos y referencias.
+- Configuración de almacenes y stock inicial.
+- Integración inventario ↔ facturación.
+- Soporte prioritario durante 90 días.
+
+**Precio:** 1.199 € + IVA.
+
+## Diferencias principales
+
+| | Pack Starter | Migración sin inventario | Migración con inventario |
+|---|---|---|---|
+| Configuración inicial | ✓ | ✓ | ✓ |
+| Datos fiscales | ✓ | ✓ | ✓ |
+| Clientes y proveedores migrados | — | ✓ | ✓ |
+| Facturas históricas | — | ✓ | ✓ |
+| Configuración contable (PGC) | — | ✓ | ✓ |
+| Productos y stock | — | — | ✓ |
+| Almacenes | — | — | ✓ |
+| Precio | 499 € + IVA | 899 € + IVA | 1.199 € + IVA |
+
+## Cuándo elegir Pack Starter
+
+Elige Pack Starter si:
+- Empiezas con Holded desde cero, sin historial previo que trasladar.
+- Llevas la contabilidad en Excel de forma muy básica y no necesitas migrar datos.
+- Tienes una cuenta Holded creada pero sin configurar bien.
+- Quieres preparar la cuenta antes de contratar gestión mensual.
+- No tienes inventario ni catálogo de productos.
+
+## Cuándo elegir migración sin inventario
+
+Elige migración sin inventario si:
+- Tienes datos en otro software (ContaPlus, Sage, Quipu, Excel avanzado) que quieres trasladar.
+- Quieres tu historial de facturas disponible en Holded.
+- Necesitas el plan contable (PGC) correctamente configurado desde el inicio.
+- No tienes catálogo de productos con stock.
+
+## Cuándo elegir migración con inventario
+
+Elige migración con inventario si:
+- Tienes un catálogo de productos con referencias, precios y stock.
+- Gestionas uno o varios almacenes.
+- Quieres que el inventario esté integrado con la facturación desde el primer día.
+
+## ¿Y si no sé cuál necesito?
+
+Si no tienes claro qué aplica a tu caso, la forma más rápida de saberlo es una llamada de 15 minutos. Revisamos tu situación actual y te decimos exactamente qué servicio encaja y por qué.
+
+[Reservar llamada de 15 minutos →](https://expertconsulting.es/cita)
+
+O puedes empezar directamente con el Pack Starter si ya sabes que no tienes historial que migrar:
+
+[Preparar contratación Pack Starter →](https://expertconsulting.es/holded/pack-starter)
+    `
+  },
+  {
     slug: 'permiso-residencia-inicial-guia-2025',
     category: 'Extranjería',
     title: 'Permiso inicial de residencia en España: guía completa 2025',

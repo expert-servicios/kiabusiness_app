@@ -1084,6 +1084,39 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     estimatedPrice: '180 € / bloque de 2 h',
   },
 
+  // ── Holded — Servicios de implantación ──────────────────────────────────────
+
+  {
+    serviceId: 'holded-pack-starter',
+    serviceName: 'Pack Starter / Onboarding a Holded',
+    category: 'holded',
+    requiredData: [
+      'Nombre y apellidos o razón social',
+      'NIF / NIE / CIF',
+      'Email de acceso al portal EXPERT',
+      'Teléfono / WhatsApp',
+      'Tipo de cliente: autónomo, SL u otra entidad',
+      'Dirección fiscal / facturación',
+      'Actividad económica (epígrafe IAE o descripción)',
+      'Si ya tiene cuenta Holded: sí / no / no lo sé',
+      'Si quiere crear cuenta nueva o configurar cuenta existente',
+      'Si quiere conectar banco: sí / más adelante / no lo sé',
+      'Si emite facturas con IVA: sí / no / no lo sé',
+      'Fecha aproximada de inicio de uso',
+    ],
+    requiredDocs: [],
+    keyQuestions: [
+      '¿Ya tienes cuenta activa de Holded, o necesitas empezar desde cero?',
+      '¿Eres autónomo o sociedad?',
+      '¿Qué necesitas principalmente: crear desde cero, configurar cuenta o prepararte para gestión mensual?',
+      '¿Quieres dejar preparada la facturación?',
+      '¿Tienes datos fiscales básicos (NIF, dirección fiscal, actividad)?',
+    ],
+    botInstructions:
+      'Pack Starter es configuración inicial de Holded: empresa, datos fiscales, facturación, bancos y estructura básica. No incluye migración histórica, inventario, integraciones API ni gestión mensual. Si el cliente no tiene Holded, podemos gestionar la prueba gratuita de 14 días — NO bloquear la contratación por esto. Si el cliente necesita migrar facturas históricas o tiene inventario, derivar a Migración sin/con inventario. No pedir API key por WhatsApp. Precio: 499 € + IVA, pago único. Enlace landing: expertconsulting.es/holded/pack-starter.',
+    estimatedPrice: '499 € + IVA',
+  },
+
   {
     serviceId: 'formacion-holded',
     serviceName: 'Formación en Holded',
