@@ -17,6 +17,29 @@ export interface KiaProviderRequest {
   effort?: KiaEffort;
   maxTokens?: number;
   temperature?: number;
+  modelOverride?: string;
+}
+
+const SONNET = 'claude-sonnet-4-6';
+const HAIKU = 'claude-haiku-4-5-20251001';
+
+const SONNET_TASKS: KiaTaskType[] = [
+  'viability_reasoning',
+  'readiness_reasoning',
+  'checkout_decision',
+  'company_status_summary',
+  'next_best_action',
+  'lead_client_decision',
+  'accounting_anomaly_review',
+  'admin_ai_compose',
+  'document_classification',
+  'document_extraction',
+];
+
+export function modelForTask(taskType: KiaTaskType, allowTools?: boolean): string {
+  if (SONNET_TASKS.includes(taskType)) return SONNET;
+  if (taskType === 'waba_reply' && allowTools) return SONNET;
+  return HAIKU;
 }
 
 export interface KiaProviderResult {
@@ -33,6 +56,20 @@ interface ProviderConfig {
   provider: KiaAiProvider;
   apiKey: string;
   model: string;
+}
+
+interface AnthropicContentPart {
+  type?: string;
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: unknown;
+}
+
+interface AnthropicResponseData {
+  content?: AnthropicContentPart[];
+  usage?: unknown;
+  error?: unknown;
 }
 
 export function getKiaProviderOrder(): ProviderConfig[] {
@@ -92,18 +129,18 @@ function parseMaybeJson(text: string): unknown | undefined {
 }
 
 async function callAnthropic(provider: ProviderConfig, request: KiaProviderRequest): Promise<KiaProviderResult> {
-  let { response, data } = await postAnthropic(provider, buildAnthropicBody(request, true));
+  let { response, data } = await postAnthropic(provider, buildAnthropicBody(request, true), request.modelOverride);
 
   if (!response.ok) {
     const error = extractApiError(data, response.status);
     if (request.tools?.some((tool) => tool.strict === true) && /strict|tool/i.test(error)) {
       console.warn('[Kia provider router] Anthropic strict tools unsupported; retrying compatible schema', redactJson({
         provider: provider.provider,
-        model: provider.model,
+        model: request.modelOverride ?? provider.model,
         taskType: request.taskType,
         error,
       }));
-      ({ response, data } = await postAnthropic(provider, buildAnthropicBody(request, false)));
+      ({ response, data } = await postAnthropic(provider, buildAnthropicBody(request, false), request.modelOverride));
     }
   }
 
@@ -121,7 +158,7 @@ async function callAnthropic(provider: ProviderConfig, request: KiaProviderReque
   const rawText = textParts.join('\n').trim();
   return {
     provider: 'anthropic',
-    model: provider.model,
+    model: request.modelOverride ?? provider.model,
     rawText,
     parsedJson: parseMaybeJson(rawText),
     toolCalls,
@@ -165,8 +202,8 @@ function buildAnthropicJsonSchemaInstruction(schema: unknown): string {
   ].join('\n');
 }
 
-async function postAnthropic(provider: ProviderConfig, body: Record<string, unknown>): Promise<{ response: Response; data: any }> {
-  body.model = provider.model;
+async function postAnthropic(provider: ProviderConfig, body: Record<string, unknown>, modelOverride?: string): Promise<{ response: Response; data: AnthropicResponseData }> {
+  body.model = modelOverride ?? provider.model;
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -177,7 +214,7 @@ async function postAnthropic(provider: ProviderConfig, body: Record<string, unkn
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const data = await response.json() as AnthropicResponseData;
   return { response, data };
 }
 

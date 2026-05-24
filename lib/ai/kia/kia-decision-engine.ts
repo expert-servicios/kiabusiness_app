@@ -12,10 +12,11 @@ import {
   type KiaChannel,
   type KiaDecision,
   type KiaTaskType,
+  type KiaToolRequest,
 } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
-import { defaultEffortForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
+import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
 import { saveKiaDecisionLog } from './kia-decision-log';
 import { redactJson, safeErrorMessage } from './kia-redaction';
 import {
@@ -25,6 +26,9 @@ import {
 } from './kia-response-variation';
 import { normalizeKiaQuickReplies } from './kia-quick-replies';
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
+
+const KIA_MAX_TOOL_ITERATIONS = 5;
+const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
 
 export interface KiaDecisionResult {
   decision: KiaDecision;
@@ -73,27 +77,86 @@ export async function runKiaDecision(input: {
     ? KIA_TOOL_DEFINITIONS.filter((tool) => input.allowedToolNames?.includes(tool.name))
     : KIA_TOOL_DEFINITIONS;
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext);
+  const allowToolExecution = input.allowTools === true && (
+    input.forceToolExecution === true ||
+    process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true'
+  );
+  const modelOverride = modelForTask(input.taskType, allowToolExecution);
   let providerResult: KiaProviderResult | undefined;
   let decision: KiaDecision;
   let usedFallback = false;
   let error: unknown;
+  const toolResults: KiaToolResult[] = [];
 
   if (process.env.KIA_AI_EVAL_MODE?.toLowerCase() === 'true') {
     decision = heuristicDecision(input.taskType, input.message, context);
   } else {
     try {
-      providerResult = await runKiaProviderRequest({
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        { role: 'user', content: promptPayload },
+      ];
+
+      const requestBase = {
         taskType: input.taskType,
         systemPrompt,
-        messages: [{ role: 'user', content: promptPayload }],
         responseSchema: KIA_DECISION_JSON_SCHEMA,
         tools: input.allowTools ? allowedToolDefinitions : undefined,
         effort: defaultEffortForTask(input.taskType),
+        modelOverride,
         maxTokens: 900,
         temperature: 0.2,
-      });
+      } as const;
 
+      providerResult = await runKiaProviderRequest({ ...requestBase, messages });
       decision = applyBackendPolicyGuards(parseDecision(providerResult, input.taskType, context, locale), input, context);
+
+      // Agentic tool loop: execute tools and feed results back to LLM until resolved
+      if (allowToolExecution && decision.toolRequests.length > 0) {
+        const loopStart = Date.now();
+        let loopIteration = 0;
+
+        while (
+          decision.toolRequests.length > 0 &&
+          loopIteration < KIA_MAX_TOOL_ITERATIONS &&
+          Date.now() - loopStart < KIA_TOOL_LOOP_TIMEOUT_MS
+        ) {
+          const iterResults = await Promise.all(
+            decision.toolRequests.map((req: KiaToolRequest) =>
+              executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context),
+            ),
+          );
+          toolResults.push(...iterResults);
+
+          messages.push({ role: 'assistant', content: JSON.stringify(decision) });
+          messages.push({ role: 'user', content: buildToolResultsPayload(decision.toolRequests, iterResults) });
+
+          const loopProviderResult = await runKiaProviderRequest({
+            ...requestBase,
+            messages,
+            effort: 'medium',
+          });
+          providerResult = loopProviderResult;
+          decision = applyBackendPolicyGuards(
+            parseDecision(loopProviderResult, input.taskType, context, locale),
+            input,
+            context,
+          );
+          loopIteration++;
+        }
+
+        if (decision.toolRequests.length > 0) {
+          const reason = loopIteration >= KIA_MAX_TOOL_ITERATIONS
+            ? `tool_loop_limit_reached:${KIA_MAX_TOOL_ITERATIONS}`
+            : 'tool_loop_timeout';
+          decision = {
+            ...decision,
+            warnings: [...decision.warnings, reason],
+            toolRequests: [],
+          };
+        }
+      }
+
+      // Anti-repetition check on final response
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
@@ -140,31 +203,12 @@ export async function runKiaDecision(input: {
 
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
-  const toolResults: KiaToolResult[] = [];
-  const allowToolExecution = input.allowTools === true && (
-    input.forceToolExecution === true ||
-    process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true'
-  );
-  if (allowToolExecution) {
-    for (const request of decision.toolRequests) {
-      if (input.allowedToolNames?.length && !input.allowedToolNames.includes(request.toolName)) {
-        toolResults.push({
-          toolName: request.toolName,
-          ok: false,
-          error: `Tool not allowed for ${input.channel}: ${request.toolName}`,
-        });
-        continue;
-      }
-      toolResults.push(await executeKiaToolCall({ name: request.toolName, arguments: request.arguments }, context));
-    }
-  }
-
   await saveKiaDecisionLog({
     decision,
     channel: input.channel,
     context,
     providerResult,
-    toolCalls: decision.toolRequests.map((request) => ({ name: request.toolName, arguments: request.arguments })),
+    toolCalls: decision.toolRequests.map((request: KiaToolRequest) => ({ name: request.toolName, arguments: request.arguments })),
     toolResults,
     rawInput: { taskType: input.taskType, channel: input.channel, message: input.message, contextInput: input.contextInput },
     error,
@@ -276,6 +320,23 @@ function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAct
     return char;
   });
   return { repaired, message: chars.join('').replace(/\s+\./g, '.').replace(/\.{2,}/g, '.').trim() };
+}
+
+function buildToolResultsPayload(requests: KiaDecision['toolRequests'], results: KiaToolResult[]): string {
+  const summary = results.map((r, i) => ({
+    tool: r.toolName,
+    ok: r.ok,
+    ...(r.ok ? { result: r.result } : { error: r.error }),
+    reason: requests[i]?.reason ?? '',
+  }));
+  return [
+    '<tool_results>',
+    JSON.stringify(summary, null, 2),
+    '</tool_results>',
+    'Incorpora estos resultados en una nueva KiaDecision JSON.',
+    'Si tienes toda la información necesaria, usa toolRequests: [] y responde en userMessage.',
+    'Si aún necesitas más datos de otra tool, inclúyela en toolRequests.',
+  ].join('\n');
 }
 
 function buildUserPayload(
