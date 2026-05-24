@@ -64,6 +64,11 @@ export const kiaToolRequestSchema = z.object({
   reason: z.string().min(1),
 });
 
+export const kiaQuickReplySchema = z.object({
+  id:    z.string().min(1).max(256),
+  title: z.string().min(1).max(20),
+});
+
 export const kiaDecisionSchema = z.object({
   version: z.literal('1.0'),
   taskType: z.enum(KIA_TASK_TYPES),
@@ -71,6 +76,7 @@ export const kiaDecisionSchema = z.object({
   intent: z.enum(KIA_INTENTS),
   userMessage: z.string().default(''),
   nextAction: z.enum(KIA_NEXT_ACTIONS),
+  quickReplies: z.array(kiaQuickReplySchema).max(3).default([]),
   toolRequests: z.array(kiaToolRequestSchema).default([]),
   dataToSave: z.record(z.string(), z.unknown()).default({}),
   confidence: z.number().min(0).max(1),
@@ -140,6 +146,19 @@ export const KIA_DECISION_JSON_SCHEMA = {
         },
       },
     },
+    quickReplies: {
+      type: 'array',
+      maxItems: 3,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'title'],
+        properties: {
+          id:    { type: 'string' },
+          title: { type: 'string', maxLength: 20 },
+        },
+      },
+    },
     dataToSave: { type: 'object' },
     confidence: { type: 'number', minimum: 0, maximum: 1 },
     requiresMeeting: { type: 'boolean' },
@@ -164,6 +183,7 @@ export function buildFallbackDecision(params: {
     intent: 'unknown',
     userMessage: params.userMessage ?? '',
     nextAction: 'needs_review',
+    quickReplies: [],
     toolRequests: [],
     dataToSave: {},
     confidence: 0,

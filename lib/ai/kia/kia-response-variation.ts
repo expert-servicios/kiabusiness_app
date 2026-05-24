@@ -70,6 +70,75 @@ export function getRecentAssistantTextsFromContext(context: KiaContext, limit = 
     .slice(-limit);
 }
 
+// ── Deterministic variation for Kia Engine replies ────────────────────────────
+
+const URL_RE = /https?:\/\/\S+/;
+const SHORT_BODY_THRESHOLD = 60;
+
+/** Returns true if body is too similar to a recent outbound and should be varied. */
+export function isRepeatedKiaMessage(
+  body: string,
+  recentTexts: string[],
+  threshold = DEFAULT_THRESHOLD,
+): boolean {
+  return findSimilarRecentMessage(body, recentTexts, threshold) !== null;
+}
+
+/** Returns true when the body should NOT be varied (URLs, very short messages). */
+export function shouldSkipVariation(body: string): boolean {
+  return URL_RE.test(body) || body.length < SHORT_BODY_THRESHOLD;
+}
+
+// Each sub-array is a group of interchangeable openers.
+// The function picks an alternative that differs from the one currently in use.
+const OPENER_GROUPS: Array<{ pattern: RegExp; alts: string[] }> = [
+  { pattern: /^Perfecto[,!\s]/i,           alts: ['Perfecto, ', 'Entendido, ', 'De acuerdo, ', 'Muy bien, '] },
+  { pattern: /^¡Perfecto[!,]/i,            alts: ['¡Perfecto! ', '¡Entendido! ', '¡Muy bien! ', '¡Estupendo! '] },
+  { pattern: /^¡Genial[!,]/i,              alts: ['¡Genial! ', '¡Perfecto! ', '¡Estupendo! ', '¡Muy bien! '] },
+  { pattern: /^Genial[,!\s]/i,             alts: ['Genial, ', 'Perfecto, ', 'Muy bien, ', 'Entendido, '] },
+  { pattern: /^Entendido[,!\s.]/i,         alts: ['Entendido. ', 'Perfecto. ', 'De acuerdo. ', 'Claro. '] },
+  { pattern: /^¡Entendido[!,]/i,           alts: ['¡Entendido! ', '¡Perfecto! ', '¡Claro! ', '¡Muy bien! '] },
+  { pattern: /^¡Claro[!,]/i,              alts: ['¡Claro! ', '¡Por supuesto! ', '¡Entendido! ', '¡Perfecto! '] },
+  { pattern: /^No te preocupes/i,          alts: ['No te preocupes', 'Sin problema', 'Tranquilo/a', 'Está bien'] },
+  { pattern: /^Sin problema/i,             alts: ['Sin problema', 'No te preocupes', 'Tranquilo/a', 'Claro'] },
+  { pattern: /^(?:💬\s*)?¡Cuéntame[!,]/,  alts: ['💬 ¡Cuéntame! ', '😊 ¡Adelante! ', '💬 ¡Aquí estoy! ', '✨ ¡Dime! '] },
+  // Russian openers
+  { pattern: /^Отлично[,!\s]/,             alts: ['Отлично! ', 'Хорошо! ', 'Понял! ', 'Замечательно! '] },
+  { pattern: /^Хорошо[,!\s]/,              alts: ['Хорошо! ', 'Отлично! ', 'Понятно! ', 'Понял! '] },
+  { pattern: /^Понял[,!\s.]/,              alts: ['Понял. ', 'Хорошо. ', 'Отлично. ', 'Понятно. '] },
+  { pattern: /^Не беспокойтесь/,           alts: ['Не беспокойтесь', 'Всё в порядке', 'Не волнуйтесь', 'Хорошо'] },
+];
+
+/**
+ * Rotates the opener of `body` to a different phrase from the same group.
+ * `seed` is used to pick deterministically without repeating the current opener.
+ */
+export function rotateOpener(body: string, seed: number): string {
+  for (const { pattern, alts } of OPENER_GROUPS) {
+    const match = body.match(pattern);
+    if (!match) continue;
+    const current = match[0];
+    const rest    = body.slice(current.length);
+    // Pick an alt that's different from current
+    const filtered = alts.filter((a) => !body.startsWith(a.trimEnd()));
+    if (filtered.length === 0) return body;
+    const picked = filtered[Math.abs(seed) % filtered.length]!;
+    return picked + rest;
+  }
+  return body;
+}
+
+/**
+ * If the body is repeated (≥ 0.72 similarity to a recent outbound) and doesn't
+ * contain a URL, applies deterministic opener rotation.
+ * Preserves the operational content, only varies the phrasing.
+ */
+export function applyDeterministicVariation(body: string, recentTexts: string[]): string {
+  if (shouldSkipVariation(body)) return body;
+  if (!isRepeatedKiaMessage(body, recentTexts)) return body;
+  return rotateOpener(body, recentTexts.length);
+}
+
 export function buildNoRepeatInstruction(recentAssistantTexts: string[]): string {
   if (recentAssistantTexts.length === 0) return '';
   const snippets = recentAssistantTexts.slice(-4).map((text, index) => `${index + 1}. ${text.slice(0, 500)}`).join('\n');

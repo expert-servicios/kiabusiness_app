@@ -10,7 +10,11 @@ import {
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, type WabaAiMessage } from '@/lib/integrations/waba-ai';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
-import { buildNoRepeatInstruction, findSimilarRecentMessage } from '@/lib/ai/kia/kia-response-variation';
+import {
+  buildNoRepeatInstruction,
+  findSimilarRecentMessage,
+  applyDeterministicVariation,
+} from '@/lib/ai/kia/kia-response-variation';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
@@ -183,19 +187,23 @@ async function persistSessionUpdates(admin: any, phone: string, updates: Partial
 // ── Send a single Kia reply ───────────────────────────────────────────────────
 
 async function sendKiaReply(
-  reply    : KiaReply,
-  phone    : string,
-  clientId : string | undefined,
+  reply       : KiaReply,
+  phone       : string,
+  clientId    : string | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  admin    : any,
+  admin       : any,
   aiResponded = false,
+  recentTexts : string[] = [],
 ): Promise<void> {
   if (reply.type === 'text') {
-    const sent = await sendWhatsAppMessage({ to: phone, body: reply.body });
+    const body = recentTexts.length > 0
+      ? applyDeterministicVariation(reply.body, recentTexts)
+      : reply.body;
+    const sent = await sendWhatsAppMessage({ to: phone, body });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body: reply.body, whatsappMessageId: sent.messageId,
+        body, whatsappMessageId: sent.messageId,
         aiResponded, needsReview: false,
       });
     } else {
@@ -207,14 +215,17 @@ async function sendKiaReply(
         .is('read_at', null);
     }
   } else if (reply.type === 'buttons') {
+    const btnBody = recentTexts.length > 0
+      ? applyDeterministicVariation(reply.body, recentTexts)
+      : reply.body;
     const sent = await sendWhatsAppInteractive({
-      to: phone, body: reply.body, footer: reply.footer,
+      to: phone, body: btnBody, footer: reply.footer,
       buttons: reply.buttons,
     });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body: `[Kia] ${reply.body} | ${reply.buttons.map((b) => b.title).join(' / ')}`,
+        body: `[Kia] ${btnBody} | ${reply.buttons.map((b) => b.title).join(' / ')}`,
         whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
       });
     } else {
@@ -226,14 +237,17 @@ async function sendKiaReply(
         .is('read_at', null);
     }
   } else if (reply.type === 'list') {
+    const listBody = recentTexts.length > 0
+      ? applyDeterministicVariation(reply.body, recentTexts)
+      : reply.body;
     const sent = await sendWhatsAppInteractive({
-      to: phone, body: reply.body, footer: reply.footer,
+      to: phone, body: listBody, footer: reply.footer,
       list: { buttonText: reply.buttonText, sections: reply.sections },
     });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body: `[Kia:list] ${reply.body}`,
+        body: `[Kia:list] ${listBody}`,
         whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
       });
     } else {
@@ -485,6 +499,10 @@ async function generateKiaAiResponse({
 
       const reply = structured.userMessage.replace(/\*\*(.+?)\*\*/gs, '*$1*').trim();
       if (reply && structured.decision.nextAction !== 'needs_review' && !structured.decision.requiresManualReview) {
+        const qr = structured.decision.quickReplies ?? [];
+        if (qr.length >= 2) {
+          return { reply: null, interactive: { body: reply, buttons: qr.slice(0, 3) } };
+        }
         return { reply };
       }
     } catch (err) {
@@ -1090,9 +1108,21 @@ export async function POST(request: NextRequest) {
       });
       const updatedSession = { ...session, ...updates };
 
+      // Load recent outbound texts for anti-repetition (lightweight — 4 rows max)
+      const { data: recentOutboundRows } = await admin
+        .from('whatsapp_conversations')
+        .select('body')
+        .eq('phone_number', from)
+        .eq('direction', 'outbound')
+        .order('created_at', { ascending: false })
+        .limit(4);
+      const kiaEngineRecentTexts: string[] = (recentOutboundRows ?? [])
+        .map((r: { body: string }) => r.body.replace(/^\[Kia(?::AI|:list)?\]\s*/i, '').trim())
+        .filter(Boolean);
+
       // Send all structured replies
       for (const reply of replies) {
-        await sendKiaReply(reply, from, clientId, admin);
+        await sendKiaReply(reply, from, clientId, admin, false, kiaEngineRecentTexts);
       }
 
       // Handle side effects (test numbers skip lead/case creation)

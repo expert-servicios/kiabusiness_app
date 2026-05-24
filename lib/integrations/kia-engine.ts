@@ -1440,7 +1440,16 @@ export function processKiaStep(
       sideEffects: { sendPaymentLink: true },
     };
   }
-  if (interaction === 'btn_write_here') {
+  if (interaction === 'btn_write_here' || interaction === 'btn_other') {
+    return {
+      replies    : [freeConsultPrompt(lang)],
+      updates    : { flow: 'consult', step: 'free_consult', escalated: false },
+      sideEffects: { needsAiFallback: true },
+    };
+  }
+  // Text inputs "otro" / "другое" as escape valve (exact match only, case-insensitive)
+  const msgBodyLower = msgBody.trim().toLowerCase();
+  if (msgBodyLower === 'otro' || msgBodyLower === 'другое' || msgBodyLower === 'другой') {
     return {
       replies    : [freeConsultPrompt(lang)],
       updates    : { flow: 'consult', step: 'free_consult', escalated: false },

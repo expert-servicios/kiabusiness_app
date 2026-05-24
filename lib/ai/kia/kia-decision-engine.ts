@@ -454,6 +454,7 @@ function heuristicDecision(taskType: KiaTaskType, message: string, context: KiaC
         ? 'Para avanzar sin errores, entra en el portal seguro y completa tus datos antes de contratar. EXPERT 💼'
         : 'Te oriento con la informacion disponible. EXPERT 💼',
     nextAction,
+    quickReplies: [],
     toolRequests: [],
     dataToSave: {},
     confidence: 0.65,
