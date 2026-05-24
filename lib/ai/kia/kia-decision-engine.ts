@@ -17,6 +17,7 @@ import {
 import { KIA_TOOL_DEFINITIONS, type KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
 import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
+import { classifyKiaIntent, type KiaIntentClassification } from './kia-intent-classifier';
 import { saveKiaDecisionLog } from './kia-decision-log';
 import { redactJson, safeErrorMessage } from './kia-redaction';
 import {
@@ -77,11 +78,51 @@ export async function runKiaDecision(input: {
     ? KIA_TOOL_DEFINITIONS.filter((tool) => input.allowedToolNames?.includes(tool.name))
     : KIA_TOOL_DEFINITIONS;
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext);
+  // F2: Intent pre-classifier (Haiku, <500ms) - runs only on inbound WABA messages.
+
+  // F2: Intent pre-classifier (Haiku, <500ms) — runs only on inbound WABA messages
+  let classification: KiaIntentClassification | null = null;
+  if (input.channel === 'waba' && input.taskType === 'waba_reply') {
+    classification = await classifyKiaIntent({
+      message: input.message,
+      recentMessages: context.conversation.recentMessages,
+      contactStatus: context.contact.status,
+      channel: input.channel,
+    }).catch(() => null);
+  }
+
+  // If genuinely ambiguous: return clarify decision without calling Sonnet
+  if (classification?.needsClarify && classification.ambiguityScore >= 0.7) {
+    const clarifyDecision = finalizeDecisionPresentation(
+      buildClarifyDecision(classification, input.taskType, context),
+      input.channel,
+      locale,
+    );
+    await saveKiaDecisionLog({
+      decision: clarifyDecision,
+      channel: input.channel,
+      context,
+      providerResult: undefined,
+      toolCalls: [],
+      toolResults: [],
+      rawInput: { taskType: input.taskType, channel: input.channel, message: input.message, contextInput: input.contextInput },
+      error: undefined,
+    });
+    return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false };
+  }
+
+  // Upgrade taskType if classifier detected something more specific than waba_reply
+  const resolvedTaskType: KiaTaskType =
+    classification?.suggestedTaskType && classification.suggestedTaskType !== 'waba_reply'
+      ? classification.suggestedTaskType
+      : input.taskType;
+
   const allowToolExecution = input.allowTools === true && (
     input.forceToolExecution === true ||
     process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true'
   );
-  const modelOverride = modelForTask(input.taskType, allowToolExecution);
+  const modelOverride = modelForTask(resolvedTaskType, allowToolExecution);
+
   let providerResult: KiaProviderResult | undefined;
   let decision: KiaDecision;
   let usedFallback = false;
@@ -97,18 +138,18 @@ export async function runKiaDecision(input: {
       ];
 
       const requestBase = {
-        taskType: input.taskType,
+        taskType: resolvedTaskType,
         systemPrompt,
         responseSchema: KIA_DECISION_JSON_SCHEMA,
         tools: input.allowTools ? allowedToolDefinitions : undefined,
-        effort: defaultEffortForTask(input.taskType),
+        effort: defaultEffortForTask(resolvedTaskType),
         modelOverride,
         maxTokens: 900,
         temperature: 0.2,
       } as const;
 
       providerResult = await runKiaProviderRequest({ ...requestBase, messages });
-      decision = applyBackendPolicyGuards(parseDecision(providerResult, input.taskType, context, locale), input, context);
+      decision = applyBackendPolicyGuards(parseDecision(providerResult, resolvedTaskType, context, locale), input, context);
 
       // Agentic tool loop: execute tools and feed results back to LLM until resolved
       if (allowToolExecution && decision.toolRequests.length > 0) {
@@ -181,7 +222,7 @@ export async function runKiaDecision(input: {
     } catch (err) {
       error = err;
       const repaired = await tryRepairDecision({
-        taskType: input.taskType,
+        taskType: resolvedTaskType,
         systemPrompt,
         badOutput: providerResult?.rawText ?? providerResult?.error ?? safeErrorMessage(err),
         context,
@@ -193,7 +234,7 @@ export async function runKiaDecision(input: {
       } else {
         usedFallback = true;
         decision = buildFallbackDecision({
-          taskType: input.taskType,
+          taskType: resolvedTaskType,
           contactStatus: context.contact.status,
           reason: `Structured AI failed: ${safeErrorMessage(err)}`,
         });
@@ -320,6 +361,31 @@ function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAct
     return char;
   });
   return { repaired, message: chars.join('').replace(/\s+\./g, '.').replace(/\.{2,}/g, '.').trim() };
+}
+
+function buildClarifyDecision(
+  classification: KiaIntentClassification,
+  taskType: KiaTaskType,
+  context: KiaContext,
+): KiaDecision {
+  return {
+    version: '1.0',
+    taskType,
+    contactStatus: context.contact.status,
+    intent: classification.detectedIntent,
+    userMessage: classification.clarifyQuestion || '¿En qué puedo ayudarte exactamente?',
+    nextAction: 'ask_one_question',
+    quickReplies: classification.clarifyOptions,
+    toolRequests: [],
+    dataToSave: {},
+    confidence: classification.confidence,
+    requiresMeeting: false,
+    requiresManualReview: false,
+    decisionSummary: `Clarificación solicitada por clasificador Haiku (ambiguity=${classification.ambiguityScore.toFixed(2)})`,
+    rulesApplied: ['intent_classifier_haiku', 'clarifying_questions_policy_applied', 'ambiguity_detected'],
+    missingData: [],
+    warnings: [],
+  };
 }
 
 function buildToolResultsPayload(requests: KiaDecision['toolRequests'], results: KiaToolResult[]): string {
