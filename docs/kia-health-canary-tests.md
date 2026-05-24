@@ -20,3 +20,5 @@ Casos actuales:
 
 Cada canary valida `intent`, `nextAction`, reglas aplicadas, contenido prohibido, idioma, secretos y `requiresManualReview`.
 El canary anti-repeticion compara la respuesta nueva con respuestas recientes y falla si supera el umbral de similitud configurado.
+
+Ultima ejecucion local no persistente con proveedores reales: 2026-05-24, `11/11` checks OK.

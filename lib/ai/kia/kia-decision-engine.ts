@@ -4,7 +4,11 @@ import {
   buildFallbackDecision,
   extractJsonObject,
   KIA_DECISION_JSON_SCHEMA,
+  KIA_CONTACT_STATUSES,
   kiaDecisionSchema,
+  KIA_INTENTS,
+  KIA_NEXT_ACTIONS,
+  KIA_TASK_TYPES,
   type KiaChannel,
   type KiaDecision,
   type KiaTaskType,
@@ -62,7 +66,7 @@ export async function runKiaDecision(input: {
         temperature: 0.2,
       });
 
-      decision = parseDecision(providerResult, input.taskType, context);
+      decision = applyBackendPolicyGuards(parseDecision(providerResult, input.taskType, context), input, context);
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
@@ -74,7 +78,7 @@ export async function runKiaDecision(input: {
         });
         if (retry.decision) {
           providerResult = retry.providerResult;
-          decision = retry.decision;
+          decision = applyBackendPolicyGuards(retry.decision, input, context);
         } else {
           decision = {
             ...decision,
@@ -148,7 +152,11 @@ function buildUserPayload(message: string, context: KiaContext, recentAssistantT
 
 function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType, context: KiaContext): KiaDecision {
   if (providerResult.error) throw new Error(providerResult.error);
-  const candidate = providerResult.parsedJson ?? extractJsonObject(providerResult.rawText ?? '');
+  const candidate = normalizeDecisionCandidate(
+    providerResult.parsedJson ?? extractJsonObject(providerResult.rawText ?? ''),
+    taskType,
+    context,
+  );
   const parsed = kiaDecisionSchema.safeParse(candidate);
   if (!parsed.success) {
     throw new Error(`Invalid KiaDecision JSON: ${parsed.error.message}`);
@@ -160,6 +168,200 @@ function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType,
     return { ...parsed.data, contactStatus: context.contact.status, warnings: [...parsed.data.warnings, 'contactStatus corrected by backend'] };
   }
   return parsed.data;
+}
+
+function normalizeDecisionCandidate(candidate: unknown, taskType: KiaTaskType, context: KiaContext): unknown {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return candidate;
+  const record = { ...(candidate as Record<string, unknown>) };
+
+  record.version = '1.0';
+  if (!KIA_TASK_TYPES.includes(record.taskType as KiaTaskType)) record.taskType = taskType;
+  if (!KIA_CONTACT_STATUSES.includes(record.contactStatus as KiaDecision['contactStatus'])) record.contactStatus = context.contact.status;
+
+  record.intent = normalizeEnum(record.intent, KIA_INTENTS);
+  record.nextAction = normalizeEnum(record.nextAction, KIA_NEXT_ACTIONS);
+  record.userMessage = typeof record.userMessage === 'string' ? record.userMessage : String(record.userMessage ?? '');
+  record.toolRequests = Array.isArray(record.toolRequests) ? record.toolRequests.map(normalizeToolRequest).filter(Boolean) : [];
+  record.dataToSave = isRecord(record.dataToSave) ? record.dataToSave : {};
+  record.confidence = normalizeConfidence(record.confidence);
+  record.requiresMeeting = normalizeBoolean(record.requiresMeeting);
+  record.requiresManualReview = normalizeBoolean(record.requiresManualReview);
+  record.decisionSummary = typeof record.decisionSummary === 'string' && record.decisionSummary.trim()
+    ? record.decisionSummary
+    : 'Decision estructurada normalizada por backend.';
+  record.rulesApplied = normalizeStringArray(record.rulesApplied, ['structured_output_normalized']);
+  record.missingData = normalizeStringArray(record.missingData, []);
+  record.warnings = normalizeStringArray(record.warnings, []);
+
+  return record;
+}
+
+function applyBackendPolicyGuards(
+  decision: KiaDecision,
+  input: { taskType: KiaTaskType; channel: KiaChannel; message: string },
+  context: KiaContext,
+): KiaDecision {
+  const lower = input.message.toLowerCase();
+  const rules = new Set(decision.rulesApplied);
+  const warnings = [...decision.warnings];
+  const missingData = new Set(decision.missingData);
+
+  if ((input.channel === 'waba' || input.channel === 'email') && /(api key|clave api|token)/i.test(input.message)) {
+    rules.add('never_request_api_key_in_whatsapp');
+    rules.add('send_secure_holded_panel_link');
+    warnings.push('backend_policy_override_api_key_channel');
+    return {
+      ...decision,
+      intent: 'connect_holded',
+      nextAction: 'send_holded_connect_link',
+      userMessage: 'Por seguridad, no me envíes claves API por este chat. Usa el Panel Cliente seguro para conectar Holded; si no sabes sacarla, te puedo guiar paso a paso.',
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.9),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  if (input.taskType === 'checkout_decision' && /(sin registrarme|sin registro|sin cuenta|sin login|pagar sin|pago sin)/i.test(input.message)) {
+    rules.add('checkout_requires_login');
+    rules.add('no_guest_checkout');
+    warnings.push('backend_policy_override_checkout_login');
+    return {
+      ...decision,
+      intent: 'checkout',
+      nextAction: 'send_login_link',
+      userMessage: 'Para pagar necesitamos que entres en el portal seguro. Así protegemos tus datos, validamos perfil y facturación, y evitamos crear un checkout incompleto.',
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.9),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  const monthlyPlanRequiresHolded = context.service?.flowType === 'subscription_readiness';
+  if (monthlyPlanRequiresHolded && !context.company?.holdedConnected) {
+    rules.add('monthly_plan_requires_holded');
+    rules.add('checkout_blocked_until_holded_connected');
+    missingData.add('holded_connected');
+    warnings.push('backend_policy_override_monthly_plan_holded');
+    return {
+      ...decision,
+      intent: 'connect_holded',
+      nextAction: 'send_holded_connect_link',
+      userMessage: 'Para el plan mensual necesitamos primero conectar o preparar Holded desde el Panel Cliente. Así validamos que la contabilidad puede gestionarse bien antes de pagar.',
+      requiresManualReview: false,
+      requiresMeeting: false,
+      confidence: Math.max(decision.confidence, 0.9),
+      rulesApplied: Array.from(rules),
+      missingData: Array.from(missingData),
+      warnings,
+    };
+  }
+
+  const holdedOrReadiness = context.service?.requiresHolded || context.service?.flowType === 'readiness' || /holded|migrar|migracion|migración/.test(lower);
+  if (holdedOrReadiness && (decision.nextAction === 'run_viability' || input.taskType === 'readiness_reasoning')) {
+    rules.add('holded_uses_readiness_not_viability');
+    rules.add('readiness_before_checkout');
+    warnings.push('backend_policy_override_holded_readiness');
+    return {
+      ...decision,
+      intent: 'readiness',
+      nextAction: 'run_readiness',
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.85),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  if (input.taskType === 'viability_reasoning' && /arraigo|nacionalidad|residencia|renovar|modelo 720|patrimonio|beckham|denegaron|requerimiento/.test(lower)) {
+    rules.add('service_flowtype_viability_detected');
+    rules.add('run_viability_before_checkout');
+    warnings.push('backend_policy_override_viability');
+    return {
+      ...decision,
+      intent: 'viability',
+      nextAction: 'run_viability',
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.85),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  if (input.taskType === 'company_status_summary' || /presenta mi iva|presentar.*iva|iva|impuesto/.test(lower)) {
+    rules.add('tax_summary_is_estimated');
+    rules.add('no_tax_presentation_by_ai');
+    warnings.push('backend_policy_override_tax_summary');
+    return {
+      ...decision,
+      intent: 'accounting_summary',
+      nextAction: decision.nextAction === 'create_next_best_action' ? 'create_next_best_action' : 'reply_only',
+      userMessage: decision.userMessage.includes('Resumen estimado pendiente de revisión profesional')
+        ? decision.userMessage
+        : `Resumen estimado pendiente de revisión profesional. ${decision.userMessage || 'Puedo orientarte con los datos disponibles, pero la presentación requiere revisión profesional.'}`,
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.85),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  if (context.contact.status === 'client' && /expediente|tr[aá]mite|estado|documento falta|documentos faltan/.test(lower)) {
+    rules.add('client_flow');
+    rules.add('case_status_context');
+    if (context.conversation.selectedMessage) rules.add('reply_to_selected_message_only');
+    warnings.push('backend_policy_override_case_status');
+    return {
+      ...decision,
+      intent: 'case_status',
+      nextAction: 'get_case_status',
+      requiresManualReview: false,
+      confidence: Math.max(decision.confidence, 0.85),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
+  return decision;
+}
+
+function normalizeEnum<T extends readonly string[]>(value: unknown, allowed: T): T[number] | unknown {
+  if (typeof value !== 'string') return value;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return allowed.includes(normalized) ? normalized : value;
+}
+
+function normalizeToolRequest(value: unknown) {
+  if (!isRecord(value)) return null;
+  return {
+    toolName: typeof value.toolName === 'string' ? value.toolName : typeof value.tool_name === 'string' ? value.tool_name : '',
+    arguments: isRecord(value.arguments) ? value.arguments : {},
+    reason: typeof value.reason === 'string' && value.reason.trim() ? value.reason : 'Solicitado por Kia',
+  };
+}
+
+function normalizeConfidence(value: unknown): number {
+  const numberValue = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : 0;
+  if (!Number.isFinite(numberValue)) return 0;
+  const normalized = numberValue > 1 && numberValue <= 100 ? numberValue / 100 : numberValue;
+  return Math.max(0, Math.min(1, normalized));
+}
+
+function normalizeBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
+  return Boolean(value);
+}
+
+function normalizeStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const result = value.map(String).map((item) => item.trim()).filter(Boolean);
+  return result.length ? result : fallback;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
 async function tryRepairDecision(input: {

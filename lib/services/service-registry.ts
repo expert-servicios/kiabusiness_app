@@ -1,6 +1,6 @@
 import { services as catalogServices } from '@/lib/utils/catalog';
 import { hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
-import { hasReadinessCheck } from '@/lib/data/service-readiness-checks';
+import { getReadinessCheck, hasReadinessCheck } from '@/lib/data/service-readiness-checks';
 
 export type ServiceFlowType =
   | 'viability'            // shows ViabilityButton (juridical/fiscal eligibility check)
@@ -41,8 +41,20 @@ const HOLDED_SLUGS = new Set([
 ]);
 
 const HOLDED_API_SLUGS = new Set(['holded-integraciones-api']);
+const MONTHLY_PLAN_SLUGS = new Set([
+  'plan-avanzado',
+  'plan-colaborativo',
+  'plan-presupuesto-personalizado',
+]);
+
+const MONTHLY_PLAN_PRICE_IDS: Record<string, string | undefined> = {
+  'plan-avanzado': process.env.STRIPE_PLAN_MONTHLY_99,
+  'plan-colaborativo': process.env.STRIPE_PLAN_MONTHLY_199,
+  'plan-presupuesto-personalizado': process.env.STRIPE_PLAN_MONTHLY_349,
+};
 
 function resolveFlowType(slug: string, categoria: string): ServiceFlowType {
+  if (MONTHLY_PLAN_SLUGS.has(slug)) return 'subscription_readiness';
   if (HOLDED_SLUGS.has(slug) || categoria === 'holded') return 'readiness';
   if (hasSpecificViabilityCheck(slug))                   return 'viability';
   if (hasReadinessCheck(slug))                           return 'readiness';
@@ -64,9 +76,29 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
       flowType,
       hasReadiness        : hasReadinessCheck(svc.slug),
       readinessSlug       : svc.slug,
-      requiresHoldedLicense: HOLDED_SLUGS.has(svc.slug),
+      requiresHoldedLicense: HOLDED_SLUGS.has(svc.slug) || MONTHLY_PLAN_SLUGS.has(svc.slug),
       requiresHoldedApi   : HOLDED_API_SLUGS.has(svc.slug),
-      isSubscription      : false,
+      isSubscription      : MONTHLY_PLAN_SLUGS.has(svc.slug),
+    });
+  }
+  for (const slug of MONTHLY_PLAN_SLUGS) {
+    if (map.has(slug)) continue;
+    const readiness = getReadinessCheck(slug);
+    if (!readiness) continue;
+    map.set(slug, {
+      slug,
+      name: readiness.title,
+      categoria: 'empresas-autonomos',
+      price: undefined,
+      stripePriceId: MONTHLY_PLAN_PRICE_IDS[slug],
+      hasViability: false,
+      hasCheckout: Boolean(MONTHLY_PLAN_PRICE_IDS[slug]),
+      flowType: 'subscription_readiness',
+      hasReadiness: true,
+      readinessSlug: slug,
+      requiresHoldedLicense: true,
+      requiresHoldedApi: false,
+      isSubscription: true,
     });
   }
   return map;

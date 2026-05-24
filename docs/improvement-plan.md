@@ -401,6 +401,8 @@ Notas:
 - Implementado en local el 2026-05-23/24: arquitectura `lib/ai/kia`, decision logs, health checks, canary runner, API admin, cron protegido, panel admin, badge en Panel Gerente, docs y fixtures.
 - Pendiente aplicar migraciones en Supabase remoto. En local no se verifico con `supabase migration list --local` porque el Postgres local no estaba levantado en `127.0.0.1:54322`.
 - El 2026-05-24 se intento `supabase db push --db-url $DATABASE_URL --dry-run`; no conecto porque el host directo de Supabase resuelve por IPv6 y esta maquina no tiene ruta valida. Siguiente paso: usar connection string pooler IPv4-compatible del Dashboard o enlazar proyecto Supabase en un entorno con IPv6.
+- El 2026-05-24 se probo Supavisor `eu-west-2`; el tenant existe pero el password de `DATABASE_URL` no autentica. Pendiente usar connection string actual del pooler o resetear password DB.
+- El 2026-05-24 se ejecuto canary no persistente con proveedores reales: 11/11 OK. WABA Meta responde con token valido, numero conectado, calidad GREEN y WABA ACTIVE.
 - Las nuevas capacidades deben permanecer bajo flags hasta completar canary manual y prueba real controlada.
 
 ## P2 - Producto, escalabilidad y consistencia

@@ -181,6 +181,12 @@ function contextInputForCheck(check: KiaHealthCheck): KiaContextInput {
     serviceSlug: typeof context.serviceSlug === 'string' ? context.serviceSlug : undefined,
     latestMessage: check.input?.message,
     syntheticRecentMessages,
+    syntheticSelectedMessage: context.selectedMessage ? {
+      id: '00000000-0000-4000-8000-000000000303',
+      text: check.input?.message ?? '',
+      direction: 'inbound',
+      createdAt: new Date().toISOString(),
+    } : undefined,
   };
 }
 

@@ -133,7 +133,10 @@ function buildAnthropicBody(request: KiaProviderRequest, includeStrict: boolean)
   const body: Record<string, unknown> = {
     max_tokens: request.maxTokens ?? 900,
     temperature: request.temperature ?? 0.2,
-    system: request.systemPrompt,
+    system: [
+      request.systemPrompt,
+      buildAnthropicJsonSchemaInstruction(request.responseSchema),
+    ].filter(Boolean).join('\n\n'),
     messages: request.messages,
   };
 
@@ -147,6 +150,19 @@ function buildAnthropicBody(request: KiaProviderRequest, includeStrict: boolean)
   }
 
   return body;
+}
+
+function buildAnthropicJsonSchemaInstruction(schema: unknown): string {
+  if (!schema) return '';
+  return [
+    '<strict_json_schema>',
+    JSON.stringify(schema),
+    '</strict_json_schema>',
+    'Devuelve exactamente un objeto JSON que cumpla este schema.',
+    'Incluye todos los campos required, aunque sean arrays u objetos vacios.',
+    'No uses markdown, bloques ```json, texto antes/despues, ni campos alternativos como decision/metadata.',
+    'version debe ser el string "1.0". confidence debe ser numero entre 0 y 1.',
+  ].join('\n');
 }
 
 async function postAnthropic(provider: ProviderConfig, body: Record<string, unknown>): Promise<{ response: Response; data: any }> {

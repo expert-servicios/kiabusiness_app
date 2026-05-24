@@ -32,6 +32,13 @@ npm run build
 
 Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build pasan.
 
+## Ejecucion 2026-05-24
+
+- Canary Kia no persistente ejecutado con proveedores reales: `Kia Health verde: 11/11 checks OK`.
+- WABA Meta verificado por API: token valido, phone number conectado, calidad GREEN y WABA ACTIVE.
+- No se ejecuto canary persistente desde `/admin/kia-health` porque las migraciones remotas siguen pendientes y las tablas de logs/health/auditor aun no existen en Supabase remoto.
+- No se enviaron mensajes reales a testers porque no hay numeros de prueba configurados en env ni proporcionados en esta sesion.
+
 ## Pendiente antes de retomar
 
 - Aplicar migraciones en Supabase remoto:
@@ -39,6 +46,7 @@ Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build
   - `20260523182625_kia_health_check.sql`
   - `20260524060850_kia_auditor_reviews.sql`
 - Bloqueo actual para aplicar desde este entorno: `.env.local` usa la connection string directa `db.<project-ref>.supabase.co`, que resuelve solo por IPv6. Esta maquina no puede abrir esa ruta; usar la connection string de Supavisor Session Pooler/Transaction Pooler del Dashboard o enlazar el proyecto con una red compatible.
+- Se detecto la region de Supavisor como `eu-west-2`, pero el password de Postgres guardado en `DATABASE_URL` no autentica contra el pooler. Hace falta la connection string actual del pooler o resetear/actualizar el password de DB en Supabase.
 - Verificar RLS, grants y exposicion via Data API para las tablas nuevas.
 - Configurar feature flags de produccion segun el nivel de prueba deseado.
 - Ejecutar un canary manual desde `/admin/kia-health`.
