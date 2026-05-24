@@ -65,14 +65,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sin acceso a esta integración' }, { status: 403 });
     }
 
-    // Revoke: clear the encrypted key, mark as revoked
+    // Delete the secret first (IMP-002: secret lives in a separate table)
+    await admin
+      .from('client_integration_secrets')
+      .delete()
+      .eq('integration_id', parsed.data.integrationId);
+
+    // Revoke: mark as revoked (encrypted_api_key column no longer exists)
     const { error: updateError } = await admin
       .from('client_integrations')
       .update({
-        status            : 'revoked',
-        encrypted_api_key : null,
-        disconnected_at   : new Date().toISOString(),
-        updated_at        : new Date().toISOString(),
+        status          : 'revoked',
+        disconnected_at : new Date().toISOString(),
+        updated_at      : new Date().toISOString(),
       })
       .eq('id', parsed.data.integrationId);
 

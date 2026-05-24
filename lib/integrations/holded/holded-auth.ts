@@ -53,7 +53,7 @@ export async function getClientIntegrationAuth(integrationId: string): Promise<H
 
   const { data, error } = await admin
     .from('client_integrations')
-    .select('id, status, mode, encrypted_api_key, provider')
+    .select('id, status, mode, provider')
     .eq('id', integrationId)
     .single();
 
@@ -69,7 +69,14 @@ export async function getClientIntegrationAuth(integrationId: string): Promise<H
     );
   }
 
-  if (!data.encrypted_api_key) {
+  // Secret lives in a separate table with no authenticated grant (IMP-002)
+  const { data: secret, error: secretError } = await admin
+    .from('client_integration_secrets')
+    .select('encrypted_api_key')
+    .eq('integration_id', integrationId)
+    .single();
+
+  if (secretError || !secret?.encrypted_api_key) {
     throw new HoldedIntegrationError(
       `Integration ${integrationId} has no encrypted API key stored.`
     );
@@ -77,7 +84,7 @@ export async function getClientIntegrationAuth(integrationId: string): Promise<H
 
   let apiKey: string;
   try {
-    apiKey = decryptSecret(data.encrypted_api_key);
+    apiKey = decryptSecret(secret.encrypted_api_key);
   } catch (decryptErr) {
     throw new HoldedIntegrationError(
       `Failed to decrypt API key for integration ${integrationId}: ${decryptErr instanceof Error ? decryptErr.message : String(decryptErr)}`

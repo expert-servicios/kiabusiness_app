@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const now = new Date().toISOString();
+    // encrypted_api_key is stored in client_integration_secrets, never in client_integrations (IMP-002)
     const upsertPayload = {
       provider            : 'holded',
       mode                : 'client_account',
-      encrypted_api_key   : encryptedApiKey,
       api_key_last4       : last4,
       permissions_detected: testResult.permissions,
       status              : 'active',
@@ -126,6 +126,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Error actualizando integración' }, { status: 500 });
       }
 
+      // Upsert secret separately — service_role only table, no authenticated grant
+      const { error: secretError } = await admin
+        .from('client_integration_secrets')
+        .upsert({ integration_id: existing.data.id, encrypted_api_key: encryptedApiKey, updated_at: now });
+
+      if (secretError) {
+        console.error('[holded/connect] secret upsert error:', secretError.message);
+        return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
+      }
+
       return NextResponse.json({
         ok: true,
         integration: updated,
@@ -141,6 +151,18 @@ export async function POST(request: NextRequest) {
       if (insertError || !inserted) {
         console.error('[holded/connect] insert error:', insertError?.message);
         return NextResponse.json({ error: 'Error guardando integración' }, { status: 500 });
+      }
+
+      // Insert secret separately — service_role only table, no authenticated grant
+      const { error: secretError } = await admin
+        .from('client_integration_secrets')
+        .insert({ integration_id: inserted.id, encrypted_api_key: encryptedApiKey });
+
+      if (secretError) {
+        console.error('[holded/connect] secret insert error:', secretError.message);
+        // Roll back the integration row to avoid orphaned rows without a secret
+        await admin.from('client_integrations').delete().eq('id', inserted.id);
+        return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
       }
 
       return NextResponse.json({
