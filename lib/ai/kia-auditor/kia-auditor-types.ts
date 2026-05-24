@@ -77,6 +77,8 @@ export interface AuditMessageInput {
   channel?: string;
   contactStatus?: 'lead' | 'client' | 'unknown';
   context?: Record<string, unknown>;
+  /** Last N outbound messages from Kia in the same conversation (for repetition detection). */
+  recentAssistantMessages?: string[];
 }
 
 export interface LlmJudgeOutput {

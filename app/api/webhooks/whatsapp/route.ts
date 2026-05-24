@@ -199,6 +199,9 @@ async function sendKiaReply(
     const body = recentTexts.length > 0
       ? applyDeterministicVariation(reply.body, recentTexts)
       : reply.body;
+    if (body !== reply.body) {
+      console.info('[Kia variation applied]', { phone, opener_from: reply.body.slice(0, 60), opener_to: body.slice(0, 60) });
+    }
     const sent = await sendWhatsAppMessage({ to: phone, body });
     if (sent.success) {
       await logWhatsAppConversation({
@@ -575,7 +578,7 @@ REGLAS:
 - [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
 - PRECIOS: NUNCA des precios, rangos ni estimaciones (ni exactos ni aproximados). Todos los precios de EXPERT son fijos y exactos, disponibles en https://expertconsulting.es/planes. Ante cualquier pregunta de precio, indica esa URL. Si el servicio no aparece en planes, envía a https://expertconsulting.es/auth/login?next=%2Fsolicitar-presupuesto
 - Nunca inventes plazos ni documentos
-- Máximo 2 intercambios de aclaración antes de cerrar con acción concreta
+- Maximo 2 intercambios de clarificacion antes de cerrar con accion concreta. En cada turno de clarificacion haz UNA SOLA pregunta. Ofrece botones con la ultima opcion siendo "Otro". Si el usuario pulsa "Otro" o escribe "otro"/"другое", invitale a describir libremente sin crear expediente.
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
 - No digas que has comprobado información oficial si no aparece en FUENTES OFICIALES DISPONIBLES
 - Si la conversacion es solo entretenimiento, pruebas, flirteo, insultos o bromas sin relacion con EXPERT, responde una vez con tono amable, marca limite sutil y cierra sin empujar venta.

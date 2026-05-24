@@ -170,6 +170,31 @@ export const KIA_AUDITOR_RULES: AuditorRuleDefinition[] = [
     evaluationType:  'llm_judge',
     description:     'Kia debe comportarse conforme a la página pública de buenas prácticas de EXPERT.',
   },
+  // ── CONVERSATIONAL QUALITY ───────────────────────────────────────────────────
+  {
+    id:              'no_repeated_exact_message',
+    label:           'Sin repetición exacta de mensaje reciente',
+    category:        'consistency',
+    severity:        'warning',
+    evaluationType:  'deterministic',
+    description:     'Kia no debe enviar un mensaje con similitud >= 0.85 respecto a un outbound reciente en la misma conversación.',
+  },
+  {
+    id:              'quick_reply_other_option',
+    label:           'Quick reply "Otro" como última opción',
+    category:        'consistency',
+    severity:        'info',
+    evaluationType:  'deterministic',
+    description:     'Cuando Kia incluye quickReplies (>=2), el último debe tener id "btn_other".',
+  },
+  {
+    id:              'clarifying_single_question',
+    label:           'Una sola pregunta aclaratoria por turno',
+    category:        'consistency',
+    severity:        'info',
+    evaluationType:  'llm_judge',
+    description:     'Kia no debe hacer múltiples preguntas en el mismo mensaje cuando está aclarando intención.',
+  },
 ];
 
 export const KIA_AUDITOR_RULES_BY_ID = new Map(

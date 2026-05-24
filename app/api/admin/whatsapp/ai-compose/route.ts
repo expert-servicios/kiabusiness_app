@@ -4,6 +4,7 @@ import { buildOfficialSourceContext } from '@/lib/integrations/official-sources'
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { buildNoRepeatInstruction } from '@/lib/ai/kia/kia-response-variation';
+import { KIA_CLARIFYING_POLICY_PROMPT } from '@/lib/ai/kia/prompts/kia-clarifying-policy';
 import { formatChecklistForPrompt, getChecklistsByCategory, getServiceChecklist } from '@/lib/utils/service-checklists';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { z } from 'zod';
@@ -282,6 +283,8 @@ ACTITUD:
 - No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
 - Lee TODA LA CONVERSACIÓN RECIENTE antes de redactar. No repitas información ya dada. Muestra continuidad y memoria: si el cliente ya proporcionó un dato, no lo vuelvas a pedir.
 - Evita repetir frases ya usadas por EXPERT/Kia en este hilo. Si el mensaje anterior ya ofrecio cita, portal o enlace, cambia el enfoque y aporta el siguiente dato util.
+
+${KIA_CLARIFYING_POLICY_PROMPT}
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
 ${antiRepeatInstruction}

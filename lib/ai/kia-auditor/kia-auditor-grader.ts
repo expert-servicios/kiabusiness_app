@@ -1,4 +1,5 @@
 import { redactSensitiveText } from '@/lib/ai/kia/kia-redaction';
+import { messageSimilarity } from '@/lib/ai/kia/kia-response-variation';
 import type { AuditMessageInput, AuditorRuleResult, LlmJudgeOutput } from './kia-auditor-types';
 import { KIA_AUDITOR_RULES_BY_ID } from './kia-auditor-rules';
 
@@ -227,6 +228,46 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
     String(contextStatus || 'unknown'),
     !contactStatusCorrect ? `Kia declara contactStatus=${declaredContactStatus} pero contexto indica ${contextStatus}` : undefined,
   );
+
+  // 13. no_repeated_exact_message — check against recentAssistantMessages
+  const recentMsgs = input.recentAssistantMessages ?? [];
+  if (recentMsgs.length > 0) {
+    const REPEAT_THRESHOLD = 0.85;
+    let maxSimilarity = 0;
+    let mostSimilar = '';
+    for (const prev of recentMsgs) {
+      const sim = messageSimilarity(kiaResponse, prev);
+      if (sim > maxSimilarity) { maxSimilarity = sim; mostSimilar = prev; }
+    }
+    const isRepeated = maxSimilarity >= REPEAT_THRESHOLD;
+    check(
+      'no_repeated_exact_message',
+      !isRepeated,
+      isRepeated ? `similitud=${maxSimilarity.toFixed(2)} con mensaje reciente` : 'ok',
+      `similitud < ${REPEAT_THRESHOLD}`,
+      isRepeated ? `La respuesta es muy similar (${(maxSimilarity * 100).toFixed(0)}%) a un mensaje reciente: "${mostSimilar.slice(0, 80)}..."` : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('no_repeated_exact_message');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
+
+  // 14. quick_reply_other_option — if quickReplies present, last must be btn_other
+  const quickReplies = Array.isArray(decisionJson.quickReplies) ? decisionJson.quickReplies : null;
+  if (quickReplies && quickReplies.length >= 2) {
+    const last = quickReplies[quickReplies.length - 1] as Record<string, unknown>;
+    const lastId = String(last?.id ?? '');
+    check(
+      'quick_reply_other_option',
+      lastId === 'btn_other',
+      lastId || 'sin id',
+      'btn_other',
+      lastId !== 'btn_other' ? `El último quickReply tiene id="${lastId}" en lugar de "btn_other"` : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('quick_reply_other_option');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
 
   return results;
 }
