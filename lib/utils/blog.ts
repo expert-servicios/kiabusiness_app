@@ -2317,6 +2317,482 @@ Las sesiones se adaptan al perfil del participante, pero los contenidos más hab
 Las sesiones son prácticas: trabajamos sobre casos reales o sobre tu propia situación. La formación online permite hacerla desde cualquier lugar. Cada bloque de 2 horas incluye material escrito y resolución de dudas en directo.
     `
   },
+  // ── Holded ─────────────────────────────────────────────────────────────────
+  {
+    slug: 'como-empezar-con-holded',
+    category: 'Holded',
+    title: 'Cómo empezar con Holded: configuración inicial paso a paso',
+    excerpt: 'Guía práctica para configurar Holded desde cero: empresa, datos fiscales, facturación, bancos y usuarios. Lo que debes hacer antes de emitir la primera factura.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'configuración Holded', 'facturación online', 'ERP pymes', 'software contabilidad'],
+    relatedServiceSlugs: ['holded-pack-starter'],
+    body: `
+## Por qué la configuración inicial importa
+
+Holded es flexible y potente, pero si la cuenta no está bien configurada desde el principio los problemas aparecen después: facturas con el NIF mal, series de numeración incorrectas, impuestos mal aplicados o cuentas bancarias sin conectar. Empezar bien ahorra mucho tiempo.
+
+## Antes de crear la cuenta
+
+Antes de abrir Holded ten a mano:
+
+- **NIF / NIE / CIF** de la empresa o autónomo.
+- **Razón social** o nombre y apellidos exactos.
+- **Dirección fiscal** completa.
+- **Email de acceso** (se convertirá en el usuario principal).
+- **Actividad económica** (epígrafe IAE o descripción).
+
+## Paso 1: Crear la cuenta y verificar el email
+
+Holded ofrece una **prueba gratuita de 14 días** sin necesidad de tarjeta. Tras el registro, verifica el email antes de continuar.
+
+## Paso 2: Configurar los datos de empresa
+
+Accede a **Ajustes → Empresa** y completa:
+
+- Nombre legal y nombre comercial.
+- NIF / CIF.
+- Dirección fiscal.
+- Teléfono y email de contacto.
+- Logo (opcional, pero aparecerá en las facturas).
+
+## Paso 3: Configurar la facturación
+
+En **Ajustes → Facturación**:
+
+- Define las series de numeración (ej.: F-2026-001).
+- Configura los tipos de IVA que vas a aplicar (21 %, 10 %, 4 %, exento...).
+- Establece los plazos de pago por defecto.
+- Añade los datos bancarios que aparecerán en las facturas.
+
+## Paso 4: Conectar el banco (opcional pero recomendable)
+
+Holded se conecta con la mayoría de bancos españoles a través de Open Banking. Esto permite que los movimientos bancarios se importen automáticamente y se reconcilien con las facturas. No es obligatorio desde el primer día, pero facilita mucho el trabajo diario.
+
+## Paso 5: Crear los primeros clientes y proveedores
+
+Puedes crearlos manualmente o importarlos desde un Excel. Para empezar, lo habitual es irlos añadiendo al crear las primeras facturas.
+
+## Paso 6: Emitir la primera factura
+
+Con todo configurado, ya puedes emitir facturas con los datos correctos. Holded numerará automáticamente según las series configuradas.
+
+## ¿Y si ya tienes datos en otro sistema?
+
+Si venías usando ContaPlus, A3, Sage, Excel u otro ERP, tienes la opción de migrar el historial a Holded. Esto se gestiona como un servicio aparte (Migración sin inventario o con inventario) porque requiere exportar, limpiar y transformar los datos del sistema origen.
+
+## ¿Necesitas ayuda con la configuración?
+
+El **Pack Starter de EXPERT** deja Holded configurado y listo para operar en 1–2 semanas: datos fiscales, facturación, series, impuestos, orientación bancaria y soporte posterior.
+    `,
+  },
+
+  {
+    slug: 'holded-autonomos-pequenas-empresas',
+    category: 'Holded',
+    title: 'Holded para autónomos y pequeñas empresas: qué módulos usar y cuáles no',
+    excerpt: 'Qué partes de Holded son útiles para autónomos y pymes pequeñas y cuáles pueden ignorarse al empezar. Cómo aprovechar el ERP sin perderse en opciones.',
+    date: '24 may 2026',
+    readTime: '5 min',
+    tags: ['Holded', 'autónomos', 'pequeñas empresas', 'ERP pymes', 'facturación online'],
+    relatedServiceSlugs: ['holded-pack-starter'],
+    body: `
+## Holded tiene muchos módulos. No necesitas todos.
+
+Holded es un ERP completo: facturación, contabilidad, inventario, proyectos, CRM, nóminas… Para un autónomo o una pyme pequeña, empezar con todos los módulos activos puede ser abrumador. La clave es saber qué usar desde el primer día y qué dejar para más adelante.
+
+## Módulos esenciales para autónomos
+
+### Facturación
+El core de Holded para autónomos. Permite:
+- Crear presupuestos, albaranes y facturas.
+- Numerar automáticamente con series personalizadas.
+- Aplicar los tipos de IVA correctos.
+- Enviar la factura directamente desde Holded por email.
+
+### Tesorería
+Conectas el banco y ves el saldo real. Las facturas emitidas y recibidas se reconcilian con los movimientos bancarios. Muy útil para saber exactamente cuánto tienes y cuánto te deben.
+
+### Contabilidad básica
+Si llevas la contabilidad con una asesoría, pueden conectarse con acceso limitado. Si la llevas tú, Holded genera asientos automáticamente a partir de las facturas.
+
+## Módulos útiles para pymes pequeñas
+
+### CRM
+Gestión de contactos y seguimiento comercial. Muy útil si tienes un equipo comercial o gestionas muchas oportunidades en paralelo.
+
+### Proyectos
+Control de horas, tareas y costes por proyecto. Útil para servicios profesionales (consultoras, estudios, agencias).
+
+### Inventario
+Solo necesario si vendes productos físicos con stock. Si eres consultor, formador o prestas servicios, puedes ignorarlo.
+
+## Módulos que generalmente no necesitas al empezar
+
+- **Nóminas**: a menos que seas empresa con empleados. Para autónomos solos, es innecesario.
+- **Informes avanzados**: útiles cuando ya tienes meses de datos. Al inicio, no aportan.
+- **Integraciones de tienda online**: solo si vendes en WooCommerce, Shopify, etc.
+
+## La trampa del "todo gratis en la prueba"
+
+Durante la prueba gratuita tienes acceso a todos los módulos. Esto puede llevar a perder tiempo configurando cosas que no vas a usar. Mejor activar solo lo que necesitas y aprender a usarlo bien antes de añadir más.
+
+## ¿Y si ya tienes datos en otro sistema?
+
+Si migras desde ContaPlus, Sage o Excel, no empieces a introducir datos a mano. Existe el servicio de **Migración a Holded** que importa el historial completo de forma ordenada y validada.
+    `,
+  },
+
+  {
+    slug: 'pack-starter-holded-vs-migracion',
+    category: 'Holded',
+    title: 'Pack Starter vs. Migración a Holded: qué servicio necesitas',
+    excerpt: 'Cómo decidir entre Pack Starter (configuración inicial) y los servicios de Migración a Holded, según si tienes historial de datos, inventario o empiezas desde cero.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'Pack Starter', 'migración Holded', 'configuración Holded', 'ERP pymes'],
+    relatedServiceSlugs: ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    body: `
+## La pregunta que nos hacen más
+
+"Quiero empezar con Holded. ¿Qué servicio necesito?" La respuesta depende de una sola pregunta: **¿tienes datos históricos que importar?**
+
+## Pack Starter: para quien empieza desde cero
+
+**Pack Starter** (499 € + IVA) es para quien quiere dejar Holded configurado y listo para operar, pero sin mover datos del pasado. Configura:
+
+- Datos de empresa y fiscales.
+- Series de facturación.
+- Tipos de IVA y configuración contable básica.
+- Orientación bancaria.
+- Permisos de usuario.
+
+Es el punto de partida ideal para autónomos o pymes que:
+- Acaban de darse de alta.
+- Tenían una gestoría que llevaba todo y ahora quieren usar Holded.
+- Tienen facturas antiguas en papel o en Excel pero no necesitan importarlas a Holded.
+
+**Pack Starter no importa datos históricos.** Si quieres ver en Holded las facturas de los últimos años, necesitas migración.
+
+## Migración sin inventario: para quien tiene historial de facturas
+
+**Migración sin inventario** (899 € + IVA) es para empresas que tienen años de facturas en ContaPlus, A3, Sage, Excel u otro sistema y quieren importarlos a Holded de forma ordenada.
+
+Incluye:
+- Importación de facturas emitidas y recibidas.
+- Importación del maestro de clientes y proveedores.
+- Validación de los datos en Holded.
+
+No incluye inventario, almacenes ni stock.
+
+## Migración con inventario: para quien tiene catálogo de productos
+
+**Migración con inventario** (1.199 € + IVA) añade la importación del catálogo completo:
+
+- Maestro de referencias y productos.
+- Variantes (talla, color, modelo).
+- Stock inicial por referencia y almacén.
+- Múltiples almacenes si aplica.
+
+Ideal para distribuidores, tiendas o fabricantes que quieren centralizar el inventario en Holded.
+
+## ¿Y si necesito Pack Starter y Migración?
+
+Es posible combinarlos. Si partes desde cero (sin cuenta Holded) y además quieres importar el historial, el orden natural es:
+
+1. **Pack Starter**: configurar bien la cuenta.
+2. **Migración**: importar los datos históricos sobre la cuenta ya configurada.
+
+Algunos clientes lo hacen en paralelo. Otros hacen primero la configuración y luego deciden si migrar el historial.
+
+## La tabla resumen
+
+| | Pack Starter | Migración sin inventario | Migración con inventario |
+|---|---|---|---|
+| Configuración de empresa | ✓ | ✓ (básica) | ✓ (básica) |
+| Datos fiscales y facturación | ✓ | ✓ | ✓ |
+| Importar facturas históricas | — | ✓ | ✓ |
+| Importar clientes y proveedores | — | ✓ | ✓ |
+| Importar inventario y stock | — | — | ✓ |
+| Precio | 499 € + IVA | 899 € + IVA | 1.199 € + IVA |
+
+## ¿No tienes claro cuál es tu caso?
+
+Si no estás seguro de qué necesitas, la llamada de 15 min con EXPERT es el camino más corto. En 15 minutos queda claro qué servicio se ajusta mejor y qué se puede dejar para después.
+    `,
+  },
+
+  {
+    slug: 'migrar-contaplus-a-holded',
+    category: 'Holded',
+    title: 'Migrar de ContaPlus a Holded: qué datos puedes exportar y cómo',
+    excerpt: 'Guía para migrar el historial de ContaPlus a Holded: qué exportar, en qué formato, qué se puede importar directamente y qué requiere transformación previa.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'ContaPlus', 'migración datos', 'importar facturas Holded', 'cambio ERP'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario'],
+    body: `
+## Por qué migrar de ContaPlus a Holded
+
+ContaPlus (ahora parte de Wolters Kluwer) ha sido durante años el software de contabilidad más usado por pymes y asesorías en España. Sin embargo, muchos usuarios han optado por migrar a Holded por su interfaz moderna, acceso cloud, integraciones y automatizaciones.
+
+El reto de migrar está en los datos históricos: facturas de los últimos años, clientes, proveedores y saldos. Perderlos no es una opción.
+
+## Qué se puede exportar desde ContaPlus
+
+ContaPlus permite exportar en diferentes formatos según la versión:
+
+- **Asientos contables** en formato XML o TXT.
+- **Maestro de cuentas** (clientes, proveedores, cuentas del PGC).
+- **Facturas emitidas** en formato personalizado o CSV.
+- **Facturas recibidas** de forma similar.
+
+La calidad de la exportación varía según la versión de ContaPlus y cómo se haya usado el sistema. En versiones antiguas, algunos campos no están bien estructurados y hay que transformar los datos antes de importar.
+
+## Qué acepta Holded en la importación
+
+Holded importa datos en **CSV y Excel** mediante plantillas específicas:
+
+- Clientes y proveedores: nombre, NIF, dirección, email, teléfono.
+- Facturas emitidas: número, fecha, cliente, líneas de detalle, impuestos.
+- Facturas recibidas: similar a las emitidas.
+- Productos e inventario (si aplica).
+
+El formato exacto de las plantillas lo define Holded y puede variar. Los datos de ContaPlus raramente coinciden directamente con las plantillas de Holded, por lo que es habitual necesitar una transformación intermedia.
+
+## El proceso habitual de migración
+
+1. **Exportar** los datos de ContaPlus en el mejor formato disponible.
+2. **Limpiar y mapear**: transformar los campos de ContaPlus al formato que acepta Holded.
+3. **Importar en Holded** usando las herramientas de importación masiva.
+4. **Validar**: revisar que los totales cuadran, que los NIFs son correctos y que no hay duplicados.
+
+Este proceso puede llevar días o semanas según el volumen de datos y la calidad de la exportación original.
+
+## ¿Cuántos años de historial vale la pena migrar?
+
+No siempre tiene sentido migrar todo el historial. Lo más habitual:
+
+- **1–2 años**: datos más recientes, los que se consultan frecuentemente.
+- **3 años**: cubre el período de inspección fiscal habitual.
+- **Más de 3 años**: solo si hay obligación legal específica o si el cliente necesita visibilidad histórica completa.
+
+## Servicio de migración EXPERT
+
+Si quieres migrar de ContaPlus a Holded sin hacerlo tú mismo, el servicio **Migración sin inventario** de EXPERT (899 € + IVA) incluye el análisis del sistema origen, la transformación de datos y la importación validada en Holded.
+    `,
+  },
+
+  {
+    slug: 'holded-migracion-sin-inventario-guia',
+    category: 'Holded',
+    title: 'Migración a Holded sin inventario: qué incluye y qué necesitas preparar',
+    excerpt: 'Todo lo que debes saber antes de migrar facturas, clientes y proveedores a Holded: datos necesarios, plazos, qué sistemas son compatibles y qué no incluye este servicio.',
+    date: '24 may 2026',
+    readTime: '5 min',
+    tags: ['Holded', 'migración datos', 'importar facturas Holded', 'clientes proveedores Holded'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario'],
+    body: `
+## Qué es una migración sin inventario
+
+La migración sin inventario mueve el historial de tu actividad comercial y contable a Holded: facturas emitidas, facturas recibidas, maestro de clientes y maestro de proveedores. No incluye productos, stock ni almacenes.
+
+Es el servicio adecuado para empresas de servicios, consultoras, agencias, autónomos con historial en otro sistema y, en general, para cualquier negocio que no venda productos físicos con stock.
+
+## Qué necesitas tener preparado
+
+Antes de iniciar la migración, conviene tener claro:
+
+### Datos de empresa
+- NIF / CIF, razón social, dirección fiscal.
+- Si ya tienes cuenta en Holded o necesitas crearla.
+
+### Origen de los datos
+- ¿Qué sistema usas actualmente? (ContaPlus, A3, Sage, Excel propio, otro)
+- ¿Puedes exportar los datos en Excel o CSV?
+- ¿Cuántos años de historial quieres migrar?
+
+### Volumen estimado
+- Facturas emitidas por año.
+- Facturas recibidas por año (si quieres incluirlas).
+- Número de clientes y proveedores.
+
+## Qué hacemos en la migración
+
+1. **Análisis del sistema origen**: revisamos qué datos hay y en qué formato.
+2. **Mapeo de campos**: transformamos los datos al formato que acepta Holded.
+3. **Importación**: subimos los datos a tu cuenta de Holded usando las herramientas de importación masiva.
+4. **Validación**: comprobamos que los totales cuadran y que no hay errores en NIF, fechas o importes.
+5. **Entrega**: te informamos de lo importado y de cualquier incidencia detectada.
+
+## Qué NO incluye este servicio
+
+- Inventario, productos o stock → servicio de Migración con inventario.
+- Contabilidad analítica avanzada.
+- Integración con otras plataformas.
+- Gestión mensual recurrente.
+- Presentación de impuestos.
+
+## Cuánto tarda
+
+Entre **2 y 4 semanas** desde que recibimos los datos completos y en formato exportable. Si los datos necesitan mucha limpieza previa, el plazo puede alargarse.
+
+## ¿Necesitas también configurar Holded?
+
+Si tu cuenta de Holded no está configurada (o si aún no tienes cuenta), el punto de partida puede ser el **Pack Starter** (499 € + IVA), que deja la cuenta lista antes de importar datos.
+    `,
+  },
+
+  {
+    slug: 'holded-inventario-guia-completa',
+    category: 'Holded',
+    title: 'Inventario en Holded: cómo funciona y cómo migrar el catálogo desde otro sistema',
+    excerpt: 'Guía sobre el módulo de inventario de Holded: referencias, variantes, almacenes y cómo importar el catálogo desde ContaPlus, Excel u otro ERP.',
+    date: '24 may 2026',
+    readTime: '7 min',
+    tags: ['Holded inventario', 'catálogo productos Holded', 'variantes Holded', 'almacenes Holded', 'importar inventario'],
+    relatedServiceSlugs: ['holded-migracion-con-inventario'],
+    body: `
+## El módulo de inventario de Holded
+
+Holded incluye un módulo de inventario completo que permite:
+
+- Crear un **catálogo de productos** con referencias, descripciones, fotos, precios de compra y venta.
+- Gestionar **variantes**: tallas, colores, modelos u otras combinaciones.
+- Controlar el **stock por almacén**.
+- Ver el movimiento de entrada y salida de stock vinculado a facturas y albaranes.
+- Emitir facturas y albaranes que descuenten automáticamente el stock.
+
+## Conceptos clave del inventario en Holded
+
+### Referencia (SKU)
+Cada producto tiene un identificador único. Si un producto tiene variantes, cada combinación (ej.: camiseta talla M color rojo) tiene su propio SKU o se gestiona como variante del producto principal.
+
+### Variantes
+Holded permite crear productos con múltiples atributos (talla, color, material…). Cada combinación de atributos es una variante con su propio stock.
+
+### Almacenes
+Si tienes más de un almacén (tienda física, almacén logístico, tienda online…), Holded permite gestionar el stock de forma independiente por ubicación.
+
+### Movimientos de stock
+Los movimientos se generan automáticamente al emitir o recibir facturas y albaranes, o manualmente mediante ajustes de inventario.
+
+## Cómo migrar el inventario desde otro sistema
+
+El proceso de migración del inventario tiene más complejidad que la migración de facturas porque los datos de productos suelen estar más dispersos y en formatos menos estándar.
+
+### Paso 1: Exportar el catálogo del sistema origen
+
+Desde ContaPlus, Sage, A3 u otro ERP, exporta:
+- Maestro de productos (referencia, descripción, precios).
+- Variantes si existen.
+- Stock actual por referencia y almacén.
+
+### Paso 2: Limpiar y mapear los datos
+
+El formato del sistema origen raramente coincide con el de Holded. Hay que:
+- Eliminar referencias duplicadas o dadas de baja.
+- Normalizar los códigos de variantes.
+- Ajustar los precios al formato que acepta Holded.
+
+### Paso 3: Importar en Holded
+
+Holded acepta la importación de productos en CSV mediante su plantilla oficial. Los campos mínimos son: referencia, nombre, precio de venta, precio de coste y stock inicial.
+
+### Paso 4: Validar
+
+Tras la importación, se revisa que:
+- El número de referencias coincide con la exportación.
+- El stock inicial de cada referencia es correcto.
+- Los precios están bien cargados.
+
+## ¿Cuándo no tiene sentido migrar el inventario completo?
+
+Si tienes un catálogo muy grande (más de 5.000 referencias con variantes complejas), puede ser más eficiente empezar el inventario en Holded desde cero e ir introduciendo solo los productos activos.
+
+Si tienes pocas referencias pero muchas variantes y almacenes, el tiempo de migración depende más de la complejidad que del número de productos.
+
+## Servicio de Migración con inventario de EXPERT
+
+Si prefieres que lo hagamos nosotros, el servicio **Migración con inventario** (1.199 € + IVA) incluye el análisis del sistema origen, la transformación del catálogo y el stock al formato Holded, la importación validada y el soporte posterior.
+    `,
+  },
+
+  {
+    slug: 'migrar-inventario-a-holded',
+    category: 'Holded',
+    title: 'Cómo migrar el inventario a Holded: pasos, formatos y errores frecuentes',
+    excerpt: 'Guía práctica para importar el catálogo de productos, variantes y stock inicial a Holded desde Excel, ContaPlus u otro ERP. Qué preparar y qué errores evitar.',
+    date: '24 may 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'migrar inventario', 'importar productos Holded', 'stock inicial Holded', 'catálogo ERP'],
+    relatedServiceSlugs: ['holded-migracion-con-inventario'],
+    body: `
+## Antes de empezar: qué información necesitas tener clara
+
+Migrar el inventario a Holded requiere tener la información del catálogo organizada y exportable. Antes de empezar, responde estas preguntas:
+
+- ¿Cuántas referencias activas tienes?
+- ¿Tus productos tienen variantes (talla, color, modelo)?
+- ¿Tienes más de un almacén?
+- ¿El sistema origen permite exportar en Excel o CSV?
+- ¿El stock que tienes ahora es fiable o está desactualizado?
+
+Migrar un inventario con datos erróneos solo traslada el problema a Holded. Si el stock no está actualizado en el sistema origen, es mejor hacer un recuento físico antes de la migración.
+
+## El formato que acepta Holded
+
+Holded importa productos mediante una plantilla CSV con los siguientes campos principales:
+
+| Campo | Descripción |
+|---|---|
+| Referencia | Código único del producto (SKU) |
+| Nombre | Descripción del producto |
+| Precio de venta | PVP sin IVA |
+| Precio de coste | Precio de compra sin IVA |
+| Stock inicial | Unidades disponibles al momento de importar |
+| Almacén | Nombre del almacén si hay más de uno |
+| Categoría | Agrupación del producto |
+| Variantes | Si aplica: atributos y valores |
+
+Los campos de variantes tienen su propia estructura dentro del CSV. Un error en el formato de variantes es la causa más frecuente de importaciones fallidas.
+
+## Errores frecuentes al importar inventario en Holded
+
+### Referencias duplicadas
+Si el mismo SKU aparece dos veces en la importación, Holded puede crear duplicados o rechazar la importación. Hay que limpiar el archivo antes de subir.
+
+### Formato de decimales y separadores
+Holded usa punto como separador decimal en su API, pero la interfaz de importación puede comportarse de forma diferente según el idioma del sistema. Revisar que los precios y cantidades usen el formato correcto.
+
+### Variantes mal estructuradas
+Las variantes deben seguir exactamente la estructura esperada. Un atributo adicional o un valor con caracteres especiales puede romper toda la importación.
+
+### Stock negativo
+Si el sistema origen tiene referencias con stock negativo (ajustes contables, devoluciones no regularizadas), Holded los acepta pero distorsiona la imagen del inventario. Mejor regularizar antes.
+
+## ¿Y si tengo muchos productos?
+
+Para catálogos grandes (más de 1.000 referencias), la importación masiva es la única opción viable. Pero la preparación del archivo puede llevar horas si los datos no están bien estructurados en el sistema origen.
+
+Para catálogos con variantes complejas o múltiples almacenes, es habitual que el proceso de preparación del archivo sea más largo que la importación en sí.
+
+## Cuánto tiempo tarda la migración
+
+El tiempo depende principalmente de:
+- El volumen de referencias.
+- Si hay variantes o no.
+- La calidad de los datos en el sistema origen.
+- El número de almacenes.
+
+Como orientación: un catálogo de 500 referencias sin variantes puede importarse en 1–2 días. Un catálogo de 2.000 referencias con variantes y múltiples almacenes puede requerir 2–3 semanas de trabajo.
+
+## Servicio de Migración con inventario de EXPERT
+
+Si prefieres que lo hagamos nosotros, el servicio **Migración con inventario** (1.199 € + IVA) incluye el análisis del sistema origen, la preparación del archivo, la importación validada y el soporte durante 30 días.
+    `,
+  },
+
   {
     slug: 'formacion-laboral-rrhh-para-no-especialistas',
     category: 'Formación',

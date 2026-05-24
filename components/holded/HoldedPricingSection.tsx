@@ -289,6 +289,22 @@ export function HoldedPricingSection() {
                       Ver detalles del servicio →
                     </Link>
                   )}
+                  {pkg.slug === 'holded-migracion-sin-inventario' && (
+                    <Link
+                      href="/holded/migracion-sin-inventario"
+                      className="inline-flex w-full items-center justify-center border border-[#D4A017]/40 px-5 py-2.5 text-xs font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                    >
+                      Ver detalles del servicio →
+                    </Link>
+                  )}
+                  {pkg.slug === 'holded-migracion-con-inventario' && (
+                    <Link
+                      href="/holded/migracion-con-inventario"
+                      className="inline-flex w-full items-center justify-center border border-[#D4A017]/40 px-5 py-2.5 text-xs font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                    >
+                      Ver detalles del servicio →
+                    </Link>
+                  )}
                   <Link
                     href={`/solicitar-presupuesto?servicio=${pkg.slug}`}
                     className="inline-flex w-full items-center justify-center border border-[#0D1B2A]/20 px-5 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
