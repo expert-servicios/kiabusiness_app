@@ -1,0 +1,24 @@
+{
+  "suite": "client-flow",
+  "channel": "waba",
+  "contactStatus": "client",
+  "expected": {
+    "contactStatus": "client",
+    "intent": "case_status",
+    "nextAction": "get_case_status",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "CL1", "message": "Hola, soy cliente" },
+    { "id": "CL2", "message": "Como va mi expediente?" },
+    { "id": "CL3", "message": "Quiero enviar documentos", "expected": { "intent": "send_documents", "nextAction": "classify_document" } },
+    { "id": "CL4", "message": "Que me falta?" },
+    { "id": "CL5", "message": "Ya he enviado el DNI", "expected": { "intent": "send_documents", "nextAction": "classify_document" } },
+    { "id": "CL6", "message": "Quiero contratar otro servicio", "expected": { "intent": "service_selection", "nextAction": "show_menu" } },
+    { "id": "CL7", "message": "Tengo facturas pendientes?" },
+    { "id": "CL8", "message": "Esta presentada mi renta?" },
+    { "id": "CL9", "message": "Me falta completar perfil?", "expected": { "intent": "complete_profile", "nextAction": "send_profile_link" } },
+    { "id": "CL10", "message": "Quiero cambiar mi direccion", "expected": { "intent": "complete_profile", "nextAction": "send_profile_link" } }
+  ]
+}

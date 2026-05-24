@@ -9,6 +9,8 @@ import {
 } from '@/lib/integrations/whatsapp';
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, type WabaAiMessage } from '@/lib/integrations/waba-ai';
+import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { buildNoRepeatInstruction, findSimilarRecentMessage } from '@/lib/ai/kia/kia-response-variation';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
@@ -376,8 +378,22 @@ interface KiaAiContext {
   contactCtx         ?: KiaContactContext;
 }
 
+function isStructuredKiaAiEnabled(): boolean {
+  return process.env.KIA_STRUCTURED_AI_ENABLED?.toLowerCase() === 'true'
+    && process.env.KIA_STRUCTURED_AI_WABA_ENABLED?.toLowerCase() === 'true'
+    && process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
+}
+
+function recentAssistantTextsFromWabaHistory(history: KiaAiContext['conversationHistory']): string[] {
+  return history
+    .filter((item) => item.direction === 'outbound')
+    .map((item) => item.body.replace(/^\[Kia(?::AI|:list)?\]\s*/i, '').trim())
+    .filter(Boolean)
+    .slice(-6);
+}
+
 async function generateKiaAiResponse({
-  clientId, msgBody, session, conversationHistory, contactCtx,
+  clientId, phone, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
   // Always detect lang from the current message — session.lang may be stale mid-conversation.
   const lang = msgBody ? detectLanguage(msgBody) : session.lang;
@@ -388,6 +404,8 @@ async function generateKiaAiResponse({
   const officialSourceContext = await buildOfficialSourceContext(
     [...conversationHistory.slice(-3).map((h) => `${h.direction}: ${h.body}`), `inbound: ${msgBody}`].join('\n'),
   );
+  const recentAssistantTexts = recentAssistantTextsFromWabaHistory(conversationHistory);
+  const antiRepeatInstruction = buildNoRepeatInstruction(recentAssistantTexts);
 
   let clientContext = '';
   if (contactCtx) {
@@ -436,6 +454,42 @@ async function generateKiaAiResponse({
       'Memoria Kia: este contacto tuvo uso de bajo interes/diversion antes, pero ahora parece haber vuelto con una consulta util.',
       'Ayuda con normalidad, manteniendo respuestas concretas y evitando insistir en captacion innecesaria.',
     ].join('\n');
+  }
+
+  if (isStructuredKiaAiEnabled()) {
+    try {
+      const structured = await runKiaDecision({
+        taskType: 'waba_reply',
+        channel: 'waba',
+        message: [
+          msgBody,
+          officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.',
+          'HISTORIAL RECIENTE:',
+          conversationHistory.slice(-8).map((h) => `${h.direction}: ${h.body}`).join('\n') || 'Sin historial previo.',
+          'CONTEXTO DEL CONTACTO:',
+          clientContext,
+          antiRepeatInstruction,
+          'Reglas: no pedir API keys ni email por WhatsApp; usar login/panel seguro para datos sensibles; mantener respuesta breve.',
+        ].join('\n\n'),
+        contextInput: {
+          channel: 'waba',
+          phone: contactCtx?.phone ?? phone,
+          clientId: contactCtx?.clientId ?? clientId,
+          leadId: contactCtx?.leadId ?? undefined,
+          serviceSlug: session.service_id ?? undefined,
+          latestMessage: msgBody,
+        },
+        locale: lang,
+        allowTools: false,
+      });
+
+      const reply = structured.userMessage.replace(/\*\*(.+?)\*\*/gs, '*$1*').trim();
+      if (reply && structured.decision.nextAction !== 'needs_review' && !structured.decision.requiresManualReview) {
+        return { reply };
+      }
+    } catch (err) {
+      console.error('[Kia structured AI fallback]', err);
+    }
   }
 
   const systemPrompt = `Eres *Kia*, la asistente virtual IA de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
@@ -495,6 +549,9 @@ Emojis con moderación: ✅ 👋 📋 📅 💼 🚀
 
 REGLAS:
 - Varía la redacción segun historial y contexto; evita repetir la misma frase si ya la has dicho.
+- Antes de responder, compara tu borrador con CONVERSACIÓN RECIENTE y con mensajes anteriores de EXPERT. Si se parece demasiado, reescríbelo con otra apertura, otra estructura y otro cierre.
+- No uses varias veces seguidas frases como "te oriento", "para avanzar", "puedes reservar una llamada" o "entra en el portal seguro"; adapta la frase al contexto.
+- Si ya ofreciste enlace/cita/panel en el hilo, no repitas exactamente el CTA. Explica el siguiente paso o pide un dato mínimo.
 - Si requiere decision profesional compleja, da primero orientacion util y despues ofrece reserva de llamada/reunion: https://expertconsulting.es/auth/login?next=%2Fcita
 - Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), da pasos iniciales prudentes y recomienda llamada/reunion de 15 minutos.
 - [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
@@ -539,7 +596,9 @@ REGLAS PARA LEAD:
 `}
 
 CONTEXTO DEL CONTACTO:
-${clientContext}`;
+${clientContext}
+
+${antiRepeatInstruction}`;
 
   const messages: WabaAiMessage[] = conversationHistory.map((h) => ({
     role:    h.direction === 'inbound' ? 'user' : 'assistant',
@@ -553,7 +612,7 @@ ${clientContext}`;
 
     if (!text || text.includes('[NEEDS_REVIEW]')) return { reply: null };
 
-    const normalizedText = text.replace(/\*\*(.+?)\*\*/gs, '*$1*');
+    let normalizedText = text.replace(/\*\*(.+?)\*\*/gs, '*$1*');
 
     if (normalizedText.startsWith('{')) {
       try {
@@ -571,6 +630,30 @@ ${clientContext}`;
           if (buttons.length >= 2) return { reply: null, interactive: { body: parsed.body, buttons } };
         }
       } catch { /* not valid JSON — fall through */ }
+    }
+
+    const repeated = findSimilarRecentMessage(normalizedText, recentAssistantTexts);
+    if (repeated) {
+      const retry = await generateWabaAiText({
+        systemPrompt,
+        messages: [
+          ...messages,
+          {
+            role: 'user',
+            content: [
+              'La respuesta anterior se parece demasiado a una respuesta reciente de Kia/EXPERT.',
+              'Reescribe la respuesta con el mismo objetivo operativo, pero sin repetir apertura, cierre, CTA ni estructura.',
+              'Respuesta reciente que debes evitar:',
+              repeated.text.slice(0, 1200),
+            ].join('\n'),
+          },
+        ],
+        maxTokens: 450,
+      });
+      const retryText = retry?.text.trim().replace(/\*\*(.+?)\*\*/gs, '*$1*') ?? '';
+      if (retryText && !findSimilarRecentMessage(retryText, recentAssistantTexts)) {
+        normalizedText = retryText;
+      }
     }
 
     return { reply: normalizedText };
@@ -1017,6 +1100,22 @@ export async function POST(request: NextRequest) {
         ? { ...sideEffects, saveLead: false, createCase: false }
         : sideEffects;
       await handleKiaSideEffects({ sideEffects: effectiveSideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
+
+      // ── Profitability: register whatsapp_message_handled for known clients ───
+      if (!isTestNumber && clientId && contactCtx.openCases.length > 0) {
+        const firstCase = contactCtx.openCases[0];
+        void import('@/lib/profitability/register-event')
+          .then(({ registerProfitabilityEvent }) => registerProfitabilityEvent({
+            caseId:    firstCase.id,
+            clientId,
+            serviceId: updatedSession.service_id ?? firstCase.service ?? 'unknown',
+            eventType: 'whatsapp_message_handled',
+            source:    'auto',
+            operator:  'kia',
+            metadata:  { phone: from, flow: updatedSession.flow ?? 'unknown' },
+          }))
+          .catch(() => {});
+      }
 
       // ── Cart: add service to kia_cart_items ──────────────────────────────────
       if (!isTestNumber && sideEffects.addToCart && updatedSession.service_id) {

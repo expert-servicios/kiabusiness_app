@@ -1,0 +1,23 @@
+{
+  "suite": "anomalies",
+  "channel": "dashboard",
+  "contactStatus": "client",
+  "expected": {
+    "intent": "anomaly_review",
+    "nextAction": "create_next_best_action",
+    "requiresManualReview": false,
+    "rulesApplied": ["no_accounting_mutation_without_admin_confirmation"]
+  },
+  "cases": [
+    { "id": "AN1", "message": "Hay dos cobros iguales" },
+    { "id": "AN2", "message": "Stripe no cuadra con Holded" },
+    { "id": "AN3", "message": "Banco no coincide" },
+    { "id": "AN4", "message": "Factura sin NIF" },
+    { "id": "AN5", "message": "Gasto de supermercado" },
+    { "id": "AN6", "message": "Google sin inversion sujeto pasivo" },
+    { "id": "AN7", "message": "OpenAI con IVA raro" },
+    { "id": "AN8", "message": "Falta factura de un cobro" },
+    { "id": "AN9", "message": "Factura sin cobro" },
+    { "id": "AN10", "message": "Movimiento no conciliado" }
+  ]
+}

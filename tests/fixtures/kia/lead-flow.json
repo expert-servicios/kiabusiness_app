@@ -1,0 +1,29 @@
+{
+  "suite": "lead-flow",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "contactStatus": "lead",
+    "intent": "service_selection",
+    "nextAction": "show_menu",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true,
+    "requiresRulesApplied": true
+  },
+  "cases": [
+    { "id": "L1", "message": "Hola" },
+    { "id": "L2", "message": "Quiero informacion" },
+    { "id": "L3", "message": "No se que tramite necesito" },
+    { "id": "L4", "message": "Quiero contratar un servicio" },
+    { "id": "L5", "message": "Cuanto cuesta hacer la renta?" },
+    { "id": "L6", "message": "Necesito ayuda con nacionalidad" },
+    { "id": "L7", "message": "Quiero hacer arraigo" },
+    { "id": "L8", "message": "Quiero una SL" },
+    { "id": "L9", "message": "Soy autonomo y necesito gestoria" },
+    {
+      "id": "L10",
+      "message": "Quiero hablar con alguien",
+      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+    }
+  ]
+}

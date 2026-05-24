@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-05-23
+Ultima actualizacion: 2026-05-24
 
 ## Objetivo
 
@@ -351,6 +351,55 @@ Notas:
 - Implementado el 2026-05-23: se corrigio el reconocimiento de omitir email, se anadieron botones de omision, se delegan consultas reales al fallback IA y se amplio el prompt/fuentes oficiales para asesoramiento fiscal, laboral, mercantil y juridico.
 - Implementado el 2026-05-23: memoria interna `kia_contact_disposition` para contactos de bajo interes/diversion, con motivo y contador. Si vuelven con una consulta real, Kia marca `reactivated_after_low_intent` y responde con normalidad usando ese contexto.
 - Implementado el 2026-05-23: Kia deja de pedir email en bienvenida y deja de crear leads desde WABA con datos incompletos. Los flujos de interes real envian al portal seguro (`/auth/login`) para presupuesto, cita o contratacion.
+- Implementado el 2026-05-24: capa anti-repeticion en WABA, Admin Compose y prompt maestro. Kia revisa mensajes anteriores antes de responder, evita repetir apertura/cierre/CTA/estructura y reintenta una vez si la respuesta generada se parece demasiado al historial.
+- Implementado el 2026-05-24: Kia Health detecta `repeated_answer_loop` a partir de warnings/reglas anti-repeticion para que los bucles conversacionales queden visibles como anomalias.
+
+### IMP-017 - Kia estructurada, Health y Auditor
+
+Estado: [~]
+
+Tipo: IA, observabilidad, admin, Supabase.
+
+Riesgo: sin decisiones estructuradas, logs y canaries, Kia puede parecer operativa aunque incumpla reglas criticas de EXPERT: pedir API keys, confundir Holded con viabilidad, repetir frases, usar `needs_review` de forma excesiva o proponer checkout sin requisitos.
+
+Archivos principales:
+
+- `lib/ai/kia/`
+- `lib/ai/kia/health/`
+- `lib/ai/kia-auditor/`
+- `app/api/admin/kia/health/`
+- `app/api/admin/kia-auditor/`
+- `app/(protected)/admin/kia-health/page.tsx`
+- `app/(protected)/admin/kia-auditor/`
+- `supabase/migrations/20260523171440_kia_decision_logs.sql`
+- `supabase/migrations/20260523182625_kia_health_check.sql`
+
+Criterio de aceptacion:
+
+- Kia mantiene el motor determinista como primera linea y usa decision estructurada solo en flujos habilitados por flags.
+- `KiaDecision` se valida con schema, genera `decisionSummary` y `rulesApplied`, y no guarda chain-of-thought.
+- Provider router conserva Anthropic/OpenAI con fallback y logs redactados.
+- Tool calls quedan definidas con schema estricto y ejecutadas solo por backend validado.
+- Health canaries cubren API key, checkout, Holded, viabilidad, impuestos, idioma, cliente/lead y mensaje seleccionado.
+- Admin tiene panel `/admin/kia-health` con badge/resumen en Panel Gerente.
+- Kia Auditor revisa reglas criticas y puede crear anomalias.
+- Migraciones aplicadas en Supabase remoto con RLS/grants verificados antes de activar pruebas amplias.
+
+Verificacion local:
+
+- [x] `npm run typecheck`
+- [x] `npm run kia:eval`
+- [x] `npm run build`
+- [x] `npm run kia:auditor:test`
+- [ ] `supabase migration list --local` o verificacion remota equivalente.
+- [ ] Canary manual desde `/admin/kia-health`.
+- [ ] Prueba manual WABA con usuarios amigos/testers.
+
+Notas:
+
+- Implementado en local el 2026-05-23/24: arquitectura `lib/ai/kia`, decision logs, health checks, canary runner, API admin, cron protegido, panel admin, badge en Panel Gerente, docs y fixtures.
+- Pendiente aplicar migraciones en Supabase remoto. En local no se verifico con `supabase migration list --local` porque el Postgres local no estaba levantado en `127.0.0.1:54322`.
+- Las nuevas capacidades deben permanecer bajo flags hasta completar canary manual y prueba real controlada.
 
 ## P2 - Producto, escalabilidad y consistencia
 

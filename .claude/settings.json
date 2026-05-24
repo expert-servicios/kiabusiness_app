@@ -138,7 +138,8 @@
       "PowerShell(New-Item -ItemType Directory -Force -Path \"d:\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard\\\\integraciones\\\\holded\")",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\cart\\\\add\")",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\cart\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\report\\\\generate\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\kia\\\\report\\\\generate\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\tests\\\\fixtures\\\\kia-auditor\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",

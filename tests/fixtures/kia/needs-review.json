@@ -1,0 +1,22 @@
+{
+  "suite": "needs-review",
+  "channel": "waba",
+  "contactStatus": "unknown",
+  "expected": {
+    "intent": "unknown",
+    "nextAction": "needs_review",
+    "requiresManualReview": true
+  },
+  "cases": [
+    { "id": "NR1", "message": "asdf qwer zzz" },
+    { "id": "NR2", "message": "IA devuelve vacio" },
+    { "id": "NR3", "message": "Error tecnico Holded" },
+    { "id": "NR4", "message": "No puede identificar cliente" },
+    { "id": "NR5", "message": "Documento ilegible" },
+    { "id": "NR6", "message": "Quiero humano", "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true, "requiresManualReview": false } },
+    { "id": "NR7", "message": "Error checkout backend" },
+    { "id": "NR8", "message": "Conflicto grave de datos" },
+    { "id": "NR9", "message": "Mensaje amenazante legal extremo", "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true, "requiresManualReview": false } },
+    { "id": "NR10", "message": "Varias respuestas fallidas" }
+  ]
+}

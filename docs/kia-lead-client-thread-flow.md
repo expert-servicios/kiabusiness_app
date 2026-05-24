@@ -1,5 +1,7 @@
 # Kia Lead/Client + Thread Replies
 
+Actualizacion 2026-05-23: la capa `lib/ai/kia` aporta decision estructurada y logs auditables para respuestas no deterministas. No cambia la resolucion lead/client ni convierte `needs_review` en salida comercial normal.
+
 ## Arquitectura
 
 Kia decide el flujo al inicio de cada interacción con `resolveKiaContactContext(admin, phone)` en `lib/integrations/kia-contact-resolver.ts`.

@@ -66,6 +66,9 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Plug,
     items: [
       { label: 'Panel Gerente', href: '/admin/executive' },
+      { label: 'Rentabilidad', href: '/admin/rentabilidad' },
+      { label: 'Kia Health', href: '/admin/kia-health' },
+      { label: 'Kia Auditor', href: '/admin/kia-auditor' },
       { label: 'Integraciones', href: '/admin/integraciones' },
       { label: 'Reportes', href: '/admin/reportes' },
     ]

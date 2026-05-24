@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
+import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { buildNoRepeatInstruction } from '@/lib/ai/kia/kia-response-variation';
 import { formatChecklistForPrompt, getChecklistsByCategory, getServiceChecklist } from '@/lib/utils/service-checklists';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { z } from 'zod';
@@ -49,6 +51,24 @@ function detectLanguageInstruction(text: string): string {
     return 'espanol.';
   }
   return 'el mismo idioma del ultimo mensaje del cliente.';
+}
+
+function detectLocale(text: string): 'es' | 'ru' {
+  return /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es';
+}
+
+function isStructuredAiEnabled(): boolean {
+  return process.env.KIA_STRUCTURED_AI_ENABLED?.toLowerCase() === 'true'
+    && process.env.KIA_STRUCTURED_AI_ADMIN_ENABLED?.toLowerCase() === 'true'
+    && process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
+}
+
+function recentOutboundTexts(history: Array<{ direction: 'inbound' | 'outbound'; body: string }>): string[] {
+  return history
+    .filter((message) => message.direction === 'outbound')
+    .map((message) => message.body.trim())
+    .filter(Boolean)
+    .slice(-6);
 }
 
 export async function POST(request: NextRequest) {
@@ -120,6 +140,7 @@ export async function POST(request: NextRequest) {
     const historyText = history.slice(-25)
       .map((m) => `${m.direction === 'inbound' ? 'Cliente' : 'EXPERT'}: ${m.body}`)
       .join('\n');
+    const antiRepeatInstruction = buildNoRepeatInstruction(recentOutboundTexts(history));
 
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
     const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
@@ -156,7 +177,9 @@ FORMATO WHATSAPP OBLIGATORIO:
 - NO uses ##, ***, \`código\`, ni guiones de lista. Usa párrafos cortos.
 
 CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
-${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}`;
+${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}
+
+${antiRepeatInstruction}`;
 
       const ai = await generateWabaAiText({
         systemPrompt: editPrompt,
@@ -171,6 +194,63 @@ ${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}`;
     // ── COMPOSE mode: generate fresh response ────────────────────
     const intentText = intent ? `\nInstrucción del asesor: ${intent}` : '';
     const officialSourceContext = await buildOfficialSourceContext(`${historyText}\n${intent ?? ''}`);
+
+    if (isStructuredAiEnabled()) {
+      try {
+        const structuredMessage = [
+          'Redacta un borrador breve de WhatsApp para que lo revise un asesor humano antes de enviarlo.',
+          intentText.trim() ? intentText.trim() : 'No hay instruccion adicional del asesor.',
+          replyTo
+            ? 'Hay un mensaje seleccionado. Responde a ese mensaje concreto y usa el historial solo como contexto.'
+            : 'No hay mensaje seleccionado. Responde al ultimo punto relevante del historial.',
+          replyToBlock.trim(),
+          officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.',
+          antiRepeatInstruction,
+          checklistContext.trim(),
+          'CONTEXTO DEL CLIENTE:',
+          clientContext,
+          'CONVERSACION RECIENTE:',
+          historyText || 'Sin historial previo.',
+          'Reglas de formato: WhatsApp breve, maximo 3 parrafos, sin markdown complejo, accion concreta.',
+        ].filter(Boolean).join('\n\n');
+
+        const structured = await runKiaDecision({
+          taskType: 'admin_ai_compose',
+          channel: 'admin',
+          message: structuredMessage,
+          contextInput: {
+            channel: 'admin',
+            phone,
+            clientId: contactCtx.clientId ?? clientId ?? undefined,
+            leadId: contactCtx.leadId ?? undefined,
+            serviceSlug: serviceId,
+            latestMessage: lastInbound || intent || '',
+          },
+          locale: detectLocale(`${lastInbound}\n${intent ?? ''}`),
+          allowTools: false,
+        });
+
+        const draft = cleanMarkdownForWhatsApp(structured.userMessage);
+        if (draft) {
+          return NextResponse.json({
+            draft,
+            structured: true,
+            decision: {
+              intent: structured.decision.intent,
+              nextAction: structured.decision.nextAction,
+              confidence: structured.decision.confidence,
+              requiresMeeting: structured.decision.requiresMeeting,
+              requiresManualReview: structured.decision.requiresManualReview,
+              decisionSummary: structured.decision.decisionSummary,
+              rulesApplied: structured.decision.rulesApplied,
+              warnings: structured.decision.warnings,
+            },
+          });
+        }
+      } catch (err) {
+        console.error('[WA ai-compose structured fallback]', err);
+      }
+    }
 
     // Contact type instruction
     const contactTypeBlock = isClient
@@ -201,8 +281,10 @@ ACTITUD:
 - Si hay fuentes oficiales disponibles, usalas como apoyo y comparte 1 o 2 enlaces oficiales utiles.
 - No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
 - Lee TODA LA CONVERSACIÓN RECIENTE antes de redactar. No repitas información ya dada. Muestra continuidad y memoria: si el cliente ya proporcionó un dato, no lo vuelvas a pedir.
+- Evita repetir frases ya usadas por EXPERT/Kia en este hilo. Si el mensaje anterior ya ofrecio cita, portal o enlace, cambia el enfoque y aporta el siguiente dato util.
 
 ${officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.'}
+${antiRepeatInstruction}
 
 ${contactTypeBlock}${replyToBlock}
 CONTEXTO DEL CLIENTE:

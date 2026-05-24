@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
-  AlertCircle, ArrowRight, CheckCircle2, CreditCard,
+  Activity, AlertCircle, ArrowRight, CheckCircle2, CreditCard,
   FileText, FolderOpen, Mail, MessageCircle,
   TrendingUp, UserCheck, Users, Zap
 } from 'lucide-react';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
+import { getKiaHealthSummary } from '@/lib/ai/kia/health/kia-health-summary';
 import { CASE_ACTION_GROUPS, countCaseStates } from '@/lib/utils/case-states';
 import {
   RevenueChart,
@@ -97,7 +98,7 @@ function StatCard({
 }
 
 export default async function AdminPage() {
-  const [stats, reports] = await Promise.all([
+  const [stats, reports, kiaHealth] = await Promise.all([
     fetchAdmin<AdminStats>('/api/admin/stats', {
       totalUsers: 0, pendingQuotes: 0, activeCases: 0, totalRevenue: 0
     }),
@@ -111,7 +112,8 @@ export default async function AdminPage() {
       activeSubs: 0,
       paymentIssuesCount: 0,
       clientMessagesAwaitingResponse: 0
-    })
+    }),
+    getKiaHealthSummary().catch(() => null)
   ]);
 
   // Action counts
@@ -153,7 +155,29 @@ export default async function AdminPage() {
                   : '✓ Sin acciones urgentes pendientes'}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              {kiaHealth && (
+                <Link
+                  href="/admin/kia-health"
+                  className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition ${
+                    kiaHealth.currentStatus === 'red'
+                      ? 'border-red-200 bg-red-50 text-red-700 hover:border-red-300'
+                      : kiaHealth.currentStatus === 'yellow'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300'
+                        : kiaHealth.currentStatus === 'green'
+                          ? 'border-green-200 bg-green-50 text-green-700 hover:border-green-300'
+                          : 'border-[#d8cbb5] bg-white text-[#29384a] hover:border-[#c88b25]'
+                  }`}
+                >
+                  <Activity className="h-3.5 w-3.5" />
+                  Kia {kiaHealth.currentStatus === 'unknown' ? 'sin datos' : kiaHealth.currentStatus}
+                  {kiaHealth.openAnomalies.length > 0 && (
+                    <span className="ml-1 rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] font-bold">
+                      {kiaHealth.openAnomalies.length}
+                    </span>
+                  )}
+                </Link>
+              )}
               <Link
                 href="/admin/expedientes"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-semibold text-[#07111d] transition hover:border-[#c88b25]"

@@ -1,0 +1,24 @@
+{
+  "suite": "admin-compose",
+  "channel": "admin",
+  "contactStatus": "client",
+  "expected": {
+    "contactStatus": "client",
+    "intent": "case_status",
+    "nextAction": "reply_only",
+    "requiresManualReview": false,
+    "rulesApplied": ["reply_to_selected_message_only"]
+  },
+  "cases": [
+    { "id": "I1", "message": "Responder a pregunta concreta" },
+    { "id": "I2", "message": "Responder a mensaje antiguo" },
+    { "id": "I3", "message": "Responder a documento" },
+    { "id": "I4", "message": "Entonces que documento falta exactamente?" },
+    { "id": "I5", "message": "Quiero pagar", "expected": { "intent": "checkout", "nextAction": "send_login_link" } },
+    { "id": "I6", "message": "No entiendo" },
+    { "id": "I7", "message": "Cliente enfadado" },
+    { "id": "I8", "message": "Lead ruso pregunta", "expected": { "contactStatus": "lead", "language": "ru" } },
+    { "id": "I9", "message": "Cliente espanol pregunta" },
+    { "id": "I10", "message": "Mensaje seleccionado ambiguo" }
+  ]
+}

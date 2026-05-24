@@ -1,0 +1,31 @@
+{
+  "suite": "viability-flow",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "intent": "viability",
+    "nextAction": "run_viability",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "V1", "message": "Puedo hacer arraigo social?" },
+    { "id": "V2", "message": "Tengo residencia y quiero nacionalidad" },
+    { "id": "V3", "message": "Mi hijo nacio en Espana" },
+    { "id": "V4", "message": "Quiero renovar residencia" },
+    { "id": "V5", "message": "Soy no residente y tengo inmueble" },
+    { "id": "V6", "message": "Tengo que presentar Modelo 720" },
+    { "id": "V7", "message": "Tengo que declarar patrimonio?" },
+    { "id": "V8", "message": "Quiero hacer Ley Beckham" },
+    {
+      "id": "V9",
+      "message": "Me denegaron la residencia",
+      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+    },
+    {
+      "id": "V10",
+      "message": "Tengo un requerimiento de extranjeria",
+      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+    }
+  ]
+}

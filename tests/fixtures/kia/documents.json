@@ -1,0 +1,27 @@
+{
+  "suite": "documents",
+  "channel": "document",
+  "contactStatus": "client",
+  "expected": {
+    "intent": "document_classification",
+    "nextAction": "classify_document",
+    "minConfidence": 0.7,
+    "requiresManualReview": false
+  },
+  "cases": [
+    { "id": "D1", "message": "Te envio mi DNI" },
+    { "id": "D2", "message": "Te envio mi TIE" },
+    { "id": "D3", "message": "Aqui esta mi contrato de alquiler" },
+    { "id": "D4", "message": "Adjunto factura" },
+    { "id": "D5", "message": "Aqui esta el certificado digital" },
+    { "id": "D6", "message": "Te paso datos fiscales AEAT" },
+    { "id": "D7", "message": "Envio escritura de empresa" },
+    { "id": "D8", "message": "Envio requerimiento" },
+    { "id": "D9", "message": "Envio Excel de contabilidad" },
+    {
+      "id": "D10",
+      "message": "No se que documento es",
+      "expected": { "minConfidence": 0, "requiresManualReview": true, "warnings": ["low_confidence_classification"] }
+    }
+  ]
+}

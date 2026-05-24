@@ -1,0 +1,23 @@
+{
+  "suite": "cases",
+  "channel": "waba",
+  "contactStatus": "client",
+  "expected": {
+    "intent": "case_status",
+    "nextAction": "get_case_status",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "E1", "message": "Que estado tiene mi tramite?" },
+    { "id": "E2", "message": "Que documentos faltan?" },
+    { "id": "E3", "message": "Quiero subir un documento" },
+    { "id": "E4", "message": "Esta bloqueado mi expediente?" },
+    { "id": "E5", "message": "Ya esta presentado?" },
+    { "id": "E6", "message": "Cuando estara listo?" },
+    { "id": "E7", "message": "Tengo varios expedientes", "expected": { "nextAction": "ask_one_question" } },
+    { "id": "E8", "message": "Este documento es para nacionalidad", "expected": { "intent": "send_documents", "nextAction": "classify_document" } },
+    { "id": "E9", "message": "Me falta conseguir un certificado", "expected": { "intent": "send_documents", "nextAction": "create_task" } },
+    { "id": "E10", "message": "Ya tengo todo listo", "expected": { "nextAction": "update_case" } }
+  ]
+}

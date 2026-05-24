@@ -1,0 +1,22 @@
+{
+  "suite": "accounting-summary",
+  "channel": "dashboard",
+  "contactStatus": "client",
+  "expected": {
+    "intent": "accounting_summary",
+    "nextAction": "reply_only",
+    "requiresManualReview": false
+  },
+  "cases": [
+    { "id": "EE1", "message": "Como va mi empresa este trimestre?" },
+    { "id": "EE2", "message": "Cuanto IVA sale a pagar?", "expected": { "mustContain": ["Resumen estimado pendiente de revision profesional"] } },
+    { "id": "EE3", "message": "Tengo gastos pendientes?" },
+    { "id": "EE4", "message": "Hay bancos sin conciliar?" },
+    { "id": "EE5", "message": "Que anomalias hay?" },
+    { "id": "EE6", "message": "Puedo presentar ya el IVA?", "expected": { "mustContain": ["Resumen estimado pendiente de revision profesional"] } },
+    { "id": "EE7", "message": "Por que subio el IVA?", "expected": { "mustContain": ["Resumen estimado pendiente de revision profesional"] } },
+    { "id": "EE8", "message": "Que facturas faltan?" },
+    { "id": "EE9", "message": "Tengo cobros sin factura?" },
+    { "id": "EE10", "message": "Esta todo correcto?" }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "suite": "checkout-flow",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "intent": "checkout",
+    "nextAction": "send_login_link",
+    "requiresMeeting": false,
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "C1", "message": "Quiero contratar Renta IRPF" },
+    { "id": "C2", "message": "Quiero pagar ya" },
+    { "id": "C3", "message": "Mandame enlace de pago" },
+    { "id": "C4", "message": "No quiero registrarme, solo pagar" },
+    {
+      "id": "C5",
+      "message": "Ya he rellenado todo, quiero pagar",
+      "expected": { "nextAction": "send_profile_link", "missingData": ["profile_completed", "billing_ready"] }
+    },
+    {
+      "id": "C6",
+      "message": "Tengo dudas antes de pagar",
+      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+    },
+    { "id": "C7", "message": "Puedo pagar por WhatsApp?" },
+    { "id": "C8", "message": "Me puedes hacer descuento?" },
+    { "id": "C9", "message": "Confirmo, quiero contratar" },
+    {
+      "id": "C10",
+      "message": "No se si este servicio es para mi",
+      "expected": { "intent": "viability", "nextAction": "run_viability" }
+    }
+  ]
+}

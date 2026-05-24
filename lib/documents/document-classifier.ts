@@ -1,7 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { documentClassificationDecisionSchema, type DocumentClassificationDecision } from '@/lib/ai/kia/kia-output-schema';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { logAiEvent } from '@/lib/integrations/ai';
 import { createNba } from '@/lib/nba/create-nba';
+import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { extractStructuredData } from './document-extractor';
 
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -29,8 +32,6 @@ export interface ClassificationResult {
   extracted_data: Record<string, string>;
 }
 
-// ── Rule-based fast classification ──────────────────────────────────────────
-
 interface RuleResult {
   type: string;
   subtype?: string;
@@ -56,32 +57,26 @@ function quickClassify(fileName: string, mimeType?: string): RuleResult {
   const ext = getExtension(fileName);
   const lower = fileName.toLowerCase();
 
-  // Extension-based hard rules
   if (EXT_MAP[ext]) return EXT_MAP[ext];
 
-  // Excel/CSV → contable
   if (['.xlsx', '.xls', '.ods', '.csv'].includes(ext)) {
     return { type: 'excel_contable', confidence: 0.85 };
   }
 
-  // AEAT model numbers in filename (very high confidence)
   const modelMatch = /\b(303|130|190|720|100|111|200|202|349|390)\b/.exec(lower);
   if (modelMatch) {
     return { type: 'modelo_aeat', subtype: modelMatch[1], confidence: 0.9 };
   }
 
-  // Requerimiento
   if (/requeri?miento|requer\d|notificaci[oó]n.aeat/i.test(lower)) {
     return { type: 'requerimiento', confidence: 0.85 };
   }
 
-  // Identity docs
   if (/\bdni\b/.test(lower)) return { type: 'dni', confidence: 0.85 };
   if (/\bnie\b/.test(lower)) return { type: 'nie', confidence: 0.85 };
   if (/\btie\b/.test(lower)) return { type: 'tie', confidence: 0.85 };
   if (/pasaporte/.test(lower)) return { type: 'pasaporte', confidence: 0.85 };
 
-  // Invoices
   if (/factura.*(emitida|venta|cliente)|invoice.out/i.test(lower)) {
     return { type: 'factura_emitida', confidence: 0.8 };
   }
@@ -89,25 +84,21 @@ function quickClassify(fileName: string, mimeType?: string): RuleResult {
     return { type: 'factura_recibida', confidence: 0.8 };
   }
   if (/\bfactura\b|invoice/.test(lower)) {
-    return { type: 'factura_emitida', confidence: 0.55 }; // ambiguous
+    return { type: 'factura_emitida', confidence: 0.55 };
   }
 
-  // Banking
   if (/extracto|banco|cuenta|iban|transfer/i.test(lower)) {
     return { type: 'documento_bancario', confidence: 0.75 };
   }
 
-  // Contracts
   if (/contrato|contract/i.test(lower)) {
     return { type: 'contrato', confidence: 0.8 };
   }
 
-  // Certificates
   if (/certificado|certificate/i.test(lower)) {
     return { type: 'certificado', confidence: 0.75 };
   }
 
-  // MIME-type fallbacks
   if (mimeType?.includes('pdf')) {
     return { type: 'otros', confidence: 0.3 };
   }
@@ -117,8 +108,6 @@ function quickClassify(fileName: string, mimeType?: string): RuleResult {
 
   return { type: 'otros', confidence: 0.2 };
 }
-
-// ── AI classification ────────────────────────────────────────────────────────
 
 const VALID_TYPES = [
   'requerimiento', 'modelo_aeat', 'factura_emitida', 'factura_recibida',
@@ -189,33 +178,65 @@ Reglas:
   }
 }
 
-// ── Main entry point ─────────────────────────────────────────────────────────
+async function kiaClassify(params: ClassifyDocumentParams): Promise<RuleResult | null> {
+  if (process.env.KIA_AI_DOCUMENT_CLASSIFICATION_ENABLED?.toLowerCase() !== 'true') return null;
+  const decision = await classifyDocumentWithKia({
+    documentId: params.fileId,
+    fileName: params.fileName,
+    textPreview: [params.caption, params.mimeType, params.sourceUrl].filter(Boolean).join('\n'),
+    clientId: params.clientId,
+    caseId: params.caseId,
+  });
+
+  const normalizedType = normalizeKiaDocumentType(decision.documentType);
+  return {
+    type: normalizedType,
+    subtype: decision.documentSubtype ?? undefined,
+    confidence: decision.confidence,
+  };
+}
+
+function normalizeKiaDocumentType(documentType: string): string {
+  const normalized = documentType
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return VALID_TYPES.includes(normalized as typeof VALID_TYPES[number]) ? normalized : 'otros';
+}
 
 export async function classifyDocument(
   params: ClassifyDocumentParams
 ): Promise<ClassificationResult | null> {
   const admin = getSupabaseAdmin();
 
-  // Step 1: try fast rule-based classification
   let { type: detected_type, subtype: detected_subtype, confidence } = quickClassify(
     params.fileName,
     params.mimeType
   );
 
-  // Step 2: if low confidence, escalate to AI
+  const kia = await kiaClassify(params);
+  if (kia && kia.confidence > confidence) {
+    detected_type = kia.type;
+    detected_subtype = kia.subtype;
+    confidence = kia.confidence;
+  }
+
   if (confidence < 0.75) {
     const ai = await aiClassify(params);
     if (ai && ai.confidence > confidence) {
-      detected_type    = ai.type;
+      detected_type = ai.type;
       detected_subtype = ai.subtype;
-      confidence       = ai.confidence;
+      confidence = ai.confidence;
     }
   }
 
   const status: DocumentStatus = confidence >= 0.6 ? 'classified' : 'needs_review';
   const extracted_data = extractStructuredData(detected_type, params.fileName, params.caption);
 
-  // Step 3: try to resolve client by NIF if not provided
   let resolvedClientId = params.clientId ?? null;
   if (!resolvedClientId && extracted_data.nif) {
     const { data: profile } = await admin
@@ -226,7 +247,6 @@ export async function classifyDocument(
     if (profile) resolvedClientId = profile.id;
   }
 
-  // Step 4: store classification
   const { data: inserted, error } = await admin
     .from('document_classifications')
     .insert({
@@ -248,7 +268,6 @@ export async function classifyDocument(
     return null;
   }
 
-  // Step 5: create NBAs
   if (status === 'needs_review') {
     await createNba({
       action_type: 'documento_sin_clasificar',
@@ -273,6 +292,19 @@ export async function classifyDocument(
     });
   }
 
+  // Register profitability event when document is linked to a known case
+  if (params.caseId && resolvedClientId) {
+    void registerProfitabilityEvent({
+      caseId:    params.caseId,
+      clientId:  resolvedClientId,
+      serviceId: 'unknown',
+      eventType: status === 'needs_review' ? 'document_classified_manual' : 'document_reviewed',
+      source:    'auto',
+      operator:  'kia',
+      metadata:  { file_name: params.fileName, confidence, source: params.source },
+    }).catch(() => {});
+  }
+
   return {
     id: inserted.id,
     detected_type,
@@ -280,5 +312,48 @@ export async function classifyDocument(
     confidence,
     status,
     extracted_data,
+  };
+}
+
+export async function classifyDocumentWithKia(input: {
+  documentId?: string;
+  fileName?: string;
+  textPreview?: string;
+  clientId?: string;
+  companyId?: string;
+  caseId?: string;
+}): Promise<DocumentClassificationDecision> {
+  const result = await runKiaDecision({
+    taskType: 'document_classification',
+    channel: 'document',
+    message: [
+      `DocumentId: ${input.documentId ?? 'unknown'}`,
+      `FileName: ${input.fileName ?? 'unknown'}`,
+      `Preview: ${input.textPreview?.slice(0, 2000) ?? 'no preview'}`,
+    ].join('\n'),
+    contextInput: {
+      channel: 'document',
+      clientId: input.clientId,
+      companyId: input.companyId,
+      caseId: input.caseId,
+    },
+    allowTools: false,
+  });
+
+  const raw = result.decision.dataToSave.documentClassification ?? result.decision.dataToSave;
+  const parsed = documentClassificationDecisionSchema.safeParse(raw);
+  if (parsed.success) return parsed.data;
+
+  return {
+    documentType: 'unknown',
+    documentSubtype: null,
+    confidence: 0,
+    suggestedClientId: input.clientId ?? null,
+    suggestedCompanyId: input.companyId ?? null,
+    suggestedCaseId: input.caseId ?? null,
+    suggestedChecklistItemId: null,
+    extractedData: {},
+    needsReview: true,
+    decisionSummary: result.decision.decisionSummary || 'No se pudo clasificar el documento con seguridad.',
   };
 }

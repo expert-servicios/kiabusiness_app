@@ -1,0 +1,47 @@
+{
+  "suite": "monthly-plans",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true,
+    "forbiddenNextAction": "run_viability",
+    "service": { "flowType": "readiness" }
+  },
+  "cases": [
+    { "id": "P1", "message": "Quiero contratar plan mensual", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    { "id": "P2", "message": "Quiero Plan Avanzado", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    { "id": "P3", "message": "Quiero Plan Colaborativo", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    {
+      "id": "P4",
+      "message": "No tengo Holded",
+      "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link", "warnings": ["monthly_plan_requires_holded"] }
+    },
+    {
+      "id": "P5",
+      "message": "Uso otro programa",
+      "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link", "warnings": ["monthly_plan_requires_holded"] }
+    },
+    {
+      "id": "P6",
+      "message": "Uso Excel",
+      "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link", "warnings": ["monthly_plan_requires_holded"] }
+    },
+    {
+      "id": "P7",
+      "message": "Tengo Holded",
+      "expected": { "intent": "readiness", "nextAction": "run_readiness" }
+    },
+    {
+      "id": "P8",
+      "message": "No puedo obtener API key",
+      "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link", "warnings": ["monthly_plan_requires_holded"] }
+    },
+    { "id": "P9", "message": "Ya conecte Holded", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    {
+      "id": "P10",
+      "message": "Quiero pagar la suscripcion",
+      "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link", "warnings": ["monthly_plan_requires_holded"], "missingData": ["profile_completed", "billing_ready", "holded_connected"] }
+    }
+  ]
+}

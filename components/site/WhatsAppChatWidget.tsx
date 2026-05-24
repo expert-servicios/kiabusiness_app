@@ -259,7 +259,7 @@ export function WhatsAppChatWidget() {
         </div>
 
         {/* Footer — direct WhatsApp fallback */}
-        <div className="px-4 pb-4 pt-2">
+        <div className="px-4 pb-3 pt-2 space-y-2">
           <a
             href={fallbackWaUrl}
             target="_blank"
@@ -270,6 +270,13 @@ export function WhatsAppChatWidget() {
             <WhatsAppIcon className="h-4 w-4" />
             Chatear con Kia
           </a>
+          <Link
+            href="/ayuda/kia"
+            onClick={dismiss}
+            className="flex w-full items-center justify-center text-[10px] text-[#0D1B2A]/40 hover:text-[#c88b25] transition"
+          >
+            Cómo usar Kia de forma segura →
+          </Link>
         </div>
       </div>
 

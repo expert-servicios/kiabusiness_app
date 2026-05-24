@@ -6,6 +6,10 @@
 
 ---
 
+## Actualizacion 2026-05-23
+
+La capa `lib/ai/kia` puede resumir estado de empresa y anomalias contables, pero solo como informacion estimada pendiente de revision profesional. Kia no presenta impuestos, no modifica contabilidad, no crea asientos ni guarda API keys de Holded recibidas por chat.
+
 ## 0. Contexto del encargo
 
 Este documento precede cualquier implementación. Su función es establecer la fotografía real del estado actual, las decisiones ya cerradas, los riesgos concretos y el plan de fases. Ningún código se escribe antes de que este documento esté aprobado.

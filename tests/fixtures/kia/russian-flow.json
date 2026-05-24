@@ -1,0 +1,22 @@
+{
+  "suite": "russian-flow",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "language": "ru",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "R1", "message": "Здравствуйте", "expected": { "intent": "greeting", "nextAction": "show_menu" } },
+    { "id": "R2", "message": "Хочу оформить декларацию", "expected": { "intent": "service_selection", "nextAction": "show_menu" } },
+    { "id": "R3", "message": "Хочу получить гражданство", "expected": { "intent": "viability", "nextAction": "run_viability" } },
+    { "id": "R4", "message": "У меня есть отказ", "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true } },
+    { "id": "R5", "message": "Хочу оплатить услугу", "expected": { "intent": "checkout", "nextAction": "send_login_link" } },
+    { "id": "R6", "message": "У меня нет Holded", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    { "id": "R7", "message": "Где взять API ключ Holded?", "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link" } },
+    { "id": "R8", "message": "Я уже клиент", "contactStatus": "client", "expected": { "contactStatus": "client", "intent": "case_status", "nextAction": "get_case_status" } },
+    { "id": "R9", "message": "Какие документы нужны?", "expected": { "intent": "send_documents", "nextAction": "get_case_status" } },
+    { "id": "R10", "message": "Хочу поговорить с вами", "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true } }
+  ]
+}

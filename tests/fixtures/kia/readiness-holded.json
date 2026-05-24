@@ -1,0 +1,25 @@
+{
+  "suite": "readiness-holded",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "expected": {
+    "intent": "readiness",
+    "nextAction": "run_readiness",
+    "requiresManualReview": false,
+    "forbidsNeedsReview": true,
+    "forbiddenNextAction": "run_viability",
+    "service": { "flowType": "readiness" }
+  },
+  "cases": [
+    { "id": "H1", "message": "Quiero configurar Holded" },
+    { "id": "H2", "message": "Necesito migrar a Holded" },
+    { "id": "H3", "message": "Tengo Excel de facturas" },
+    { "id": "H4", "message": "No tengo licencia Holded" },
+    { "id": "H5", "message": "No se que es API key" },
+    { "id": "H6", "message": "Tengo Holded pero no se sacar API", "expected": { "requiresMeeting": true } },
+    { "id": "H7", "message": "Tengo productos con stock", "expected": { "requiresMeeting": true } },
+    { "id": "H8", "message": "Tengo 3.000 productos", "expected": { "requiresMeeting": true } },
+    { "id": "H9", "message": "Quiero formacion en Holded" },
+    { "id": "H10", "message": "Quiero que me enseneis Holded desde cero" }
+  ]
+}

@@ -25,6 +25,7 @@ Estado aplicado:
 - `ProfileCompletionWizard` recoge nombre, telefono, NIF/NIE/CIF, tipo de cliente, direccion de facturacion y domicilio habitual cuando aplica.
 - El webhook de Stripe conserva el pago aunque Holded falle: registra `paid_invoice_error`, `holded_sync_error`, `holded_sync_event_id` y `holded_invoice_id` cuando existe factura.
 - `commercial review` de Kia no implica `flow='human'`; la reunion/cita es la via humana comercial.
+- La nueva capa IA estructurada se documenta en `docs/kia-ai-architecture.md` y no sustituye el motor determinista. Primero se activa en admin compose y solo despues en WABA fallback bajo flags.
 
 Los apartados historicos siguientes se mantienen como auditoria original; cuando contradigan esta actualizacion, prevalece el estado 2026-05-23.
 

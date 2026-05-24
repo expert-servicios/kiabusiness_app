@@ -1,7 +1,11 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
+import { Activity } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getKiaHealthSummary }      from '@/lib/ai/kia/health/kia-health-summary';
+import { fetchAuditorSummary }      from '@/lib/ai/kia-auditor/kia-auditor-engine';
 import { fetchCommercialMetrics }   from '@/lib/admin/metrics/commercial-metrics';
 import { fetchOperationalMetrics }  from '@/lib/admin/metrics/operational-metrics';
 import { fetchFiscalMetrics }       from '@/lib/admin/metrics/fiscal-metrics';
@@ -52,6 +56,10 @@ export default async function ExecutivePage() {
     fetchCommunicationMetrics(admin),
     fetchProfitabilityMetrics(admin),
   ]);
+  const [kiaHealth, auditorSummary] = await Promise.all([
+    getKiaHealthSummary().catch(() => null),
+    fetchAuditorSummary().catch(() => null),
+  ]);
 
   // Fetch open NBAs ordered by priority
   const { data: rawNbas } = await admin
@@ -97,6 +105,65 @@ export default async function ExecutivePage() {
 
         {/* Profitability */}
         <ProfitabilitySummary data={profitability} />
+
+        {kiaHealth && (
+          <Link
+            href="/admin/kia-health"
+            className={`flex items-center justify-between gap-4 rounded-xl border p-4 shadow-sm transition hover:shadow-md ${
+              kiaHealth.currentStatus === 'red'
+                ? 'border-red-200 bg-red-50'
+                : kiaHealth.currentStatus === 'yellow'
+                  ? 'border-amber-200 bg-amber-50'
+                  : 'border-green-200 bg-green-50'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-white/70 p-2">
+                <Activity className="h-4 w-4 text-[#c88b25]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Kia Health</p>
+                <p className="mt-1 text-sm font-semibold text-[#07111d]">
+                  {kiaHealth.lastRun?.summary ?? 'Sin canary ejecutado todavía'}
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase text-[#07111d]">
+              {kiaHealth.currentStatus}
+            </span>
+          </Link>
+        )}
+
+        {/* Kia Auditor widget */}
+        {auditorSummary && (
+          <Link
+            href="/admin/kia-auditor"
+            className={`flex items-center justify-between gap-4 rounded-xl border p-4 shadow-sm transition hover:shadow-md ${
+              auditorSummary.criticalFails > 0
+                ? 'border-red-200 bg-red-50'
+                : auditorSummary.avgScore >= 80
+                  ? 'border-emerald-200 bg-emerald-50'
+                  : 'border-amber-200 bg-amber-50'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-white/70 p-2">
+                <Activity className="h-4 w-4 text-[#c88b25]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Kia Auditor</p>
+                <p className="mt-1 text-sm font-semibold text-[#07111d]">
+                  Score medio: {auditorSummary.avgScore}/100 · {auditorSummary.totalReviews} revisiones · {auditorSummary.criticalFails} fallos críticos
+                </p>
+              </div>
+            </div>
+            <span className={`rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase ${
+              auditorSummary.criticalFails > 0 ? 'text-red-700' : auditorSummary.avgScore >= 80 ? 'text-emerald-700' : 'text-amber-700'
+            }`}>
+              {auditorSummary.criticalFails > 0 ? 'FALLOS' : auditorSummary.avgScore >= 80 ? 'OK' : 'AVISOS'}
+            </span>
+          </Link>
+        )}
 
         {/* NBAs */}
         <NextBestActions initialItems={nbas} />
