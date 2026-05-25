@@ -159,7 +159,7 @@ const replySchema = z.object({
   mediaUrl:         z.string().url().optional(),
   mediaType:        z.enum(['image', 'document', 'audio', 'video']).optional(),
   mediaFilename:    z.string().max(255).optional(),
-  caption:          z.string().max(1024).optional(),
+  caption:          z.string().max(4096).optional(),
   caseId:           z.string().uuid().optional(),
   replyToMessageId: z.string().uuid().optional(),
 });
