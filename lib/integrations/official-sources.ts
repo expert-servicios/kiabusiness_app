@@ -48,7 +48,7 @@ const OFFICIAL_DOMAINS = [
 ];
 
 const OFFICIAL_SOURCE_TRIGGERS = [
-  /\b(aeat|agencia tributaria|hacienda|irpf|renta|iva|modelo\s?\d+|sociedades|declaraci[oó]n|impuesto|tributari|verifactu|factura electr[oó]nica)\b/i,
+  /\b(aeat|agencia tributaria|hacienda|irpf|renta|iva|modelo\s?\d+|sociedades|declaraci[oó]n|impuesto|tributari|verifactu|factura electr[oó]nica|referencia renta|n[uú]mero de referencia|renta web|c[oó]mo.*(presentar|hacer|acceder).*(renta|declaraci[oó]n))\b/i,
   /\b(seguridad social|reta|aut[oó]nomo|cotizaci[oó]n|vida laboral|n[oó]mina|contrato|baja laboral|alta laboral|importass)\b/i,
   /\b(extranjer[ií]a|nie|tie|arraigo|residencia|nacionalidad|reagrupaci[oó]n|asilo|visado)\b/i,
   /\b(sepe|paro|desempleo|prestaci[oó]n|subsidio|erte)\b/i,
@@ -60,6 +60,31 @@ const OFFICIAL_SOURCE_TRIGGERS = [
 ];
 
 const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
+  {
+    title: 'AEAT — Como obtener el numero de referencia para la declaracion de la Renta (IRPF)',
+    url: 'https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/renta-ayuda-tecnica/obtener-referencia-renta-clave.html',
+    snippet: [
+      'La referencia es un codigo de 6 caracteres que permite acceder a Renta WEB y presentar la declaracion del IRPF.',
+      'Solo la ultima referencia generada es valida; puedes obtener hasta 10 al dia. Es valida unicamente para la campana actual.',
+      '',
+      'METODO 1 — Con Cl@ve Movil (recomendado):',
+      '1. Ve a https://www1.agenciatributaria.gob.es/wlpl/DABJ-REN0/ObtenerReferenciaServlet',
+      '2. Selecciona "Cl@ve Movil" en la ventana de identificacion.',
+      '3. Aparece un QR con validez de 5 minutos y un codigo de 3 digitos.',
+      '4. Abre la app Cl@ve en tu movil, escanea el QR y verifica que la URL empieza por https://www2.agenciatributaria.gob.es',
+      '5. Confirma que el codigo de 3 digitos coincide y autenticate con huella, Face ID, PIN o patron.',
+      '6. La referencia de 6 caracteres aparecera en pantalla lista para copiar.',
+      '',
+      'METODO 2 — Con DNI/NIE sin QR (alternativa):',
+      '1. En la misma URL, pulsa "continuar con autenticacion sin lectura de QR".',
+      '2. Introduce tu DNI o NIE y el dato de contraste (normalmente el IBAN o casilla 505 de la declaracion anterior).',
+      '3. Tras 59 segundos se activa la opcion de recibir un PIN de 6 digitos por SMS.',
+      '4. Introduce el PIN recibido para completar la autenticacion y obtener la referencia.',
+      '',
+      'NOTA: Para declaracion conjunta, el conyuge debe obtener su propia referencia o usar sus credenciales Cl@ve.',
+    ].join('\n'),
+    keywords: [/referencia.*(renta|irpf|declaraci[oó]n)|renta web|n[uú]mero de referencia|c[oó]mo.*(presentar|hacer|acceder).*(renta|declaraci[oó]n)|obtener referencia|cl@ve.*(renta|irpf)|casilla 505/i],
+  },
   {
     title: 'Agencia Tributaria - Sede electronica',
     url: 'https://sede.agenciatributaria.gob.es/',
