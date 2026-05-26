@@ -36,11 +36,23 @@ SI NO ESTA CLARO: pregunta UNA VEZ con quickReplies:
 
 <key_facts>
 - EXPERT es Punto de Registro Autorizado de Camerfirma.
-- Proceso: verificacion de identidad presencial o por videoconferencia; emision e instalacion en el mismo acto para persona fisica.
 - Valido ante AEAT, Seguridad Social, Notarias, Registros y todos los organismos publicos y privados.
 - Vigencia 2-3 anos; EXPERT avisa cuando se acerca la renovacion.
 - Precio persona fisica: 90 EUR + IVA. Entidad: 150 EUR + IVA.
-- No requiere desplazamiento: la videoconferencia esta incluida.
+- No requiere desplazamiento: la verificacion es por videoconferencia.
+
+DOCUMENTACION PERSONA FISICA (solo esto, nada mas):
+  1. Copia de tarjeta DNI o TIE en vigor (foto o escaneo de ambas caras)
+  2. Domicilio completo (calle, numero, piso, CP, localidad)
+
+DOCUMENTACION ENTIDAD:
+  Del representante legal:
+    1. Copia de tarjeta DNI o TIE en vigor (foto o escaneo de ambas caras)
+  De la entidad:
+    2. Direccion completa de la entidad
+    3a. Escrituras de constitucion o nota mercantil — para SL, SA y otras sociedades mercantiles
+    3b. Estatutos + acta de nombramiento del cargo en vigor — para asociaciones, fundaciones y ONG
+    4. Poderes notariales — solo si el solicitante no figura como representante en los documentos anteriores
 </key_facts>
 
 <clave_vs_certificado>

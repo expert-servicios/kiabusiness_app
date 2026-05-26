@@ -1233,8 +1233,8 @@ export const services: Service[] = [
       'Ciudadanos que quieren evitar desplazamientos a oficinas presenciales',
     ],
     requirements: [
-      'DNI o NIE en vigor',
-      'Correo electrónico activo',
+      'Copia de tarjeta DNI o TIE en vigor (foto o escáner de ambas caras)',
+      'Domicilio completo (calle, número, piso, código postal, localidad)',
       'Ordenador con Windows o macOS para la instalación',
     ],
     includes: [
@@ -1248,15 +1248,15 @@ export const services: Service[] = [
       {
         title: 'Documentación necesaria',
         items: [
-          'DNI o NIE original en vigor',
-          'Email activo al que tengas acceso durante la sesión',
+          'Copia de tarjeta DNI o TIE en vigor (foto o escáner de ambas caras)',
+          'Domicilio completo (calle, número, piso, código postal, localidad)',
         ],
       },
     ],
     process: [
       { title: 'Solicita y paga online', text: 'Completa el formulario y realiza el pago. Recibirás confirmación inmediata.' },
       { title: 'Confirmamos la cita', text: 'Te contactamos en menos de 24 h para fijar la cita presencial o por videoconferencia.' },
-      { title: 'Verificación de identidad', text: 'Verificamos tu DNI/NIE. El proceso dura menos de 15 minutos.' },
+      { title: 'Verificación de identidad', text: 'Verificamos la copia de tu DNI/TIE y domicilio. El proceso dura menos de 15 minutos.' },
       { title: 'Emisión e instalación', text: 'El certificado se genera en el momento y te ayudamos a instalarlo y probarlo.' },
     ],
     notIncluded: [
@@ -1264,7 +1264,7 @@ export const services: Service[] = [
       'Soporte técnico general del equipo o sistema operativo',
     ],
     reviewBeforeHiring: [
-      'Asegúrate de tener el DNI/NIE vigente antes de la cita',
+      'Ten a mano una copia (foto o escáner) de tu DNI/TIE antes de la cita',
       'El certificado se instala en el equipo que uses en la sesión — lleva el que uses habitualmente',
     ],
     finalCta: {
@@ -1272,8 +1272,9 @@ export const services: Service[] = [
       text: 'Solicítalo ahora y te llamamos para fijar la cita. En menos de 24 horas tienes tu certificado instalado y funcionando.',
     },
     faqs: [
+      { q: '¿Qué documentos necesito para el certificado de persona física?', a: 'Solo la copia de tu tarjeta DNI o TIE (foto o escáner de ambas caras) y tu domicilio completo. Nada más.' },
+      { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Por videoconferencia nos envías la copia del DNI/TIE antes de la sesión y en la videollamada verificamos tu identidad. Todo en menos de 15 minutos.' },
       { q: '¿Qué diferencia hay entre el certificado de persona física y el de entidad?', a: 'El de persona física te identifica a ti como individuo. El de entidad identifica a tu empresa o sociedad y permite actuar en su nombre.' },
-      { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Ofrecemos ambas modalidades. Por videoconferencia solo necesitas DNI/NIE y conexión a internet.' },
       { q: '¿Cuánto dura el certificado Camerfirma?', a: 'Entre 2 y 3 años según el tipo. Te avisamos con tiempo para renovarlo sin interrupciones.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es una Autoridad de Certificación reconocida y su certificado es válido en AEAT, Seguridad Social, DGT, Notarías y cualquier organismo público o privado.' },
       { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 € + IVA.' },
@@ -1305,10 +1306,9 @@ export const services: Service[] = [
       'Cualquier persona jurídica con obligaciones digitales ante organismos públicos',
     ],
     requirements: [
-      'CIF de la entidad',
-      'DNI o NIE en vigor del representante legal',
-      'Escrituras de constitución o poderes de representación',
-      'Email corporativo activo',
+      'Copia de tarjeta DNI o TIE en vigor del representante legal (foto o escáner de ambas caras)',
+      'Dirección completa de la entidad',
+      'Documentos de constitución: escrituras, nota mercantil o acta de nombramiento según el tipo de entidad',
       'Ordenador con Windows o macOS para la instalación',
     ],
     includes: [
@@ -1320,25 +1320,25 @@ export const services: Service[] = [
     ],
     documents: [
       {
-        title: 'Documentación de la entidad',
+        title: 'Documentación del representante legal',
         items: [
-          'CIF de la entidad',
-          'Escrituras de constitución o estatutos vigentes',
-          'Poderes de representación si el solicitante no es administrador único',
+          'Copia de tarjeta DNI o TIE en vigor (foto o escáner de ambas caras)',
         ],
       },
       {
-        title: 'Documentación del representante',
+        title: 'Documentación de la entidad',
         items: [
-          'DNI o NIE original en vigor del representante legal',
-          'Email corporativo activo durante el proceso',
+          'Dirección completa de la entidad (calle, número, código postal, localidad)',
+          'Escrituras de constitución o nota mercantil (para SL, SA y otras mercantiles)',
+          'Estatutos y acta de nombramiento del cargo en vigor (para asociaciones y fundaciones)',
+          'Poderes notariales (si el solicitante no figura como representante en los documentos anteriores)',
         ],
       },
     ],
     process: [
       { title: 'Solicita y paga online', text: 'Completa el formulario con los datos de la entidad y realiza el pago. Recibirás confirmación inmediata.' },
-      { title: 'Envío de documentación', text: 'Nos envías las escrituras y el DNI/NIE del representante para la verificación previa.' },
-      { title: 'Verificación del representante', text: 'Verificamos la identidad del representante legal presencialmente o por videoconferencia.' },
+      { title: 'Nos envías la documentación', text: 'Copia del DNI/TIE del representante y los documentos de la entidad (escrituras, nota mercantil o estatutos).' },
+      { title: 'Verificación del representante', text: 'Verificamos la identidad del representante presencialmente o por videoconferencia. Menos de 15 minutos.' },
       { title: 'Emisión e instalación', text: 'Emitimos el certificado en 24–48 h y te ayudamos a instalarlo y probarlo.' },
     ],
     notIncluded: [
@@ -1347,17 +1347,18 @@ export const services: Service[] = [
       'Soporte técnico general del equipo o sistema operativo',
     ],
     reviewBeforeHiring: [
-      'El solicitante debe ser el representante legal o tener poderes suficientes',
-      'Ten preparadas las escrituras actualizadas antes de iniciar el proceso',
+      'Ten preparada la copia del DNI/TIE del representante antes de iniciar el proceso',
+      'Necesitarás las escrituras o nota mercantil actualizadas (o estatutos y acta si es asociación)',
     ],
     finalCta: {
       title: '¿Tu empresa necesita certificado digital?',
       text: 'Solicítalo ahora. En 24–48 horas tu entidad puede firmar electrónicamente y operar con cualquier organismo sin desplazamientos.',
     },
     faqs: [
-      { q: '¿Quién puede solicitar el certificado de entidad?', a: 'El representante legal de la entidad (administrador, presidente, apoderado con poderes suficientes).' },
-      { q: '¿Qué diferencia hay con el certificado de persona física?', a: 'El de entidad identifica a la organización y permite actuar en su nombre. El de persona física solo identifica al individuo.' },
+      { q: '¿Qué documentos necesita la empresa para el certificado digital?', a: 'La copia del DNI/TIE del representante, la dirección de la entidad, y los documentos de constitución: escrituras o nota mercantil para sociedades, o estatutos y acta de nombramiento para asociaciones y fundaciones.' },
+      { q: '¿Quién puede solicitar el certificado de entidad?', a: 'El representante legal que figure en las escrituras o nota mercantil (administrador único, solidario, etc.). Si no figura directamente, se necesitan poderes notariales.' },
       { q: '¿Cuánto tiempo tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante.' },
+      { q: '¿Qué diferencia hay con el certificado de persona física?', a: 'El de entidad identifica a la organización y permite actuar y firmar en su nombre. El de persona física solo identifica al individuo.' },
       { q: '¿Cuánto dura el certificado?', a: 'Entre 2 y 3 años. Te avisamos con antelación para renovarlo sin interrupciones.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es reconocida por AEAT, Seguridad Social, Registros Mercantiles, Notarías y cualquier organismo público o privado.' },
     ],

@@ -963,21 +963,20 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     serviceName: 'Certificado Digital Persona Física — Camerfirma',
     category: 'certificado-digital',
     requiredData: [
+      'Domicilio completo (calle, número, piso, código postal, localidad)',
       'Si prefiere la cita presencial o por videoconferencia',
       'Si tiene ordenador con Windows o macOS disponible para la instalación',
-      'Si el certificado es para uso personal o profesional como autónomo',
     ],
     requiredDocs: [
-      'DNI o NIE original en vigor',
-      'Email activo al que tenga acceso durante la sesión',
+      'Copia de tarjeta DNI o TIE en vigor (foto o escáner de ambas caras)',
     ],
     keyQuestions: [
+      '¿Tienes el DNI o TIE en vigor? Necesitamos una foto o escáner de ambas caras.',
+      '¿Cuál es tu domicilio completo (calle, número, piso, CP, localidad)?',
       '¿Prefieres la cita presencial o por videoconferencia?',
-      '¿Tienes el DNI / NIE en vigor?',
-      '¿Para qué trámites necesitas el certificado digital?',
     ],
     botInstructions:
-      'Somos Punto de Registro Autorizado de Camerfirma. El proceso dura menos de 15 minutos. El certificado se emite en el momento de la cita. Precio: 90 €. Validez: 2–3 años. Tras el pago online confirmamos la cita en menos de 24 horas. Ofrecer enlace de pago.',
+      'Solo necesitamos la copia de la tarjeta DNI/TIE (foto o escáner de ambas caras) y el domicilio completo. Somos Punto de Registro Autorizado de Camerfirma. Proceso: menos de 15 minutos. Emision en el momento de la cita. Precio: 90 € + IVA. Validez: 2–3 años. Tras el pago online confirmamos la cita en menos de 24 horas.',
     estimatedPrice: '90 €',
   },
 
@@ -986,26 +985,23 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     serviceName: 'Certificado Digital de Entidad — Camerfirma',
     category: 'certificado-digital',
     requiredData: [
-      'CIF de la entidad',
+      'Dirección completa de la entidad (calle, número, código postal, localidad)',
       'Nombre y cargo del representante legal',
-      'Si el representante es administrador único o necesita poderes',
-      'Si la entidad es SL, SA, asociación, fundación u otro tipo',
+      'Tipo de entidad (SL, SA, asociación, fundación, comunidad de propietarios…)',
     ],
     requiredDocs: [
-      'CIF de la entidad',
-      'Escrituras de constitución o estatutos vigentes',
-      'Poderes de representación (si el solicitante no es administrador único)',
-      'DNI o NIE original en vigor del representante legal',
-      'Email corporativo activo',
+      'Copia de tarjeta DNI o TIE en vigor del representante legal (foto o escáner de ambas caras)',
+      'Escrituras de constitución o nota mercantil (para SL, SA y otras mercantiles)',
+      'Estatutos y acta de nombramiento del cargo en vigor (para asociaciones y fundaciones)',
+      'Poderes notariales (solo si el solicitante no figura como representante en los documentos anteriores)',
     ],
     keyQuestions: [
-      '¿Qué tipo de entidad es? (SL, SA, asociación…)',
-      '¿Eres el administrador único o necesitas poderes?',
-      '¿Tienes las escrituras actualizadas?',
-      '¿Para qué trámites necesita el certificado la empresa?',
+      '¿Qué tipo de entidad es? (SL, SA, asociación, fundación…)',
+      '¿Tienes la copia del DNI/TIE del representante legal?',
+      '¿Dispones de las escrituras o nota mercantil actualizada (o estatutos y acta si es asociación)?',
     ],
     botInstructions:
-      'El certificado de entidad permite actuar y firmar en nombre de la organización. Precio: 150 €. Plazo: 24–48 horas desde la verificación del representante. Somos Punto de Registro Autorizado de Camerfirma.',
+      'Para el certificado de entidad necesitamos: copia de DNI/TIE del representante, dirección de la entidad, y documentos de constitución (escrituras o nota mercantil para sociedades; estatutos y acta para asociaciones). Somos Punto de Registro Autorizado de Camerfirma. Precio: 150 € + IVA. Plazo: 24–48 horas desde la verificación del representante.',
     estimatedPrice: '150 €',
   },
 
