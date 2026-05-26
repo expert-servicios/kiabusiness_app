@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
+import { PlanCtaButton } from '@/components/planes/PlanCtaButton';
 
 export const metadata: Metadata = {
   title: 'Plan Avanzado — 99 €/mes | EXPERT',
@@ -19,20 +20,21 @@ export const metadata: Metadata = {
 };
 
 const includes = [
-  'Revisión mensual de tu contabilidad en Holded',
-  'Impuestos trimestrales (IVA + IRPF)',
-  'Resumen anual (Modelo 390 + 190)',
-  'Declaración de la Renta anual',
-  'Recordatorio de plazos fiscales',
+  'Revisión mensual de Holded',
+  'Preparación y presentación de impuestos trimestrales básicos si aplica',
+  'Revisión de cierre trimestral',
+  'Calendario fiscal',
+  'Alertas Kia',
   'Portal de cliente EXPERT',
-  'Soporte por email y WhatsApp — 48 h'
+  'Soporte por email y WhatsApp — 48 h',
+  'Renta anual del titular autónomo en casos sencillos, o condiciones especiales según complejidad'
 ];
 
 const notIncludes = [
   'Gestión laboral y nóminas',
-  'Gestiones de extranjería',
-  'Trámites notariales',
-  'Declaraciones de no residentes',
+  'Alto volumen de facturas sin presupuesto previo',
+  'Inventario, e-commerce u operaciones internacionales complejas',
+  'Varias sociedades',
   'Formación en Holded (servicio aparte)',
   'Migración a Holded (servicio aparte)'
 ];
@@ -54,18 +56,15 @@ export default function PlanAvanzadoPage() {
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes · sin IVA</span>
           </div>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#9CA3AF]">
-            Para autónomos y PYMEs que llevan su contabilidad en Holded y necesitan supervisión profesional
-            y presentación de impuestos. Tú tienes el control, nosotros supervisamos.
+            Para autónomos y PYMEs que introducen su información en Holded y quieren revisión profesional,
+            cierre trimestral y presentación de impuestos básicos.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="w-full max-w-xs">
+              <PlanCtaButton planSlug="avanzado" ctaLabel="Configurar plan — 99 €/mes" />
+            </div>
             <Link
-              href="/auth/login"
-              className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-            >
-              Suscribirme ahora
-            </Link>
-            <Link
-              href="/contacto"
+              href="/ayuda/kia?topic=plan-avanzado"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
               Tengo dudas, consultar
@@ -145,10 +144,10 @@ export default function PlanAvanzadoPage() {
             Sin permanencia. Cancela cuando quieras con 30 días de preaviso.
           </p>
           <Link
-            href="/auth/login"
+            href="/planes#planes"
             className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
-            Suscribirme — 99 €/mes
+            Configurar desde planes
           </Link>
         </div>
       </section>
@@ -156,8 +155,9 @@ export default function PlanAvanzadoPage() {
   );
 }
 
-function PlanComparison({ current }: { current: 'avanzado' | 'colaborativo' }) {
+function PlanComparison({ current }: { current: 'supervision' | 'avanzado' | 'colaborativo' }) {
   const plans = [
+    { slug: 'supervision', name: 'Plan Supervisión', price: '49', href: '/planes/supervision' },
     { slug: 'avanzado', name: 'Plan Avanzado', price: '99', href: '/planes/avanzado' },
     { slug: 'colaborativo', name: 'Plan Colaborativo', price: '199', href: '/planes/colaborativo' },
     { slug: 'personalizado', name: 'Plan Personalizado', price: null, href: '/planes/presupuesto-personalizado' }

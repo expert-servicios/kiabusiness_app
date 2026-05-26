@@ -139,7 +139,7 @@ export default function CondicionesPage() {
 
           <Section title="8. Cancelación de suscripciones">
             <p>
-              Los planes de suscripción mensual (Plan Avanzado, Plan Colaborativo, Plan Delegado) pueden cancelarse en cualquier momento con un preaviso mínimo de <strong>30 días naturales</strong> comunicado por escrito a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o a través del panel de cliente.
+              Los planes de suscripción mensual (Plan Supervisión, Plan Avanzado y Plan Colaborativo) pueden cancelarse en cualquier momento con un preaviso mínimo de <strong>30 días naturales</strong> comunicado por escrito a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o a través del panel de cliente.
             </p>
             <p>
               La cancelación surte efecto al final del período de facturación en curso. No se realizan devoluciones por períodos ya facturados y en curso, salvo que la cancelación sea motivada por un incumplimiento imputable a EXPERT.

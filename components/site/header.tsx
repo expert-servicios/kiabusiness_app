@@ -23,9 +23,10 @@ const holdedLinks = [
 
 const planesLinks = [
   { label: 'Ver todos los planes', href: '/planes', highlight: true },
-  { label: 'Plan Gratuito — Holded demo', href: '/planes/gratuito' },
+  { label: 'Plan Supervisión — 49 €/mes', href: '/planes/supervision' },
   { label: 'Plan Avanzado — 99 €/mes', href: '/planes/avanzado' },
   { label: 'Plan Colaborativo — 199 €/mes', href: '/planes/colaborativo' },
+  { label: 'Prueba Holded 14 días', href: '/holded' },
   { label: 'Presupuesto personalizado', href: '/planes/presupuesto-personalizado' }
 ];
 

@@ -43,7 +43,7 @@ export default function PrivacidadPage() {
             <div className="mt-4 space-y-4 text-sm leading-7">
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.1 Formularios de contacto y solicitud de servicios</h3>
-                <p>Cuando envías un formulario (contacto, solicitud de presupuesto, plan gratuito Holded o formulario B2B) recogemos nombre, dirección de correo electrónico, teléfono y la información que incluyes en el mensaje. Estos datos se usan para responder a tu solicitud, preparar presupuestos y gestionar la prestación del servicio contratado.</p>
+                <p>Cuando envías un formulario (contacto, solicitud de presupuesto, prueba Holded o formulario B2B) recogemos nombre, dirección de correo electrónico, teléfono y la información que incluyes en el mensaje. Estos datos se usan para responder a tu solicitud, preparar presupuestos y gestionar la prestación del servicio contratado.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.2 Cuenta de usuario (área privada)</h3>

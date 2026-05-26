@@ -31,7 +31,7 @@ import {
   SERVICES,
 } from '@/lib/integrations/kia-engine';
 
-// Numbers used internally for testing — no lead creation, no session persistence.
+// Numbers used internally for testing — keep conversational memory, skip business side effects.
 const TEST_PHONE_NUMBERS = new Set(['34669045528']);
 import { resolveKiaContactContext, type KiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
@@ -261,8 +261,23 @@ function localizeKiaReplyControls(reply: KiaReply, lang: KiaLang): KiaReply {
 
 function bodyMatchesLocale(body: string, lang: KiaLang): boolean {
   const withoutUrls = body.replace(URL_RE, '').replace(/\b(EXPERT|Kia|Holded|Stripe|GoCardless|Cl@ve|AEAT)\b/gi, '');
-  if (lang === 'ru') return CYRILLIC_RE.test(withoutUrls);
+  if (lang === 'ru') {
+    const cyrillicCount = withoutUrls.match(/[А-Яа-яЁё]/g)?.length ?? 0;
+    const latinCount = withoutUrls.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ¿¡]/g)?.length ?? 0;
+    const spanishMarkers = /\b(hola|perfecto|gracias|puedes|quieres|cuentame|cuéntame|servicio|llamada|contratar|datos|equipo|aqui|aquí|ayudo|necesitas|expediente|trámite|tramite)\b/i;
+    return cyrillicCount > 0
+      && cyrillicCount / Math.max(cyrillicCount + latinCount, 1) >= 0.45
+      && !spanishMarkers.test(withoutUrls);
+  }
   return !CYRILLIC_RE.test(withoutUrls);
+}
+
+function detectLatestMessageLanguage(text: string, fallback: KiaLang): KiaLang {
+  const trimmed = text.trim();
+  if (!trimmed) return fallback;
+  if (CYRILLIC_RE.test(trimmed)) return 'ru';
+  if (trimmed.length < 4) return fallback;
+  return detectLanguage(trimmed);
 }
 
 function fallbackLocalizedBody(reply: KiaReply, lang: KiaLang): string {
@@ -288,7 +303,9 @@ function applyFeminineKiaVoice(body: string, lang: KiaLang): string {
   if (lang === 'ru') {
     return body
       .replace(/\bя готов\b/gi, 'я готова')
-      .replace(/\bя уверен\b/gi, 'я уверена');
+      .replace(/\bя уверен\b/gi, 'я уверена')
+      .replace(/виртуальный ассистент/gi, 'виртуальная ассистентка')
+      .replace(/виртуальный ИИ-ассистент/gi, 'виртуальная ИИ-ассистентка');
   }
 
   return body
@@ -375,6 +392,7 @@ async function prepareKiaReplyForSending({
   reply = await enforceKiaReplyLanguage(localizeKiaReplyControls(reply, lang), lang);
   const recentAssistantTexts = await loadRecentKiaOutboundTexts(admin, phone, 6);
   reply = enforceKiaVoice(reply, lang, recentAssistantTexts);
+  reply = await enforceKiaReplyLanguage(reply, lang);
   if (recentAssistantTexts.length === 0) return reply;
 
   const before = isRepeatedKiaMessage({
@@ -406,7 +424,7 @@ async function prepareKiaReplyForSending({
     console.warn('[Kia repetition_risk_detected]', logContext);
   }
 
-  return withKiaReplyBody(reply, variedBody);
+  return enforceKiaReplyLanguage(withKiaReplyBody(reply, variedBody), lang);
 }
 
 async function sendKiaReply(
@@ -656,7 +674,7 @@ async function generateKiaAiResponse({
   clientId, phone, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
   // Always detect lang from the current message — session.lang may be stale mid-conversation.
-  const lang = msgBody ? detectLanguage(msgBody) : session.lang;
+  const lang = detectLatestMessageLanguage(msgBody, session.lang);
   const languageInstruction = lang === 'ru'
     ? 'ruso. Responde ÚNICAMENTE en ruso con alfabeto cirílico. NUNCA uses español ni otro idioma en la misma respuesta.'
     : 'español. Responde ÚNICAMENTE en español. NUNCA uses ruso ni otro idioma en la misma respuesta.';
@@ -1121,7 +1139,7 @@ export async function POST(request: NextRequest) {
       }).catch(() => {});
 
       const buttonId = extractButtonId(msg as Record<string, unknown>);
-      const inboundLang = detectLanguage(msgBody);
+      const inboundLang = detectLatestMessageLanguage(msgBody, 'es');
 
       // ── Catalog: category selection → send services list ──────────────────
       if (buttonId?.startsWith('menu_cat_')) {
@@ -1265,22 +1283,7 @@ export async function POST(request: NextRequest) {
 
       // ── Kia session ────────────────────────────────────────────────────────
       const isTestNumber = TEST_PHONE_NUMBERS.has(from);
-      const session  = isTestNumber
-        ? ({
-            phone_number: from,
-            client_id   : null,
-            lang        : msgBody ? detectLanguage(msgBody) : 'es',
-            flow        : 'welcome',
-            step        : 'init',
-            service_id  : null,
-            precal_step : 0,
-            data        : {},
-            name        : null,
-            email       : null,
-            priority    : 'normal',
-            escalated   : false,
-          } as KiaSession)
-        : await getOrCreateSession(admin, from, clientId);
+      const session = await getOrCreateSession(admin, from, clientId);
       const clientName = clientId
         ? (contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
@@ -1325,7 +1328,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Run the Kia state machine (language detection is handled inside)
-      const currentMessageLang = msgBody ? detectLanguage(msgBody) : session.lang;
+      const currentMessageLang = detectLatestMessageLanguage(msgBody, session.lang);
       const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName, {
         status              : contactCtx.status,
         openCases           : contactCtx.openCases,
@@ -1346,7 +1349,7 @@ export async function POST(request: NextRequest) {
 
       // Handle side effects (test numbers skip lead/case creation)
       const effectiveSideEffects: KiaSideEffects = isTestNumber
-        ? { ...sideEffects, saveLead: false, createCase: false }
+        ? { ...sideEffects, saveLead: false, createCase: false, addToCart: false, generateReport: false, sendPaymentLink: false }
         : sideEffects;
       await handleKiaSideEffects({ sideEffects: effectiveSideEffects, session: updatedSession, phone: from, clientId, contactCtx, admin });
 
@@ -1491,10 +1494,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Persist session state changes (skipped for test numbers)
-      if (!isTestNumber) {
-        await persistSessionUpdates(admin, from, updatesWithLanguage);
-      }
+      // Persist session state changes, including test numbers, so Kia can keep context and avoid loops.
+      await persistSessionUpdates(admin, from, updatesWithLanguage);
     }
 
     return NextResponse.json({ received: true });

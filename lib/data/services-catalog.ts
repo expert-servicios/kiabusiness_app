@@ -50,7 +50,8 @@ export const SERVICES_CATALOG: CatalogSection[] = [
     services: [
       { id: 'alta-autonomo', title: 'Alta autónomo', description: 'Inicio de actividad' },
       { id: 'constitucion-sl', title: 'Constitución SL', description: 'Creación de sociedad limitada' },
-      { id: 'plan-avanzado', title: 'Plan Avanzado', description: 'Gestión mensual con Holded' },
+      { id: 'plan-supervision', title: 'Plan Supervisión', description: 'Revisión mensual básica con Holded' },
+      { id: 'plan-avanzado', title: 'Plan Avanzado', description: 'Revisión + impuestos básicos' },
       { id: 'plan-colaborativo', title: 'Plan Colaborativo', description: 'Gestión mensual colaborativa' },
       { id: 'plan-personalizado', title: 'Plan Personalizado', description: 'Cobertura mensual a medida' },
       { id: 'configurar-holded', title: 'Configurar Holded', description: 'Onboarding antes de empezar' },

@@ -42,10 +42,18 @@ EMPRESAS Y AUTONOMOS (categoria: empresas-autonomos):
   apoderamientos-mercantiles    → direct_checkout | Apoderamientos y poderes notariales
 
 PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
-  plan-avanzado                 → subscription_readiness | Plan mensual avanzado (contabilidad + impuestos + Holded)
-  plan-colaborativo             → subscription_readiness | Plan mensual colaborativo (empresa con equipos)
-  plan-presupuesto-personalizado → subscription_readiness | Plan personalizado (presupuesto a medida)
+  plan-supervision              → subscription_readiness | Plan Supervisión 49 EUR + IVA (revisión mensual, alertas, sin impuestos)
+  plan-avanzado                 → subscription_readiness | Plan Avanzado 99 EUR + IVA (revisión + impuestos básicos según alcance)
+  plan-colaborativo             → subscription_readiness | Plan Colaborativo 199 EUR + IVA (más intervención, informes, soporte 24 h)
+  plan-personalizado            → quote | Plan personalizado (presupuesto a medida; sin checkout directo)
+  plan-presupuesto-personalizado → quote | Alias público de Plan personalizado (presupuesto a medida; sin checkout directo)
   Si context.company.holdedConnected = false: nextAction=send_holded_connect_link antes de run_readiness.
+  No uses "comprobar viabilidad" para planes mensuales. Usa "Configurar mi plan".
+  Si pregunta por "gratis": explicar prueba Holded 14 dias; NO es un plan EXPERT.
+  Si quiere soporte mensual barato: Plan Supervisión.
+  Si quiere presentación de impuestos: Plan Avanzado o superior.
+  Si quiere delegar más: Plan Colaborativo.
+  Si menciona laboral, alto volumen, inventario, e-commerce, operaciones internacionales o varias sociedades: Plan Personalizado.
 
 HOLDED — readiness:
   holded-pack-starter           → readiness | Pack Starter Holded — CASO ESPECIAL: contrateable sin Holded previo; la readiness evalua idoneidad, no bloquea por falta de cuenta

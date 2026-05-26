@@ -35,7 +35,14 @@ async function getSubscriptions(): Promise<SubscriptionRecord[]> {
   return data.subscriptions as SubscriptionRecord[];
 }
 
-export default async function SubscriptionsPage() {
+interface PageProps {
+  searchParams: Promise<{ billing?: string; plan?: string }>;
+}
+
+export default async function SubscriptionsPage({ searchParams }: PageProps) {
+  const params        = await searchParams;
+  const initialBilling: 'mensual' | 'anual' = params.billing === 'anual' ? 'anual' : 'mensual';
+
   const subscriptions = await getSubscriptions();
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
   const hasActive = activeSubscriptions.length > 0;
@@ -100,8 +107,13 @@ export default async function SubscriptionsPage() {
                   : 'Elige un plan mensual y deja que nos ocupemos de tus trámites.'}
               </p>
               <SubscriptionPlanCards
-                planAvanzadoPriceId={process.env.STRIPE_PLAN_MONTHLY_99 ?? ''}
-                planColaborativoPriceId={process.env.STRIPE_PLAN_MONTHLY_199 ?? ''}
+                planSupervisionMonthlyId={process.env.STRIPE_PLAN_MONTHLY_49  ?? ''}
+                planAvanzadoMonthlyId   ={process.env.STRIPE_PLAN_MONTHLY_99  ?? ''}
+                planColaborativoMonthlyId={process.env.STRIPE_PLAN_MONTHLY_199 ?? ''}
+                planSupervisionAnnualId ={process.env.STRIPE_PLAN_ANNUAL_49   ?? ''}
+                planAvanzadoAnnualId    ={process.env.STRIPE_PLAN_ANNUAL_99   ?? ''}
+                planColaborativoAnnualId ={process.env.STRIPE_PLAN_ANNUAL_199  ?? ''}
+                initialBilling={initialBilling}
               />
             </div>
           ) : null}

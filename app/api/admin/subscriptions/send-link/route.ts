@@ -9,16 +9,16 @@ import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
+  STRIPE_PLAN_MONTHLY_49:  process.env.STRIPE_PLAN_MONTHLY_49,
   STRIPE_PLAN_MONTHLY_99:  process.env.STRIPE_PLAN_MONTHLY_99,
   STRIPE_PLAN_MONTHLY_199: process.env.STRIPE_PLAN_MONTHLY_199,
-  STRIPE_PLAN_MONTHLY_349: process.env.STRIPE_PLAN_MONTHLY_349
 };
 
 const schema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
   planName: z.string().min(2),
   amountEur: z.number().positive(),
-  stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199', 'STRIPE_PLAN_MONTHLY_349'])
+  stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_49', 'STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199'])
 });
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {

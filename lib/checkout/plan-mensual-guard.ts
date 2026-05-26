@@ -13,6 +13,9 @@ export interface PlanMensualGuardResult {
 
 // Service IDs that require an active Holded integration before checkout
 export const MONTHLY_PLAN_SERVICE_IDS = new Set([
+  'plan-supervision',
+  'plan-avanzado',
+  'plan-colaborativo',
   'svc_gestion_mensual',
   'svc_autonomo_gestion',
 ]);
@@ -28,7 +31,7 @@ export async function canCheckoutMonthlyPlan(
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('profile_completed, billing_ready')
+    .select('profile_completed, billing_ready, active_company_id')
     .eq('id', userId)
     .single();
 
@@ -39,13 +42,21 @@ export async function canCheckoutMonthlyPlan(
     return { allowed: false, reason: 'billing_incomplete' };
   }
 
-  const { data: integration } = await admin
+  let integrationQuery = admin
     .from('client_integrations')
     .select('status')
-    .eq('client_id', userId)
     .eq('provider', 'holded')
     .neq('status', 'revoked')
-    .maybeSingle();
+    .limit(1);
+
+  if (profile?.active_company_id) {
+    integrationQuery = integrationQuery.or(`client_id.eq.${userId},company_id.eq.${profile.active_company_id}`);
+  } else {
+    integrationQuery = integrationQuery.eq('client_id', userId);
+  }
+
+  const { data: integrations } = await integrationQuery;
+  const integration = integrations?.[0] ?? null;
 
   if (!integration) {
     return { allowed: false, reason: 'no_holded' };

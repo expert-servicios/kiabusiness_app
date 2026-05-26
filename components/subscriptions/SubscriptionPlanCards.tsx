@@ -10,20 +10,30 @@ const ReadinessModal = lazy(() =>
   import('@/components/services/ReadinessModal').then(m => ({ default: m.ReadinessModal }))
 );
 
-interface Plan {
-  slug        : string;
-  name        : string;
-  tagline     : string;
-  price       : string;
-  priceId     : string;
-  highlighted : boolean;
-  features    : string[];
-  isQuote     : boolean;
+type BillingMode = 'mensual' | 'anual';
+
+interface PlanData {
+  slug          : string;
+  name          : string;
+  tagline       : string;
+  monthlyPrice  : string;
+  annualTotal   : string;
+  annualMonthly : string;
+  monthlyPriceId: string;
+  annualPriceId : string;
+  highlighted   : boolean;
+  features      : string[];
+  isQuote       : boolean;
 }
 
 interface Props {
-  planAvanzadoPriceId    : string;
-  planColaborativoPriceId: string;
+  planSupervisionMonthlyId  : string;
+  planAvanzadoMonthlyId     : string;
+  planColaborativoMonthlyId : string;
+  planSupervisionAnnualId   : string;
+  planAvanzadoAnnualId      : string;
+  planColaborativoAnnualId  : string;
+  initialBilling            : BillingMode;
 }
 
 async function goToCheckout(priceId: string) {
@@ -37,58 +47,75 @@ async function goToCheckout(priceId: string) {
     window.location.href =
       data.code === 'billing_required'
         ? '/dashboard/perfil?section=billing'
+        : data.code === 'holded_required'
+        ? '/dashboard/integraciones/holded'
         : '/dashboard/perfil';
     return;
   }
   if (data.url) window.location.href = data.url;
 }
 
+const FEATURES_SUPERVISION = [
+  'Plataforma EXPERT + Kia básico',
+  'Revisión mensual básica de Holded',
+  'Alertas básicas de errores y anomalías',
+  'Revisión de facturas y categorías principales',
+  'Resumen mensual generado por Kia',
+  'Estado de empresa básico',
+  'Soporte por email y WhatsApp',
+  'Licencia Holded obligatoria (no incluida)',
+];
+
 const FEATURES_AVANZADO = [
-  'Revisión mensual de tu contabilidad',
-  'Impuestos trimestrales (IVA + IRPF)',
-  'Resumen anual (Modelo 390 + 190)',
-  'Declaración de la Renta anual',
-  'Recordatorio de plazos fiscales',
-  'Portal de cliente EXPERT',
-  'Soporte por email y WhatsApp — 48 h',
+  'Plataforma EXPERT + Kia fiscal',
+  'Revisión mensual de Holded',
+  'Impuestos trimestrales básicos si aplica',
+  'Revisión de cierre trimestral',
+  'Calendario fiscal y alertas Kia',
+  'Estado de empresa completo',
+  'Renta anual sencilla del titular autónomo según alcance',
+  'Soporte 48 h',
   'Licencia Holded obligatoria (no incluida)',
 ];
 
 const FEATURES_COLABORATIVO = [
-  'Tú introduces facturas en Holded',
-  'Revisión y validación mensual completa',
-  'Impuestos trimestrales (IVA + IRPF)',
-  'Impuesto de Sociedades anual (si aplica)',
-  'Modelos informativos (347, 349, 180, 190)',
-  'Declaración de la Renta anual',
-  'Informe mensual de resultados',
-  'Soporte prioritario — respuesta en 24 h',
+  'Plataforma EXPERT + Kia avanzado',
+  'Tú subes facturas o las organizas en Holded',
+  'EXPERT revisa y valida mensualmente',
+  'Preparación fiscal según alcance',
+  'Informe mensual',
+  'Alertas Kia de anomalías',
+  'Estado de empresa completo',
+  'Soporte prioritario — 24 h',
   'Licencia Holded obligatoria (no incluida)',
 ];
 
 const FEATURES_PERSONALIZADO = [
+  'Plataforma EXPERT + Kia premium',
   'Contabilidad y fiscalidad completa',
   'Gestión laboral y nóminas (si aplica)',
   'Trámites de extranjería',
   'Asesoramiento fiscal estratégico',
-  'Formación en Holded',
   'Precio ajustado a tu volumen real',
 ];
 
 function PlanCard({
-  plan, onReadiness,
+  plan, billing, onReadiness,
 }: {
-  plan       : Plan;
-  onReadiness: (check: ReadinessCheck, slug: string, priceId: string) => void;
+  plan        : PlanData;
+  billing     : BillingMode;
+  onReadiness : (check: ReadinessCheck, slug: string, priceId: string) => void;
 }) {
-  const check = !plan.isQuote ? getReadinessCheck(`plan-${plan.slug}`) : null;
+  const check   = !plan.isQuote ? getReadinessCheck(`plan-${plan.slug}`) : null;
+  const priceId = billing === 'anual' ? plan.annualPriceId : plan.monthlyPriceId;
+  const isAnnual = billing === 'anual';
 
   function handleCta() {
-    if (plan.isQuote) return; // handled by Link
+    if (plan.isQuote) return;
     if (check) {
-      onReadiness(check, `plan-${plan.slug}`, plan.priceId);
+      onReadiness(check, `plan-${plan.slug}`, priceId);
     } else {
-      void goToCheckout(plan.priceId);
+      void goToCheckout(priceId);
     }
   }
 
@@ -106,12 +133,27 @@ function PlanCard({
 
       <p className="text-sm uppercase tracking-[0.2em] text-[#c88b25]">{plan.name}</p>
       <p className="mt-0.5 text-xs text-[#29384a]">{plan.tagline}</p>
-      <p className="mt-3 font-serif text-3xl font-bold text-[#07111d]">{plan.price}</p>
+
+      {isAnnual ? (
+        <div className="mt-3">
+          <span className="inline-block rounded-full bg-[#c88b25] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
+            2 meses gratis
+          </span>
+          <p className="mt-1 font-serif text-3xl font-bold text-[#07111d]">{plan.annualTotal}</p>
+          <p className="text-xs text-[#6b7280]">≈ {plan.annualMonthly}/mes · antes {plan.monthlyPrice}</p>
+        </div>
+      ) : (
+        <p className="mt-3 font-serif text-3xl font-bold text-[#07111d]">{plan.monthlyPrice}</p>
+      )}
 
       <ul className="mt-4 flex-1 space-y-2">
         {plan.features.map((f) => (
           <li key={f} className={`flex items-start gap-2 text-xs ${
-            f.includes('obligatoria') ? 'font-semibold text-[#c88b25]' : 'text-[#29384a]'
+            f.includes('obligatoria')
+              ? 'font-semibold text-[#c88b25]'
+              : f.includes('Plataforma EXPERT')
+              ? 'font-bold text-[#07111d]'
+              : 'text-[#29384a]'
           }`}>
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c88b25]" />
             {f}
@@ -135,13 +177,13 @@ function PlanCard({
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e]"
           >
             <Zap className="h-4 w-4" />
-            Configurar plan
+            {isAnnual ? 'Contratar anual' : 'Configurar plan'}
           </button>
         )}
 
         {!plan.isQuote && (
           <Link
-            href="/planes/gratuito"
+            href="/holded"
             className="mt-2 block text-center text-[10px] text-[#29384a] transition hover:text-[#c88b25]"
           >
             <Gift className="mr-1 inline-block h-3 w-3" />
@@ -153,27 +195,45 @@ function PlanCard({
   );
 }
 
-export function SubscriptionPlanCards({ planAvanzadoPriceId, planColaborativoPriceId }: Props) {
+export function SubscriptionPlanCards({
+  planSupervisionMonthlyId,
+  planAvanzadoMonthlyId,
+  planColaborativoMonthlyId,
+  planSupervisionAnnualId,
+  planAvanzadoAnnualId,
+  planColaborativoAnnualId,
+  initialBilling,
+}: Props) {
+  const [billing, setBilling]           = useState<BillingMode>(initialBilling);
   const [readinessState, setReadinessState] = useState<{
     check  : ReadinessCheck;
     slug   : string;
     priceId: string;
   } | null>(null);
 
-  const plans: Plan[] = [
+  const plans: PlanData[] = [
     {
-      slug: 'avanzado', name: 'Plan Avanzado', tagline: 'Tienes el control, yo superviso',
-      price: '99 €/mes', priceId: planAvanzadoPriceId,
+      slug: 'supervision', name: 'Plan Supervisión', tagline: 'Tú llevas Holded, Kia y EXPERT supervisan',
+      monthlyPrice: '49 €/mes + IVA', annualTotal: '490 €/año + IVA', annualMonthly: '40,83 €',
+      monthlyPriceId: planSupervisionMonthlyId, annualPriceId: planSupervisionAnnualId,
+      highlighted: false, features: FEATURES_SUPERVISION, isQuote: false,
+    },
+    {
+      slug: 'avanzado', name: 'Plan Avanzado', tagline: 'Revisión + impuestos básicos',
+      monthlyPrice: '99 €/mes + IVA', annualTotal: '990 €/año + IVA', annualMonthly: '82,50 €',
+      monthlyPriceId: planAvanzadoMonthlyId, annualPriceId: planAvanzadoAnnualId,
       highlighted: false, features: FEATURES_AVANZADO, isQuote: false,
     },
     {
-      slug: 'colaborativo', name: 'Plan Colaborativo', tagline: 'Tú facturas, yo gestiono',
-      price: '199 €/mes', priceId: planColaborativoPriceId,
+      slug: 'colaborativo', name: 'Plan Colaborativo', tagline: 'Tú organizas, EXPERT revisa y valida',
+      monthlyPrice: '199 €/mes + IVA', annualTotal: '1.990 €/año + IVA', annualMonthly: '165,83 €',
+      monthlyPriceId: planColaborativoMonthlyId, annualPriceId: planColaborativoAnnualId,
       highlighted: true, features: FEATURES_COLABORATIVO, isQuote: false,
     },
     {
       slug: 'personalizado', name: 'Plan Personalizado', tagline: 'Gestión avanzada a medida',
-      price: 'Consultar', priceId: '',
+      monthlyPrice: 'Consultar', annualTotal: 'Consultar', annualMonthly: '',
+      monthlyPriceId: '', annualPriceId: '',
       highlighted: false, features: FEATURES_PERSONALIZADO, isQuote: true,
     },
   ];
@@ -198,11 +258,47 @@ export function SubscriptionPlanCards({ planAvanzadoPriceId, planColaborativoPri
         </Suspense>
       )}
 
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* Billing toggle */}
+      <div className="mb-8 flex justify-center">
+        <div className="flex items-center gap-1 rounded-full border border-[#d8cbb5] bg-[#f8f4eb] p-1">
+          <button
+            type="button"
+            onClick={() => setBilling('mensual')}
+            className={`rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wide transition ${
+              billing === 'mensual'
+                ? 'bg-[#07111d] text-white'
+                : 'text-[#6b7280] hover:text-[#07111d]'
+            }`}
+          >
+            Mensual
+          </button>
+          <button
+            type="button"
+            onClick={() => setBilling('anual')}
+            className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wide transition ${
+              billing === 'anual'
+                ? 'bg-[#c88b25] text-[#07111d]'
+                : 'text-[#6b7280] hover:text-[#07111d]'
+            }`}
+          >
+            <Gift className="h-3 w-3" />
+            Anual — 2 meses gratis
+          </button>
+        </div>
+      </div>
+
+      {billing === 'anual' && (
+        <p className="mb-6 text-center text-xs text-[#6b7280]">
+          Pago único anual equivalente a 10 mensualidades. 2 meses de regalo.
+        </p>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
           <PlanCard
             key={plan.slug}
             plan={plan}
+            billing={billing}
             onReadiness={(check, slug, priceId) =>
               setReadinessState({ check, slug, priceId })
             }

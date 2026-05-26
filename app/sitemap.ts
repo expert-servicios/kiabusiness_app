@@ -37,12 +37,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/solicitar-presupuesto`,           changeFrequency: 'yearly',  priority: 0.6, lastModified: now },
     { url: `${BASE}/para-asesorias`,                  changeFrequency: 'monthly', priority: 0.5, lastModified: now },
     // Planes
-    { url: `${BASE}/planes/basico`,                   changeFrequency: 'monthly', priority: 0.7, lastModified: now },
-    { url: `${BASE}/planes/estandar`,                 changeFrequency: 'monthly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/planes/supervision`,              changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/planes/avanzado`,                 changeFrequency: 'monthly', priority: 0.7, lastModified: now },
-    { url: `${BASE}/planes/premium`,                  changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/planes/colaborativo`,             changeFrequency: 'monthly', priority: 0.6, lastModified: now },
-    { url: `${BASE}/planes/gratuito`,                 changeFrequency: 'monthly', priority: 0.5, lastModified: now },
     { url: `${BASE}/planes/presupuesto-personalizado`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
     // Especiales
     { url: `${BASE}/nacionalidad-espanola-menor-nacido-en-espana`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },

@@ -45,13 +45,17 @@ type SortDir = 'asc' | 'desc';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const PLAN_LABEL: Record<string, string> = {
-  gratuito: 'Gratuito', avanzado: 'Avanzado', colaborativo: 'Colaborativo',
+  gratuito: 'Prueba Holded', supervision: 'Supervisión', avanzado: 'Avanzado', colaborativo: 'Colaborativo',
+  'plan-supervision': 'Supervisión', 'Plan Supervisión': 'Supervisión',
   'Plan Avanzado': 'Avanzado', 'Plan Colaborativo': 'Colaborativo',
   'Plan Presupuesto Personalizado': 'Personalizado',
-  'Plan Delegado': 'Delegado', 'Plan Premium': 'Premium',
+  'Plan Delegado': 'Personalizado', 'Plan Premium': 'Personalizado',
 };
 const PLAN_CLS: Record<string, string> = {
-  gratuito: 'bg-gray-100 text-gray-600', avanzado: 'bg-blue-100 text-blue-700',
+  gratuito: 'bg-gray-100 text-gray-600', supervision: 'bg-emerald-100 text-emerald-700',
+  'plan-supervision': 'bg-emerald-100 text-emerald-700',
+  'Plan Supervisión': 'bg-emerald-100 text-emerald-700',
+  avanzado: 'bg-blue-100 text-blue-700',
   colaborativo: 'bg-[#d7a33a]/15 text-[#c88b25]',
   'Plan Avanzado': 'bg-blue-100 text-blue-700',
   'Plan Colaborativo': 'bg-[#d7a33a]/15 text-[#c88b25]',

@@ -19,9 +19,9 @@ function getPlanName(priceId: string, fallback?: string | null): string {
   if (fallback) return fallback;
 
   const map: Record<string, string> = {
+    [process.env.STRIPE_PLAN_MONTHLY_49 ?? '']: 'Plan Supervisión',
     [process.env.STRIPE_PLAN_MONTHLY_99 ?? '']: 'Plan Avanzado',
     [process.env.STRIPE_PLAN_MONTHLY_199 ?? '']: 'Plan Colaborativo',
-    [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Presupuesto Personalizado'
   };
   return map[priceId] ?? 'Suscripción';
 }

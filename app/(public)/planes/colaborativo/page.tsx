@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
+import { PlanCtaButton } from '@/components/planes/PlanCtaButton';
 
 export const metadata: Metadata = {
   title: 'Plan Colaborativo — 199 €/mes | EXPERT',
@@ -19,20 +20,20 @@ export const metadata: Metadata = {
 };
 
 const includes = [
-  'Todo lo del Plan Avanzado',
-  'Tú introduces facturas — nosotros revisamos y validamos',
-  'Contabilidad mensual completa (ilimitada de asientos)',
-  'Impuesto de Sociedades anual (si aplica)',
-  'Modelos informativos (347, 349, 180, 190)',
-  'Informe mensual de resultados',
-  'Soporte prioritario — respuesta en menos de 24 h'
+  'Tú subes facturas o las organizas en Holded',
+  'EXPERT revisa y valida mensualmente',
+  'Preparación y presentación fiscal según alcance',
+  'Informe mensual',
+  'Alertas Kia',
+  'Soporte prioritario 24 h',
+  'Estado de empresa completo'
 ];
 
 const notIncludes = [
   'Gestión laboral y nóminas (servicio aparte)',
-  'Gestiones de extranjería (servicio aparte)',
-  'Trámites notariales o de tráfico',
-  'Declaraciones de no residentes',
+  'Alto volumen sin presupuesto previo',
+  'Inventario, e-commerce u operaciones internacionales complejas',
+  'Varias sociedades',
   'Migración a Holded (servicio aparte)',
   'Licencia de Holded (obligatoria, va aparte)'
 ];
@@ -57,18 +58,15 @@ export default function PlanColaborativoPage() {
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes · sin IVA</span>
           </div>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#9CA3AF]">
-            Para autónomos activos y pymes que introducen sus facturas en Holded y quieren que su asesora
-            revise, cuadre y presente todos los impuestos. Tú facturas, nosotros gestionamos.
+            Para volumen estándar y operativa sencilla: tú subes facturas o las organizas en Holded,
+            EXPERT revisa y valida mensualmente según el alcance contratado.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="w-full max-w-xs">
+              <PlanCtaButton planSlug="colaborativo" ctaLabel="Configurar plan — 199 €/mes" />
+            </div>
             <Link
-              href="/auth/login"
-              className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-            >
-              Suscribirme ahora
-            </Link>
-            <Link
-              href="/contacto"
+              href="/ayuda/kia?topic=plan-colaborativo"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
               Tengo dudas, consultar
@@ -111,6 +109,9 @@ export default function PlanColaborativoPage() {
               ))}
             </ul>
             <p className="mt-5 text-sm text-[#23364D]">
+              El precio está pensado para volumen estándar de facturas y operativa sencilla. Si hay alto volumen, nóminas, inventario, e-commerce, operaciones internacionales o varias sociedades, se preparará presupuesto personalizado.
+            </p>
+            <p className="mt-5 text-sm text-[#23364D]">
               ¿Necesitas gestión laboral u otras coberturas?{' '}
               <Link href="/planes/presupuesto-personalizado" className="font-semibold text-[#D4A017] hover:text-[#F2C14E]">
                 Solicita presupuesto personalizado →
@@ -147,10 +148,10 @@ export default function PlanColaborativoPage() {
             Sin permanencia. Cancela cuando quieras con 30 días de preaviso.
           </p>
           <Link
-            href="/auth/login"
+            href="/planes#planes"
             className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
-            Suscribirme — 199 €/mes
+            Configurar desde planes
           </Link>
         </div>
       </section>
@@ -158,8 +159,9 @@ export default function PlanColaborativoPage() {
   );
 }
 
-function PlanComparison({ current }: { current: 'avanzado' | 'colaborativo' }) {
+function PlanComparison({ current }: { current: 'supervision' | 'avanzado' | 'colaborativo' }) {
   const plans = [
+    { slug: 'supervision', name: 'Plan Supervisión', price: '49', href: '/planes/supervision' },
     { slug: 'avanzado', name: 'Plan Avanzado', price: '99', href: '/planes/avanzado' },
     { slug: 'colaborativo', name: 'Plan Colaborativo', price: '199', href: '/planes/colaborativo' },
     { slug: 'personalizado', name: 'Plan Personalizado', price: null, href: '/planes/presupuesto-personalizado' }

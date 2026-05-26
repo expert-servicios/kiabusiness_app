@@ -88,6 +88,43 @@ function normalizeIntentText(text: string): string {
     .toLowerCase();
 }
 
+function inferInteractionFromText(text: string, flow: string, step: string): string | null {
+  const normalized = normalizeIntentText(text);
+  if (!normalized) return null;
+
+  if (/^(otro|otra|other|другое|другой)$/i.test(normalized)) return 'btn_other';
+
+  const wantsExistingClient = /\b(ya soy cliente|soy cliente|cliente existente)\b/.test(normalized)
+    || /(^|\s)(я клиент|уже клиент|я уже клиент)(\s|$)/.test(normalized);
+  const wantsContract = /\b(contratar servicio|contratar online|contratar|comprar|pagar|quiero pagar|necesito servicio|nuevo servicio)\b/.test(normalized)
+    || /(заказать услугу|нужна услуга|оформить услугу|оплатить услугу|хочу оплатить|хочу оформить)/.test(normalized);
+  const wantsViability = /\b(comprobar viabilidad|viabilidad|saber si puedo|es para mi)\b/.test(normalized)
+    || /(проверить возможность|подходит ли|могу ли|возможно ли)/.test(normalized);
+  const wantsCall = /\b(llamada(?: 15 min)?|cita|hablar con alguien|hablar con una persona)\b/.test(normalized)
+    || /(звонок|созвон|поговорить|связаться)/.test(normalized);
+  const wantsConsult = /\b(consulta|presupuesto|tengo dudas|dudas|ayuda|no se que necesito|no se cual|no se)\b/.test(normalized)
+    || /(консультац|вопрос|помощ|не знаю|сомневаюсь)/.test(normalized);
+
+  if (flow === 'lead_start' && step === 'waiting_option') {
+    if (wantsViability) return 'lead_viability';
+    if (wantsContract) return 'lead_contract';
+    if (wantsCall) return 'lead_call';
+  }
+
+  if (flow === 'welcome' && step === 'waiting_intent') {
+    if (wantsExistingClient) return 'btn_existing';
+    if (wantsContract) return 'btn_new';
+    if (wantsCall || wantsConsult || wantsViability) return 'btn_consult';
+  }
+
+  if (flow === 'consult' && step === 'waiting_option') {
+    if (wantsCall) return 'co_cita';
+    if (wantsConsult || wantsViability || wantsContract) return 'co_no_se';
+  }
+
+  return null;
+}
+
 function shouldAnswerInsteadOfRetryingEmail(msgBody: string): boolean {
   const text = normalizeIntentText(msgBody);
   if (text.length < 12) return false;
@@ -868,7 +905,7 @@ type AnyMenu = BtnMenu | ListMenu;
 
 const WELCOME_MENU: Record<KiaLang, BtnMenu> = {
   es: { type: 'buttons', body: '¡Hola! 👋✨ Soy *Kia*, la asistente virtual de EXPERT Asesoría.\n\n¡Estoy aquí para ayudarte con lo que necesites! 😊 ¿Por dónde empezamos?', buttons: [{ id: 'btn_new', title: 'Contratar servicio' }, { id: 'btn_existing', title: 'Ya soy cliente' }, { id: 'btn_consult', title: 'Consulta / Presupuesto' }] },
-  ru: { type: 'buttons', body: 'Привет! 👋✨ Я *Kia*, виртуальный ассистент EXPERT Asesoría.\n\nЯ здесь, чтобы помочь вам! 😊 С чего начнём?', buttons: [{ id: 'btn_new', title: 'Нужна услуга' }, { id: 'btn_existing', title: 'Я клиент' }, { id: 'btn_consult', title: 'Консультация' }] },
+  ru: { type: 'buttons', body: 'Привет! 👋✨ Я *Kia*, виртуальная ассистентка EXPERT Asesoría.\n\nЯ здесь, чтобы помочь вам! 😊 С чего начнём?', buttons: [{ id: 'btn_new', title: 'Нужна услуга' }, { id: 'btn_existing', title: 'Я клиент' }, { id: 'btn_consult', title: 'Консультация' }] },
 };
 
 const AREA_LIST_MENU: Record<KiaLang, ListMenu> = {
@@ -969,7 +1006,7 @@ const LEAD_WELCOME_MENU: Record<KiaLang, BtnMenu> = {
   },
   ru: {
     type: 'buttons',
-    body: '👋 Привет! Я *Kia*, виртуальный ассистент EXPERT Asesoría.\n\nМогу помочь проверить, подходит ли ваша ситуация, выбрать нужную услугу или записаться на 15-минутный звонок.',
+    body: '👋 Привет! Я *Kia*, виртуальная ассистентка EXPERT Asesoría.\n\nМогу помочь проверить, подходит ли ваша ситуация, выбрать нужную услугу или записаться на 15-минутный звонок.',
     buttons: [
       { id: 'lead_viability', title: 'Проверить возможность' },
       { id: 'lead_contract',  title: 'Заказать услугу'       },
@@ -1130,7 +1167,7 @@ function bookingConfirm(lang: KiaLang): KiaReply {
 
 function privacyNotice(lang: KiaLang): KiaReply {
   const body = lang === 'ru'
-    ? '👋✨ Привет! Я *Kia* — виртуальный ИИ-ассистент EXPERT Asesoría. Я автоматизированная система, *не живой сотрудник*, но дам всё от себя чтобы помочь! 😊\n\n🔒 *Ваши данные под защитой.* Используем только предоставленные данные для обработки вашего запроса. Подробнее: https://expertconsulting.es/privacidad'
+    ? '👋✨ Привет! Я *Kia* — виртуальная ИИ-ассистентка EXPERT Asesoría. Я автоматизированная система, *не человек*, но дам всё от себя, чтобы помочь! 😊\n\n🔒 *Ваши данные под защитой.* Используем только предоставленные данные для обработки вашего запроса. Подробнее: https://expertconsulting.es/privacidad'
     : '👋✨ ¡Hola! Soy *Kia*, la asistente virtual IA de EXPERT Asesoría. Soy un sistema automatizado, *no una persona*, ¡pero daré lo mejor de mí para ayudarte! 😊\n\n🔒 *Tus datos, siempre protegidos.* Solo usaremos los que compartas para gestionar tu consulta o trámite. Más info: https://expertconsulting.es/privacidad';
   return { type: 'text', body };
 }
@@ -1153,7 +1190,9 @@ function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaConta
 
   if (name) {
     const fn       = firstName(name);
-    const leadBody = `Hola, *${fn}*. Soy *Kia*, asistente virtual de EXPERT. En que puedo ayudarte?`;
+    const leadBody = lang === 'ru'
+      ? `Привет, *${fn}*. Я *Kia*, виртуальная ассистентка EXPERT. Чем могу помочь?`
+      : `Hola, *${fn}*. Soy *Kia*, asistente virtual de EXPERT. En que puedo ayudarte?`;
     const leadMenu = { ...LEAD_WELCOME_MENU[lang], body: leadBody };
     return {
       replies    : [privacyNotice(lang), menuToReply(leadMenu)],
@@ -1200,7 +1239,7 @@ function shouldRestartKiaFromHuman(text: string): boolean {
 
 const COMPLEX_SERVICE_REVIEW = new Set([
   'svc_modelo_151', 'svc_modelo_720',
-  'svc_constitucion_sl', 'svc_gestion_mensual',
+  'svc_constitucion_sl',
   'svc_nacionalidad',
   'svc_notaria_compraventa', 'svc_notaria_herencia',
 ]);
@@ -1226,7 +1265,7 @@ const SERVICE_PAGE: Partial<Record<string, string>> = {
   svc_modelo_720:              'declaraciones-impuestos/modelo-720',
   svc_alta_autonomo:           'empresas-autonomos/alta-autonomo',
   svc_constitucion_sl:         'empresas-autonomos/constitucion-sl',
-  svc_gestion_mensual:         'empresas-autonomos/plan-avanzado',
+  svc_gestion_mensual:         'planes',
   svc_holded_starter:          'holded/holded-starter',
   svc_holded_formacion:        'holded/formacion-holded',
   svc_holded_migracion:        'holded/holded-migracion-sin-inventario',
@@ -1252,7 +1291,9 @@ const SERVICE_PAGE: Partial<Record<string, string>> = {
 
 export function getServicePageUrl(svcId: string): string | null {
   const path = SERVICE_PAGE[svcId];
-  return path ? `https://expertconsulting.es/servicios/${path}` : null;
+  if (!path) return null;
+  if (path === 'planes') return 'https://expertconsulting.es/planes';
+  return `https://expertconsulting.es/servicios/${path}`;
 }
 
 function precalCta(lang: KiaLang, name: string | null, svcId: string): KiaReply {
@@ -1337,6 +1378,22 @@ function holdedReadinessCta(lang: KiaLang, name: string | null, svcId: string): 
   };
 }
 
+function monthlyPlansCta(lang: KiaLang, name: string | null): KiaReply {
+  const named = firstName(name) ? `, *${firstName(name)}*` : '';
+  const plansUrl = 'https://expertconsulting.es/planes';
+  const body = lang === 'ru'
+    ? `Поняла${named} 😊 Для ежемесячного плана сначала нужно выбрать уровень и проверить готовность Holded.\n\n*Supervisión* — 49 €/мес + IVA: базовая проверка без подачи налогов.\n*Avanzado* — 99 €/мес + IVA: проверка + базовые налоги по объёму.\n*Colaborativo* — 199 €/мес + IVA: больше участия, отчёты и приоритетная поддержка.\n\nНастроить план можно здесь:\n${plansUrl}`
+    : `Perfecto${named} 😊 Para un plan mensual primero elegimos nivel y comprobamos readiness de Holded.\n\n*Supervisión* — 49 €/mes + IVA: revisión básica sin presentación de impuestos.\n*Avanzado* — 99 €/mes + IVA: revisión + impuestos básicos según alcance.\n*Colaborativo* — 199 €/mes + IVA: más intervención, informes y soporte prioritario.\n\nConfigura tu plan aquí:\n${plansUrl}`;
+  return {
+    type: 'buttons', body, footer: FOOTER,
+    buttons: [
+      { id: 'btn_monthly_plans', title: lang === 'ru' ? 'Настроить план' : 'Configurar plan' },
+      { id: 'btn_write_here', title: lang === 'ru' ? 'Есть вопрос' : 'Tengo dudas' },
+      otherButton(lang),
+    ],
+  };
+}
+
 // ── Sensitive-topic keywords — recommend call before checkout ─────────────────
 
 const SENSITIVE_KEYWORDS_ES = [
@@ -1402,11 +1459,12 @@ export function processKiaStep(
   contactInfo ?: KiaContactInfo,
 ): KiaStepResult {
   const sessionLang = session.lang;
-  const detectedLang = msgBody.length >= 4 ? detectLanguage(msgBody) : sessionLang;
+  const detectedLang = /[А-Яа-яЁё]/.test(msgBody) ? 'ru' : (msgBody.length >= 4 ? detectLanguage(msgBody) : sessionLang);
   const lang = detectedLang;
   const name = session.name ?? clientName ?? null;
-  const interaction = buttonId ?? '';
   const langChanged  = detectedLang !== sessionLang;
+  const { flow, step } = session;
+  const interaction = buttonId ?? inferInteractionFromText(msgBody, flow, step) ?? '';
 
   // Commands — any point in the conversation
   const cmd = COMMANDS.find((c) => msgBody.toLowerCase().trim() === c || msgBody.toLowerCase().trim().startsWith(c + ' '));
@@ -1522,11 +1580,21 @@ export function processKiaStep(
   if (interaction === 'btn_holded_trial') {
     const trialUrl = process.env.NEXT_PUBLIC_HOLDED_TRIAL_URL ?? 'https://www.holded.com/es';
     const body     = lang === 'ru'
-      ? `🚀 *Попробуй Holded бесплатно 14 дней:*\n\n${trialUrl}\n\nЗарегистрируйся, а мы как *официальный партнёр Holded* поможем с настройкой и обучением. Потом можешь контрактовать любой пакет.`
-      : `🚀 *Prueba Holded gratis 14 días:*\n\n${trialUrl}\n\nRegístrate y nosotros, como *Partner Oficial de Holded*, te ayudamos con la configuración y la formación. Después ya puedes contratar el paquete que necesites.`;
+      ? `🚀 *Попробуй Holded бесплатно 14 дней:*\n\n${trialUrl}\n\nЭто доступ к software Holded, не план EXPERT. Если нужна настройка или обучение, подскажу Pack Starter или подходящий платный формат.`
+      : `🚀 *Prueba Holded gratis 14 días:*\n\n${trialUrl}\n\nEs acceso al software Holded, no un plan EXPERT. Si necesitas configuración o formación, te oriento con Pack Starter o el servicio adecuado.`;
     return {
       replies    : [{ type: 'text', body }],
       updates    : { step: 'holded_trial_sent', service_id: session.service_id },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_monthly_plans') {
+    const body = lang === 'ru'
+      ? 'Настроить ежемесячный план можно на странице EXPERT:\nhttps://expertconsulting.es/planes\n\nПеред оплатой я проверю readiness и подключение Holded.'
+      : 'Puedes configurar el plan mensual desde la página de EXPERT:\nhttps://expertconsulting.es/planes\n\nAntes de pagar comprobaremos readiness y conexión Holded.';
+    return {
+      replies    : [{ type: 'text', body }],
+      updates    : { flow: 'consult', step: 'monthly_plan_info', service_id: session.service_id },
       sideEffects: {},
     };
   }
@@ -1571,8 +1639,6 @@ export function processKiaStep(
       sideEffects: { priority: 'high' },
     };
   }
-
-  const { flow, step } = session;
 
   if (interaction === 'resume_kia_menu') {
     const l = langChanged ? detectedLang : lang;
@@ -1653,7 +1719,7 @@ export function processKiaStep(
     if (name) {
       const fn2     = firstName(name);
       const leadBody = l === 'ru'
-        ? `👋 Привет, *${fn2}*! Я *Kia*, виртуальный ассистент EXPERT. Чем могу помочь?`
+        ? `👋 Привет, *${fn2}*! Я *Kia*, виртуальная ассистентка EXPERT. Чем могу помочь?`
         : `👋 ¡Hola, *${fn2}*! Soy *Kia*, asistente virtual de EXPERT. ¿En qué puedo ayudarte?`;
       const leadMenu = { ...LEAD_WELCOME_MENU[l], body: leadBody };
       return {
@@ -1750,6 +1816,14 @@ export function processKiaStep(
       const area = step.split(':')[1] ?? '';
       const m = SERVICE_MENUS[area]?.[lang];
       return { replies: m ? [menuToReply(m)] : [menuToReply(AREA_LIST_MENU[lang])], updates: {}, sideEffects: {} };
+    }
+
+    if (svcId === 'svc_gestion_mensual') {
+      return {
+        replies    : [monthlyPlansCta(lang, name)],
+        updates    : { flow: 'consult', step: 'monthly_plan_info', service_id: svcId },
+        sideEffects: {},
+      };
     }
 
     // Complex services → call/meeting recommended, not automatic human escalation.
@@ -2143,7 +2217,7 @@ export function processKiaStep(
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────
 
-  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'free_text_other', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment', 'cart_added'].includes(step)) {
+  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'free_text_other', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment', 'cart_added', 'monthly_plan_info'].includes(step)) {
     return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 

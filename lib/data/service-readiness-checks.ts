@@ -7,6 +7,7 @@ export type ReadinessQuestionType = 'single' | 'multi' | 'boolean';
 export type ReadinessNextAction =
   | 'continue_checkout'
   | 'holded_trial'
+  | 'recommend_plan_avanzado'
   | 'api_tutorial'
   | 'upload_excel'
   | 'book_call'
@@ -59,6 +60,7 @@ const ACTION_PRIORITY: ReadinessNextAction[] = [
   'request_quote',
   'book_call',
   'holded_trial',
+  'recommend_plan_avanzado',
   'api_tutorial',
   'upload_excel',
   'continue_checkout',
@@ -81,6 +83,11 @@ const RESULT_COPY: Record<ReadinessNextAction, Omit<ReadinessResult, 'nextAction
   holded_trial: {
     title      : 'Prueba Holded primero',
     message    : 'Te recomendamos activar la prueba gratuita de 14 días de Holded antes de contratar. Así podrás explorar la herramienta sin compromiso.',
+    canCheckout: false,
+  },
+  recommend_plan_avanzado: {
+    title      : 'Te encaja mejor el Plan Avanzado',
+    message    : 'El Plan Supervisión no incluye preparación ni presentación de impuestos. Para eso conviene configurar el Plan Avanzado o revisar el alcance contigo.',
     canCheckout: false,
   },
   api_tutorial: {
@@ -381,12 +388,104 @@ const HOLDED_MODULO_FORMACION: ReadinessCheck = {
   ],
 };
 
+const PLAN_SUPERVISION: ReadinessCheck = {
+  slug       : 'plan-supervision',
+  title      : 'Plan Supervisión — Verifica que encaja contigo',
+  description: 'El Plan Supervisión es para quienes llevan Holded por su cuenta y quieren revisión mensual profesional, alertas y soporte básico.',
+  ctaLabel   : 'Configurar plan',
+  questions  : [
+    {
+      id   : 'holded_account_status',
+      text : '¿Ya tienes cuenta Holded activa?',
+      hint : 'Todos los planes mensuales requieren Holded. La licencia no está incluida.',
+      type : 'single',
+      options: [
+        { id: 'si',       label: 'Sí',       nextAction: 'continue_checkout' },
+        { id: 'no',       label: 'No',       nextAction: 'holded_trial', blocking: true,
+          description: 'Empieza con la prueba Holded 14 días o Pack Starter antes del plan mensual' },
+        { id: 'no_lo_se', label: 'No lo sé', nextAction: 'holded_trial', blocking: true },
+        { id: 'otro',     label: 'Otro',     nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'self_accounting',
+      text : '¿Llevas tú la contabilidad en Holded?',
+      type : 'single',
+      options: [
+        { id: 'si',              label: 'Sí',              nextAction: 'continue_checkout' },
+        { id: 'empezando',       label: 'Estoy empezando', nextAction: 'continue_checkout' },
+        { id: 'necesito_ayuda',  label: 'Necesito ayuda',  nextAction: 'book_call' },
+        { id: 'otro',            label: 'Otro',            nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'api_connection',
+      text : '¿Puedes conectar tu API key de Holded desde el Panel Cliente?',
+      hint : 'Nunca envíes la API key por WhatsApp o email. Se conecta desde el portal seguro.',
+      type : 'single',
+      options: [
+        { id: 'si',              label: 'Sí',              nextAction: 'continue_checkout' },
+        { id: 'no_se_como',      label: 'No sé cómo',      nextAction: 'api_tutorial', blocking: true },
+        { id: 'necesito_tutorial', label: 'Necesito tutorial', nextAction: 'api_tutorial', blocking: true },
+        { id: 'otro',            label: 'Otro',            nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'tax_scope',
+      text : '¿Quieres solo revisión o también presentación de impuestos?',
+      type : 'single',
+      options: [
+        { id: 'solo_revision',     label: 'Solo revisión',       nextAction: 'continue_checkout' },
+        { id: 'tambien_impuestos', label: 'También impuestos',   nextAction: 'recommend_plan_avanzado', blocking: true },
+        { id: 'no_lo_se',          label: 'No lo sé',            nextAction: 'book_call' },
+        { id: 'otro',              label: 'Otro',                nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'plataforma_expert',
+      text : '¿Aceptas trabajar desde Plataforma EXPERT para centralizar documentos, avisos, comunicación y conexión Holded?',
+      hint : 'Plataforma EXPERT es el área privada donde conectas Holded, subes documentos, ves alertas y tienes el seguimiento de Kia. Es obligatoria para todos los planes mensuales.',
+      type : 'single',
+      options: [
+        { id: 'si',                   label: 'Sí, acepto',           nextAction: 'continue_checkout' },
+        { id: 'necesito_explicacion',  label: 'Necesito explicación', nextAction: 'book_call', blocking: true,
+          description: 'Plataforma EXPERT es el área privada donde se centraliza la gestión mensual. Sin ella no podemos ofrecer el servicio. Un asesor te explica cómo funciona en 10 minutos.' },
+        { id: 'otro',                  label: 'Otro',                 nextAction: 'book_call' },
+      ],
+    },
+  ],
+};
+
 const PLAN_AVANZADO: ReadinessCheck = {
   slug       : 'plan-avanzado',
   title      : 'Plan Avanzado — Verifica que es tu plan',
-  description: 'Unas preguntas para confirmar que el Plan Avanzado se adapta a tus necesidades.',
+  description: 'Unas preguntas para confirmar que tienes Holded preparado y que el alcance fiscal básico encaja con el Plan Avanzado.',
   ctaLabel   : 'Configurar mi plan',
   questions  : [
+    {
+      id   : 'holded_account_status',
+      text : '¿Ya tienes cuenta Holded activa?',
+      hint : 'Holded es obligatorio y la licencia no está incluida.',
+      type : 'single',
+      options: [
+        { id: 'si',       label: 'Sí, ya tengo cuenta',        nextAction: 'continue_checkout' },
+        { id: 'no',       label: 'No tengo Holded',            nextAction: 'holded_trial', blocking: true },
+        { id: 'no_lo_se', label: 'No lo sé',                   nextAction: 'holded_trial', blocking: true },
+        { id: 'otro',     label: 'Otro',                       nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'holded_api_connection',
+      text : '¿Puedes conectar Holded desde el Panel Cliente?',
+      hint : 'El checkout mensual queda bloqueado hasta tener Holded conectado.',
+      type : 'single',
+      options: [
+        { id: 'si',               label: 'Sí',              nextAction: 'continue_checkout' },
+        { id: 'no_se_como',       label: 'No sé cómo',      nextAction: 'api_tutorial', blocking: true },
+        { id: 'necesito_tutorial', label: 'Necesito tutorial', nextAction: 'api_tutorial', blocking: true },
+        { id: 'otro',             label: 'Otro',            nextAction: 'book_call' },
+      ],
+    },
     {
       id   : 'forma_juridica',
       text : '¿Cuál es tu situación actual?',
@@ -414,10 +513,22 @@ const PLAN_AVANZADO: ReadinessCheck = {
       text : '¿Qué necesitas principalmente?',
       type : 'single',
       options: [
-        { id: 'fiscal',        label: 'Gestión fiscal y declaraciones',          nextAction: 'continue_checkout' },
-        { id: 'laboral',       label: 'Nóminas y gestión laboral',               nextAction: 'continue_checkout' },
-        { id: 'contabilidad',  label: 'Contabilidad y cuentas anuales',          nextAction: 'continue_checkout' },
+        { id: 'fiscal',        label: 'Impuestos básicos',                       nextAction: 'continue_checkout' },
+        { id: 'laboral',       label: 'Nóminas y gestión laboral',               nextAction: 'request_quote', blocking: true },
+        { id: 'contabilidad',  label: 'Revisión y cierre trimestral',            nextAction: 'continue_checkout' },
         { id: 'todo',          label: 'Todo lo anterior más asesoría estratégica', nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'plataforma_expert',
+      text : '¿Aceptas trabajar desde Plataforma EXPERT para centralizar documentos, avisos, comunicación y conexión Holded?',
+      hint : 'Plataforma EXPERT es el área privada donde conectas Holded, subes documentos, ves alertas y tienes el seguimiento de Kia. Es obligatoria para todos los planes mensuales.',
+      type : 'single',
+      options: [
+        { id: 'si',                   label: 'Sí, acepto',           nextAction: 'continue_checkout' },
+        { id: 'necesito_explicacion',  label: 'Necesito explicación', nextAction: 'book_call', blocking: true,
+          description: 'Plataforma EXPERT es el área privada donde se centraliza la gestión mensual. Sin ella no podemos ofrecer el servicio. Un asesor te explica cómo funciona en 10 minutos.' },
+        { id: 'otro',                  label: 'Otro',                 nextAction: 'book_call' },
       ],
     },
   ],
@@ -426,9 +537,31 @@ const PLAN_AVANZADO: ReadinessCheck = {
 const PLAN_COLABORATIVO: ReadinessCheck = {
   slug       : 'plan-colaborativo',
   title      : 'Plan Colaborativo — Verifica que es tu plan',
-  description: 'El Plan Colaborativo está pensado para equipos y empresas en crecimiento. Veamos si encaja.',
+  description: 'El Plan Colaborativo está pensado para volumen estándar y operativa sencilla con Holded conectado. Revisamos si encaja o requiere presupuesto.',
   ctaLabel   : 'Configurar mi plan',
   questions  : [
+    {
+      id   : 'holded_account_status',
+      text : '¿Ya tienes cuenta Holded activa?',
+      hint : 'Holded es obligatorio y la licencia no está incluida.',
+      type : 'single',
+      options: [
+        { id: 'si',       label: 'Sí, ya tengo cuenta',        nextAction: 'continue_checkout' },
+        { id: 'no',       label: 'No tengo Holded',            nextAction: 'holded_trial', blocking: true },
+        { id: 'otro',     label: 'Otro',                       nextAction: 'book_call' },
+      ],
+    },
+    {
+      id   : 'holded_api_connection',
+      text : '¿Puedes conectar Holded desde el Panel Cliente?',
+      type : 'single',
+      options: [
+        { id: 'si',               label: 'Sí',              nextAction: 'continue_checkout' },
+        { id: 'no_se_como',       label: 'No sé cómo',      nextAction: 'api_tutorial', blocking: true },
+        { id: 'necesito_tutorial', label: 'Necesito tutorial', nextAction: 'api_tutorial', blocking: true },
+        { id: 'otro',             label: 'Otro',            nextAction: 'book_call' },
+      ],
+    },
     {
       id   : 'forma_juridica',
       text : '¿Cuál es tu situación actual?',
@@ -467,8 +600,20 @@ const PLAN_COLABORATIVO: ReadinessCheck = {
       type : 'single',
       options: [
         { id: 'si_activo',  label: 'Sí, ya usamos Holded',          nextAction: 'continue_checkout' },
-        { id: 'si_nuevo',   label: 'Queremos empezar con Holded',   nextAction: 'continue_checkout' },
-        { id: 'no',         label: 'No, usamos otro sistema',        nextAction: 'continue_checkout' },
+        { id: 'si_nuevo',   label: 'Queremos empezar con Holded',   nextAction: 'holded_trial', blocking: true },
+        { id: 'no',         label: 'No, usamos otro sistema',        nextAction: 'holded_trial', blocking: true },
+      ],
+    },
+    {
+      id   : 'plataforma_expert',
+      text : '¿Aceptas trabajar desde Plataforma EXPERT para centralizar documentos, avisos, comunicación y conexión Holded?',
+      hint : 'Plataforma EXPERT es el área privada donde conectas Holded, subes documentos, ves alertas y tienes el seguimiento de Kia. Es obligatoria para todos los planes mensuales.',
+      type : 'single',
+      options: [
+        { id: 'si',                   label: 'Sí, acepto',           nextAction: 'continue_checkout' },
+        { id: 'necesito_explicacion',  label: 'Necesito explicación', nextAction: 'book_call', blocking: true,
+          description: 'Plataforma EXPERT es el área privada donde se centraliza la gestión mensual. Sin ella no podemos ofrecer el servicio. Un asesor te explica cómo funciona en 10 minutos.' },
+        { id: 'otro',                  label: 'Otro',                 nextAction: 'book_call' },
       ],
     },
   ],
@@ -513,6 +658,7 @@ const CHECKS: ReadinessCheck[] = [
   HOLDED_MIGRACION_SIN_INVENTARIO,
   HOLDED_MIGRACION_CON_INVENTARIO,
   HOLDED_MODULO_FORMACION,
+  PLAN_SUPERVISION,
   PLAN_AVANZADO,
   PLAN_COLABORATIVO,
   PLAN_PRESUPUESTO_PERSONALIZADO,

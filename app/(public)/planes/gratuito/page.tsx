@@ -7,9 +7,9 @@ import { Breadcrumb } from '@/components/site/Breadcrumb';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 const STEPS_INCLUDED = [
-  { step: '01', title: 'Activamos tu demo', desc: 'En menos de 24 horas hábiles activamos tu prueba gratuita de Holded de 14 días.' },
-  { step: '02', title: 'Onboarding de 1 hora', desc: 'Reservas una videollamada con nosotros para configurar Holded adaptado a tu negocio.' },
-  { step: '03', title: 'Formación de 2 horas', desc: 'Sesión práctica para que aprendas a usarlo con autonomía desde el primer día.' }
+  { step: '01', title: 'Solicitas la prueba', desc: 'Te orientamos para activar la prueba gratuita de Holded de 14 días.' },
+  { step: '02', title: 'Pruebas Holded', desc: 'La prueba es acceso al software. Configuración y formación son servicios aparte.' },
+  { step: '03', title: 'Eliges siguiente paso', desc: 'Después puedes contratar Pack Starter, Supervisión, Avanzado o Colaborativo.' }
 ];
 
 export default function PlanGratuitoPage() {
@@ -60,7 +60,7 @@ export default function PlanGratuitoPage() {
           <p className="mt-4 text-base leading-7 text-[#23364D]">
             Hemos recibido tu solicitud. En menos de <strong>24 horas hábiles</strong> activamos tu demo de Holded y te lo confirmamos por email.
           </p>
-          <p className="mt-3 text-sm text-[#23364D]">Incluido sin coste: onboarding de 1 hora + formación de 2 horas.</p>
+          <p className="mt-3 text-sm text-[#23364D]">La prueba es acceso al software Holded. Configuración, migración y formación se contratan aparte si las necesitas.</p>
           <Link
             href="/planes"
             className="mt-8 inline-flex items-center gap-2 border border-[#0D1B2A]/20 px-6 py-3 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017]"
@@ -76,21 +76,20 @@ export default function PlanGratuitoPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <div className="mx-auto max-w-4xl px-6 pt-5 pb-2">
-        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Gratuito Holded' }]} />
+        <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Prueba Holded 14 días' }]} />
       </div>
       {/* Hero */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#D4A017]/40 bg-[#D4A017]/10 px-4 py-1.5">
             <Gift className="h-4 w-4 text-[#D4A017]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Sin coste</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Prueba de software</span>
           </div>
           <h1 className="mt-5 font-serif text-4xl font-bold leading-tight md:text-5xl">
-            Plan Gratuito Holded
+            Prueba Holded 14 días
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#9CA3AF]">
-            Prueba Holded durante 14 días. Nosotros activamos la demo, te ayudamos con el onboarding
-            y te formamos. Todo sin coste.
+            Prueba Holded durante 14 días. No es un plan EXPERT: es acceso al software para que puedas empezar antes de elegir Pack Starter o un plan mensual.
           </p>
         </div>
       </section>
@@ -98,7 +97,7 @@ export default function PlanGratuitoPage() {
       {/* Qué incluye */}
       <section className="bg-white px-6 py-12">
         <div className="mx-auto max-w-4xl">
-          <p className="text-center text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Qué incluye</p>
+          <p className="text-center text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Cómo funciona</p>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {STEPS_INCLUDED.map(({ step, title, desc }) => (
               <div key={step} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-6">
@@ -115,10 +114,10 @@ export default function PlanGratuitoPage() {
       <section className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-2xl">
           <div className="mx-auto max-w-xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Solicitar plan gratuito</p>
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Solicitar prueba Holded</p>
             <h2 className="mt-4 font-serif text-3xl font-bold">Rellena el formulario</h2>
             <p className="mt-3 text-sm text-[#23364D]">
-              Cuéntanos sobre tu empresa y nos ponemos en marcha. Sin tarjeta de crédito, sin compromiso.
+              Cuéntanos sobre tu empresa y te orientamos para empezar con Holded. Sin tarjeta de crédito, sin compromiso.
             </p>
           </div>
 
@@ -232,7 +231,7 @@ export default function PlanGratuitoPage() {
               {status === 'loading' ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
               ) : (
-                'Solicitar plan gratuito'
+                'Solicitar prueba Holded'
               )}
             </button>
 

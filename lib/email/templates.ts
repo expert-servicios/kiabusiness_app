@@ -372,15 +372,15 @@ export function documentRequired(name: string, service: string, docs: string[]) 
 // ── 16. Holded demo — solicitud recibida (usuario) ───────────────────────────
 export function holdedDemoRequested(name: string, companyName: string) {
   return {
-    subject: 'Hemos recibido tu solicitud de plan gratuito Holded — EXPERT',
+    subject: 'Hemos recibido tu solicitud de prueba Holded 14 días — EXPERT',
     html: base('Solicitud recibida', `
       ${heading('¡Solicitud recibida!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Hemos recibido tu solicitud para el Plan Gratuito con Holded. Activaremos tu prueba de 14 días y te lo confirmaremos por email en menos de <strong>24 horas hábiles</strong>.')}
+      ${para('Hemos recibido tu solicitud para la prueba Holded de 14 días. Te orientaremos para activarla y te lo confirmaremos por email en menos de <strong>24 horas hábiles</strong>.')}
       ${table(
         detail('Empresa', escapeHtml(companyName)),
         detail('Próximo paso', 'Recibirás un email cuando la demo esté activa'),
-        detail('Incluido', 'Onboarding de 1 hora + formación de 2 horas, sin coste')
+        detail('Incluido', 'Acceso de prueba al software Holded. Configuración, migración y formación se contratan aparte si las necesitas.')
       )}
       ${para('Si tienes cualquier pregunta mientras tanto, puedes responder directamente a este email.')}
     `)
@@ -400,9 +400,9 @@ export function holdedDemoRequestAdmin(input: {
   demoId: string;
 }) {
   return {
-    subject: `Nueva solicitud Plan Gratuito Holded: ${escapeHtml(input.companyName)}`,
+    subject: `Nueva solicitud prueba Holded 14 días: ${escapeHtml(input.companyName)}`,
     html: base('Nueva solicitud demo Holded', `
-      ${heading('Nueva solicitud de Plan Gratuito')}
+      ${heading('Nueva solicitud de prueba Holded 14 días')}
       ${para('Se ha recibido una solicitud de prueba gratuita de Holded desde el sitio web.')}
       ${table(
         detail('Nombre', escapeHtml(input.name)),
@@ -420,20 +420,20 @@ export function holdedDemoRequestAdmin(input: {
 }
 
 // ── 18. Holded demo — demo activada → reservar onboarding ────────────────────
-export function holdedDemoActivated(name: string, calendlyOnboardingUrl: string) {
+export function holdedDemoActivated(name: string, helpUrl: string) {
   return {
-    subject: '¡Tu demo de Holded está activa! Reserva tu onboarding gratuito',
+    subject: '¡Tu prueba de Holded está activa! Siguiente paso',
     html: base('Demo Holded activa', `
       ${heading('¡Tu prueba de Holded está activa!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Ya hemos activado tu prueba gratuita de 14 días en Holded. Ahora te toca dar el siguiente paso: reservar tu sesión de <strong>onboarding de 1 hora</strong> para que empieces con todo configurado desde el primer día.')}
+      ${para('Ya hemos activado tu prueba de 14 días en Holded. Puedes empezar a revisar el software y, si quieres ayuda profesional para configurarlo, migrar datos o formarte, podemos orientarte con Pack Starter o formación Holded.')}
       ${table(
-        detail('Estado', '✅ Demo activa — 14 días gratuitos'),
-        detail('Siguiente paso', 'Reservar sesión de onboarding (1 hora, sin coste)'),
-        detail('Formato', 'Videollamada — te guiamos desde cero')
+        detail('Estado', 'Prueba Holded activa — 14 días'),
+        detail('Siguiente paso', 'Elegir si necesitas Pack Starter, formación o un plan mensual'),
+        detail('Importante', 'Los servicios EXPERT no están incluidos en la prueba del software')
       )}
-      ${btn('Reservar mi onboarding gratuito', calendlyOnboardingUrl)}
-      ${para('<small style="color:#8899aa;">Si no puedes en los horarios disponibles, responde a este correo y buscamos una alternativa.</small>')}
+      ${btn('Ver opciones de ayuda', helpUrl)}
+      ${para('<small style="color:#8899aa;">Si tienes dudas, responde a este correo y te indicamos el siguiente paso adecuado.</small>')}
     `)
   };
 }
@@ -441,17 +441,17 @@ export function holdedDemoActivated(name: string, calendlyOnboardingUrl: string)
 // ── 19. Holded demo — onboarding completado → reservar formación ──────────────
 export function holdedOnboardingDone(name: string, calendlyFormacionUrl: string) {
   return {
-    subject: '¡Onboarding completado! Reserva tu formación gratuita de 2 horas',
+    subject: 'Formación Holded disponible — EXPERT',
     html: base('Formación Holded disponible', `
-      ${heading('Siguiente paso: formación gratuita de 2 horas')}
+      ${heading('Siguiente paso: formación Holded')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Ya has completado el onboarding en Holded. Ahora puedes reservar tu sesión de <strong>formación de 2 horas gratuita</strong>, donde profundizaremos en las funciones más útiles para tu negocio.')}
+      ${para('Si quieres profundizar en Holded, puedes reservar una sesión de formación práctica de 2 horas adaptada a tu negocio.')}
       ${table(
         detail('Duración', '2 horas'),
         detail('Formato', 'Videollamada — contenido adaptado a tu sector'),
-        detail('Coste', 'Incluida en tu Plan Gratuito')
+        detail('Coste', 'Servicio EXPERT aparte de la prueba Holded')
       )}
-      ${btn('Reservar mi formación gratuita', calendlyFormacionUrl)}
+      ${btn('Reservar formación Holded', calendlyFormacionUrl)}
       ${para('<small style="color:#8899aa;">La formación está pensada para que puedas usar Holded con autonomía desde el primer mes. Aprovéchala.</small>')}
     `)
   };

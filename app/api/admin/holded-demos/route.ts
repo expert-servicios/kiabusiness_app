@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
-const CALENDLY_ONBOARDING =
-  process.env.NEXT_PUBLIC_CALENDLY_ONBOARDING_URL ?? 'https://calendly.com/soy-kseniailicheva/onboarding-holded';
+const HOLDED_HELP_URL = `${getPublicAppUrl()}/holded/pack-starter`;
 const CALENDLY_FORMACION =
   process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
 
@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest) {
       await sendEmail({
         to: demo.email,
         eventType: 'holded_demo.activated',
-        ...holdedDemoActivated(demo.name, CALENDLY_ONBOARDING),
+        ...holdedDemoActivated(demo.name, HOLDED_HELP_URL),
         metadata: { demo_id: id }
       });
     }

@@ -517,6 +517,33 @@ Cambios que requieren mas cuidado:
 - No se rompe flujo Lead/Cliente.
 - Admin Compose sigue respondiendo al mensaje seleccionado.
 
+## 15. Revision WABA real - 2026-05-26
+
+Se revisaron conversaciones recientes de WABA para comprobar dos incidencias reportadas: respuestas en espanol tras ultimo mensaje en ruso y respuestas en bucle.
+
+Hallazgos:
+
+- En un hilo ruso real hubo respuestas antiguas en espanol despues de mensajes cirilicos. Las respuestas mas recientes del mismo hilo ya estaban en ruso, pero el guard de idioma podia dejar pasar textos mixtos si contenian alguna palabra cirilica, por ejemplo una etiqueta de servicio.
+- El numero interno de pruebas `3466...528` repetia el saludo/menu al escribir `Contratar servicio`. La causa no era el motor de negocio, sino que los numeros de test recreaban una sesion `welcome/init` en cada mensaje y no persistian memoria.
+- Algunos usuarios escriben literalmente el titulo del boton en vez de pulsarlo. Si no llega `buttonId`, Kia debe interpretar textos como `Contratar servicio`, `Заказать услугу`, `Проверить возможность` o `Звонок 15 мин` como la accion equivalente.
+
+Cambios aplicados:
+
+- El webhook mantiene memoria tambien para numeros internos de test, pero sigue bloqueando side effects de negocio: lead, expediente, carrito, pago y reporte.
+- La deteccion del idioma del ultimo mensaje conserva ruso si hay cirilico aunque el mensaje sea corto.
+- El guard de idioma ruso ahora exige predominio real de cirilico y no solo presencia de una palabra cirilica.
+- El guard de idioma se ejecuta despues de aplicar voz de Kia y despues de variar una respuesta repetida.
+- Kia Engine infiere acciones desde texto cuando falta `buttonId`, sin sustituir los flujos deterministas.
+
+Validacion:
+
+- `npm run typecheck`
+- `npx eslint app/api/webhooks/whatsapp/route.ts lib/integrations/kia-engine.ts`
+- `npm run kia:eval`
+- `npm run kia:auditor:test`
+- `npm run build`
+- Prueba enfocada con `processKiaStep`: textos rusos de botones avanzan al flujo esperado.
+
 ## Conclusion
 
 La propuesta es correcta y encaja con la arquitectura actual. El repo ya tiene una base solida de anti-repeticion para IA estructurada, fallback WABA y Admin Compose, pero todavia falta extender esa proteccion al punto mas importante: todos los mensajes deterministas que salen de Kia Engine y de envios interactivos directos.

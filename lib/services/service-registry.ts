@@ -29,6 +29,12 @@ export interface ServiceRegistryEntry {
   requiresHoldedApi    : boolean;
   /** True for recurring monthly plan services */
   isSubscription       : boolean;
+  /** True when checkout must validate an active Holded connection */
+  requiresHoldedConnectionBeforeCheckout: boolean;
+  /** True when profile completion is required before checkout */
+  requiresProfileCompleted: boolean;
+  /** True when billing data is required before checkout */
+  requiresBillingReady: boolean;
 }
 
 const HOLDED_SLUGS = new Set([
@@ -42,18 +48,24 @@ const HOLDED_SLUGS = new Set([
 
 const HOLDED_API_SLUGS = new Set(['holded-integraciones-api']);
 const MONTHLY_PLAN_SLUGS = new Set([
+  'plan-supervision',
   'plan-avanzado',
   'plan-colaborativo',
+]);
+
+const QUOTE_PLAN_SLUGS = new Set([
+  'plan-personalizado',
   'plan-presupuesto-personalizado',
 ]);
 
 const MONTHLY_PLAN_PRICE_IDS: Record<string, string | undefined> = {
+  'plan-supervision': process.env.STRIPE_PLAN_MONTHLY_49,
   'plan-avanzado': process.env.STRIPE_PLAN_MONTHLY_99,
   'plan-colaborativo': process.env.STRIPE_PLAN_MONTHLY_199,
-  'plan-presupuesto-personalizado': process.env.STRIPE_PLAN_MONTHLY_349,
 };
 
 function resolveFlowType(slug: string, categoria: string): ServiceFlowType {
+  if (QUOTE_PLAN_SLUGS.has(slug)) return 'quote';
   if (MONTHLY_PLAN_SLUGS.has(slug)) return 'subscription_readiness';
   if (HOLDED_SLUGS.has(slug) || categoria === 'holded') return 'readiness';
   if (hasSpecificViabilityCheck(slug))                   return 'viability';
@@ -65,6 +77,7 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
   const map = new Map<string, ServiceRegistryEntry>();
   for (const svc of catalogServices) {
     const flowType = resolveFlowType(svc.slug, svc.categoria);
+    const isMonthlyPlan = MONTHLY_PLAN_SLUGS.has(svc.slug);
     map.set(svc.slug, {
       slug                : svc.slug,
       name                : svc.name,
@@ -76,9 +89,12 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
       flowType,
       hasReadiness        : hasReadinessCheck(svc.slug),
       readinessSlug       : svc.slug,
-      requiresHoldedLicense: HOLDED_SLUGS.has(svc.slug) || MONTHLY_PLAN_SLUGS.has(svc.slug),
-      requiresHoldedApi   : HOLDED_API_SLUGS.has(svc.slug),
-      isSubscription      : MONTHLY_PLAN_SLUGS.has(svc.slug),
+      requiresHoldedLicense: HOLDED_SLUGS.has(svc.slug) || isMonthlyPlan,
+      requiresHoldedApi   : HOLDED_API_SLUGS.has(svc.slug) || isMonthlyPlan,
+      isSubscription      : isMonthlyPlan,
+      requiresHoldedConnectionBeforeCheckout: isMonthlyPlan,
+      requiresProfileCompleted: isMonthlyPlan || Boolean(svc.stripePriceId),
+      requiresBillingReady: isMonthlyPlan || Boolean(svc.stripePriceId),
     });
   }
   for (const slug of MONTHLY_PLAN_SLUGS) {
@@ -97,8 +113,32 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
       hasReadiness: true,
       readinessSlug: slug,
       requiresHoldedLicense: true,
-      requiresHoldedApi: false,
+      requiresHoldedApi: true,
       isSubscription: true,
+      requiresHoldedConnectionBeforeCheckout: true,
+      requiresProfileCompleted: true,
+      requiresBillingReady: true,
+    });
+  }
+  for (const slug of QUOTE_PLAN_SLUGS) {
+    if (map.has(slug)) continue;
+    map.set(slug, {
+      slug,
+      name: 'Plan Personalizado',
+      categoria: 'empresas-autonomos',
+      price: 'Consultar',
+      stripePriceId: undefined,
+      hasViability: false,
+      hasCheckout: false,
+      flowType: 'quote',
+      hasReadiness: hasReadinessCheck(slug),
+      readinessSlug: slug,
+      requiresHoldedLicense: true,
+      requiresHoldedApi: true,
+      isSubscription: false,
+      requiresHoldedConnectionBeforeCheckout: false,
+      requiresProfileCompleted: false,
+      requiresBillingReady: false,
     });
   }
   return map;

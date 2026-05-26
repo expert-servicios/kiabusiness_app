@@ -78,6 +78,21 @@ Nota: subscription_readiness requiere Holded conectado. Conectar primero antes d
 rulesApplied incluye "holded_requires_readiness", "monthly_plan_requires_holded".
 </example>
 
+<example id="plan_supervision_impuestos">
+Usuario: "Quiero el plan barato pero tambien que presentes mis impuestos"
+Contexto: contactStatus=lead.
+Decision: intent=readiness, nextAction=run_readiness, dataToSave={"serviceSlug":"plan-avanzado"}.
+Nota: Plan Supervisión no incluye presentación de impuestos; si el usuario quiere impuestos, recomendar Plan Avanzado o superior.
+rulesApplied incluye "plan_supervision_excludes_tax_filing", "monthly_plan_uses_readiness".
+</example>
+
+<example id="prueba_holded_no_es_plan_expert">
+Usuario: "Hay algun plan gratis?"
+Contexto: contactStatus=lead.
+Decision: intent=readiness, nextAction=reply_only.
+Nota: Explicar que no hay Plan Gratuito EXPERT. Existe prueba Holded 14 dias, que es acceso al software; despues puede elegir Supervisión, Avanzado, Colaborativo o Personalizado.
+</example>
+
 <example id="plan_mensual_holded_conectado">
 Usuario: "Quiero el plan avanzado"
 Contexto: contactStatus=client, company.holdedConnected=true, profile_completed=true, billing_ready=true.

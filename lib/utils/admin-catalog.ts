@@ -12,10 +12,19 @@ export interface CatalogItem {
 export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Plans (subscription) ────────────────────────────────────────────────────
   {
+    id: 'plan-supervision',
+    label: 'Plan Supervisión',
+    category: 'plan',
+    description: 'Revisión mensual básica de Holded, alertas Kia y soporte básico',
+    suggestedPrice: 49,
+    mode: 'subscription',
+    stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_49'
+  },
+  {
     id: 'plan-avanzado',
     label: 'Plan Avanzado',
     category: 'plan',
-    description: 'Gestión fiscal y contable mensual básica para autónomos y pymes',
+    description: 'Revisión mensual, cierre trimestral e impuestos básicos según alcance',
     suggestedPrice: 99,
     mode: 'subscription',
     stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_99'
@@ -24,19 +33,18 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'plan-colaborativo',
     label: 'Plan Colaborativo',
     category: 'plan',
-    description: 'Gestión completa para pymes con contabilidad, IVA y asesoría continua',
+    description: 'Revisión mensual colaborativa, informes y soporte prioritario',
     suggestedPrice: 199,
     mode: 'subscription',
     stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_199'
   },
   {
-    id: 'plan-delegado',
-    label: 'Plan Delegado',
+    id: 'plan-personalizado',
+    label: 'Plan Personalizado',
     category: 'plan',
-    description: 'Delegación total de la gestión fiscal, contable y administrativa',
-    suggestedPrice: 349,
+    description: 'Presupuesto a medida para laboral, alto volumen o gestión más delegada',
+    suggestedPrice: 0,
     mode: 'subscription',
-    stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_349'
   },
 
   // ── Formaciones ──────────────────────────────────────────────────────────────

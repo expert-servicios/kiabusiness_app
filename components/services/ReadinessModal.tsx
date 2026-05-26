@@ -27,6 +27,7 @@ interface CtaConfig {
 }
 
 function getCtaConfig(nextAction: ReadinessNextAction, serviceSlug: string): CtaConfig {
+  void serviceSlug;
   switch (nextAction) {
     case 'continue_checkout':
       return {
@@ -35,7 +36,12 @@ function getCtaConfig(nextAction: ReadinessNextAction, serviceSlug: string): Cta
     case 'holded_trial':
       return {
         primary  : { label: 'Activar prueba gratuita de Holded', icon: PlayCircle, href: HOLDED_TRIAL_URL },
-        secondary: { label: 'Reservar llamada para ayudarte', href: '/cita' },
+        secondary: { label: 'Ver Pack Starter', href: '/holded/pack-starter' },
+      };
+    case 'recommend_plan_avanzado':
+      return {
+        primary  : { label: 'Ver Plan Avanzado', icon: FileText, href: '/planes/avanzado' },
+        secondary: { label: 'Preguntar a Kia', href: '/ayuda/kia?topic=planes-mensuales' },
       };
     case 'api_tutorial':
       return {
