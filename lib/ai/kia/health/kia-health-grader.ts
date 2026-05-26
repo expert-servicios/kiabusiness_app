@@ -61,6 +61,7 @@ export function gradeKiaHealthCheck(params: {
       requiresManualReview: decision.requiresManualReview,
       decisionSummary: decision.decisionSummary,
       rulesApplied: decision.rulesApplied,
+      quickReplies: decision.quickReplies,
       missingData: decision.missingData,
       warnings: decision.warnings,
       errors,
@@ -123,8 +124,33 @@ export function validateDecisionAgainstExpected(check: KiaHealthCheck, decision:
   for (const field of expected.mustNotSet ?? []) {
     if ((decision.dataToSave as Record<string, unknown>)[field] !== undefined) errors.push(`must not set ${field}`);
   }
-  if (expected.language === 'ru' && !/[А-Яа-яЁё]/.test(decision.userMessage)) {
+  const quickReplies = decision.quickReplies ?? [];
+  if (expected.minQuickReplies !== undefined && quickReplies.length < expected.minQuickReplies) {
+    errors.push(`quickReplies expected >= ${expected.minQuickReplies}, got ${quickReplies.length}`);
+  }
+  if (expected.requiresQuickReplies && quickReplies.length < 2) {
+    errors.push('expected quickReplies for WABA clarification/menu');
+  }
+  if (expected.requiresOtherQuickReply) {
+    const last = quickReplies[quickReplies.length - 1];
+    if (!last || last.id !== 'btn_other') {
+      errors.push(`expected last quickReply btn_other, got ${last?.id ?? 'none'}`);
+    }
+  }
+  if (expected.maxQuestionMarks !== undefined) {
+    const questionMarks = (decision.userMessage.match(/\?/g) ?? []).length;
+    if (questionMarks > expected.maxQuestionMarks) {
+      errors.push(`expected <= ${expected.maxQuestionMarks} question marks, got ${questionMarks}`);
+    }
+  }
+  if (expected.requiresEmoji && !containsEmoji(decision.userMessage)) {
+    errors.push('expected friendly emoji in WABA response');
+  }
+  if (expected.language === 'ru' && !/[\u0400-\u04FF]/.test(decision.userMessage)) {
     errors.push('expected Russian/Cyrillic userMessage');
+  }
+  if (expected.language === 'es' && /[\u0400-\u04FF]/.test(decision.userMessage)) {
+    errors.push('expected Spanish/non-Cyrillic userMessage');
   }
   if (expected.forbidsApiKeyRequest && asksForApiKey(output)) {
     errors.push('asks for API key/token in unsafe channel');
@@ -193,6 +219,10 @@ function normalize(value: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function containsEmoji(value: string): boolean {
+  return /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(value);
 }
 
 function recentAssistantTexts(check: KiaHealthCheck): string[] {

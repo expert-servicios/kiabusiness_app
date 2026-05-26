@@ -1,6 +1,6 @@
 # Kia Implementation Progress
 
-Ultima actualizacion: 2026-05-24
+Ultima actualizacion: 2026-05-25
 
 ## Estado general
 
@@ -20,6 +20,10 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Anti-repeticion conversacional: Kia revisa historial antes de responder, evita repetir frases/CTA/estructura y reintenta una vez si detecta respuesta demasiado parecida.
 - Deteccion de anomalia `repeated_answer_loop` para respuestas repetitivas.
 - Canary anti-repeticion con historial sintetico y umbral de similitud.
+- Quick replies estructuradas en `KiaDecision`, normalizador `Otro` / `Другое` y manejo de `btn_other`.
+- Guardia de idioma por ultimo mensaje: el `locale` explicito del ultimo inbound manda sobre el historial.
+- Voz de Kia reforzada: se presenta como Kia, asistente virtual de EXPERT, y habla de si misma en femenino.
+- Compatibilidad temporal del API de anomalías Health con esquema antiguo (`resolved`) y nuevo (`status`).
 
 ## Verificado
 
@@ -30,7 +34,51 @@ npm run kia:auditor:test
 npm run build
 ```
 
-Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build pasan.
+Resultado local anterior: typecheck, 161 evals de Kia, 21 fixtures de Kia Auditor y build pasan.
+
+## Ejecucion 2026-05-25
+
+- Supabase remoto responde por Data API para:
+  - `kia_decision_logs`
+  - `kia_health_runs`
+  - `kia_health_check_results`
+  - `kia_behavior_anomalies`
+  - `kia_auditor_reviews`
+  - `kia_auditor_rule_results`
+  - `client_integration_secrets`
+- La ruta Postgres directa sigue bloqueada desde esta maquina: `db.<project-ref>.supabase.co` resuelve solo por IPv6 y la red local no tiene salida IPv6.
+- El pooler correcto es `aws-0-eu-west-2.pooler.supabase.com`, pero el password de `DATABASE_URL` no autentica. La CLI local y `supabase@latest` fallan igual para `db push`.
+- Con token Supabase con permisos, la CLI ya pudo enlazar el repo a `ybtpqscmqrrjjmuoryap` y la Management API permitio ejecutar SQL de reparacion.
+- Se detecto desfase de esquema remoto en `kia_behavior_anomalies`: remoto antiguo usa `resolved/resolved_at`; codigo nuevo espera `status/updated_at`.
+- Creadas y aplicadas en remoto por Management API las migraciones de reparacion:
+  - `20260525162302_kia_health_schema_repair.sql`
+  - `20260525172343_kia_rls_repair.sql`
+  - `20260525172441_kia_grants_repair.sql`
+- Verificacion remota:
+  - `kia_behavior_anomalies` tiene `status` y `updated_at`.
+  - `kia_health_check_results` tiene `decision_log_id`.
+  - RLS activo en logs, health, anomalies, auditor y secrets.
+  - `anon` sin grants en tablas Kia/secretos.
+  - `authenticated` solo SELECT en tablas Kia admin, sin acceso a `client_integration_secrets`.
+  - `service_role` con CRUD.
+  - Data API: service role OK, anon recibe `permission denied`.
+- Configurado `SECRET_ENCRYPTION_KEY` en `.env.local`, Vercel production y Vercel development. Preview queda pendiente si se necesita una rama preview concreta.
+- Ejecutado Kia Health persistente contra remoto:
+  - Run final post-RLS/grants `d1624025-9108-4b70-8051-5c1e2afe3712`
+  - Resultado: `Kia Health amarillo: 28/29 OK, 1 warnings, 0 fallos.`
+  - Unico warning: mas de 5 Next Best Actions criticas abiertas.
+- Ajustado `supabase/config.toml` a `major_version = 15`, igual que el remoto.
+- Verificado despues de cambios:
+
+```bash
+npm run typecheck
+npx eslint lib/ai/kia/kia-decision-engine.ts lib/ai/kia/health/kia-health-grader.ts
+npm run kia:eval
+npm run kia:auditor:test
+npm run build
+```
+
+Resultado: typecheck OK, lint focalizado OK, 161 evals OK, 21 fixtures de Auditor OK y build Next OK.
 
 ## Ejecucion 2026-05-24
 
@@ -41,15 +89,9 @@ Resultado local: typecheck, 161 evals de Kia, 13 fixtures de Kia Auditor y build
 
 ## Pendiente antes de retomar
 
-- Aplicar migraciones en Supabase remoto:
-  - `20260523171440_kia_decision_logs.sql`
-  - `20260523182625_kia_health_check.sql`
-  - `20260524060850_kia_auditor_reviews.sql`
-- Bloqueo actual para aplicar desde este entorno: `.env.local` usa la connection string directa `db.<project-ref>.supabase.co`, que resuelve solo por IPv6. Esta maquina no puede abrir esa ruta; usar la connection string de Supavisor Session Pooler/Transaction Pooler del Dashboard o enlazar el proyecto con una red compatible.
-- Se detecto la region de Supavisor como `eu-west-2`, pero el password de Postgres guardado en `DATABASE_URL` no autentica contra el pooler. Hace falta la connection string actual del pooler o resetear/actualizar el password de DB en Supabase.
-- Verificar RLS, grants y exposicion via Data API para las tablas nuevas.
+- Si queremos volver a usar `supabase db push`, actualizar `DATABASE_URL` con el password DB/pooler vigente. Mientras tanto, SQL remoto funciona por Management API con token autorizado.
 - Configurar feature flags de produccion segun el nivel de prueba deseado.
-- Ejecutar un canary manual desde `/admin/kia-health`.
+- Abrir `/admin/kia-health` y confirmar visualmente que muestra el run final guardado.
 - Probar WABA con usuarios amigos/testers, especialmente:
   - no pedir ni repetir API keys,
   - no checkout sin login/perfil/billing/Holded cuando aplique,

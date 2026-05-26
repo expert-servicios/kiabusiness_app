@@ -21,7 +21,11 @@ async function requireAdmin(request: NextRequest) {
 const schema = z.object({
   clientId:  z.string().uuid().nullish(),
   phone:     z.string().min(1),
-  history:   z.array(z.object({ direction: z.enum(['inbound','outbound']), body: z.string() })).max(40),
+  history:   z.array(z.object({
+    direction:    z.enum(['inbound','outbound']),
+    body:         z.string(),
+    ai_responded: z.boolean().optional(),
+  })).max(40),
   intent:    z.string().max(2000).optional(),
   mode:      z.enum(['compose', 'edit']).default('compose'),
   serviceId: z.string().optional(),
@@ -45,17 +49,17 @@ function cleanMarkdownForWhatsApp(text: string): string {
 }
 
 function detectLanguageInstruction(text: string): string {
-  if (/[А-Яа-яЁё]/.test(text)) {
+  if (/[\u0400-\u04FF]/.test(text)) {
     return 'ruso. Redacta en ruso natural usando alfabeto cirilico.';
   }
-  if (/[À-ÿ¿¡]/.test(text) || /\b(hola|buenos|buenas|declaracion|declaración|renta|autonomo|autónomo|empresa)\b/i.test(text)) {
+  if (/[\u00C0-\u00FF¿¡]/.test(text) || /\b(hola|buenos|buenas|declaracion|declaracion|renta|autonomo|autonomo|empresa)\b/i.test(text)) {
     return 'espanol.';
   }
   return 'el mismo idioma del ultimo mensaje del cliente.';
 }
 
 function detectLocale(text: string): 'es' | 'ru' {
-  return /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es';
+  return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'es';
 }
 
 function isStructuredAiEnabled(): boolean {
@@ -64,7 +68,18 @@ function isStructuredAiEnabled(): boolean {
     && process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
 }
 
-function recentOutboundTexts(history: Array<{ direction: 'inbound' | 'outbound'; body: string }>): string[] {
+function isKiaAuthoredHistoryMessage(message: { direction: 'inbound' | 'outbound'; body: string; ai_responded?: boolean }): boolean {
+  if (message.direction !== 'outbound') return false;
+  if (message.ai_responded === true) return true;
+  return /^\[(Kia|Kia:AI|Kia:list|Kia:doc_select|Cat[aá]logo)/i.test(message.body.trim());
+}
+
+function historySpeakerLabel(message: { direction: 'inbound' | 'outbound'; body: string; ai_responded?: boolean }): string {
+  if (message.direction === 'inbound') return 'Cliente';
+  return isKiaAuthoredHistoryMessage(message) ? 'Kia' : 'Admin humano';
+}
+
+function recentOutboundTexts(history: Array<{ direction: 'inbound' | 'outbound'; body: string; ai_responded?: boolean }>): string[] {
   return history
     .filter((message) => message.direction === 'outbound')
     .map((message) => message.body.trim())
@@ -139,12 +154,18 @@ export async function POST(request: NextRequest) {
     }
 
     const historyText = history.slice(-25)
-      .map((m) => `${m.direction === 'inbound' ? 'Cliente' : 'EXPERT'}: ${m.body}`)
+      .map((m) => `${historySpeakerLabel(m)}: ${m.body}`)
+      .join('\n');
+    const humanStyleExamples = history
+      .filter((m) => m.direction === 'outbound' && !isKiaAuthoredHistoryMessage(m))
+      .slice(-6)
+      .map((m, index) => `${index + 1}. ${m.body.slice(0, 500)}`)
       .join('\n');
     const antiRepeatInstruction = buildNoRepeatInstruction(recentOutboundTexts(history));
 
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
-    const languageInstruction = detectLanguageInstruction(`${lastInbound}\n${intent ?? ''}`);
+    const languageProbe = lastInbound || intent || '';
+    const languageInstruction = detectLanguageInstruction(languageProbe);
 
     const replyToBlock = replyTo
       ? (() => {
@@ -169,7 +190,9 @@ Tu tarea (sigue este orden exacto):
 2. Mejora la claridad y el tono: cercano, profesional, breve.
 3. Traduce el mensaje COMPLETO al idioma del cliente: ${languageInstruction}
 4. Si el borrador incluye enlaces, mantenlos tal cual.
-5. Devuelve ÚNICAMENTE el mensaje final listo para enviar. Sin explicaciones, sin prefijos, sin comillas.
+5. Mantén la voz de Kia cuando el borrador sea una respuesta generada por Kia: asistente virtual de EXPERT, en femenino.
+6. Usa las respuestas de Admin humano como referencia de tono y continuidad, sin copiarlas literalmente.
+7. Devuelve ÚNICAMENTE el mensaje final listo para enviar. Sin explicaciones, sin prefijos, sin comillas.
 
 FORMATO WHATSAPP OBLIGATORIO:
 - Negrita: asterisco SIMPLE *texto* — NUNCA doble **texto**
@@ -179,6 +202,8 @@ FORMATO WHATSAPP OBLIGATORIO:
 
 CONVERSACIÓN RECIENTE (para contexto de idioma y tono):
 ${historyText || 'Sin historial previo.'}${replyToBlock}${checklistContext}
+
+${humanStyleExamples ? `RESPUESTAS HUMANAS/ADMIN PREVIAS COMO REFERENCIA DE TONO, SIN COPIAR LITERALMENTE:\n${humanStyleExamples}\n` : ''}
 
 ${antiRepeatInstruction}`;
 
@@ -212,6 +237,8 @@ ${antiRepeatInstruction}`;
           clientContext,
           'CONVERSACION RECIENTE:',
           historyText || 'Sin historial previo.',
+          'Reglas de identidad: redacta como Kia, asistente virtual de EXPERT, en femenino. No firmes como equipo EXPERT ni finjas ser humana.',
+          humanStyleExamples ? `RESPUESTAS HUMANAS/ADMIN PREVIAS PARA APRENDER TONO Y CONTINUIDAD, SIN COPIAR LITERALMENTE:\n${humanStyleExamples}` : '',
           'Reglas de formato: WhatsApp breve, maximo 3 parrafos, sin markdown complejo, accion concreta.',
         ].filter(Boolean).join('\n\n');
 
@@ -227,7 +254,7 @@ ${antiRepeatInstruction}`;
             serviceSlug: serviceId,
             latestMessage: lastInbound || intent || '',
           },
-          locale: detectLocale(`${lastInbound}\n${intent ?? ''}`),
+          locale: detectLocale(languageProbe),
           allowTools: false,
         });
 
@@ -258,8 +285,8 @@ ${antiRepeatInstruction}`;
       ? `\nTIPO DE CONTACTO: CLIENTE\n- Tono de soporte/gestion profesional.\n- Usa contexto de expedientes si disponible.\n- No pidas datos que ya tiene.\n- No uses CTA generica si tiene expediente activo.\n- Si pide nuevo servicio, tratale como cliente existente.\n- Si hay dudas o complejidad, ofrece llamada/reunion; no plantees escalacion como salida normal.\n`
       : `\nTIPO DE CONTACTO: LEAD (aun no es cliente)\n- Tono comercial y orientativo.\n- Lleva a viabilidad, llamada 15 min o contratacion.\n- Pide solo datos minimos necesarios.\n- No hables de expedientes salvo que existan.\n- Cierra siempre con accion concreta.\n- Si hay riesgo, dudas o servicio complejo, recomienda llamada de 15 min antes de contratar.\n`;
 
-    const systemPrompt = `Eres el asistente de redacción de mensajes de WhatsApp de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
-Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.
+    const systemPrompt = `Eres Kia, la asistente virtual de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
+Hablas sobre ti misma en femenino. Ayudas al asesor humano a redactar mensajes profesionales y proactivos para enviar a clientes.
 Nuestra web es https://expertconsulting.es
 
 PÁGINAS CLAVE (incluye el enlace completo cuando sea relevante para el mensaje):
@@ -275,6 +302,8 @@ ACTITUD:
 - Si el cliente escribió en ruso/cirílico, redacta toda la respuesta en ruso/cirílico.
 - Tono cercano y profesional.
 - Usa emojis ocasionales (✅ 📋 👋 😊 💼 📅 🚀) para humanizar.
+- Responde como Kia, asistente virtual de EXPERT. Si hablas de ti misma, usa femenino: "encantada", "estoy segura", "preparada".
+- Usa las respuestas de "Admin humano" del historial como ejemplos de tono y continuidad, sin copiarlas literalmente.
 - Si el contexto lo permite, termina con una CTA suave: reservar cita, ver planes, pedir presupuesto o ver Holded.
 - Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial, ofrece demo gratuita y enlaza la página.
 - Máximo 3 párrafos cortos. Firma como "Asesoría EXPERT 💼" si es apropiado.

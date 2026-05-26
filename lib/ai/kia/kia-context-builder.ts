@@ -69,7 +69,7 @@ export interface KiaContext {
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
 function detectLanguage(text: string | null | undefined): 'es' | 'ru' {
-  return /[А-Яа-яЁё]/.test(text ?? '') ? 'ru' : 'es';
+  return /[\u0400-\u04FF]/.test(text ?? '') ? 'ru' : 'es';
 }
 
 export async function buildKiaContext(input: KiaContextInput): Promise<KiaContext> {
@@ -218,16 +218,24 @@ async function loadConversation(admin: AdminClient, phone: string | null): Promi
   if (!phone) return [];
   const { data } = await admin
     .from('whatsapp_conversations')
-    .select('direction, body, created_at')
+    .select('direction, body, created_at, ai_responded')
     .eq('phone_number', phone)
     .order('created_at', { ascending: false })
     .limit(10);
 
-  return (data ?? []).reverse().map((m: { direction: string; body: string; created_at: string }) => ({
-    role: m.direction === 'inbound' ? 'user' : m.body.startsWith('[Admin') ? 'admin' : 'assistant',
+  return (data ?? []).reverse().map((m: { direction: string; body: string; created_at: string; ai_responded?: boolean | null }) => ({
+    role: roleForConversationMessage(m),
     text: m.body.slice(0, 1200),
     createdAt: m.created_at,
   }));
+}
+
+function roleForConversationMessage(message: { direction: string; body: string; ai_responded?: boolean | null }): 'user' | 'assistant' | 'admin' {
+  if (message.direction === 'inbound') return 'user';
+  const body = message.body.trim();
+  const kiaPrefix = /^\[(Kia|Kia:AI|Kia:list|Kia:doc_select|Cat[aá]logo)/i.test(body);
+  if (message.ai_responded === true || kiaPrefix) return 'assistant';
+  return 'admin';
 }
 
 async function loadSelectedMessage(admin: AdminClient, selectedMessageId: string | undefined): Promise<KiaContext['conversation']['selectedMessage']> {

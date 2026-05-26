@@ -1,8 +1,34 @@
 # Kia Conversation Behavior Audit
 
 Fecha: 2026-05-24
+Actualizacion: 2026-05-25
 
-Estado: auditoria previa. Este documento revisa los ajustes propuestos antes de aplicarlos a produccion. No sustituye Kia Engine, Kia Decision Engine, WABA, Readiness, Viability, Checkout, Holded, Health Check ni Kia Auditor.
+Estado: auditoria previa + implementacion incremental en curso. No sustituye Kia Engine, Kia Decision Engine, WABA, Readiness, Viability, Checkout, Holded, Health Check ni Kia Auditor.
+
+## Progreso 2026-05-25
+
+Implementado en esta pasada:
+
+- `KiaDecision.quickReplies` ya forma parte del contrato estructurado, con `kind` y schema JSON estricto.
+- Nuevo normalizador `lib/ai/kia/kia-quick-replies.ts` para limitar a 3 opciones y forzar `btn_other` como ultima opcion cuando procede.
+- WABA convierte `quickReplies` estructurados y botones legacy IA en botones WhatsApp normalizados.
+- `btn_other` / `Otro` / `Другое` abre escritura libre sin crear expediente, sin `needs_review` y sin escalacion.
+- `sendKiaReply` aplica guard global de idioma + anti-repeticion a respuestas deterministas, IA, botones y listas.
+- El idioma del ultimo mensaje entrante gana sobre `session.lang`; la sesion se actualiza con ese idioma.
+- Admin Compose detecta idioma por el ultimo inbound, no por instrucciones mezcladas del asesor.
+- Kia Health valida quick replies, opcion `Otro`, tono amable, una sola pregunta y continuidad.
+- Kia Auditor incluye reglas/fixtures para historial revisado, alta similitud, quick replies obligatorias, tono frio y comportamiento repetitivo.
+- Evals legacy actualizados para exigir `quickReplies` como campo del contrato.
+- Kia ahora refuerza identidad: responde como Kia, asistente virtual de EXPERT, habla en femenino y evita firmar como "equipo EXPERT".
+- El historial WABA distingue `Cliente`, `Kia` y `Admin humano`; las respuestas humanas/admin se pasan como referencia de tono y continuidad, sin copiarlas literalmente.
+
+Revision real WABA redactada:
+
+- Se revisaron 240 mensajes recientes de 7 hilos.
+- Se detectaron 6 cruces historicos de idioma; 3 eran respuestas Kia AI en espanol tras mensajes rusos.
+- Tambien aparecio una respuesta determinista de nombre en espanol tras inbound ruso.
+- Los fixes anteriores atacan esos dos puntos: guard de idioma en salida y deteccion por ultimo mensaje.
+- Ajuste posterior: guard de voz Kia en salida para que incluso respuestas deterministas se presenten como Kia con variantes anti-repeticion.
 
 ## Objetivo
 
@@ -249,42 +275,33 @@ Recomendacion:
 
 ## 8. Quick replies en salida estructurada
 
-`lib/ai/kia/kia-output-schema.ts` aun no incluye `quickReplies`.
+Estado 2026-05-25: implementado.
 
-Consecuencia:
+`lib/ai/kia/kia-output-schema.ts` incluye `quickReplies` con:
 
-- el Decision Engine puede decidir `nextAction`, pero no tiene contrato formal para botones;
-- WABA fallback legacy puede devolver botones en JSON propio;
-- Kia Engine tiene botones deterministas;
-- no hay una politica unica para "ultimo boton Otro".
+- `id`;
+- `title` maximo 20 caracteres;
+- `kind` (`primary`, `secondary`, `other`, `call`, `checkout`, `profile`, `holded`, `viability`, `readiness`);
+- maximo 3 respuestas rapidas;
+- schema JSON estricto con `quickReplies` como campo requerido.
 
-Recomendacion:
+Normalizacion implementada:
 
-- anadir `quickReplies` como campo opcional/default `[]`;
-- validar maximo 3 para WABA;
-- normalizar el ultimo boton a "Otro" / "Другое";
-- convertir solo cuando el canal sea WABA;
-- mantener texto puro en admin/email/dashboard si no aplica.
+- `normalizeKiaQuickReplies` fuerza `btn_other` como ultima opcion cuando procede;
+- WABA convierte `quickReplies` a botones;
+- Admin/email/dashboard mantienen texto sin botones;
+- acciones criticas como checkout/login/perfil/Holded no se sustituyen por quick replies genericas.
 
 ## 9. Politica "Hazme preguntas"
 
-El prompt estructurado ya dice "Si faltan datos, pide el minimo dato siguiente".
+Estado 2026-05-25: implementado parcialmente.
 
-Falta formalizar:
-
-- una sola pregunta por turno;
-- respuestas rapidas en aclaraciones;
-- ultima opcion "Otro";
-- maximo dos rondas antes de proponer accion;
-- si pulsa "Otro", invitar a escribir libremente;
-- no inventar servicio para evitar preguntar.
-
-Recomendacion:
-
-- crear `lib/ai/kia/prompts/kia-clarifying-policy.ts`;
-- importarlo desde `kia-system-prompt.ts`;
-- inyectarlo tambien en WABA fallback legacy y Admin Compose;
-- anadir reglas aplicadas: `clarifying_questions_policy_applied`, `quick_reply_policy_applied`, `other_option_policy_applied`.
+- Existe `lib/ai/kia/prompts/kia-clarifying-policy.ts`.
+- `kia-system-prompt.ts` lo importa y refuerza que el idioma del ultimo mensaje manda.
+- `runKiaDecision` normaliza quick replies y anade reglas aplicadas cuando procede.
+- WABA fallback legacy normaliza botones IA y asegura `Otro`.
+- Admin Compose usa el ultimo inbound para idioma y mantiene politica de aclaracion en prompt.
+- `btn_other` invita a escribir libremente sin crear expediente ni marcar `needs_review`.
 
 ## 10. Kia Auditor y Kia Health
 
@@ -314,20 +331,29 @@ Kia Health ya detecta:
 - idioma;
 - repeticion por similitud si el check lo configura.
 
-### Gaps
+### Estado 2026-05-25
 
-Faltan reglas/canaries especificos para:
+Implementado en Kia Auditor:
 
-- mensaje exacto repetido;
 - alta similitud >= 0.72;
 - historial revisado antes de responder;
-- pregunta aclaratoria cuando falta informacion;
 - quick replies obligatorias en aclaraciones WABA;
-- ultima opcion "Otro";
-- tono cercano/profesional con emoji moderado;
-- patron de loro en 3 mensajes consecutivos.
+- ultima opcion `btn_other`;
+- tono cercano/profesional;
+- patron de loro con varias respuestas similares.
 
-Estas reglas deben venir despues del cambio de schema/normalizacion para no generar falsos fallos.
+Implementado en Kia Health:
+
+- canary de repeticion;
+- canary de opcion `Otro`;
+- canary de pregunta aclaratoria;
+- canary de tono amable;
+- canary de continuidad;
+- canary de ultimo mensaje ruso sobre historial previo en espanol.
+
+Pendiente posible:
+
+- llevar las reglas de tono a metricas mas finas con review humano/LLM judge si hace falta.
 
 ## 11. Riesgos de aplicar todo de golpe
 

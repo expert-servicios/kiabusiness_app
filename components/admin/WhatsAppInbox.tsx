@@ -871,7 +871,11 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         body: JSON.stringify({
           clientId: activeConv.clientId,
           phone: activeConv.phone,
-          history: activeConv.messages.slice(-30).map((m) => ({ direction: m.direction, body: stripVisualQuote(m.body) })),
+          history: activeConv.messages.slice(-30).map((m) => ({
+            direction: m.direction,
+            body: stripVisualQuote(m.body),
+            ai_responded: m.ai_responded,
+          })),
           intent: reply.trim() || undefined,
           mode: reply.trim() ? 'edit' : 'compose',
           ...(replyTo && {

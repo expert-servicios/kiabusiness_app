@@ -142,7 +142,13 @@
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\tests\\\\fixtures\\\\kia-auditor\")",
       "PowerShell(\\(Get-Content \"d:\\\\ksenia_expert\\\\lib\\\\utils\\\\blog.ts\" | Measure-Object -Line\\).Lines)",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\holded\\\\migracion-sin-inventario\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\holded\\\\migracion-con-inventario\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\\\(public\\)\\\\holded\\\\migracion-con-inventario\")",
+      "PowerShell(Set-Location \"d:\\\\ksenia_expert\"; \\(Get-ChildItem . | Select-Object -ExpandProperty Name\\) -join \", \")",
+      "PowerShell(Set-Location \"d:\\\\ksenia_expert\\\\supabase\\\\migrations\"; \\(Get-ChildItem -Name | Sort-Object\\) -join \"`n\")",
+      "Read(//d/ksenia_expert/app/**)",
+      "PowerShell(Get-ChildItem -Path 'd:\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard' -Recurse -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"d:\\\\ksenia_expert\\\\app\\\\\", \"\"\\) })",
+      "WebFetch(domain:sede.agenciatributaria.gob.es)",
+      "WebFetch(domain:clave.gob.es)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",

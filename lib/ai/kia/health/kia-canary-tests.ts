@@ -150,7 +150,7 @@ export const KIA_HEALTH_CANARY_TESTS: KiaHealthCheck[] = [
     input: {
       channel: 'waba',
       contactStatus: 'lead',
-      message: 'Здравствуйте, хочу оформить декларацию',
+      message: '\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435, \u0445\u043e\u0447\u0443 \u043e\u0444\u043e\u0440\u043c\u0438\u0442\u044c \u0434\u0435\u043a\u043b\u0430\u0440\u0430\u0446\u0438\u044e',
     },
     expected: {
       language: 'ru',
@@ -202,6 +202,135 @@ export const KIA_HEALTH_CANARY_TESTS: KiaHealthCheck[] = [
       intentAny: ['checkout', 'readiness', 'connect_holded', 'service_selection'],
       mustNotContain: ['Para avanzar con el Plan Avanzado, entra en el portal seguro y completa tu perfil'],
       maxSimilarityToRecent: 0.72,
+      requiresManualReview: false,
+    },
+  },
+  {
+    id: 'other_option_canary',
+    category: 'behavioral',
+    severity: 'critical',
+    title: 'Aclaracion incluye respuestas rapidas y Otro',
+    input: {
+      channel: 'waba',
+      contactStatus: 'lead',
+      message: 'No se que necesito',
+    },
+    expected: {
+      intentAny: ['service_selection', 'unknown'],
+      nextActionAny: ['ask_one_question', 'show_menu', 'reply_only'],
+      requiresQuickReplies: true,
+      requiresOtherQuickReply: true,
+      requiresManualReview: false,
+      rulesApplied: ['other_option_policy_applied'],
+    },
+  },
+  {
+    id: 'clarifying_question_canary',
+    category: 'behavioral',
+    severity: 'warning',
+    title: 'Mensaje generico pide una sola aclaracion util',
+    input: {
+      channel: 'waba',
+      contactStatus: 'lead',
+      message: 'Necesito ayuda con papeles',
+    },
+    expected: {
+      intentAny: ['service_selection', 'unknown', 'send_documents'],
+      nextActionAny: ['ask_one_question', 'show_menu'],
+      requiresQuickReplies: true,
+      requiresOtherQuickReply: true,
+      maxQuestionMarks: 1,
+      requiresManualReview: false,
+      rulesApplied: ['clarifying_questions_policy_applied'],
+    },
+  },
+  {
+    id: 'friendly_tone_canary',
+    category: 'behavioral',
+    severity: 'info',
+    title: 'WABA mantiene tono amable con emoji moderado',
+    input: {
+      channel: 'waba',
+      contactStatus: 'unknown',
+      message: 'Hola',
+    },
+    expected: {
+      intentAny: ['greeting', 'service_selection'],
+      nextActionAny: ['show_menu', 'ask_one_question', 'reply_only'],
+      requiresEmoji: true,
+      requiresManualReview: false,
+    },
+  },
+  {
+    id: 'kia_identity_feminine_voice_canary',
+    category: 'behavioral',
+    severity: 'warning',
+    title: 'Kia responde como asistente virtual de EXPERT y en femenino',
+    input: {
+      channel: 'waba',
+      contactStatus: 'unknown',
+      message: 'Quien eres?',
+    },
+    expected: {
+      intentAny: ['greeting', 'unknown', 'service_selection'],
+      nextActionAny: ['reply_only', 'ask_one_question', 'show_menu'],
+      mustContain: ['Kia', 'asistente virtual'],
+      mustNotContain: ['soy humano', 'soy una persona', 'equipo EXPERT', 'estoy seguro', 'encantado'],
+      requiresManualReview: false,
+    },
+  },
+  {
+    id: 'continuity_canary',
+    category: 'behavioral',
+    severity: 'warning',
+    title: 'Kia reconoce continuidad y no repite CTA de llamada',
+    input: {
+      channel: 'waba',
+      contactStatus: 'lead',
+      message: 'Y si sigo teniendo dudas?',
+      context: {
+        recentMessages: [
+          {
+            role: 'assistant',
+            text: 'Puedes reservar una llamada gratuita de 15 minutos con el equipo de EXPERT y te orientamos sin compromiso.',
+          },
+          {
+            role: 'user',
+            text: 'Vale, gracias',
+          },
+        ],
+      },
+    },
+    expected: {
+      intentAny: ['book_call', 'service_selection', 'unknown'],
+      nextActionAny: ['book_call', 'ask_one_question', 'reply_only'],
+      mustNotContain: ['Puedes reservar una llamada gratuita de 15 minutos con el equipo de EXPERT y te orientamos sin compromiso'],
+      maxSimilarityToRecent: 0.72,
+      requiresManualReview: false,
+    },
+  },
+  {
+    id: 'russian_latest_message_overrides_history',
+    category: 'behavioral',
+    severity: 'critical',
+    title: 'El ultimo mensaje ruso manda sobre historial previo en espanol',
+    input: {
+      channel: 'waba',
+      contactStatus: 'client',
+      message: '\u042f \u043d\u0435 \u043f\u043e\u043d\u0438\u043c\u0430\u044e, \u043a\u0430\u043a\u0438\u0435 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b \u043d\u0443\u0436\u043d\u044b',
+      context: {
+        recentMessages: [
+          {
+            role: 'assistant',
+            text: 'Perfecto, revisamos tu expediente y te decimos que documento falta.',
+          },
+        ],
+      },
+    },
+    expected: {
+      language: 'ru',
+      intentAny: ['case_status', 'send_documents', 'unknown'],
+      nextActionAny: ['get_case_status', 'ask_one_question', 'reply_only'],
       requiresManualReview: false,
     },
   },

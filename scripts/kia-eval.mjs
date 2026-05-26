@@ -12,6 +12,7 @@ const requiredDecisionKeys = [
   'intent',
   'userMessage',
   'nextAction',
+  'quickReplies',
   'toolRequests',
   'dataToSave',
   'confidence',
@@ -139,7 +140,15 @@ function validateDecision({ decision, expected, testCase, fixture }) {
     errors.push(`service.flowType expected ${expected.service.flowType} got ${decision.dataToSave?.service?.flowType}`);
   }
   if (expected.mustNotEchoSecrets && echoesSecret(testCase.message, outputText)) errors.push('echoes secret-like input');
-  if (expected.language === 'ru' && !/[А-Яа-яЁё]/.test(decision.userMessage)) errors.push('expected Russian/Cyrillic response');
+  if (expected.requiresQuickReplies && (!Array.isArray(decision.quickReplies) || decision.quickReplies.length < 2)) {
+    errors.push('expected quickReplies');
+  }
+  if (expected.requiresOtherQuickReply) {
+    const quickReplies = Array.isArray(decision.quickReplies) ? decision.quickReplies : [];
+    const last = quickReplies[quickReplies.length - 1];
+    if (!last || last.id !== 'btn_other') errors.push('expected last quickReply btn_other');
+  }
+  if (expected.language === 'ru' && !/[\u0400-\u04FF]/.test(decision.userMessage)) errors.push('expected Russian/Cyrillic response');
   if ((fixture.suite === 'readiness-holded' || fixture.suite === 'monthly-plans') && decision.nextAction === 'run_viability') {
     errors.push('Holded/monthly plan must not use run_viability');
   }
@@ -161,6 +170,7 @@ function simulateDecision(fixture, testCase) {
     intent: 'unknown',
     userMessage: 'Respuesta breve de Kia con siguiente paso concreto.',
     nextAction: 'reply_only',
+    quickReplies: [],
     toolRequests: [],
     dataToSave: {},
     confidence: 0.84,

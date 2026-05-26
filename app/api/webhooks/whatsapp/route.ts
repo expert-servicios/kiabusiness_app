@@ -14,7 +14,9 @@ import {
   buildNoRepeatInstruction,
   findSimilarRecentMessage,
   applyDeterministicVariation,
+  isRepeatedKiaMessage,
 } from '@/lib/ai/kia/kia-response-variation';
+import { normalizeKiaQuickReplies, quickRepliesToButtons } from '@/lib/ai/kia/kia-quick-replies';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
@@ -23,6 +25,7 @@ import {
   processKiaStep,
   detectLanguage,
   type KiaSession,
+  type KiaLang,
   type KiaReply,
   type KiaSideEffects,
   SERVICES,
@@ -186,28 +189,258 @@ async function persistSessionUpdates(admin: any, phone: string, updates: Partial
 
 // ── Send a single Kia reply ───────────────────────────────────────────────────
 
-async function sendKiaReply(
-  reply       : KiaReply,
-  phone       : string,
-  clientId    : string | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  admin       : any,
-  aiResponded = false,
-  recentTexts : string[] = [],
-): Promise<void> {
-  if (reply.type === 'text') {
-    const body = recentTexts.length > 0
-      ? applyDeterministicVariation(reply.body, recentTexts)
-      : reply.body;
-    if (body !== reply.body) {
-      console.info('[Kia variation applied]', { phone, opener_from: reply.body.slice(0, 60), opener_to: body.slice(0, 60) });
+function cleanKiaOutboundForSimilarity(body: string): string {
+  return body
+    .replace(/^\[[^\]]+\]\s*/i, '')
+    .split(/\s+\|\s+/)[0]
+    .trim();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadRecentKiaOutboundTexts(admin: any, phone: string, limit = 6): Promise<string[]> {
+  const { data } = await admin
+    .from('whatsapp_conversations')
+    .select('body')
+    .eq('phone_number', phone)
+    .eq('direction', 'outbound')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  return (data ?? [])
+    .map((row: { body: string }) => cleanKiaOutboundForSimilarity(row.body))
+    .filter(Boolean);
+}
+
+function withKiaReplyBody(reply: KiaReply, body: string): KiaReply {
+  if (reply.type === 'text') return { ...reply, body };
+  if (reply.type === 'buttons') return { ...reply, body };
+  return { ...reply, body };
+}
+
+const CYRILLIC_RE = /[\u0400-\u04FF]/;
+const URL_RE = /https?:\/\/\S+/g;
+
+function localizeButtonTitle(title: string, lang: KiaLang): string {
+  const normalized = title.trim().toLowerCase();
+  if (lang === 'ru') {
+    const map: Record<string, string> = {
+      'llamada 15 min': 'Звонок 15 мин',
+      'reservar llamada': 'Звонок 15 мин',
+      'tengo dudas': 'Есть вопрос',
+      'escríbeme aquí': 'Написать здесь',
+      'escribeme aqui': 'Написать здесь',
+      'contratar ahora': 'Заказать',
+      'contratar online': 'Заказать онлайн',
+      'ver servicio': 'Об услуге',
+      'otro': 'Другое',
+      'no sé / otro': 'Другое',
+      'otro / no sé': 'Другое',
+    };
+    return map[normalized] ?? title;
+  }
+
+  const map: Record<string, string> = {
+    'другое': 'Otro',
+    'другой': 'Otro',
+    'звонок 15 мин': 'Llamada 15 min',
+    'есть вопрос': 'Tengo dudas',
+  };
+  return map[normalized] ?? title;
+}
+
+function localizeKiaReplyControls(reply: KiaReply, lang: KiaLang): KiaReply {
+  if (reply.type !== 'buttons') return reply;
+  return {
+    ...reply,
+    buttons: reply.buttons.map((button) => ({
+      ...button,
+      title: localizeButtonTitle(button.title, lang).slice(0, 20),
+    })),
+  };
+}
+
+function bodyMatchesLocale(body: string, lang: KiaLang): boolean {
+  const withoutUrls = body.replace(URL_RE, '').replace(/\b(EXPERT|Kia|Holded|Stripe|GoCardless|Cl@ve|AEAT)\b/gi, '');
+  if (lang === 'ru') return CYRILLIC_RE.test(withoutUrls);
+  return !CYRILLIC_RE.test(withoutUrls);
+}
+
+function fallbackLocalizedBody(reply: KiaReply, lang: KiaLang): string {
+  const urls = reply.body.match(URL_RE) ?? [];
+  if (lang === 'ru') {
+    if (urls.length > 0) {
+      return `Поняла 😊 Для следующего шага используйте эту безопасную ссылку:\n${urls[0]}\n\nЕсли что-то не подходит, коротко напишите ваш вопрос.`;
     }
-    const sent = await sendWhatsAppMessage({ to: phone, body });
+    return reply.type === 'text'
+      ? 'Поняла 😊 Коротко опишите вашу ситуацию, и я подскажу следующий полезный шаг.'
+      : 'Поняла 😊 Выберите подходящий вариант ниже или нажмите “Другое”.';
+  }
+
+  if (urls.length > 0) {
+    return `Claro 😊 Para el siguiente paso usa este enlace seguro:\n${urls[0]}\n\nSi no encaja, cuéntame brevemente tu caso.`;
+  }
+  return reply.type === 'text'
+    ? 'Claro 😊 Cuéntame brevemente tu caso y te hago la siguiente pregunta útil.'
+    : 'Claro 😊 Elige una opción abajo o pulsa “Otro”.';
+}
+
+function applyFeminineKiaVoice(body: string, lang: KiaLang): string {
+  if (lang === 'ru') {
+    return body
+      .replace(/\bя готов\b/gi, 'я готова')
+      .replace(/\bя уверен\b/gi, 'я уверена');
+  }
+
+  return body
+    .replace(/\bestoy seguro\b/gi, 'estoy segura')
+    .replace(/\bencantado\b/gi, 'encantada')
+    .replace(/\bpreparado para ayudarte\b/gi, 'preparada para ayudarte')
+    .replace(/\bsoy el asistente\b/gi, 'soy la asistente')
+    .replace(/\bcomo asesor virtual\b/gi, 'como asistente virtual');
+}
+
+function kiaIdentityIntro(lang: KiaLang, recentAssistantTexts: string[]): string {
+  const variants = lang === 'ru'
+    ? [
+        'Здравствуйте, я Kia, виртуальная ассистентка EXPERT 😊',
+        'Я Kia, виртуальная ассистентка EXPERT 😊',
+        'Kia на связи, виртуальная ассистентка EXPERT 😊',
+        'Здравствуйте 😊 Это Kia, виртуальная ассистентка EXPERT',
+      ]
+    : [
+        'Hola, soy Kia, la asistente virtual de EXPERT 😊',
+        'Soy Kia, tu asistente virtual de EXPERT 😊',
+        'Te atiende Kia, asistente virtual de EXPERT 😊',
+        'Hola 😊 Kia por aquí, asistente virtual de EXPERT',
+      ];
+  return variants[recentAssistantTexts.length % variants.length];
+}
+
+function enforceKiaVoice(reply: KiaReply, lang: KiaLang, recentAssistantTexts: string[]): KiaReply {
+  let body = applyFeminineKiaVoice(reply.body, lang)
+    .replace(/\bNuestro equipo lo revisar[aá] y te responderemos\b/gi, 'Desde EXPERT lo revisaremos y yo te avisaré por aquí')
+    .replace(/\bEl equipo de EXPERT\b/gi, 'Desde EXPERT')
+    .replace(/\bAsesor[ií]a EXPERT 💼\b/gi, 'Kia · EXPERT 💼');
+
+  if (!/\bKia\b/i.test(body)) {
+    body = `${kiaIdentityIntro(lang, recentAssistantTexts)}\n\n${body}`;
+  }
+
+  return withKiaReplyBody(reply, body);
+}
+
+async function enforceKiaReplyLanguage(reply: KiaReply, lang: KiaLang): Promise<KiaReply> {
+  if (bodyMatchesLocale(reply.body, lang)) return reply;
+
+  try {
+    const ai = await generateWabaAiText({
+      systemPrompt: [
+        'Eres un traductor de mensajes WhatsApp de Kia/EXPERT.',
+        lang === 'ru'
+          ? 'Traduce TODO el mensaje a ruso natural con alfabeto cirilico.'
+          : 'Traduce TODO el mensaje a espanol claro.',
+        'Conserva URLs, nombres de marca, formato WhatsApp con *negrita* y saltos de linea.',
+        'No anadas explicaciones. Devuelve solo el mensaje final.',
+      ].join('\n'),
+      messages: [{ role: 'user', content: reply.body }],
+      maxTokens: 500,
+    });
+    const translated = ai?.text?.trim().replace(/\*\*(.+?)\*\*/gs, '*$1*') ?? '';
+    if (translated && bodyMatchesLocale(translated, lang)) {
+      console.info('[Kia language guard applied]', { type: reply.type, lang });
+      return withKiaReplyBody(reply, translated);
+    }
+  } catch (error) {
+    console.warn('[Kia language guard failed]', { type: reply.type, lang, error: String(error).slice(0, 120) });
+  }
+
+  console.warn('[Kia language guard fallback]', { type: reply.type, lang });
+  return withKiaReplyBody(reply, fallbackLocalizedBody(reply, lang));
+}
+
+async function prepareKiaReplyForSending({
+  admin,
+  phone,
+  reply,
+  currentUserMessage,
+  lang,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin: any;
+  phone: string;
+  reply: KiaReply;
+  currentUserMessage?: string;
+  lang: KiaLang;
+}): Promise<KiaReply> {
+  reply = await enforceKiaReplyLanguage(localizeKiaReplyControls(reply, lang), lang);
+  const recentAssistantTexts = await loadRecentKiaOutboundTexts(admin, phone, 6);
+  reply = enforceKiaVoice(reply, lang, recentAssistantTexts);
+  if (recentAssistantTexts.length === 0) return reply;
+
+  const before = isRepeatedKiaMessage({
+    candidate: reply.body,
+    recentAssistantTexts,
+  });
+  if (!before.repeated) return reply;
+
+  const variedBody = applyDeterministicVariation(reply.body, recentAssistantTexts);
+  const after = isRepeatedKiaMessage({
+    candidate: variedBody,
+    recentAssistantTexts,
+  });
+
+  const logContext = {
+    phoneLast4: phone.slice(-4),
+    type: reply.type,
+    lang,
+    similarity: before.match?.similarity,
+    varied: variedBody !== reply.body,
+    stillRepeated: after.repeated,
+    hasCurrentUserMessage: Boolean(currentUserMessage?.trim()),
+  };
+
+  if (variedBody !== reply.body) {
+    console.info('[Kia variation applied]', logContext);
+  }
+  if (after.repeated || variedBody === reply.body) {
+    console.warn('[Kia repetition_risk_detected]', logContext);
+  }
+
+  return withKiaReplyBody(reply, variedBody);
+}
+
+async function sendKiaReply(
+  originalReply: KiaReply,
+  phone        : string,
+  clientId     : string | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin        : any,
+  options: {
+    aiResponded?: boolean;
+    currentUserMessage?: string;
+    lang?: KiaLang;
+    logPrefix?: string;
+    needsReview?: boolean;
+  } = {},
+): Promise<void> {
+  const aiResponded = options.aiResponded ?? false;
+  const logPrefix = options.logPrefix ?? 'Kia';
+  const needsReview = options.needsReview ?? false;
+  const reply = await prepareKiaReplyForSending({
+    admin,
+    phone,
+    reply: originalReply,
+    currentUserMessage: options.currentUserMessage,
+    lang: options.lang ?? 'es',
+  });
+
+  if (reply.type === 'text') {
+    const sent = await sendWhatsAppMessage({ to: phone, body: reply.body });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body, whatsappMessageId: sent.messageId,
-        aiResponded, needsReview: false,
+        body: reply.body, whatsappMessageId: sent.messageId,
+        aiResponded, needsReview,
       });
     } else {
       console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
@@ -218,18 +451,15 @@ async function sendKiaReply(
         .is('read_at', null);
     }
   } else if (reply.type === 'buttons') {
-    const btnBody = recentTexts.length > 0
-      ? applyDeterministicVariation(reply.body, recentTexts)
-      : reply.body;
     const sent = await sendWhatsAppInteractive({
-      to: phone, body: btnBody, footer: reply.footer,
+      to: phone, body: reply.body, footer: reply.footer,
       buttons: reply.buttons,
     });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body: `[Kia] ${btnBody} | ${reply.buttons.map((b) => b.title).join(' / ')}`,
-        whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
+        body: `[${logPrefix}] ${reply.body} | ${reply.buttons.map((b) => b.title).join(' / ')}`,
+        whatsappMessageId: sent.messageId, aiResponded, needsReview,
       });
     } else {
       console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
@@ -240,18 +470,15 @@ async function sendKiaReply(
         .is('read_at', null);
     }
   } else if (reply.type === 'list') {
-    const listBody = recentTexts.length > 0
-      ? applyDeterministicVariation(reply.body, recentTexts)
-      : reply.body;
     const sent = await sendWhatsAppInteractive({
-      to: phone, body: listBody, footer: reply.footer,
+      to: phone, body: reply.body, footer: reply.footer,
       list: { buttonText: reply.buttonText, sections: reply.sections },
     });
     if (sent.success) {
       await logWhatsAppConversation({
         clientId, phoneNumber: phone, direction: 'outbound',
-        body: `[Kia:list] ${listBody}`,
-        whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
+        body: `[${logPrefix}:list] ${reply.body}`,
+        whatsappMessageId: sent.messageId, aiResponded, needsReview,
       });
     } else {
       console.error('[Kia send reply failed]', { phone, type: reply.type, error: sent.error, detail: sent.detail });
@@ -359,20 +586,10 @@ async function handleKiaSideEffects({
       const body = session.lang === 'ru'
         ? `🔐 *Para contratar ${svc.label.ru}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`
         : `🔐 *Para contratar el servicio ${svc.label.es}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abrirá automáticamente. EXPERT 💼`;
-      const sent = await sendWhatsAppMessage({ to: phone, body });
-      if (sent.success) {
-        await logWhatsAppConversation({
-          clientId, phoneNumber: phone, direction: 'outbound',
-          body: `[Kia:contratar] ${svc.label.es} → ${url}`,
-          whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
-        });
-      } else {
-        await admin.from('whatsapp_conversations')
-          .update({ needs_review: true })
-          .eq('phone_number', phone)
-          .eq('direction', 'inbound')
-          .is('read_at', null);
-      }
+      await sendKiaReply({ type: 'text', body }, phone, clientId, admin, {
+        currentUserMessage: 'send_payment_link',
+        lang: session.lang,
+      });
     } catch (e) {
       console.error('[Kia sendPaymentLink]', e);
       await admin.from('whatsapp_conversations')
@@ -391,7 +608,7 @@ interface KiaAiContext {
   phone               : string;
   msgBody             : string;
   session             : KiaSession;
-  conversationHistory : { direction: string; body: string }[];
+  conversationHistory : { direction: string; body: string; ai_responded?: boolean | null }[];
   contactCtx         ?: KiaContactContext;
 }
 
@@ -409,6 +626,32 @@ function recentAssistantTextsFromWabaHistory(history: KiaAiContext['conversation
     .slice(-6);
 }
 
+function isKiaAuthoredWabaHistoryMessage(message: { direction: string; body: string; ai_responded?: boolean | null }): boolean {
+  if (message.direction !== 'outbound') return false;
+  if (message.ai_responded === true) return true;
+  return /^\[(Kia|Kia:AI|Kia:list|Kia:doc_select|Cat[aá]logo)/i.test(message.body.trim());
+}
+
+function wabaHistorySpeakerLabel(message: { direction: string; body: string; ai_responded?: boolean | null }): string {
+  if (message.direction === 'inbound') return 'Cliente';
+  return isKiaAuthoredWabaHistoryMessage(message) ? 'Kia' : 'Admin humano';
+}
+
+function formatWabaHistoryForPrompt(history: KiaAiContext['conversationHistory'], limit = 10): string {
+  return history
+    .slice(-limit)
+    .map((message) => `${wabaHistorySpeakerLabel(message)}: ${message.body}`)
+    .join('\n');
+}
+
+function humanAdminStyleExamples(history: KiaAiContext['conversationHistory']): string {
+  return history
+    .filter((message) => message.direction === 'outbound' && !isKiaAuthoredWabaHistoryMessage(message))
+    .slice(-6)
+    .map((message, index) => `${index + 1}. ${message.body.slice(0, 500)}`)
+    .join('\n');
+}
+
 async function generateKiaAiResponse({
   clientId, phone, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
@@ -419,10 +662,12 @@ async function generateKiaAiResponse({
     : 'español. Responde ÚNICAMENTE en español. NUNCA uses ruso ni otro idioma en la misma respuesta.';
 
   const officialSourceContext = await buildOfficialSourceContext(
-    [...conversationHistory.slice(-3).map((h) => `${h.direction}: ${h.body}`), `inbound: ${msgBody}`].join('\n'),
+    [formatWabaHistoryForPrompt(conversationHistory, 3), `Cliente: ${msgBody}`].filter(Boolean).join('\n'),
   );
   const recentAssistantTexts = recentAssistantTextsFromWabaHistory(conversationHistory);
   const antiRepeatInstruction = buildNoRepeatInstruction(recentAssistantTexts);
+  const labeledHistory = formatWabaHistoryForPrompt(conversationHistory, 10);
+  const humanStyle = humanAdminStyleExamples(conversationHistory);
 
   let clientContext = '';
   if (contactCtx) {
@@ -482,11 +727,12 @@ async function generateKiaAiResponse({
           msgBody,
           officialSourceContext || 'FUENTES OFICIALES DISPONIBLES: ninguna para este mensaje.',
           'HISTORIAL RECIENTE:',
-          conversationHistory.slice(-8).map((h) => `${h.direction}: ${h.body}`).join('\n') || 'Sin historial previo.',
+          labeledHistory || 'Sin historial previo.',
+          humanStyle ? `RESPUESTAS HUMANAS/ADMIN PREVIAS PARA APRENDER TONO Y CONTINUIDAD, SIN COPIAR LITERALMENTE:\n${humanStyle}` : '',
           'CONTEXTO DEL CONTACTO:',
           clientContext,
           antiRepeatInstruction,
-          'Reglas: no pedir API keys ni email por WhatsApp; usar login/panel seguro para datos sensibles; mantener respuesta breve.',
+          'Reglas: responde como Kia, asistente virtual de EXPERT, en femenino; no pedir API keys ni email por WhatsApp; usar login/panel seguro para datos sensibles; mantener respuesta breve.',
         ].join('\n\n'),
         contextInput: {
           channel: 'waba',
@@ -502,9 +748,9 @@ async function generateKiaAiResponse({
 
       const reply = structured.userMessage.replace(/\*\*(.+?)\*\*/gs, '*$1*').trim();
       if (reply && structured.decision.nextAction !== 'needs_review' && !structured.decision.requiresManualReview) {
-        const qr = structured.decision.quickReplies ?? [];
+        const qr = normalizeKiaQuickReplies(structured.decision.quickReplies, lang, { ensureOther: true });
         if (qr.length >= 2) {
-          return { reply: null, interactive: { body: reply, buttons: qr.slice(0, 3) } };
+          return { reply: null, interactive: { body: reply, buttons: quickRepliesToButtons(qr) } };
         }
         return { reply };
       }
@@ -515,6 +761,7 @@ async function generateKiaAiResponse({
 
   const systemPrompt = `Eres *Kia*, la asistente virtual IA de EXPERT Asesoría, gestoría española y Partner Oficial de Holded.
 *Eres una inteligencia artificial (IA), NO un ser humano.* Si alguien pregunta si eres humano o una persona real, responde siempre con honestidad: "Soy Kia, una IA de EXPERT. No soy una persona, soy un sistema automatizado al servicio de EXPERT Asesoría."
+Hablas sobre ti misma en femenino: "encantada", "estoy segura", "preparada para ayudarte". No firmes como "equipo EXPERT" ni finjas ser humana.
 Nuestra web: https://expertconsulting.es
 
 ÁREAS Y SERVICIOS (único alcance permitido):
@@ -547,7 +794,8 @@ FORMATO DE RESPUESTA — ELIGE UNO:
 
 OPCIÓN A — TEXTO (la mayoría de casos):
 Responde directamente con texto claro y conciso. Máximo 3 párrafos cortos.
-Termina con un siguiente paso natural solo si encaja con el contexto. Firma: "EXPERT 💼"
+Empieza de forma natural como Kia, asistente virtual de EXPERT, sin repetir siempre la misma apertura.
+Termina con un siguiente paso natural solo si encaja con el contexto. Firma solo si queda natural: "Kia · EXPERT 💼"
 
 OPCIÓN B — BOTONES INTERACTIVOS (solo cuando necesitas contexto antes de responder):
 Responde ÚNICAMENTE con este JSON exacto, sin texto antes ni después:
@@ -569,6 +817,8 @@ NEGRITA en WhatsApp: *texto* (UN asterisco, NO **texto**)
 Emojis con moderación: ✅ 👋 📋 📅 💼 🚀
 
 REGLAS:
+- Responde siempre como Kia, asistente virtual de EXPERT. Usa femenino cuando hables de ti misma.
+- Consulta las respuestas de "Admin humano" del historial como ejemplos de tono, cercania y continuidad. Aprende el estilo, pero no copies literalmente.
 - Varía la redacción segun historial y contexto; evita repetir la misma frase si ya la has dicho.
 - Antes de responder, compara tu borrador con CONVERSACIÓN RECIENTE y con mensajes anteriores de EXPERT. Si se parece demasiado, reescríbelo con otra apertura, otra estructura y otro cierre.
 - No uses varias veces seguidas frases como "te oriento", "para avanzar", "puedes reservar una llamada" o "entra en el portal seguro"; adapta la frase al contexto.
@@ -619,11 +869,16 @@ REGLAS PARA LEAD:
 CONTEXTO DEL CONTACTO:
 ${clientContext}
 
+CONVERSACION RECIENTE ETIQUETADA:
+${labeledHistory || 'Sin historial previo.'}
+
+${humanStyle ? `RESPUESTAS HUMANAS/ADMIN PREVIAS COMO REFERENCIA DE TONO, SIN COPIAR LITERALMENTE:\n${humanStyle}\n` : ''}
+
 ${antiRepeatInstruction}`;
 
   const messages: WabaAiMessage[] = conversationHistory.map((h) => ({
     role:    h.direction === 'inbound' ? 'user' : 'assistant',
-    content: h.body,
+    content: `${wabaHistorySpeakerLabel(h)}: ${h.body}`,
   }));
   messages.push({ role: 'user', content: msgBody });
 
@@ -644,11 +899,11 @@ ${antiRepeatInstruction}`;
           Array.isArray(parsed.buttons) &&
           parsed.buttons.length >= 2
         ) {
-          const buttons = (parsed.buttons as unknown[])
+          const buttons = normalizeKiaQuickReplies((parsed.buttons as unknown[])
             .filter((b): b is string => typeof b === 'string')
             .slice(0, 3)
-            .map((b, i) => ({ id: `kia_ai_${i}`, title: b.slice(0, 20) }));
-          if (buttons.length >= 2) return { reply: null, interactive: { body: parsed.body, buttons } };
+            .map((b, i) => ({ id: `kia_ai_${i}`, title: b.slice(0, 20), kind: 'secondary' as const })), lang, { ensureOther: true });
+          if (buttons.length >= 2) return { reply: null, interactive: { body: parsed.body, buttons: quickRepliesToButtons(buttons) } };
         }
       } catch { /* not valid JSON — fall through */ }
     }
@@ -765,6 +1020,7 @@ export async function POST(request: NextRequest) {
 
         // ── Kia response to media ─────────────────────────────────────
         const mediaSess  = await getOrCreateSession(admin, from, clientId);
+        const mediaLang  = caption ? detectLanguage(caption) : mediaSess.lang;
         const docRef     = storedUrl ?? mediaId ?? null;
         const clientDisplay = contactCtx.name ?? mediaSess.name ?? senderName;
 
@@ -784,13 +1040,10 @@ export async function POST(request: NextRequest) {
           const askMsg = !contactCtx.name && !mediaSess.name
             ? `👋 ¡Hola! Hemos recibido tu ${mediaLabel} y lo hemos guardado de forma segura.\n\nPara vincularlo a tu ficha y darte seguimiento, necesito identificarte. ¿Cuál es tu nombre?`
             : `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel} ✅\n\nPara orientarlo correctamente, dime a qué trámite corresponde o si prefieres reservar una llamada de 15 min antes de contratar.`;
-          const sentAsk = await sendWhatsAppMessage({ to: from, body: askMsg });
-          if (sentAsk.success) {
-            await logWhatsAppConversation({
-              clientId: undefined, phoneNumber: from, direction: 'outbound',
-              body: askMsg, whatsappMessageId: sentAsk.messageId, aiResponded: false, needsReview: false,
-            });
-          }
+          await sendKiaReply({ type: 'text', body: askMsg }, from, undefined, admin, {
+            currentUserMessage: caption || `[${msgType}]`,
+            lang: mediaLang,
+          });
           continue;
         }
 
@@ -825,27 +1078,23 @@ export async function POST(request: NextRequest) {
             },
           });
           const caseButtons = openCases.slice(0, 3).map((c) => ({ id: `doc_case_${c.id}`, title: c.service.slice(0, 20) }));
-          const sentSelect = await sendWhatsAppInteractive({
-            to: from, body: `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel}. ¿A qué expediente pertenece?`,
-            footer: 'EXPERT 💼', buttons: caseButtons,
+          await sendKiaReply({
+            type: 'buttons',
+            body: `${mediaIcon} *${clientDisplay}*, hemos guardado tu ${mediaLabel}. ¿A qué expediente pertenece?`,
+            footer: 'EXPERT 💼',
+            buttons: caseButtons,
+          }, from, clientId, admin, {
+            currentUserMessage: caption || `[${msgType}]`,
+            lang: mediaLang,
+            logPrefix: 'Kia:doc_select',
           });
-          if (sentSelect.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: `[Kia:doc_select] ${mediaLabel} → ? | ${openCases.map((c) => c.service).join(' / ')}`,
-              whatsappMessageId: sentSelect.messageId, aiResponded: false, needsReview: false,
-            });
-          }
           continue;
         }
 
-        const sentAck = await sendWhatsAppMessage({ to: from, body: ackBody });
-        if (sentAck.success) {
-          await logWhatsAppConversation({
-            clientId, phoneNumber: from, direction: 'outbound',
-            body: ackBody, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
-          });
-        }
+        await sendKiaReply({ type: 'text', body: ackBody }, from, clientId, admin, {
+          currentUserMessage: caption || `[${msgType}]`,
+          lang: mediaLang,
+        });
         notifyAdmins({
           title: `📎 Doc recibido — ${clientDisplay}`,
           body:  `${mediaLabel}${caption ? ': ' + caption : ''}${openCases.length === 1 ? ' → ' + openCases[0].service : ''}`,
@@ -872,13 +1121,14 @@ export async function POST(request: NextRequest) {
       }).catch(() => {});
 
       const buttonId = extractButtonId(msg as Record<string, unknown>);
+      const inboundLang = detectLanguage(msgBody);
 
       // ── Catalog: category selection → send services list ──────────────────
       if (buttonId?.startsWith('menu_cat_')) {
         const categoryId = buttonId.slice('menu_cat_'.length);
         const section = SERVICES_CATALOG.find((s) => s.id === categoryId);
         if (section) {
-          const isRu = /[А-Яа-яЁё]/.test(msgBody);
+          const isRu = inboundLang === 'ru';
           const rows = section.services.slice(0, 10).map((s) => ({
             id:          `svc_cat_${s.id}`,
             title:       s.title.slice(0, 24),
@@ -887,27 +1137,17 @@ export async function POST(request: NextRequest) {
           const replyBody = isRu
             ? `Услуги раздела *${section.title}*. Выберите нужную:`
             : `Servicios de *${section.emoji} ${section.title}*. Elige el que necesitas:`;
-          const sentList = await sendWhatsAppInteractive({
-            to:     from,
-            header: { type: 'text', text: `${section.emoji} ${section.title}`.slice(0, 60) },
-            body:   replyBody,
+          await sendKiaReply({
+            type: 'list',
+            body: replyBody,
             footer: 'expertconsulting.es/cita',
-            list: {
-              buttonText: isRu ? 'Ver servicios' : 'Ver servicios',
-              sections:   [{ title: section.title.slice(0, 24), rows }],
-            },
+            buttonText: isRu ? 'Услуги' : 'Ver servicios',
+            sections: [{ title: section.title.slice(0, 24), rows }],
+          }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+            logPrefix: 'Catálogo:cat',
           });
-          if (sentList.success) {
-            await logWhatsAppConversation({
-              clientId,
-              phoneNumber: from,
-              direction:   'outbound',
-              body:        `[Catálogo:cat] ${section.emoji} ${section.title}`,
-              whatsappMessageId: sentList.messageId,
-              aiResponded: false,
-              needsReview: false,
-            });
-          }
           await persistSessionUpdates(admin, from, {});
           continue;
         }
@@ -923,7 +1163,7 @@ export async function POST(request: NextRequest) {
           if (svc) { foundSection = section; foundService = svc; break; }
         }
         if (foundSection && foundService) {
-          const isRu       = /[А-Яа-яЁё]/.test(msgBody);
+          const isRu       = inboundLang === 'ru';
           const pageUrl    = `https://expertconsulting.es/servicios/${foundSection.id}/${foundService.id}`;
           const registrySvc = getService(foundService.id);
           const hasCheckout = registrySvc?.hasCheckout ?? false;
@@ -942,14 +1182,11 @@ export async function POST(request: NextRequest) {
             buttons.push({ id: 'btn_write_here', title: 'Tengo dudas' });
           }
 
-          const sentSvc = await sendWhatsAppInteractive({ to: from, body, footer: 'EXPERT 💼', buttons });
-          if (sentSvc.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: `[Catálogo:svc] ${foundService.title} → ${pageUrl}${hasCheckout ? ' [checkout disponible]' : ''}`,
-              whatsappMessageId: sentSvc.messageId, aiResponded: false, needsReview: false,
-            });
-          }
+          await sendKiaReply({ type: 'buttons', body, footer: 'EXPERT 💼', buttons }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+            logPrefix: 'Catálogo:svc',
+          });
           await persistSessionUpdates(admin, from, {});
           continue;
         }
@@ -960,19 +1197,16 @@ export async function POST(request: NextRequest) {
         const serviceId   = buttonId.slice('btn_contratar_'.length);
         const registrySvc = getService(serviceId);
         if (registrySvc?.hasCheckout) {
-          const isRu = /[А-Яа-яЁё]/.test(msgBody);
+          const isRu = inboundLang === 'ru';
           const url  = absoluteAppUrl(`/contratar?service=${serviceId}&source=whatsapp`);
           const body = isRu
             ? `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`
             : `🔐 *Contratación online — ${registrySvc.name}:*\n\n${url}\n\nAccede con tu cuenta o registrate, confirma tus datos y paga de forma segura. Tu expediente se abre automáticamente. EXPERT 💼`;
-          const sent = await sendWhatsAppMessage({ to: from, body });
-          if (sent.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: `[Catálogo:contratar] ${registrySvc.name} → ${url}`,
-              whatsappMessageId: sent.messageId, aiResponded: false, needsReview: false,
-            });
-          }
+          await sendKiaReply({ type: 'text', body }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+            logPrefix: 'Catálogo:contratar',
+          });
           await persistSessionUpdates(admin, from, {});
           continue;
         }
@@ -994,13 +1228,11 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
         if (!selectedCase) {
           const bad = 'No he podido validar ese expediente para este número. Lo dejo para revisión del equipo.';
-          const sentBad = await sendWhatsAppMessage({ to: from, body: bad });
-          if (sentBad.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: bad, whatsappMessageId: sentBad.messageId, aiResponded: false, needsReview: true,
-            });
-          }
+          await sendKiaReply({ type: 'text', body: bad }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+            needsReview: true,
+          });
           continue;
         }
         const serviceName = selectedCase?.service ?? 'tu expediente';
@@ -1013,13 +1245,10 @@ export async function POST(request: NextRequest) {
         });
 
         const ack = `${mediaIcon} Perfecto. Tu ${mediaLabel} ha sido vinculado al expediente de *${serviceName}* ✅\n\nNuestro equipo lo revisará y te responderemos en breve. EXPERT 💼`;
-        const sentAck = await sendWhatsAppMessage({ to: from, body: ack });
-        if (sentAck.success) {
-          await logWhatsAppConversation({
-            clientId, phoneNumber: from, direction: 'outbound',
-            body: ack, whatsappMessageId: sentAck.messageId, aiResponded: false, needsReview: false,
-          });
-        }
+        await sendKiaReply({ type: 'text', body: ack }, from, clientId, admin, {
+          currentUserMessage: msgBody,
+          lang: inboundLang,
+        });
         if (pendingDocMessageId) {
           await admin.from('whatsapp_conversations')
             .update({ case_id: caseId })
@@ -1063,13 +1292,10 @@ export async function POST(request: NextRequest) {
           await persistSessionUpdates(admin, from, { name: nameInput, flow: 'lead_media_followup', step: 'awaiting_service' });
           const loginUrl = secureLoginUrl('/solicitar-presupuesto');
           const askService = `Gracias, *${nameInput}*. Ya tengo tu nombre para esta conversacion.\n\nPara vincular el documento a una ficha o expediente con datos correctos, hazlo desde el portal seguro:\n${loginUrl}\n\nMientras tanto, dime a que tramite corresponde y te oriento por aqui sin pedirte email.`;
-          const sentAskService = await sendWhatsAppMessage({ to: from, body: askService });
-          if (sentAskService.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: askService, whatsappMessageId: sentAskService.messageId, aiResponded: false, needsReview: false,
-            });
-          }
+          await sendKiaReply({ type: 'text', body: askService }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+          });
           continue;
         }
 
@@ -1085,13 +1311,10 @@ export async function POST(request: NextRequest) {
           const mediaLabel = docType === 'document' ? 'documento' : docType === 'image' ? 'imagen' : docType === 'audio' ? 'audio' : 'archivo';
           const loginUrl = secureLoginUrl('/solicitar-presupuesto');
           const ackDoc = `${mediaIcon} *${session.name ?? from}*, muchas gracias. Hemos guardado tu ${mediaLabel} ✅\n\nPara seguimiento formal o expediente, entra desde el portal seguro:\n${loginUrl}\n\nSi quieres, dime a que tramite corresponde y te oriento por aqui. EXPERT 💼`;
-          const sentAckDoc = await sendWhatsAppMessage({ to: from, body: ackDoc });
-          if (sentAckDoc.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: ackDoc, whatsappMessageId: sentAckDoc.messageId, aiResponded: false, needsReview: false,
-            });
-          }
+          await sendKiaReply({ type: 'text', body: ackDoc }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+          });
           notifyAdmins({
             title: `📎 Doc lead sin ficha — ${session.name ?? from}`,
             body:  `${mediaLabel}${docCaption ? ': ' + docCaption : ''} | seguimiento por portal`,
@@ -1102,6 +1325,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Run the Kia state machine (language detection is handled inside)
+      const currentMessageLang = msgBody ? detectLanguage(msgBody) : session.lang;
       const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName, {
         status              : contactCtx.status,
         openCases           : contactCtx.openCases,
@@ -1109,23 +1333,15 @@ export async function POST(request: NextRequest) {
         billingReady        : contactCtx.billingReady,
         habitualAddressReady: contactCtx.habitualAddressReady,
       });
-      const updatedSession = { ...session, ...updates };
-
-      // Load recent outbound texts for anti-repetition (lightweight — 4 rows max)
-      const { data: recentOutboundRows } = await admin
-        .from('whatsapp_conversations')
-        .select('body')
-        .eq('phone_number', from)
-        .eq('direction', 'outbound')
-        .order('created_at', { ascending: false })
-        .limit(4);
-      const kiaEngineRecentTexts: string[] = (recentOutboundRows ?? [])
-        .map((r: { body: string }) => r.body.replace(/^\[Kia(?::AI|:list)?\]\s*/i, '').trim())
-        .filter(Boolean);
+      const updatesWithLanguage: Partial<KiaSession> = { ...updates, lang: updates.lang ?? currentMessageLang };
+      const updatedSession = { ...session, ...updatesWithLanguage };
 
       // Send all structured replies
       for (const reply of replies) {
-        await sendKiaReply(reply, from, clientId, admin, false, kiaEngineRecentTexts);
+        await sendKiaReply(reply, from, clientId, admin, {
+          currentUserMessage: msgBody,
+          lang: currentMessageLang,
+        });
       }
 
       // Handle side effects (test numbers skip lead/case creation)
@@ -1188,7 +1404,7 @@ export async function POST(request: NextRequest) {
 
       // ── CIF scraping: if prof_nif was just set and matches a company CIF ──────
       const CIF_PATTERN = /^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/i;
-      const newNif = updates.data?.prof_nif;
+      const newNif = updatesWithLanguage.data?.prof_nif;
       const oldNif = session.data?.prof_nif;
       if (!isTestNumber && newNif && newNif !== oldNif && CIF_PATTERN.test(newNif.trim())) {
         try {
@@ -1217,13 +1433,10 @@ export async function POST(request: NextRequest) {
               const infoBody = updatedSession.lang === 'ru'
                 ? `✅ Данные из публичных источников для CIF *${newNif}*:\n\n${infoLines}\n\nПроверьте, всё ли верно, и сообщите если что-то изменилось.`
                 : `✅ He encontrado datos públicos para el CIF *${newNif}*:\n\n${infoLines}\n\nConfirma que son correctos o dime si algo ha cambiado.`;
-              const sentInfo = await sendWhatsAppMessage({ to: from, body: infoBody });
-              if (sentInfo.success) {
-                await logWhatsAppConversation({
-                  clientId, phoneNumber: from, direction: 'outbound',
-                  body: infoBody, whatsappMessageId: sentInfo.messageId, aiResponded: false, needsReview: false,
-                });
-              }
+              await sendKiaReply({ type: 'text', body: infoBody }, from, clientId, admin, {
+                currentUserMessage: msgBody,
+                lang: inboundLang,
+              });
             }
           }
         } catch (e) {
@@ -1235,13 +1448,13 @@ export async function POST(request: NextRequest) {
       if (sideEffects.needsAiFallback) {
         const { data: history } = await admin
           .from('whatsapp_conversations')
-          .select('direction, body, created_at')
+          .select('direction, body, created_at, ai_responded')
           .eq('phone_number', from)
           .neq('whatsapp_message_id', messageId)
           .order('created_at', { ascending: false })
           .limit(8);
 
-        const conversationHistory = ((history ?? []).reverse()) as { direction: string; body: string }[];
+        const conversationHistory = ((history ?? []).reverse()) as { direction: string; body: string; ai_responded?: boolean | null }[];
         const aiResult = await generateKiaAiResponse({
           clientId, phone: from, msgBody,
           session: updatedSession,
@@ -1250,41 +1463,24 @@ export async function POST(request: NextRequest) {
         });
 
         if (aiResult.interactive) {
-          const sent = await sendWhatsAppInteractive({
-            to: from, body: aiResult.interactive.body, footer: 'EXPERT 💼',
+          await sendKiaReply({
+            type: 'buttons',
+            body: aiResult.interactive.body,
+            footer: 'EXPERT 💼',
             buttons: aiResult.interactive.buttons,
+          }, from, clientId, admin, {
+            aiResponded: true,
+            currentUserMessage: msgBody,
+            lang: currentMessageLang,
+            logPrefix: 'Kia:AI',
           });
-          if (sent.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: `[Kia:AI] ${aiResult.interactive.body} | ${aiResult.interactive.buttons.map((b) => b.title).join(' / ')}`,
-              whatsappMessageId: sent.messageId, aiResponded: true, needsReview: false,
-            });
-          } else {
-            console.error('[Kia AI interactive send failed]', { phone: from, error: sent.error, detail: sent.detail });
-            await admin
-              .from('whatsapp_conversations')
-              .update({ needs_review: true })
-              .eq('phone_number', from)
-              .eq('direction', 'inbound')
-              .is('read_at', null);
-          }
         } else if (aiResult.reply) {
-          const sent = await sendWhatsAppMessage({ to: from, body: aiResult.reply });
-          if (sent.success) {
-            await logWhatsAppConversation({
-              clientId, phoneNumber: from, direction: 'outbound',
-              body: aiResult.reply, whatsappMessageId: sent.messageId, aiResponded: true, needsReview: false,
-            });
-          } else {
-            console.error('[Kia AI text send failed]', { phone: from, error: sent.error, detail: sent.detail });
-            await admin
-              .from('whatsapp_conversations')
-              .update({ needs_review: true })
-              .eq('phone_number', from)
-              .eq('direction', 'inbound')
-              .is('read_at', null);
-          }
+          await sendKiaReply({ type: 'text', body: aiResult.reply }, from, clientId, admin, {
+            aiResponded: true,
+            currentUserMessage: msgBody,
+            lang: currentMessageLang,
+            logPrefix: 'Kia:AI',
+          });
         } else {
           await admin
             .from('whatsapp_conversations')
@@ -1297,7 +1493,7 @@ export async function POST(request: NextRequest) {
 
       // Persist session state changes (skipped for test numbers)
       if (!isTestNumber) {
-        await persistSessionUpdates(admin, from, updates);
+        await persistSessionUpdates(admin, from, updatesWithLanguage);
       }
     }
 

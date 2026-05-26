@@ -39,9 +39,22 @@ function containsSensitiveData(text: string): boolean {
 }
 
 function detectLanguage(text: string): 'es' | 'ru' | 'other' {
-  if (/[А-Яа-яЁё]/.test(text)) return 'ru';
+  if (/[\u0400-\u04FF]/.test(text)) return 'ru';
   if (/[a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/.test(text)) return 'es';
   return 'other';
+}
+
+function hasFriendlyTone(text: string): boolean {
+  return /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(text)
+    || /\b(claro|perfecto|gracias|encantad[ao]s?|te ayudo|por supuesto|понял|конечно|спасибо|помогу)\b/i.test(text);
+}
+
+function hasKiaIdentityVoice(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const namesKia = /\bkia\b/i.test(text);
+  const virtualAssistant = /asistente virtual|ia de expert|virtual.*expert|виртуальная ассистентка|ассистентка expert/i.test(text);
+  const forbidden = /soy humano|soy una persona|equipo expert|estoy seguro|encantado\b|я человек|я реальный человек|я готов\b|я уверен\b/i.test(normalized);
+  return namesKia && virtualAssistant && !forbidden;
 }
 
 // ── Deterministic grader ─────────────────────────────────────────────────────
@@ -233,6 +246,7 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
   const recentMsgs = input.recentAssistantMessages ?? [];
   if (recentMsgs.length > 0) {
     const REPEAT_THRESHOLD = 0.85;
+    const HIGH_SIMILARITY_THRESHOLD = 0.72;
     let maxSimilarity = 0;
     let mostSimilar = '';
     for (const prev of recentMsgs) {
@@ -247,12 +261,36 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
       `similitud < ${REPEAT_THRESHOLD}`,
       isRepeated ? `La respuesta es muy similar (${(maxSimilarity * 100).toFixed(0)}%) a un mensaje reciente: "${mostSimilar.slice(0, 80)}..."` : undefined,
     );
+    check(
+      'no_high_similarity_repeat',
+      maxSimilarity < HIGH_SIMILARITY_THRESHOLD,
+      maxSimilarity >= HIGH_SIMILARITY_THRESHOLD ? `similitud=${maxSimilarity.toFixed(2)} con mensaje reciente` : 'ok',
+      `similitud < ${HIGH_SIMILARITY_THRESHOLD}`,
+      maxSimilarity >= HIGH_SIMILARITY_THRESHOLD ? `La respuesta se parece demasiado a una respuesta anterior: "${mostSimilar.slice(0, 80)}..."` : undefined,
+    );
   } else {
-    const rule = KIA_AUDITOR_RULES_BY_ID.get('no_repeated_exact_message');
+    for (const ruleId of ['no_repeated_exact_message', 'no_high_similarity_repeat']) {
+      const rule = KIA_AUDITOR_RULES_BY_ID.get(ruleId);
+      if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+    }
+  }
+
+  // 14. history_checked_before_reply — require explicit memory/anti-repeat rule when recent history is provided.
+  if (recentMsgs.length > 0 || input.context?.requiresHistoryCheck === true) {
+    const historyChecked = rulesApplied.includes('history_checked') || rulesApplied.includes('anti_repetition_checked');
+    check(
+      'history_checked_before_reply',
+      historyChecked,
+      historyChecked ? 'ok' : `rulesApplied=${rulesApplied.join(',') || 'vacio'}`,
+      'history_checked o anti_repetition_checked',
+      !historyChecked ? 'La decision no deja constancia de haber revisado historial/anti-repeticion' : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('history_checked_before_reply');
     if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
   }
 
-  // 14. quick_reply_other_option — if quickReplies present, last must be btn_other
+  // 15. quick_reply_other_option — if quickReplies present, last must be btn_other
   const quickReplies = Array.isArray(decisionJson.quickReplies) ? decisionJson.quickReplies : null;
   if (quickReplies && quickReplies.length >= 2) {
     const last = quickReplies[quickReplies.length - 1] as Record<string, unknown>;
@@ -266,6 +304,69 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
     );
   } else {
     const rule = KIA_AUDITOR_RULES_BY_ID.get('quick_reply_other_option');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
+
+  // 16. quick_replies_required_for_clarification — WABA clarifying turns must include quick replies.
+  if (input.channel === 'waba' && nextAction === 'ask_one_question') {
+    const hasEnoughQuickReplies = Boolean(quickReplies && quickReplies.length >= 2);
+    const last = hasEnoughQuickReplies ? quickReplies?.[quickReplies.length - 1] as Record<string, unknown> : null;
+    check(
+      'quick_replies_required_for_clarification',
+      hasEnoughQuickReplies && String(last?.id ?? '') === 'btn_other',
+      hasEnoughQuickReplies ? `ultimo=${String(last?.id ?? '')}` : 'sin quickReplies',
+      '>=2 quickReplies y ultimo btn_other',
+      !hasEnoughQuickReplies ? 'Kia hace pregunta aclaratoria sin respuestas rapidas' : String(last?.id ?? '') !== 'btn_other' ? 'La ultima opcion no es btn_other' : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('quick_replies_required_for_clarification');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
+
+  // 17. friendly_tone_required — only enforced for greeting/menu WABA turns or explicit fixtures.
+  const shouldCheckFriendlyTone = input.context?.expectFriendlyTone === true
+    || (input.channel === 'waba' && ['greeting', 'service_selection'].includes(intent) && ['show_menu', 'ask_one_question', 'reply_only'].includes(nextAction));
+  if (shouldCheckFriendlyTone) {
+    check(
+      'friendly_tone_required',
+      hasFriendlyTone(kiaResponse),
+      hasFriendlyTone(kiaResponse) ? 'ok' : kiaResponse.slice(0, 120),
+      'tono amable/profesional con senal humana',
+      !hasFriendlyTone(kiaResponse) ? 'La respuesta suena fria o demasiado robotica para WABA' : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('friendly_tone_required');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
+
+  // 18. kia_identity_voice_required — explicit fixtures and WABA identity questions.
+  const shouldCheckKiaIdentity = input.context?.expectKiaIdentity === true
+    || (input.channel === 'waba' && /\b(quien eres|quién eres|eres humano|eres una persona|who are you|ты кто|вы кто|ты человек)\b/i.test(userMessage));
+  if (shouldCheckKiaIdentity) {
+    check(
+      'kia_identity_voice_required',
+      hasKiaIdentityVoice(kiaResponse),
+      hasKiaIdentityVoice(kiaResponse) ? 'ok' : kiaResponse.slice(0, 140),
+      'Kia + asistente virtual + femenino + no humano/equipo',
+      !hasKiaIdentityVoice(kiaResponse) ? 'Kia no mantiene identidad/voz esperada de asistente virtual en femenino' : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('kia_identity_voice_required');
+    if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+  }
+
+  // 19. no_parrot_behavior — fail when it closely matches at least two recent messages.
+  if (recentMsgs.length >= 2) {
+    const similarCount = recentMsgs.filter((prev) => messageSimilarity(kiaResponse, prev) >= 0.72).length;
+    check(
+      'no_parrot_behavior',
+      similarCount < 2,
+      `${similarCount} mensajes similares`,
+      'menos de 2 mensajes recientes similares',
+      similarCount >= 2 ? 'Kia repite estructura/frase en varios turnos consecutivos' : undefined,
+    );
+  } else {
+    const rule = KIA_AUDITOR_RULES_BY_ID.get('no_parrot_behavior');
     if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
   }
 

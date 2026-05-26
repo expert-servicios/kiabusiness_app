@@ -58,6 +58,18 @@ export const KIA_NEXT_ACTIONS = [
   'needs_review',
 ] as const;
 
+export const KIA_QUICK_REPLY_KINDS = [
+  'primary',
+  'secondary',
+  'other',
+  'call',
+  'checkout',
+  'profile',
+  'holded',
+  'viability',
+  'readiness',
+] as const;
+
 export const kiaToolRequestSchema = z.object({
   toolName: z.string().min(1),
   arguments: z.record(z.string(), z.unknown()).default({}),
@@ -67,6 +79,7 @@ export const kiaToolRequestSchema = z.object({
 export const kiaQuickReplySchema = z.object({
   id:    z.string().min(1).max(256),
   title: z.string().min(1).max(20),
+  kind:  z.enum(KIA_QUICK_REPLY_KINDS).default('secondary'),
 });
 
 export const kiaDecisionSchema = z.object({
@@ -116,6 +129,7 @@ export const KIA_DECISION_JSON_SCHEMA = {
     'intent',
     'userMessage',
     'nextAction',
+    'quickReplies',
     'toolRequests',
     'dataToSave',
     'confidence',
@@ -152,10 +166,11 @@ export const KIA_DECISION_JSON_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['id', 'title'],
+        required: ['id', 'title', 'kind'],
         properties: {
           id:    { type: 'string' },
           title: { type: 'string', maxLength: 20 },
+          kind:  { enum: KIA_QUICK_REPLY_KINDS },
         },
       },
     },

@@ -21,6 +21,11 @@ export interface KiaHealthExpected {
   rulesApplied?: string[];
   contactStatus?: KiaHealthContactStatus;
   language?: 'es' | 'ru';
+  minQuickReplies?: number;
+  requiresQuickReplies?: boolean;
+  requiresOtherQuickReply?: boolean;
+  maxQuestionMarks?: number;
+  requiresEmoji?: boolean;
   forbidsApiKeyRequest?: boolean;
   mustNotEchoSecrets?: boolean;
   minConfidence?: number;

@@ -72,21 +72,63 @@ export function getRecentAssistantTextsFromContext(context: KiaContext, limit = 
 
 // ── Deterministic variation for Kia Engine replies ────────────────────────────
 
-const URL_RE = /https?:\/\/\S+/;
 const SHORT_BODY_THRESHOLD = 60;
 
-/** Returns true if body is too similar to a recent outbound and should be varied. */
-export function isRepeatedKiaMessage(
-  body: string,
-  recentTexts: string[],
-  threshold = DEFAULT_THRESHOLD,
-): boolean {
-  return findSimilarRecentMessage(body, recentTexts, threshold) !== null;
+/** Returns the repetition decision and the closest recent outbound, if any. */
+export function isRepeatedKiaMessage(params: {
+  candidate: string;
+  recentAssistantTexts: string[];
+  threshold?: number;
+}): { repeated: boolean; match?: SimilarMessageMatch } {
+  const match = findSimilarRecentMessage(
+    params.candidate,
+    params.recentAssistantTexts,
+    params.threshold ?? DEFAULT_THRESHOLD,
+  );
+  return match ? { repeated: true, match } : { repeated: false };
 }
 
-/** Returns true when the body should NOT be varied (URLs, very short messages). */
+export function buildVariationRequest(params: {
+  candidate: string;
+  repeatedText: string;
+  userMessage: string;
+  recentAssistantTexts: string[];
+  locale: 'es' | 'ru';
+}): string {
+  const recent = params.recentAssistantTexts
+    .slice(-4)
+    .map((text, index) => `${index + 1}. ${text.slice(0, 500)}`)
+    .join('\n');
+  const languageInstruction = params.locale === 'ru'
+    ? 'Reescribe en ruso natural.'
+    : 'Reescribe en espanol claro.';
+
+  return [
+    '<variation_request>',
+    languageInstruction,
+    'Mantén exactamente la misma decision operativa, enlaces, botones e IDs.',
+    'Cambia apertura, estructura y cierre para que no parezca una repeticion.',
+    'No anadas acciones nuevas ni cambies requisitos de checkout, login, perfil, Holded o viabilidad.',
+    'Si ya se ofrecio un enlace o llamada, reconoce continuidad en vez de repetir el mismo CTA literal.',
+    '<current_user_message>',
+    params.userMessage || 'Sin mensaje de usuario disponible.',
+    '</current_user_message>',
+    '<candidate_to_rewrite>',
+    params.candidate,
+    '</candidate_to_rewrite>',
+    '<similar_recent_message>',
+    params.repeatedText,
+    '</similar_recent_message>',
+    '<recent_assistant_messages>',
+    recent || 'Sin historial reciente.',
+    '</recent_assistant_messages>',
+    '</variation_request>',
+  ].join('\n');
+}
+
+/** Returns true when the body should NOT be varied. */
 export function shouldSkipVariation(body: string): boolean {
-  return URL_RE.test(body) || body.length < SHORT_BODY_THRESHOLD;
+  return body.length < SHORT_BODY_THRESHOLD;
 }
 
 // Each sub-array is a group of interchangeable openers.
@@ -129,14 +171,26 @@ export function rotateOpener(body: string, seed: number): string {
 }
 
 /**
- * If the body is repeated (≥ 0.72 similarity to a recent outbound) and doesn't
- * contain a URL, applies deterministic opener rotation.
+ * If the body is repeated (>= 0.72 similarity to a recent outbound), applies
+ * deterministic opener rotation or a continuity prefix.
  * Preserves the operational content, only varies the phrasing.
  */
 export function applyDeterministicVariation(body: string, recentTexts: string[]): string {
   if (shouldSkipVariation(body)) return body;
-  if (!isRepeatedKiaMessage(body, recentTexts)) return body;
-  return rotateOpener(body, recentTexts.length);
+  const repeated = isRepeatedKiaMessage({ candidate: body, recentAssistantTexts: recentTexts });
+  if (!repeated.repeated) return body;
+
+  const rotated = rotateOpener(body, recentTexts.length);
+  if (rotated !== body) return rotated;
+
+  const prefix = /[\u0400-\u04FF]/.test(body)
+    ? [
+        '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u043c \u043e\u0442\u0441\u044e\u0434\u0430:',
+        '\u041f\u043e \u044d\u0442\u043e\u043c\u0443 \u043f\u0443\u043d\u043a\u0442\u0443:',
+        '\u0427\u0442\u043e\u0431\u044b \u0434\u0432\u0438\u043d\u0443\u0442\u044c\u0441\u044f \u0434\u0430\u043b\u044c\u0448\u0435:',
+      ][recentTexts.length % 3]
+    : ['Lo retomamos por aqui:', 'Para avanzar con esto:', 'Te lo dejo de otra forma:'][recentTexts.length % 3];
+  return `${prefix}\n\n${body}`;
 }
 
 export function buildNoRepeatInstruction(recentAssistantTexts: string[]): string {

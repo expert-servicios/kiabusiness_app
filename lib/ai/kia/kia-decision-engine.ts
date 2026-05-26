@@ -23,6 +23,7 @@ import {
   findSimilarRecentMessage,
   getRecentAssistantTextsFromContext,
 } from './kia-response-variation';
+import { normalizeKiaQuickReplies } from './kia-quick-replies';
 
 export interface KiaDecisionResult {
   decision: KiaDecision;
@@ -109,6 +110,8 @@ export async function runKiaDecision(input: {
     }
   }
 
+  decision = finalizeDecisionPresentation(decision, input.channel, locale);
+
   const toolResults: KiaToolResult[] = [];
   const allowToolExecution = input.allowTools === true && process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true';
   if (allowToolExecution) {
@@ -136,6 +139,103 @@ export async function runKiaDecision(input: {
     userMessage: decision.userMessage,
     usedFallback,
   };
+}
+
+function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
+  const quickReplyAllowedActions: KiaDecision['nextAction'][] = ['ask_one_question', 'show_menu', 'reply_only'];
+  const shouldKeepQuickReplies = channel === 'waba' && quickReplyAllowedActions.includes(decision.nextAction);
+  const quickReplies = shouldKeepQuickReplies
+    ? normalizeKiaQuickReplies(decision.quickReplies, locale, { ensureOther: true })
+    : [];
+  const rules = new Set(decision.rulesApplied);
+  const warnings = [...decision.warnings];
+  let userMessage = decision.userMessage;
+
+  rules.add('history_checked');
+  rules.add('anti_repetition_checked');
+  if (quickReplies.length >= 2) {
+    rules.add('quick_reply_policy_applied');
+    if (decision.nextAction === 'ask_one_question') rules.add('clarifying_questions_policy_applied');
+    rules.add('other_option_policy_applied');
+  }
+
+  const languageRepair = repairUserMessageLanguage(userMessage, locale, decision.nextAction);
+  if (languageRepair.repaired) {
+    userMessage = languageRepair.message;
+    rules.add('latest_message_language_enforced');
+    warnings.push('user_message_language_repaired_by_backend');
+  }
+  const questionRepair = enforceSingleQuestion(userMessage, decision.nextAction);
+  if (questionRepair.repaired) {
+    userMessage = questionRepair.message;
+    rules.add('single_question_per_turn_backend_enforced');
+    warnings.push('extra_question_marks_repaired_by_backend');
+  }
+
+  return {
+    ...decision,
+    userMessage,
+    quickReplies: quickReplies.length >= 2 ? quickReplies : [],
+    rulesApplied: Array.from(rules),
+    warnings,
+  };
+}
+
+function repairUserMessageLanguage(message: string, locale: 'es' | 'ru', nextAction: KiaDecision['nextAction']): { repaired: boolean; message: string } {
+  if (locale === 'ru' && !/[А-Яа-яЁё]/.test(message)) {
+    return { repaired: true, message: russianSafeMessage(nextAction) };
+  }
+  if (locale === 'es' && /[А-Яа-яЁё]/.test(message)) {
+    return { repaired: true, message: spanishSafeMessage(nextAction) };
+  }
+  return { repaired: false, message };
+}
+
+function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
+  if (nextAction === 'ask_one_question') {
+    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Чтобы помочь точнее, уточните, пожалуйста, что вам нужно сейчас?';
+  }
+  if (nextAction === 'show_menu') {
+    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Выберите подходящий вариант, а если ничего не подходит, нажмите «Другое».';
+  }
+  if (nextAction === 'get_case_status') {
+    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Проверю ваш вопрос по делу. Уточните, пожалуйста, о каком документе или этапе речь?';
+  }
+  return 'Я Kia, виртуальная ассистентка EXPERT 😊 Помогу вам с этим шагом. Напишите коротко, что нужно уточнить дальше.';
+}
+
+function spanishSafeMessage(nextAction: KiaDecision['nextAction']): string {
+  if (nextAction === 'ask_one_question') {
+    return 'Soy Kia, asistente virtual de EXPERT 😊 Para ayudarte mejor, dime qué necesitas aclarar ahora.';
+  }
+  if (nextAction === 'show_menu') {
+    return 'Soy Kia, asistente virtual de EXPERT 😊 Elige la opción que encaje mejor; si no aparece, pulsa “Otro”.';
+  }
+  if (nextAction === 'get_case_status') {
+    return 'Soy Kia, asistente virtual de EXPERT 😊 Reviso tu consulta sobre el expediente. ¿A qué documento o fase te refieres?';
+  }
+  return 'Soy Kia, asistente virtual de EXPERT 😊 Te ayudo con el siguiente paso. Cuéntame brevemente qué necesitas aclarar.';
+}
+
+function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAction']): { repaired: boolean; message: string } {
+  if (nextAction !== 'ask_one_question') return { repaired: false, message };
+  let questionMarks = 0;
+  let repaired = false;
+  const chars = [...message].map((char) => {
+    if (char === '?') {
+      questionMarks += 1;
+      if (questionMarks > 1) {
+        repaired = true;
+        return '.';
+      }
+    }
+    if (char === '¿' && questionMarks >= 1) {
+      repaired = true;
+      return '';
+    }
+    return char;
+  });
+  return { repaired, message: chars.join('').replace(/\s+\./g, '.').replace(/\.{2,}/g, '.').trim() };
 }
 
 function buildUserPayload(message: string, context: KiaContext, recentAssistantTexts: string[]): string {
@@ -181,6 +281,13 @@ function normalizeDecisionCandidate(candidate: unknown, taskType: KiaTaskType, c
   record.intent = normalizeEnum(record.intent, KIA_INTENTS);
   record.nextAction = normalizeEnum(record.nextAction, KIA_NEXT_ACTIONS);
   record.userMessage = typeof record.userMessage === 'string' ? record.userMessage : String(record.userMessage ?? '');
+  record.quickReplies = normalizeKiaQuickReplies(
+    Array.isArray(record.quickReplies)
+      ? record.quickReplies as Array<{ id?: string; title?: string; kind?: KiaDecision['quickReplies'][number]['kind'] }>
+      : [],
+    context.contact.language,
+    { ensureOther: true },
+  );
   record.toolRequests = Array.isArray(record.toolRequests) ? record.toolRequests.map(normalizeToolRequest).filter(Boolean) : [];
   record.dataToSave = isRecord(record.dataToSave) ? record.dataToSave : {};
   record.confidence = normalizeConfidence(record.confidence);

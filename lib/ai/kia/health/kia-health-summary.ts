@@ -55,18 +55,13 @@ export interface KiaHealthSummary {
 
 export async function getKiaHealthSummary(): Promise<KiaHealthSummary> {
   const admin = getSupabaseAdmin();
-  const [{ data: runs }, { data: anomalies }, { data: failures }] = await Promise.all([
+  const [{ data: runs }, anomalies, { data: failures }] = await Promise.all([
     admin
       .from('kia_health_runs')
       .select('id, run_type, status, score, total_checks, passed_checks, failed_checks, warning_checks, provider, model, started_at, finished_at, summary')
       .order('started_at', { ascending: false })
       .limit(20),
-    admin
-      .from('kia_behavior_anomalies')
-      .select('id, severity, anomaly_type, title, description, created_at')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
-      .limit(10),
+    getOpenAnomalies(admin),
     admin
       .from('kia_health_check_results')
       .select('id, check_id, category, severity, status, error, created_at, latency_ms, cost_estimate, provider, model')
@@ -161,6 +156,35 @@ export async function getKiaHealthSummary(): Promise<KiaHealthSummary> {
       createdAt: item.created_at,
     })),
   };
+}
+
+async function getOpenAnomalies(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const primary = await admin
+    .from('kia_behavior_anomalies')
+    .select('id, severity, anomaly_type, title, description, created_at')
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!isMissingColumnError(primary.error)) return primary.data ?? [];
+
+  const legacy = await admin
+    .from('kia_behavior_anomalies')
+    .select('id, severity, anomaly_type, title, description, created_at')
+    .eq('resolved', false)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (legacy.error) {
+    console.error('[Kia health summary anomalies]', legacy.error.message);
+    return [];
+  }
+  return legacy.data ?? [];
+}
+
+function isMissingColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === '42703' || /column .* does not exist/i.test(error.message ?? '');
 }
 
 function scoreForCategory(results: Array<{ category: string; status: string }>, category: string): number | null {

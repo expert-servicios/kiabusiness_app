@@ -932,8 +932,8 @@ const SERVICE_MENUS: Record<string, Record<KiaLang, AnyMenu>> = {
     ru: { type: 'buttons', body: 'Мы *официальный партнёр Holded* ⚡\n\nЧто нужно?', buttons: [{ id: 'svc_holded_starter', title: 'Стартовый пакет' }, { id: 'svc_holded_formacion', title: 'Обучение (почасово)' }, { id: 'svc_holded_migracion', title: 'Полная миграция' }] },
   },
   certificado: {
-    es: { type: 'buttons', body: '🔐 ¡Buena elección! El certificado digital es clave para tus trámites online 😊\n\n¿Es para ti o para tu empresa?', buttons: [{ id: 'svc_certificado_fisica', title: 'Para mí (persona)' }, { id: 'svc_certificado_empresa', title: 'Para mi empresa' }] },
-    ru: { type: 'buttons', body: 'ЭЦП для кого?', buttons: [{ id: 'svc_certificado_fisica', title: 'Для меня (физлицо)' }, { id: 'svc_certificado_empresa', title: 'Для моей компании' }] },
+    es: { type: 'buttons', body: '🔐 ¡Buena elección! El certificado digital es clave para tus trámites online 😊\n\n¿Es para ti o para tu empresa?', buttons: [{ id: 'svc_certificado_fisica', title: 'Para mí (persona)' }, { id: 'svc_certificado_empresa', title: 'Para mi empresa' }, { id: 'btn_other', title: 'Otro' }] },
+    ru: { type: 'buttons', body: 'ЭЦП для кого?', buttons: [{ id: 'svc_certificado_fisica', title: 'Для меня (физлицо)' }, { id: 'svc_certificado_empresa', title: 'Для моей компании' }, { id: 'btn_other', title: 'Другое' }] },
   },
   trafico: {
     es: { type: 'buttons', body: '🚗 ¡Cuéntame! ¿Qué gestión de tráfico o capitanía necesitas? Te lo resuelvo 😊', buttons: [{ id: 'svc_trafico', title: 'Vehículo / Matric.' }, { id: 'svc_trafico_maritimo', title: 'Embarcación' }, { id: 'svc_trafico_no_se', title: 'No sé / Otro' }] },
@@ -951,8 +951,8 @@ const EXISTING_MENU: Record<KiaLang, ListMenu> = {
 };
 
 const CONSULT_MENU: Record<KiaLang, BtnMenu> = {
-  es: { type: 'buttons', body: '💬 ¡Claro que sí! ¿En qué puedo ayudarte hoy? 😊✨', buttons: [{ id: 'co_no_se', title: 'No sé qué necesito' }, { id: 'co_urgente', title: 'Caso urgente' }, { id: 'co_cita', title: 'Reservar consulta' }] },
-  ru: { type: 'buttons', body: 'Чем могу помочь? 😊', buttons: [{ id: 'co_no_se', title: 'Не знаю, что нужно' }, { id: 'co_urgente', title: 'Срочный вопрос' }, { id: 'co_cita', title: 'Записаться на консультацию' }] },
+  es: { type: 'buttons', body: '💬 ¡Claro que sí! ¿En qué puedo ayudarte hoy? 😊✨', buttons: [{ id: 'co_no_se', title: 'No sé qué necesito' }, { id: 'co_urgente', title: 'Caso urgente' }, { id: 'btn_other', title: 'Otro' }] },
+  ru: { type: 'buttons', body: 'Чем могу помочь? 😊', buttons: [{ id: 'co_no_se', title: 'Не знаю, что нужно' }, { id: 'co_urgente', title: 'Срочный вопрос' }, { id: 'btn_other', title: 'Другое' }] },
 };
 
 // ── Lead / Client differentiated menus ───────────────────────────────────────
@@ -1022,6 +1022,26 @@ function menuToReply(menu: AnyMenu, footer = FOOTER): KiaReply {
 }
 
 // ── Side effects ──────────────────────────────────────────────────────────────
+
+function otherButton(lang: KiaLang): { id: string; title: string } {
+  return { id: 'btn_other', title: lang === 'ru' ? 'Другое' : 'Otro' };
+}
+
+function withOtherButton(
+  buttons: { id: string; title: string }[],
+  lang: KiaLang,
+  options: { force?: boolean } = {},
+): { id: string; title: string }[] {
+  const withoutOther = buttons.filter((button) => {
+    const title = button.title.trim().toLowerCase();
+    return button.id !== 'btn_other' && title !== 'otro' && title !== 'другое' && title !== 'другой';
+  });
+
+  if (withoutOther.length < buttons.length || buttons.length < 3 || options.force) {
+    return [...withoutOther.slice(0, 2), otherButton(lang)].slice(0, 3);
+  }
+  return buttons.slice(0, 3);
+}
 
 export interface KiaSideEffects {
   escalate       ?: boolean;
@@ -1093,8 +1113,9 @@ function unsureCta(lang: KiaLang, name?: string | null): KiaReply {
   return {
     type: 'buttons', body, footer: FOOTER,
     buttons: [
-      { id: 'btn_book_call',  title: lang === 'ru' ? 'Reservar llamada' : 'Reservar llamada' },
-      { id: 'btn_write_here', title: lang === 'ru' ? 'Escríbeme aquí'   : 'Escríbeme aquí'   },
+      { id: 'btn_book_call',  title: lang === 'ru' ? 'Звонок 15 мин' : 'Reservar llamada' },
+      { id: 'btn_write_here', title: lang === 'ru' ? 'Написать здесь' : 'Escríbeme aquí' },
+      otherButton(lang),
     ],
   };
 }
@@ -1144,7 +1165,7 @@ function contactStart(lang: KiaLang, name: string | null, contactInfo?: KiaConta
   const askName: KiaReply = {
     type: 'text',
     body: lang === 'ru'
-      ? '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?'
+      ? '🙋😊 Приятно познакомиться! Как мне к вам обращаться?'
       : '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?',
   };
   return {
@@ -1264,6 +1285,13 @@ function freeConsultPrompt(lang: KiaLang): KiaReply {
   return { type: 'text', body };
 }
 
+function otherFreeTextPrompt(lang: KiaLang): KiaReply {
+  const body = lang === 'ru'
+    ? 'Конечно 😊 Коротко опишите вашу ситуацию или что именно не подходит, и я задам следующий полезный вопрос.'
+    : 'Claro 😊 Cuéntame brevemente tu caso o qué opción no encaja, y te hago la siguiente pregunta útil.';
+  return { type: 'text', body };
+}
+
 function serviceInfoReply(lang: KiaLang, svcId: string): KiaReply {
   const svc   = SERVICES[svcId];
   const url   = getServicePageUrl(svcId) ?? 'https://expertconsulting.es/servicios';
@@ -1373,11 +1401,12 @@ export function processKiaStep(
   clientName  ?: string | null,
   contactInfo ?: KiaContactInfo,
 ): KiaStepResult {
-  const lang = session.lang;
+  const sessionLang = session.lang;
+  const detectedLang = msgBody.length >= 4 ? detectLanguage(msgBody) : sessionLang;
+  const lang = detectedLang;
   const name = session.name ?? clientName ?? null;
   const interaction = buttonId ?? '';
-  const detectedLang = msgBody.length >= 4 ? detectLanguage(msgBody) : lang;
-  const langChanged  = detectedLang !== lang;
+  const langChanged  = detectedLang !== sessionLang;
 
   // Commands — any point in the conversation
   const cmd = COMMANDS.find((c) => msgBody.toLowerCase().trim() === c || msgBody.toLowerCase().trim().startsWith(c + ' '));
@@ -1440,20 +1469,27 @@ export function processKiaStep(
       sideEffects: { sendPaymentLink: true },
     };
   }
-  if (interaction === 'btn_write_here' || interaction === 'btn_other') {
+  if (interaction === 'btn_other') {
+    return {
+      replies    : [otherFreeTextPrompt(lang)],
+      updates    : { flow: 'consult', step: 'free_text_other', escalated: false },
+      sideEffects: {},
+    };
+  }
+  if (interaction === 'btn_write_here') {
     return {
       replies    : [freeConsultPrompt(lang)],
       updates    : { flow: 'consult', step: 'free_consult', escalated: false },
-      sideEffects: { needsAiFallback: true },
+      sideEffects: {},
     };
   }
   // Text inputs "otro" / "другое" as escape valve (exact match only, case-insensitive)
   const msgBodyLower = msgBody.trim().toLowerCase();
-  if (msgBodyLower === 'otro' || msgBodyLower === 'другое' || msgBodyLower === 'другой') {
+  if (msgBodyLower === 'otro' || msgBodyLower === '\u0434\u0440\u0443\u0433\u043e\u0435' || msgBodyLower === '\u0434\u0440\u0443\u0433\u043e\u0439') {
     return {
-      replies    : [freeConsultPrompt(lang)],
-      updates    : { flow: 'consult', step: 'free_consult', escalated: false },
-      sideEffects: { needsAiFallback: true },
+      replies    : [otherFreeTextPrompt(lang)],
+      updates    : { flow: 'consult', step: 'free_text_other', escalated: false },
+      sideEffects: {},
     };
   }
   if (interaction === 'btn_add_to_cart') {
@@ -1766,7 +1802,7 @@ export function processKiaStep(
       const qBody = q.text[lang];
       const reply: KiaReply = q.type === 'text'
         ? { type: 'text', body: qBody }
-        : { type: 'buttons', body: qBody, footer: FOOTER, buttons: (q.options ?? []).map((o) => ({ id: o.id, title: o.label[lang].slice(0, 20) })) };
+        : { type: 'buttons', body: qBody, footer: FOOTER, buttons: withOtherButton((q.options ?? []).map((o) => ({ id: o.id, title: o.label[lang].slice(0, 20) })), lang) };
       return { replies: [reply], updates: { step: 'precal', service_id: svcId, precal_step: 0 }, sideEffects: {} };
     }
 
@@ -1846,7 +1882,7 @@ export function processKiaStep(
       const nextBody = nextQ.text[lang];
       const nextReply: KiaReply = nextQ.type === 'text'
         ? { type: 'text', body: nextBody }
-        : { type: 'buttons', body: nextBody, footer: FOOTER, buttons: (nextQ.options ?? []).map((o) => ({ id: o.id, title: o.label[lang].slice(0, 20) })) };
+        : { type: 'buttons', body: nextBody, footer: FOOTER, buttons: withOtherButton((nextQ.options ?? []).map((o) => ({ id: o.id, title: o.label[lang].slice(0, 20) })), lang) };
 
       // Show an intro message when transitioning from viability → profile questions.
       const transitioningToProfile = nextQi === viabilityQs.length && profileQs.length > 0;
@@ -2107,7 +2143,7 @@ export function processKiaStep(
 
   // ── STATES THAT DELEGATE TO AI ────────────────────────────────────────────
 
-  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment', 'cart_added'].includes(step)) {
+  if (['done', 'awaiting_docs', 'awaiting_estado', 'free_consult', 'free_text_other', 'viability_sent', 'payment_pending', 'call_recommended', 'meeting_recommended', 'service_info', 'client_invoice_payment', 'cart_added'].includes(step)) {
     return { replies: [], updates: {}, sideEffects: { needsAiFallback: true } };
   }
 
