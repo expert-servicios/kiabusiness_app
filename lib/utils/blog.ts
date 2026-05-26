@@ -365,6 +365,18 @@ Si tienes empleados, también presentarás los Modelos **111** (retenciones IRPF
 - Confundir el régimen simplificado de IVA con el general.
 
 En EXPERT te asesoramos en el alta completa y te explicamos qué obligaciones tendrás desde el primer día.
+
+## Identificación electrónica: imprescindible para los trámites online
+
+Tanto el alta en Hacienda como en la Seguridad Social pueden realizarse online, pero necesitas identificarte electrónicamente. Las dos opciones más habituales son:
+
+- **Certificado digital** (FNMT, Camerfirma): recomendado para autónomos que van a gestionar trámites de forma habitual — declaraciones trimestrales, altas/bajas en RETA, comunicaciones con la AEAT.
+- **Cl@ve**: sistema gratuito del Gobierno para identificarte desde el móvil o navegador. Más cómodo para consultas y algunos trámites esporádicos.
+
+Si todavía no tienes ninguno de los dos, conviene gestionarlo **antes de iniciar la actividad**.
+
+- [Qué es Cl@ve y cómo registrarse →](/blog/que-es-clave-identificacion-electronica)
+- [Certificado digital para autónomos y empresas →](/blog/certificado-digital-empresas)
     `
   },
   {
@@ -420,6 +432,15 @@ Para no residentes:
 España tiene convenios firmados con más de 90 países para evitar que tributes dos veces por los mismos ingresos. El convenio determina qué país tiene el derecho preferente de gravar cada tipo de renta. Consulta siempre el convenio específico con tu país de residencia anterior.
 
 En EXPERT gestionamos declaraciones de residentes y no residentes, incluyendo la aplicación de convenios de doble imposición.
+
+## Cómo acceder a tu declaración online: el número de referencia
+
+Para presentar el IRPF a través de Renta WEB (el sistema online de la AEAT), necesitas un número de referencia de 6 caracteres que la propia AEAT genera para ti mediante identificación electrónica.
+
+El método más cómodo es con la app **Cl@ve Móvil**, pero también puedes obtenerlo con tu DNI/NIE y el dato de contraste (IBAN o casilla 505 del año anterior) si recibes un PIN por SMS.
+
+- [Cómo obtener el número de referencia de la Renta paso a paso →](/blog/referencia-renta-clave-paso-a-paso)
+- [Qué es Cl@ve y cómo registrarse →](/blog/que-es-clave-identificacion-electronica)
     `
   },
   {
@@ -524,6 +545,13 @@ En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que significa
 Los certificados Camerfirma tienen una validez de **2 o 3 años** según el tipo. La renovación debe realizarse antes de que caduque; si caduca, habrá que solicitar uno nuevo con un nuevo proceso de verificación de identidad.
 
 Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
+
+## Cl@ve: el complemento para trámites personales
+
+Si además de el certificado digital quieres gestionar trámites personales desde el móvil (declaración de la Renta, notificaciones, vida laboral), Cl@ve es el sistema complementario del Gobierno de España.
+
+- [Qué es Cl@ve y para qué sirve →](/blog/que-es-clave-identificacion-electronica)
+- [Cómo registrarse en Cl@ve →](/blog/como-registrarse-en-clave)
     `
   },
   {
@@ -2793,6 +2821,337 @@ Si prefieres que lo hagamos nosotros, el servicio **Migración con inventario** 
     `,
   },
 
+  // ── Cl@ve / Identificación electrónica ─────────────────────────────────────
+  {
+    slug: 'que-es-clave-identificacion-electronica',
+    category: 'Trámites',
+    title: 'Qué es Cl@ve y por qué lo necesitas para tus trámites en España',
+    excerpt:
+      'Cl@ve es el sistema oficial de identificación electrónica del Gobierno de España. Te explicamos qué métodos incluye, para qué sirve y cómo se diferencia del certificado digital.',
+    date: '25 may 2026',
+    readTime: '5 min',
+    tags: ['Cl@ve', 'identificación electrónica', 'trámites online', 'sede electrónica', 'administración pública'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    body: `
+## ¿Qué es Cl@ve?
+
+Cl@ve es el sistema oficial del Gobierno de España para identificarse electrónicamente ante las Administraciones Públicas. Permite a ciudadanos y empresas realizar trámites online — declaraciones, solicitudes, consultas, recursos — sin necesidad de desplazarse a una oficina.
+
+La web oficial es [clave.gob.es](https://clave.gob.es/).
+
+## Métodos disponibles dentro de Cl@ve
+
+Cl@ve agrupa varias formas de identificación bajo una misma plataforma:
+
+### Cl@ve PIN
+Código numérico temporal válido durante 24 horas. Se solicita online y llega por SMS al móvil registrado. Adecuado para consultas esporádicas y trámites de seguridad básica.
+
+### Cl@ve Permanente
+Usuario y contraseña fija vinculados a tu DNI/NIE y número de móvil. Para operaciones estándar basta usuario + contraseña; para operaciones sensibles, la plataforma añade un segundo factor por SMS.
+
+### Cl@ve Móvil
+La app oficial (Android e iOS) que permite autenticarse en segundos escaneando un código QR. Es el método más cómodo para el día a día y el que usa la AEAT para obtener la referencia de la Renta.
+
+[Guía completa de la app Cl@ve Móvil →](/blog/clave-movil-app-guia)
+
+### Cl@ve Firma
+Sistema de firma electrónica basado en el DNI electrónico (DNIe) con chip. Permite firmar documentos con la misma validez legal que la firma manuscrita.
+
+### Certificado electrónico / DNIe
+El certificado digital (FNMT, Camerfirma, etc.) y el DNI electrónico son métodos de identificación reconocidos tanto dentro del ecosistema Cl@ve como directamente en la Sede Electrónica.
+
+## ¿Para qué sirve Cl@ve?
+
+Con Cl@ve puedes realizar prácticamente cualquier trámite administrativo online:
+
+- **AEAT**: obtener el número de referencia para la Renta, acceder a Renta WEB, consultar datos fiscales, pagar modelos.
+- **Seguridad Social**: consultar la vida laboral, tramitar altas y bajas de autónomo, gestionar prestaciones.
+- **Sede Electrónica**: consultar notificaciones, presentar solicitudes, recursos y escritos.
+- **Extranjería**: consultar expedientes y notificaciones del Ministerio de Interior.
+- **SEPE**: tramitar prestaciones por desempleo.
+
+## Cl@ve vs. certificado digital: ¿cuál necesitas?
+
+| | Cl@ve (PIN / Permanente / Móvil) | Certificado digital (FNMT / Camerfirma) |
+|---|---|---|
+| Ideal para | Ciudadanos con trámites personales frecuentes | Autónomos y empresas con trámites habituales |
+| Nivel de seguridad | Básico o avanzado según método | Avanzado siempre |
+| Firma de documentos | Solo con DNIe (Cl@ve Firma) | Sí, todos los tipos |
+| Representar a una empresa | No | Sí (certificado de representante) |
+| Vigencia | Permanente sin caducidad; PIN dura 24 h | 2–3 años según emisor |
+
+Para un autónomo o empresa que gestiona declaraciones, contratos y comunicaciones con la AEAT y la Seguridad Social de forma habitual, el **certificado digital** es la herramienta principal. Cl@ve la complementa o sustituye para los trámites personales más sencillos.
+
+[Certificado digital para empresas: tipos y cómo obtenerlo →](/blog/certificado-digital-empresas)
+
+## Cómo registrarse
+
+El registro en Cl@ve puede hacerse online en menos de 10 minutos si tienes certificado digital, o mediante videoidentificación si no lo tienes.
+
+[Guía paso a paso para registrarse en Cl@ve →](/blog/como-registrarse-en-clave)
+    `,
+  },
+  {
+    slug: 'como-registrarse-en-clave',
+    category: 'Trámites',
+    title: 'Cómo registrarse en Cl@ve paso a paso: todos los métodos',
+    excerpt:
+      'Guía práctica para darse de alta en Cl@ve: videoidentificación online, certificado digital, carta de invitación y registro presencial. Cuál elegir según tu situación.',
+    date: '25 may 2026',
+    readTime: '6 min',
+    tags: ['Cl@ve', 'registro Cl@ve', 'identificación electrónica', 'certificado digital', 'sede electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    body: `
+## Qué necesitas antes de empezar
+
+Para registrarte en Cl@ve necesitas:
+
+- **DNI o NIE en vigor** (el número y, según el método, el propio documento físico).
+- **Número de móvil español** al que tengas acceso en ese momento.
+- Conexión a internet.
+
+Opcionalmente, un **certificado electrónico o DNIe** para el método más rápido y con mayor nivel de seguridad.
+
+## Los dos niveles de registro
+
+Cl@ve tiene dos niveles de seguridad:
+
+- **Nivel básico**: acceso a la mayoría de servicios, pero no a Cl@ve Firma.
+- **Nivel avanzado**: acceso completo, incluyendo firma electrónica.
+
+El método de registro que elijas determina el nivel que obtienes.
+
+## Método 1: Con certificado electrónico o DNIe (nivel avanzado — el más rápido)
+
+Si ya tienes un certificado digital instalado (FNMT, Camerfirma, etc.) o tu DNI electrónico operativo, este es el método más rápido.
+
+1. Accede a [sede.agenciatributaria.gob.es](https://sede.agenciatributaria.gob.es/) o directamente a la sección de registro de [clave.gob.es](https://clave.gob.es/registro/como-puedo-registrarme).
+2. Selecciona la opción de registro con certificado electrónico o DNIe.
+3. El sistema lee automáticamente tus datos del certificado.
+4. Confirma los datos, introduce tu número de móvil y acepta las condiciones.
+5. Recibirás un SMS de bienvenida en el móvil registrado.
+
+**Resultado**: nivel avanzado inmediato, sin esperas ni videoconferencia.
+
+## Método 2: Con videoidentificación online (nivel básico o avanzado)
+
+El más utilizado cuando no se tiene certificado digital.
+
+1. Accede a [clave.gob.es/registro](https://clave.gob.es/registro/como-puedo-registrarme) y selecciona la videoidentificación.
+2. Prepara tu DNI o NIE original (o pasaporte).
+3. Sigue el proceso guiado: encuadra el documento en cámara, muestra tu cara, lee el código que aparece en pantalla.
+4. **Revisión automática**: si el análisis pasa al instante, obtienes acceso básico de inmediato.
+5. **Revisión manual**: si lo requiere, un funcionario revisa el vídeo (puede tardar 1–2 días hábiles) y el resultado es nivel avanzado.
+
+## Método 3: Con carta de invitación
+
+Válido si ya estás registrado en la AEAT con datos de contacto actualizados.
+
+1. Solicita la carta desde la Sede Electrónica de la AEAT.
+2. Recibes una carta postal con un código de activación (10–15 días hábiles).
+3. Introduce el código en la Sede de la AEAT para completar el registro.
+
+**Resultado**: nivel básico. Útil si no tienes urgencia y prefieres evitar la videoconferencia.
+
+## Método 4: Registro presencial
+
+En cualquier oficina habilitada de la AEAT, Seguridad Social, SEPE o algunos Ayuntamientos.
+
+1. Solicita cita previa (recomendable para evitar esperas).
+2. Lleva tu DNI o NIE original.
+3. El funcionario verifica tu identidad en el acto.
+
+**Resultado**: nivel avanzado inmediato.
+
+## Después del registro: qué hacer
+
+Una vez registrado, activa la forma de uso que más te convenga:
+
+- **Cl@ve Permanente**: elige una contraseña segura desde la Sede Electrónica. Usarás DNI/NIE + contraseña para acceder a los servicios.
+- **App Cl@ve Móvil**: descárgala en tu móvil y actívala con el código SMS. A partir de ahí, la autenticación con QR es cuestión de segundos.
+
+[Cómo activar y usar la app Cl@ve Móvil →](/blog/clave-movil-app-guia)
+
+## ¿Ya tienes certificado digital?
+
+Si ya tienes certificado digital, **puedes acceder a los mismos servicios** que Cl@ve —y más, como representar empresas—. El registro en Cl@ve es complementario y resulta especialmente útil para trámites personales frecuentes desde el móvil sin necesidad de tener el certificado a mano.
+
+[Qué es Cl@ve y en qué se diferencia del certificado digital →](/blog/que-es-clave-identificacion-electronica)
+    `,
+  },
+  {
+    slug: 'clave-movil-app-guia',
+    category: 'Trámites',
+    title: 'App Cl@ve Móvil: cómo descargarla, activarla y usarla',
+    excerpt:
+      'La app Cl@ve Móvil es la herramienta oficial para identificarte electrónicamente desde el móvil. Guía completa: descarga, activación por SMS o certificado, y cómo funciona la autenticación por QR.',
+    date: '25 may 2026',
+    readTime: '5 min',
+    tags: ['Cl@ve Móvil', 'app Cl@ve', 'identificación electrónica', 'QR', 'trámites online'],
+    body: `
+## ¿Qué es la app Cl@ve Móvil?
+
+La app Cl@ve Móvil es la aplicación oficial del Gobierno de España que centraliza la identificación electrónica y la firma digital en el móvil. Disponible de forma gratuita en **Google Play** y **App Store**.
+
+Con ella puedes:
+- Identificarte en cualquier trámite online de las Administraciones Públicas escaneando un QR.
+- Obtener el número de referencia para la declaración de la Renta.
+- Firmar documentos electrónicamente (si tienes DNIe).
+- Recibir solicitudes de autenticación en tiempo real.
+
+> Si usabas la antigua app "Cl@ve PIN", la actualización a la nueva versión es automática.
+
+## Requisitos del sistema
+
+- **Android 8** o superior.
+- **iOS 15** o superior.
+- Número de móvil activo registrado en Cl@ve.
+- Estar previamente registrado en Cl@ve (nivel básico o avanzado).
+
+¿Aún no estás registrado? [Cómo registrarse en Cl@ve paso a paso →](/blog/como-registrarse-en-clave)
+
+## Descarga
+
+- [Google Play — Cl@ve Móvil](https://play.google.com/store)
+- [App Store — Cl@ve Móvil](https://apps.apple.com/es/)
+
+Busca "Cl@ve Móvil" o "Clave Movil" dentro de cada tienda.
+
+## Cómo activar la app
+
+Después de instalarla, debes activarla vinculándola a tu identidad. Hay tres formas:
+
+### Con código SMS (la más habitual)
+
+1. Abre la app y selecciona **"Activar con código SMS"**.
+2. Introduce tu DNI o NIE.
+3. Recibirás un SMS con un código de activación en el número de móvil registrado en Cl@ve.
+4. Introduce el código en la app. ¡Lista para usar!
+
+### Con certificado electrónico
+
+Si tienes un certificado digital instalado en el dispositivo:
+
+1. Selecciona **"Activar con certificado"**.
+2. El sistema verifica tu identidad mediante el certificado.
+3. La app queda vinculada a tu identidad sin necesidad de SMS.
+
+### Con DNIe (NFC)
+
+Si tu móvil tiene NFC y tu DNI electrónico está activo:
+
+1. Selecciona **"Activar con DNIe"**.
+2. Acerca el DNI al lector NFC del móvil cuando la app lo solicite.
+
+## Cómo funciona la autenticación por QR
+
+El uso más frecuente es autenticarse escaneando un QR en la web que quieres acceder:
+
+1. En la web del trámite (por ejemplo, la AEAT para la Renta), selecciona **"Cl@ve Móvil"**.
+2. La web muestra un **código QR** (válido 5 minutos) y un **código de verificación de 3 dígitos**.
+3. Abre la app Cl@ve Móvil y toca el botón de escanear QR.
+4. **Verifica que la URL empieza por \`https://\` y el dominio es \`.gob.es\`** — señal de que la web es legítima.
+5. Comprueba que el código de 3 dígitos en la app **coincide** con el que aparece en la pantalla del ordenador.
+6. Autentícate con huella, Face ID, PIN o patrón del dispositivo.
+7. En segundos, la web registra tu identificación y accedes al trámite.
+
+> **Seguridad**: nunca escanees un QR de Cl@ve en un enlace que no hayas iniciado tú mismo. Los estafadores envían QR falsos para suplantar tu identidad.
+
+## Para qué se usa más
+
+- **Obtener la referencia de la Renta** y acceder a Renta WEB sin certificado. [Guía completa →](/blog/referencia-renta-clave-paso-a-paso)
+- Consultar notificaciones de la AEAT y la Seguridad Social.
+- Firmar solicitudes online con DNIe.
+- Acceder al expediente de extranjería o tramitar prestaciones en el SEPE.
+- Consultar la vida laboral.
+
+## Sin app: alternativa por SMS en el momento
+
+Si no tienes el móvil a mano o la app no está instalada, algunos servicios permiten autenticarse recibiendo un código PIN de 6 dígitos por SMS directamente. En la pantalla de Cl@ve Móvil, tras 59 segundos, aparece la opción "Recibir PIN por SMS". Es más lento pero igual de válido.
+    `,
+  },
+  {
+    slug: 'referencia-renta-clave-paso-a-paso',
+    category: 'Fiscalidad',
+    title: 'Cómo obtener el número de referencia para la Renta con Cl@ve',
+    excerpt:
+      'El número de referencia de la AEAT es el acceso directo a Renta WEB para presentar el IRPF. Guía oficial paso a paso: con Cl@ve Móvil (QR) y con DNI/NIE sin app.',
+    date: '25 may 2026',
+    readTime: '6 min',
+    tags: ['renta', 'IRPF', 'número de referencia', 'Cl@ve', 'declaración de la renta', 'Renta WEB'],
+    relatedServiceSlugs: ['irpf'],
+    body: `
+## Qué es el número de referencia de la Renta
+
+El número de referencia es un **código de 6 caracteres** generado por la AEAT que permite:
+
+- Acceder a **Renta WEB** para consultar, modificar y presentar tu declaración del IRPF.
+- Ver tus **datos fiscales** del ejercicio.
+- Consultar declaraciones de campañas anteriores.
+
+Es válido únicamente para la campaña actual. Cada vez que generas una referencia nueva, la anterior queda invalidada automáticamente. Puedes obtener hasta **10 referencias al día**.
+
+## Dónde obtenerla
+
+Accede directamente al enlace oficial de la AEAT:
+
+**[https://www1.agenciatributaria.gob.es/wlpl/DABJ-REN0/ObtenerReferenciaServlet](https://www1.agenciatributaria.gob.es/wlpl/DABJ-REN0/ObtenerReferenciaServlet)**
+
+O desde [sede.agenciatributaria.gob.es](https://sede.agenciatributaria.gob.es/) → Renta → Obtén tu número de referencia.
+
+## Método 1: Con Cl@ve Móvil y QR (recomendado)
+
+El más rápido si tienes la app instalada y activada.
+
+1. Accede al enlace de obtención de referencia indicado arriba.
+2. Selecciona **"Cl@ve Móvil"** en la ventana de identificación.
+3. La web muestra un **código QR** (válido 5 minutos) y un **código de verificación de 3 dígitos**.
+4. Abre la **app Cl@ve Móvil** en tu móvil y toca el botón de escanear QR.
+5. Verifica que la URL de la app comienza exactamente por \`https://www2.agenciatributaria.gob.es\`.
+6. Comprueba que el código de 3 dígitos en la app **coincide** con el de la pantalla del ordenador.
+7. Autentícate con tu huella, Face ID, PIN o patrón del dispositivo.
+8. El código de referencia de **6 caracteres** aparece en pantalla. Cópialo o anótalo.
+
+¿No tienes la app todavía? [Guía de la app Cl@ve Móvil →](/blog/clave-movil-app-guia)
+
+## Método 2: Con DNI/NIE sin QR (alternativa sin app)
+
+Si no tienes la app o el QR falla:
+
+1. En la misma pantalla de obtención de referencia, haz clic en **"continuar con autenticación sin lectura de QR"**.
+2. Introduce tu **DNI o NIE** y el **dato de contraste**:
+   - Normalmente: tu **IBAN** de una cuenta bancaria española conocida por la AEAT, o
+   - La **casilla 505** de tu declaración de la Renta del año anterior (importe de la base liquidable general).
+3. Aparece una ventana de autenticación con código de verificación (válida 5 minutos).
+4. Tras 59 segundos, se activa el botón para recibir un **PIN de 6 dígitos por SMS** en el número de móvil registrado.
+5. Introduce ese PIN y completa la autenticación. La referencia aparece en pantalla.
+
+> **Si es tu primera declaración** y no tienes casilla 505 ni IBAN registrado en la AEAT, contacta con la AEAT para solicitar cita previa o utiliza directamente tu certificado digital para entrar en Renta WEB sin referencia.
+
+## Consejos prácticos
+
+- Guarda la referencia nada más obtenerla: cópiala o fotografía la pantalla.
+- La referencia es **personal e intransferible**. No la compartas.
+- Para una **declaración conjunta con tu cónyuge**, cada uno debe obtener su propia referencia por separado.
+- Si la pierdes, puedes generarla de nuevo; la nueva invalida la anterior.
+
+## Una vez tienes la referencia: accede a Renta WEB
+
+1. Ve a [sede.agenciatributaria.gob.es](https://sede.agenciatributaria.gob.es/).
+2. Selecciona "Renta" → "Renta WEB" → "Acceder con referencia".
+3. Introduce tu DNI/NIE + el código de referencia.
+4. Accedes al borrador de tu declaración. Puedes revisarlo, modificarlo y presentarlo.
+
+---
+
+¿Prefieres que lo gestionemos nosotros? EXPERT se encarga de tu declaración de la Renta con todos los trámites incluidos.
+
+[Ver servicio IRPF en EXPERT →](https://expertconsulting.es/servicios)
+
+**Fuente oficial**: [AEAT — Cómo obtener el número de referencia](https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/renta-ayuda-tecnica/obtener-referencia-renta-clave.html)
+    `,
+  },
+  // ── Formación ────────────────────────────────────────────────────────────────
   {
     slug: 'formacion-laboral-rrhh-para-no-especialistas',
     category: 'Formación',
