@@ -5,6 +5,7 @@ import { KIA_CLIENT_FLOW_PROMPT } from './prompts/kia-client-flow';
 import { KIA_ACCOUNTING_FLOW_PROMPT } from './prompts/kia-accounting-flow';
 import { KIA_DOCUMENT_FLOW_PROMPT } from './prompts/kia-document-flow';
 import { KIA_CHECKOUT_FLOW_PROMPT } from './prompts/kia-checkout-flow';
+import { KIA_IDENTIFICATION_FLOW_PROMPT } from './prompts/kia-identification-flow';
 import { KIA_EXAMPLES_PROMPT } from './prompts/kia-examples';
 import { KIA_CLARIFYING_POLICY_PROMPT } from './prompts/kia-clarifying-policy';
 
@@ -65,6 +66,7 @@ ${KIA_CLIENT_FLOW_PROMPT}
 ${KIA_ACCOUNTING_FLOW_PROMPT}
 ${KIA_DOCUMENT_FLOW_PROMPT}
 ${KIA_CHECKOUT_FLOW_PROMPT}
+${KIA_IDENTIFICATION_FLOW_PROMPT}
 ${KIA_EXAMPLES_PROMPT}
 
 ${KIA_CLARIFYING_POLICY_PROMPT}
