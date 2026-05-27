@@ -129,10 +129,11 @@ generado nuevos para este proyecto.
 Deploy de producción:
 
 ```text
-Deployment ID: dpl_4EX6DeqcayxPj9Wj2HnfjqaAfiXb
+Deployment ID: dpl_AZUfCbZYM5XTUdMGksLJkYXYSVjE
 Estado: READY
 Alias temporal: https://expert-holded-mcp.vercel.app
 Alias final Vercel: https://claude.expertconsulting.es
+Origen: GitHub main, commit 4aed6e5
 ```
 
 Validación remota temporal:
