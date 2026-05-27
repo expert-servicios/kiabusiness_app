@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "holded-mcp:build": "npm --prefix apps/holded-mcp run build",
+    "holded-mcp:test": "npm --prefix apps/holded-mcp test",
+    "holded-mcp:dev": "npm --prefix apps/holded-mcp run dev",
     "kia:eval": "node scripts/kia-eval.mjs",
     "kia:auditor:test": "npx tsx scripts/kia-auditor-test.ts"
   },

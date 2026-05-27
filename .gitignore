@@ -10,3 +10,11 @@ tsconfig.tsbuildinfo
 .vercel
 .vscode
 supabase/.temp
+
+# Standalone connector apps
+apps/holded-mcp/node_modules/
+apps/holded-mcp/dist/
+apps/holded-mcp/.turbo/
+apps/holded-mcp/.vercel/
+apps/holded-mcp/public/screens_claude/
+apps/holded-mcp/*.log

@@ -8,6 +8,7 @@ export default defineConfig([
   globalIgnores([
     '.next/**',
     'node_modules/**',
+    'apps/holded-mcp/**',
     'out/**',
     'next-env.d.ts'
   ])

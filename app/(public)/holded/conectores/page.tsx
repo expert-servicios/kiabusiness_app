@@ -114,19 +114,19 @@ const connectors = [
     statusColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
     desc: 'Integración con Claude (Anthropic) para consultar y operar sobre Holded en lenguaje claro. Disponible ahora.',
     primaryLabel: 'Ver Conector Claude',
-    primaryHref: 'https://holded.verifactu.business/conectores/claude',
+    primaryHref: '/holded/conectores/claude',
     secondaryLabel: 'Documentación',
-    secondaryHref: 'https://holded.verifactu.business/conectores/docs',
+    secondaryHref: '/holded/conectores/claude/docs',
   },
   {
     name: 'Conector para ChatGPT',
     status: 'En lanzamiento',
     statusColor: 'text-amber-700 bg-amber-50 border-amber-200',
     desc: 'Integración con ChatGPT (OpenAI) para las mismas capacidades de consulta y operación sobre Holded.',
-    primaryLabel: 'Ver Conector ChatGPT',
-    primaryHref: 'https://holded.verifactu.business/conectores/chatgpt',
-    secondaryLabel: 'Documentación',
-    secondaryHref: 'https://holded.verifactu.business/conectores/docs',
+    primaryLabel: 'Preguntar a Kia',
+    primaryHref: '/ayuda/kia?topic=holded-conector-chatgpt',
+    secondaryLabel: 'Ver Claude',
+    secondaryHref: '/holded/conectores/claude',
   },
 ] as const;
 
@@ -154,18 +154,14 @@ export default function HoldedConectoresPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                href="https://holded.verifactu.business/demo"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/ayuda/kia?topic=holded-conector-claude"
                 className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
               >
                 <Bot className="h-4 w-4" />
                 Solicitar demo
               </a>
               <a
-                href="https://holded.verifactu.business/conectores"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/holded/conectores/claude"
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
               >
                 Ver hub de conectores <ArrowRight className="h-4 w-4" />
@@ -343,9 +339,7 @@ export default function HoldedConectoresPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href="https://holded.verifactu.business/demo"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/ayuda/kia?topic=holded-conector-claude"
               className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <Bot className="h-4 w-4" />

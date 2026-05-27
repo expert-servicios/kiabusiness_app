@@ -1,6 +1,6 @@
 # Kia Implementation Progress
 
-Ultima actualizacion: 2026-05-25
+Ultima actualizacion: 2026-05-27
 
 ## Estado general
 
@@ -24,6 +24,7 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Guardia de idioma por ultimo mensaje: el `locale` explicito del ultimo inbound manda sobre el historial.
 - Voz de Kia reforzada: se presenta como Kia, asistente virtual de EXPERT, y habla de si misma en femenino.
 - Compatibilidad temporal del API de anomalías Health con esquema antiguo (`resolved`) y nuevo (`status`).
+- Conector Claude/Holded MCP incorporado como app aislada en `apps/holded-mcp`, con landing y paginas legales publicas bajo `/holded/conectores/claude`.
 
 ## Verificado
 
@@ -35,6 +36,46 @@ npm run build
 ```
 
 Resultado local anterior: typecheck, 161 evals de Kia, 21 fixtures de Kia Auditor y build pasan.
+
+## Ejecucion 2026-05-27
+
+- Movido el conector preparado `holded-mcp` fuera de `app/` hacia `apps/holded-mcp` para que Next.js no lo compile como rutas de la app EXPERT.
+- Aislado el conector del `tsconfig` raiz y anadidos scripts:
+  - `npm run holded-mcp:build`
+  - `npm run holded-mcp:test`
+  - `npm run holded-mcp:dev`
+- Protegidos artefactos y secretos locales con `.gitignore`: `node_modules`, `dist`, `.turbo`, `.vercel`, capturas y `.env*` reales.
+- `apps/holded-mcp/.env.example` queda versionable; los `.env` reales no.
+- Adaptado el conector a EXPERT:
+  - `BASE_URL` esperado: `https://claude.expertconsulting.es`
+  - paginas canonicas: `https://expertconsulting.es/holded/conectores/claude/*`
+  - soporte: `info@expertconsulting.es`
+  - flags de puente EXPERT desactivados por defecto.
+- Anadido modo standalone seguro: si el registro central de EXPERT esta desactivado, el conector valida la API key contra Holded antes de emitir el codigo OAuth.
+- Mantenido scaffold para modo futuro con puente EXPERT:
+  - `EXPERT_OAUTH_BRIDGE_ENABLED`
+  - `EXPERT_CENTRAL_REGISTRY_ENABLED`
+  - `EXPERT_APP_SHARED_SECRET`
+- Creadas paginas publicas:
+  - `/holded/conectores/claude`
+  - `/holded/conectores/claude/docs`
+  - `/holded/conectores/claude/privacy`
+  - `/holded/conectores/claude/dpa`
+  - `/holded/conectores/claude/terms`
+  - `/holded/conectores/claude/soporte`
+- Actualizado sitemap con las nuevas rutas.
+- Documentado en `docs/holded-claude-mcp-integration.md`.
+- Verificado:
+
+```bash
+npm run holded-mcp:build
+npm run holded-mcp:test
+npm run typecheck
+```
+
+Resultado: build MCP OK, 69 tests MCP OK, typecheck raiz OK.
+
+Aviso no bloqueante: el paquete MCP declara Node 20.x; el entorno local usa Node 24 y npm avisa `EBADENGINE`. Para deploy, usar Node 20.x.
 
 ## Ejecucion 2026-05-25
 
