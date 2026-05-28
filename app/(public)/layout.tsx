@@ -26,11 +26,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <Footer />
       <InstallPwaPrompt variant="banner" />
       {/* Floating action buttons — bottom-right */}
-      <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-[70] flex flex-col items-center gap-3 sm:bottom-5 sm:right-5">
         <WhatsAppChatWidget />
       </div>
       {/* Calendly badge — bottom-left */}
-      <div className="fixed bottom-5 left-5 z-[70]">
+      <div className="fixed bottom-5 left-5 z-[70] hidden sm:block">
         <CalendlyBadge />
       </div>
       {/* Cart sidebar — rendered above floating buttons */}

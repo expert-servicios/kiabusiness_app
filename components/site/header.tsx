@@ -41,14 +41,41 @@ export function Header() {
   const holdedDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMobileOpen(false);
-    setServicesOpen(false);
-    setPlanesOpen(false);
-    setHoldedOpen(false);
+    const timeout = window.setTimeout(() => {
+      setMobileOpen(false);
+      setServicesOpen(false);
+      setPlanesOpen(false);
+      setHoldedOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [pathname]);
 
   useEffect(() => {
+    if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setMobileOpen(false);
+        setServicesOpen(false);
+        setPlanesOpen(false);
+        setHoldedOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (window.matchMedia('(max-width: 1023px)').matches) return;
+
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setServicesOpen(false);
       }
@@ -70,9 +97,20 @@ export function Header() {
     setHoldedOpen(false);
   }
 
+  function toggleMobile() {
+    setMobileOpen((open) => {
+      if (open) {
+        setServicesOpen(false);
+        setPlanesOpen(false);
+        setHoldedOpen(false);
+      }
+      return !open;
+    });
+  }
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20">
-      <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-6">
+    <header className={`sticky top-0 border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20 ${mobileOpen ? 'z-[120]' : 'z-50'}`}>
+      <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" onClick={closeMobile} className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
@@ -86,7 +124,7 @@ export function Header() {
             />
           </span>
           <span className="min-w-0">
-            <span className="block font-serif text-2xl font-bold leading-none tracking-[0.18em] text-[#F8F6F1]">EXPERT</span>
+            <span className="block font-serif text-xl font-bold leading-none tracking-[0.18em] text-[#F8F6F1] sm:text-2xl">EXPERT</span>
             <span className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9CA3AF] sm:block">
               HOLDED SOLUTION PARTNER
             </span>
@@ -208,11 +246,11 @@ export function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <CartIcon />
           <Link
             href="/auth/login"
-            className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E] sm:px-5"
+            className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#D4A017] px-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E] sm:px-5"
           >
             <LockKeyhole className="h-4 w-4" />
             <span className="hidden sm:inline">Acceder</span>
@@ -221,9 +259,10 @@ export function Header() {
           {/* Hamburger */}
           <button
             type="button"
-            onClick={() => setMobileOpen((v) => !v)}
+            onClick={toggleMobile}
             className="flex h-11 w-11 items-center justify-center rounded-md border border-white/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] lg:hidden"
             aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-controls="mobile-site-menu"
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -233,8 +272,14 @@ export function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-t border-white/10 bg-[#0D1B2A] lg:hidden">
-          <div className="mx-auto max-w-7xl px-4 py-3">
+        <div id="mobile-site-menu" className="fixed inset-x-0 bottom-0 top-[74px] z-[120] lg:hidden">
+          <button
+            type="button"
+            aria-label="Cerrar menu movil"
+            onClick={closeMobile}
+            className="absolute inset-0 bg-[#07111D]/70 backdrop-blur-sm"
+          />
+          <div className="relative ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto border-t border-white/10 bg-[#0D1B2A] px-4 pb-28 pt-3 shadow-2xl shadow-black/50">
             <Link
               href="/"
               onClick={closeMobile}
@@ -247,8 +292,13 @@ export function Header() {
             <div>
               <button
                 type="button"
-                onClick={() => setServicesOpen((v) => !v)}
+                onClick={() => {
+                  setServicesOpen((v) => !v);
+                  setPlanesOpen(false);
+                  setHoldedOpen(false);
+                }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                aria-expanded={servicesOpen}
               >
                 Servicios
                 <ChevronDown className={`h-4 w-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
@@ -280,8 +330,13 @@ export function Header() {
             <div>
               <button
                 type="button"
-                onClick={() => setPlanesOpen((v) => !v)}
+                onClick={() => {
+                  setPlanesOpen((v) => !v);
+                  setServicesOpen(false);
+                  setHoldedOpen(false);
+                }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                aria-expanded={planesOpen}
               >
                 Planes
                 <ChevronDown className={`h-4 w-4 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
@@ -309,8 +364,13 @@ export function Header() {
             <div>
               <button
                 type="button"
-                onClick={() => setHoldedOpen((v) => !v)}
+                onClick={() => {
+                  setHoldedOpen((v) => !v);
+                  setServicesOpen(false);
+                  setPlanesOpen(false);
+                }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                aria-expanded={holdedOpen}
               >
                 Holded
                 <ChevronDown className={`h-4 w-4 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
