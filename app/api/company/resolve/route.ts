@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       const { data } = await admin
         .from('company_data_suggestions')
         .insert({
-          user_id     : user.id,
+          profile_id  : user.id,
           input_name  : name ?? null,
           input_tax_id: taxId ?? null,
           suggestion  : sug as unknown as Record<string, unknown>,
@@ -124,7 +124,7 @@ export async function PATCH(request: NextRequest) {
     .from('company_data_suggestions')
     .update({ accepted: true, accepted_at: new Date().toISOString() })
     .eq('id', body.suggestionId)
-    .eq('user_id', user.id);
+    .eq('profile_id', user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

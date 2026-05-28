@@ -36,6 +36,10 @@ export const KIA_INTENTS = [
   'accounting_summary',
   'document_classification',
   'anomaly_review',
+  'company_data_resolve',
+  'company_data_confirm',
+  'company_data_reject',
+  'company_data_edit',
   'unknown',
 ] as const;
 
@@ -56,6 +60,8 @@ export const KIA_NEXT_ACTIONS = [
   'update_case',
   'create_task',
   'needs_review',
+  'send_company_lookup_link',
+  'show_company_suggestion',
 ] as const;
 
 export const KIA_QUICK_REPLY_KINDS = [

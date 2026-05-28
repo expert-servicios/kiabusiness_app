@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check } from 'lucide-react';
+import CompanyDataLookup, { type SuggestionFormFill } from '@/components/dashboard/company/CompanyDataLookup';
 
 const FORMA_OPTIONS = [
   { value: 'autonomo', label: 'Autónomo/a' },
@@ -27,25 +28,43 @@ const PROVINCIAS = [
 
 export default function NuevaEmpresaPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState('');
+  const [showLookup,    setShowLookup]    = useState(false);
+  const [appliedSugId,  setAppliedSugId]  = useState<string | undefined>();
   const [form, setForm] = useState({
-    razon_social: '',
-    nombre_comercial: '',
-    cif_nif: '',
-    forma_juridica: 'autonomo',
-    direccion: '',
-    ciudad: '',
-    provincia: '',
-    codigo_postal: '',
-    pais: 'ES',
-    telefono: '',
-    email: '',
-    web: ''
+    razon_social     : '',
+    nombre_comercial : '',
+    cif_nif          : '',
+    forma_juridica   : 'autonomo',
+    direccion        : '',
+    ciudad           : '',
+    provincia        : '',
+    codigo_postal    : '',
+    pais             : 'ES',
+    telefono         : '',
+    email            : '',
+    web              : ''
   });
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  /** Called by CompanyDataLookup when user clicks "Usar datos" */
+  const handleFill = (data: SuggestionFormFill, suggestionId?: string) => {
+    setForm((prev) => ({
+      ...prev,
+      razon_social  : data.razon_social   ?? prev.razon_social,
+      cif_nif       : data.cif_nif        ?? prev.cif_nif,
+      direccion     : data.direccion      ?? prev.direccion,
+      ciudad        : data.ciudad         ?? prev.ciudad,
+      provincia     : data.provincia      ?? prev.provincia,
+      codigo_postal : data.codigo_postal  ?? prev.codigo_postal,
+      pais          : data.pais           ?? prev.pais,
+    }));
+    setAppliedSugId(suggestionId);
+    setShowLookup(false); // collapse panel after fill
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +73,9 @@ export default function NuevaEmpresaPage() {
 
     try {
       const res = await fetch('/api/companies', {
-        method: 'POST',
+        method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body   : JSON.stringify({ ...form, _appliedSuggestionId: appliedSugId }),
       });
       const data = await res.json();
 
@@ -93,6 +112,24 @@ export default function NuevaEmpresaPage() {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#c88b25]">Nueva empresa</p>
               <h1 className="mt-1 font-serif text-2xl font-bold text-[#07111d]">Datos de facturación</h1>
             </div>
+          </div>
+
+          {/* ── Public data lookup ─────────────────────────────────── */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setShowLookup((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2 text-xs font-semibold text-[#29384a] transition hover:bg-[#ede9de]"
+            >
+              <Building2 className="h-3.5 w-3.5" />
+              {showLookup ? 'Ocultar búsqueda de datos públicos' : 'Buscar datos públicos (CIF o nombre)'}
+            </button>
+            {showLookup && (
+              <CompanyDataLookup
+                onFill={handleFill}
+                className="mt-3"
+              />
+            )}
           </div>
 
           {error && (

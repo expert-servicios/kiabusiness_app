@@ -15,6 +15,11 @@
 import { validateSpanishVat } from '@/lib/integrations/vies';
 import { searchCompaniesByName, isOpenCorporatesEnabled } from '@/lib/integrations/opencorporates';
 import { searchBormeByCompanyName, BORME_DISCLAIMER } from '@/lib/integrations/boe-borme';
+import {
+  searchCkanCompaniesByName,
+  searchCkanCompaniesByTaxId,
+} from '@/lib/integrations/ckan/ckan-company-search';
+import { isCkanEnabled } from '@/lib/integrations/ckan/ckan-source-registry';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -23,6 +28,7 @@ export type CompanyDataSource =
   | 'registradores_opendata'
   | 'opencorporates'
   | 'vies'
+  | 'ckan_open_data'
   | 'manual';
 
 export type CompanyDataConfidence = 'high' | 'medium' | 'low';
@@ -236,11 +242,12 @@ function mergeSuggestions(suggestions: CompanySuggestion[]): CompanySuggestion[]
  * Always returns "suggested" data — never auto-saves.
  */
 export async function searchCompanyByName(name: string): Promise<CompanySuggestion[]> {
-  const [bormeResults, ocResults] = await Promise.all([
+  const [bormeResults, ocResults, ckanResults] = await Promise.all([
     fromBorme(name),
     fromOpenCorporates(name),
+    isCkanEnabled() ? searchCkanCompaniesByName(name) : Promise.resolve<CompanySuggestion[]>([]),
   ]);
-  return mergeSuggestions([...bormeResults, ...ocResults]);
+  return mergeSuggestions([...bormeResults, ...ocResults, ...ckanResults]);
 }
 
 /**
@@ -256,14 +263,17 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
     return []; // Only user-entered data allowed for natural persons
   }
 
-  const [viesResults, ocResults] = await Promise.all([
+  const [viesResults, ocResults, ckanResults] = await Promise.all([
     fromVies(taxId),
     isOpenCorporatesEnabled()
       ? fromOpenCorporates(validation.normalized ?? taxId)
       : Promise.resolve<CompanySuggestion[]>([]),
+    isCkanEnabled()
+      ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId)
+      : Promise.resolve<CompanySuggestion[]>([]),
   ]);
 
-  return mergeSuggestions([...viesResults, ...ocResults]);
+  return mergeSuggestions([...viesResults, ...ocResults, ...ckanResults]);
 }
 
 /**
