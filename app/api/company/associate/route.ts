@@ -136,10 +136,6 @@ export async function POST(request: NextRequest) {
     telefono        : overrides?.telefono  ?? null,
     email           : overrides?.email     ?? null,
     web             : overrides?.web       ?? null,
-    // Metadata fields (not all schemas have these — insert defensively)
-    data_source     : normalizedPayload.source,
-    data_source_url : normalizedPayload.sourceUrl ?? null,
-    data_confidence : normalizedPayload.confidence,
   };
 
   // ── Two-step duplicate check ────────────────────────────────────────────────
@@ -168,7 +164,7 @@ export async function POST(request: NextRequest) {
       if (suggestionId) {
         await admin
           .from('company_data_suggestions')
-          .update({ accepted: true, accepted_at: new Date().toISOString() })
+          .update({ selected_by_user: true, selected_at: new Date().toISOString() })
           .eq('id', suggestionId)
           .eq('profile_id', user.id)
           .then(() => null, () => null);
@@ -213,7 +209,7 @@ export async function POST(request: NextRequest) {
   if (suggestionId) {
     await admin
       .from('company_data_suggestions')
-      .update({ accepted: true, accepted_at: new Date().toISOString() })
+      .update({ selected_by_user: true, selected_at: new Date().toISOString() })
       .eq('id', suggestionId)
       .eq('profile_id', user.id)
       .then(() => null, () => null);

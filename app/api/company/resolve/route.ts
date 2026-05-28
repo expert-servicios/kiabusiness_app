@@ -70,12 +70,15 @@ export async function POST(request: NextRequest) {
       const { data } = await admin
         .from('company_data_suggestions')
         .insert({
-          profile_id  : user.id,
-          input_name  : name ?? null,
-          input_tax_id: taxId ?? null,
-          suggestion  : sug as unknown as Record<string, unknown>,
-          source      : sug.source,
-          confidence  : sug.confidence,
+          profile_id        : user.id,
+          input_name        : name ?? null,
+          input_tax_id      : taxId ?? null,
+          source            : sug.source,
+          source_url        : sug.sourceUrl ?? null,
+          retrieved_at      : sug.retrievedAt,
+          confidence        : sug.confidence,
+          warnings          : sug.warnings,
+          normalized_payload: sug as unknown as Record<string, unknown>,
         })
         .select('id')
         .single();
@@ -122,7 +125,7 @@ export async function PATCH(request: NextRequest) {
 
   const { error } = await getSupabaseAdmin()
     .from('company_data_suggestions')
-    .update({ accepted: true, accepted_at: new Date().toISOString() })
+    .update({ selected_by_user: true, selected_at: new Date().toISOString() })
     .eq('id', body.suggestionId)
     .eq('profile_id', user.id);
 
