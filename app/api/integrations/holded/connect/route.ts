@@ -5,9 +5,23 @@ import { encryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { isEncryptionConfigured, createHoldedClientFromRawKey, type HoldedPermissions } from '@/lib/integrations/holded/holded-client';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
+const permissionsSchema = z.object({
+  contacts        : z.boolean().default(false),
+  salesInvoices   : z.boolean().default(false),
+  purchaseInvoices: z.boolean().default(false),
+  taxes           : z.boolean().default(false),
+  bankAccounts    : z.boolean().default(false),
+  bankMovements   : z.boolean().default(false),
+  inboxDocuments  : z.boolean().default(false),
+  writeInbox      : z.boolean().default(false),
+});
+
 const bodySchema = z.object({
-  apiKey    : z.string().min(8).max(256).trim(),
-  companyId : z.string().uuid().optional(),
+  apiKey            : z.string().min(8).max(256).trim(),
+  companyId         : z.string().uuid().optional(),
+  permissionsEnabled: permissionsSchema.optional(),
+  consentVersion    : z.string().max(20).optional().default('1.0'),
+  consentAt         : z.string().datetime().optional(),
 });
 
 const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,created_at,updated_at';
@@ -37,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'API key inválida' }, { status: 400 });
     }
 
-    const { apiKey, companyId: bodyCompanyId } = parsed.data;
+    const { apiKey, companyId: bodyCompanyId, permissionsEnabled, consentVersion, consentAt } = parsed.data;
 
     // ── Resolve company ───────────────────────────────────────────────────────
     const { data: profile } = await getSupabaseAdmin()
@@ -103,6 +117,9 @@ export async function POST(request: NextRequest) {
       mode                : 'client_account',
       api_key_last4       : last4,
       permissions_detected: testResult.permissions,
+      permissions_enabled : permissionsEnabled ?? testResult.permissions,
+      consent_at          : consentAt ?? now,
+      consent_version     : consentVersion ?? '1.0',
       status              : 'active',
       sync_mode           : 'read_only',
       last_success_at     : now,

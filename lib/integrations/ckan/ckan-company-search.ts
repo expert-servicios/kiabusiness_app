@@ -28,6 +28,7 @@ import {
 const MAX_SOURCES  = 3;
 const MAX_RESULTS  = 5;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1_000; // 24 h
+const CACHE_MAX    = 500;                   // max entries — prevents OOM on unauthenticated spam
 
 // ── Simple in-memory cache ───────────────────────────────────────────────────
 
@@ -52,7 +53,27 @@ function getCached(key: string): CompanySuggestion[] | null {
 }
 
 function setCached(key: string, results: CompanySuggestion[]): void {
+  // Evict oldest entries when cap is reached
+  if (cache.size >= CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
   cache.set(key, { results, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+// ── URL helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Builds a safe dataset URL. pkg.name comes from the CKAN API and must be
+ * validated before being embedded in a URL that gets stored in the DB and
+ * rendered in the UI — a compromised source could inject path-traversal or
+ * protocol-relative segments.
+ */
+function safeDatasetUrl(baseUrl: string, pkgName: string): string {
+  // Accept only alphanumeric, hyphens, underscores, dots — standard CKAN slug chars
+  const safe = /^[a-z0-9_\-\.]{1,200}$/i.test(pkgName);
+  if (!safe) return baseUrl;
+  return `${baseUrl}/dataset/${encodeURIComponent(pkgName)}`;
 }
 
 // ── Source query ─────────────────────────────────────────────────────────────
@@ -88,7 +109,7 @@ async function querySourceByName(
             record,
             source.fieldMapping,
             source,
-            `${source.baseUrl}/dataset/${pkg.name}`,
+            safeDatasetUrl(source.baseUrl, pkg.name),
           );
           if (suggestion) results.push(suggestion);
         }
@@ -159,7 +180,7 @@ async function querySourceByTaxId(
             record,
             source.fieldMapping,
             source,
-            `${source.baseUrl}/dataset/${pkg.name}`,
+            safeDatasetUrl(source.baseUrl, pkg.name),
           );
           if (suggestion) results.push(suggestion);
         }

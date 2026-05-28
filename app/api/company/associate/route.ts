@@ -189,10 +189,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (createErr || !newCompany) {
-    return NextResponse.json(
-      { error: createErr?.message ?? 'Error al crear la empresa' },
-      { status: 500 },
-    );
+    console.error('[company/associate] Insert error:', createErr?.message);
+    return NextResponse.json({ error: 'Error al crear la empresa' }, { status: 500 });
   }
 
   // ── Link to user profile ────────────────────────────────────────────────────
@@ -201,8 +199,10 @@ export async function POST(request: NextRequest) {
     .insert({ profile_id: user.id, company_id: newCompany.id, role: 'owner' });
 
   if (linkErr) {
-    // Don't fail — company created, link failed — log and return partial success
-    console.error('[company/associate] Failed to link company to profile:', linkErr);
+    // Roll back the company row so the user is not left with an unreachable record
+    await admin.from('companies').delete().eq('id', newCompany.id).then(() => null, () => null);
+    console.error('[company/associate] Failed to link company to profile, rolled back:', linkErr.message);
+    return NextResponse.json({ error: 'Error vinculando empresa al perfil' }, { status: 500 });
   }
 
   // ── Mark suggestion accepted ────────────────────────────────────────────────

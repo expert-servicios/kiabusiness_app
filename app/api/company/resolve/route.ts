@@ -14,10 +14,18 @@ const bodySchema = z.object({
 }).refine((d) => d.name || d.taxId, { message: 'name o taxId requerido' });
 
 export async function POST(request: NextRequest) {
+  // Auth required — prevents unauthenticated DoS / quota exhaustion of external APIs
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+  }
+
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -41,11 +49,11 @@ export async function POST(request: NextRequest) {
     // RGPD: no external enrichment for natural persons
     if (taxIdValidation.type === 'nif' || taxIdValidation.type === 'nie') {
       return NextResponse.json({
-        suggestions          : [],
-        bestSuggestion       : undefined,
+        suggestions             : [],
+        bestSuggestion          : undefined,
         requiresUserConfirmation: true,
-        taxIdType            : taxIdValidation.type,
-        note                 : 'Para personas físicas no se consultan fuentes externas de enriquecimiento.',
+        taxIdType               : taxIdValidation.type,
+        note                    : 'Para personas físicas no se consultan fuentes externas de enriquecimiento.',
       });
     }
   }
@@ -59,41 +67,40 @@ export async function POST(request: NextRequest) {
   try {
     result = await resolveCompanyData({ name, taxId: taxIdValidation?.normalized ?? taxId, country });
   } catch (err) {
+    // Store a generic message — never expose internal error details to client or logs
     resolveError = err instanceof Error ? err.message : 'Error desconocido';
     result = { suggestions: [], bestSuggestion: undefined, requiresUserConfirmation: true };
   }
 
   // Persist each suggestion for audit + future user confirmation
   const savedIds: string[] = [];
-  if (user && result.suggestions.length > 0) {
-    for (const sug of result.suggestions) {
-      const { data } = await admin
-        .from('company_data_suggestions')
-        .insert({
-          profile_id        : user.id,
-          input_name        : name ?? null,
-          input_tax_id      : taxId ?? null,
-          source            : sug.source,
-          source_url        : sug.sourceUrl ?? null,
-          retrieved_at      : sug.retrievedAt,
-          confidence        : sug.confidence,
-          warnings          : sug.warnings,
-          normalized_payload: sug as unknown as Record<string, unknown>,
-        })
-        .select('id')
-        .single();
-      if (data?.id) savedIds.push(data.id);
-    }
+  for (const sug of result.suggestions) {
+    const { data } = await admin
+      .from('company_data_suggestions')
+      .insert({
+        profile_id        : user.id,
+        input_name        : name ?? null,
+        input_tax_id      : taxId ?? null,
+        source            : sug.source,
+        source_url        : sug.sourceUrl ?? null,
+        retrieved_at      : sug.retrievedAt,
+        confidence        : sug.confidence,
+        warnings          : sug.warnings,
+        normalized_payload: sug as unknown as Record<string, unknown>,
+      })
+      .select('id')
+      .single();
+    if (data?.id) savedIds.push(data.id);
   }
 
-  // Audit log (best-effort — don't fail the request if logging fails)
+  // Audit log — best-effort, never fails the request
   await admin.from('company_data_sources_log').insert({
-    user_id     : user?.id ?? null,
+    user_id     : user.id,
     source      : 'resolver',
     query       : { name, taxId, country },
     result_count: result.suggestions.length,
     status      : resolveError ? 'error' : result.suggestions.length === 0 ? 'empty' : 'ok',
-    error       : resolveError,
+    error       : resolveError ? 'internal_resolver_error' : null,
   }).then(() => null, () => null);
 
   const elapsedMs = Date.now() - startedAt;
@@ -118,17 +125,24 @@ export async function PATCH(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-  const body = await request.json() as { suggestionId?: string };
-  if (!body.suggestionId) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+  }
+
+  const { suggestionId } = body as { suggestionId?: string };
+  if (!suggestionId) {
     return NextResponse.json({ error: 'suggestionId requerido' }, { status: 400 });
   }
 
   const { error } = await getSupabaseAdmin()
     .from('company_data_suggestions')
     .update({ selected_by_user: true, selected_at: new Date().toISOString() })
-    .eq('id', body.suggestionId)
+    .eq('id', suggestionId)
     .eq('profile_id', user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: 'Error al actualizar sugerencia' }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

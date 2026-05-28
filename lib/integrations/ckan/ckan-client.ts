@@ -130,16 +130,29 @@ export function createCkanClient(config: CkanClientConfig): CkanClient {
     const url = `${base}/api/3/action/${action}`;
 
     async function attempt(retry: boolean): Promise<T> {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
+      // Each fetch leg (POST + optional GET fallback) gets its own controller
+      // so that a slow-but-valid POST response doesn't exhaust the timeout
+      // budget before the GET fallback can even start.
+      const deadline = Date.now() + timeout;
+
+      async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new CkanApiError(`CKAN ${config.sourceName} timeout`, 'timeout');
+        const ctrl   = new AbortController();
+        const timer  = setTimeout(() => ctrl.abort(), remaining);
+        try {
+          return await fetch(input, { ...init, signal: ctrl.signal });
+        } finally {
+          clearTimeout(timer);
+        }
+      }
 
       try {
         // Try POST first (preferred for complex queries), fall back to GET
-        let res = await fetch(url, {
-          method: 'POST',
+        let res = await fetchWithTimeout(url, {
+          method : 'POST',
           headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(params),
-          signal: controller.signal,
+          body   : JSON.stringify(params),
         });
 
         // Some portals only accept GET
@@ -150,14 +163,11 @@ export function createCkanClient(config: CkanClientConfig): CkanClient {
               qs.set(k, typeof v === 'string' ? v : JSON.stringify(v));
             }
           }
-          res = await fetch(`${url}?${qs.toString()}`, {
-            method: 'GET',
+          res = await fetchWithTimeout(`${url}?${qs.toString()}`, {
+            method : 'GET',
             headers,
-            signal: controller.signal,
           });
         }
-
-        clearTimeout(timer);
 
         if (!res.ok) {
           if ((res.status >= 500 || res.status === 429) && retry) {
@@ -181,7 +191,6 @@ export function createCkanClient(config: CkanClientConfig): CkanClient {
         return json.result as T;
 
       } catch (err) {
-        clearTimeout(timer);
         if (err instanceof CkanApiError) throw err;
         if (err instanceof Error && err.name === 'AbortError') {
           throw new CkanApiError(`CKAN ${config.sourceName} timeout after ${timeout}ms`, 'timeout');
