@@ -224,7 +224,22 @@ export function registerProjectsTools(server: McpServer, getClient: () => Holded
       ({ projectId }) => projectId,
       async ({ projectId }) => {
         const data = await getClient().listTasks(projectId);
-        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        if (data === null || data === undefined) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                tasks: [],
+                count: 0,
+                note: 'Holded did not return task data for this project (the endpoint may use a UI widget for this account). Try viewing tasks directly in Holded.',
+              }, null, 2),
+            }],
+          };
+        }
+        const tasks = Array.isArray(data) ? data : [];
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ tasks, count: tasks.length }, null, 2) }],
+        };
       }
     )
   );
@@ -386,8 +401,18 @@ export function registerTeamTools(server: McpServer, getClient: () => HoldedClie
     {},
     readOnlyAnnotations('list_employees'),
     async () => {
-      const data = await getClient().listEmployees();
-      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      const raw = await getClient().listEmployees();
+      // Holded wraps the list in {"employees":[...]} — unwrap for consistency.
+      const employees: unknown[] = Array.isArray(raw)
+        ? raw
+        : (raw && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).employees)
+            ? (raw as Record<string, unknown>).employees as unknown[]
+            : []);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify({ employees, count: employees.length }, null, 2) },
+        ],
+      };
     }
   );
 

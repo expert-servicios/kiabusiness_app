@@ -190,11 +190,37 @@ export class HoldedClient {
   }
 
   async getDocumentPdf(docType: HoldedDocType, documentId: string): Promise<Buffer> {
-    return this.request<Buffer>(
-      `/api/invoicing/v1/documents/${docType}/${documentId}/pdf`,
-      {},
-      { expectBinary: true }
-    );
+    const path = `/api/invoicing/v1/documents/${docType}/${documentId}/pdf`;
+    // Holded wraps the PDF in {"status":1,"data":"<base64>"} — NOT raw binary.
+    // The base64 value encodes HTTP-like headers (using literal "\n" = 0x5C 0x6E)
+    // followed immediately by the actual PDF binary. We locate the PDF by
+    // searching for the "%PDF" magic bytes and slicing from there.
+    const response = await this.request<unknown>(path);
+    const b64 =
+      response &&
+      typeof response === 'object' &&
+      'data' in response &&
+      typeof (response as Record<string, unknown>).data === 'string'
+        ? (response as Record<string, unknown>).data as string
+        : null;
+    if (!b64) {
+      throw new HoldedApiError(
+        `Holded PDF endpoint returned unexpected response format for ${docType}/${documentId}`,
+        200,
+        path
+      );
+    }
+    const raw = Buffer.from(b64, 'base64');
+    // Find %PDF magic (0x25 0x50 0x44 0x46)
+    const pdfOffset = raw.indexOf(Buffer.from([0x25, 0x50, 0x44, 0x46]));
+    if (pdfOffset < 0) {
+      throw new HoldedApiError(
+        `Holded PDF response did not contain a valid PDF for ${docType}/${documentId}`,
+        200,
+        path
+      );
+    }
+    return raw.slice(pdfOffset);
   }
 
   // ── Contactos / CRM ──────────────────────────────────────────────────────
