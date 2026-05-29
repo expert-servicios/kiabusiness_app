@@ -1151,6 +1151,17 @@ type ConsentPagePrefill = {
   verifiedUid?: string;
 };
 
+function detectChannelFromRedirectUri(redirectUri: string): { name: string; sub: string; verb: string } {
+  try {
+    const host = new URL(redirectUri).hostname.toLowerCase();
+    if (host === 'chatgpt.com' || host.endsWith('.chatgpt.com'))
+      return { name: 'ChatGPT', sub: 'Conexion Holded para ChatGPT', verb: 'ChatGPT' };
+    if (host === 'claude.ai' || host.endsWith('.claude.ai'))
+      return { name: 'Claude', sub: 'Conexion Holded para Claude', verb: 'Claude' };
+  } catch { /* fallback */ }
+  return { name: 'tu asistente IA', sub: 'Conexion Holded con IA', verb: 'tu asistente IA' };
+}
+
 function consentPage(
   clientId: string,
   redirectUri: string,
@@ -1162,6 +1173,7 @@ function consentPage(
   prefillInput: ConsentPagePrefill | null = {}
 ): string {
   const prefill: ConsentPagePrefill = prefillInput ?? {};
+  const channel = detectChannelFromRedirectUri(redirectUri);
   // Use a relative path for the form action so that the browser's
   // `form-action 'self'` CSP directive always matches (relative URLs
   // resolve to the document origin, making them unconditionally 'self').
@@ -1188,7 +1200,7 @@ function consentPage(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conectar Holded con Claude</title>
+  <title>Conectar Holded con ${escapeHtml(channel.name)}</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/holded-diamond-logo.png">
@@ -1247,13 +1259,13 @@ function consentPage(
           <div class="badge-icon"><img src="/holded-diamond-logo.png" alt="Holded"></div>
           <div class="badge-text">
             <div class="badge-title">holded</div>
-            <div class="badge-sub">Conexion Holded para Claude</div>
+            <div class="badge-sub">${escapeHtml(channel.sub)}</div>
           </div>
         </div>
       </div>
 
-      <h1><span class="star" aria-hidden="true">✦</span>Conecta Holded con Claude</h1>
-      <p class="lead">Introduce tu email y la API key de Holded. Claude podra consultar tus datos y crear borradores con tu confirmacion explicita.</p>
+      <h1><span class="star" aria-hidden="true">✦</span>Conecta Holded con ${escapeHtml(channel.name)}</h1>
+      <p class="lead">Introduce tu email y la API key de Holded. ${escapeHtml(channel.name)} podra consultar tus datos y crear borradores con tu confirmacion explicita.</p>
 
       ${
         error
@@ -1300,7 +1312,7 @@ function consentPage(
         </label>
         <input type="hidden" name="accepted_privacy" value="1">
 
-        <button type="submit" class="submit">Conectar Holded a Claude</button>
+        <button type="submit" class="submit">Conectar Holded a ${escapeHtml(channel.name)}</button>
 
         <div class="safety">
           <span class="check" aria-hidden="true">🛡</span>
