@@ -82,11 +82,12 @@ export default async function HoldedIntegrationPage() {
           </p>
           <ul className="space-y-2 text-sm text-[#3d3528]">
             {[
-              'Resumen trimestral de IVA soportado y repercutido',
-              'Estimación automática del Modelo 303',
-              'Conciliación de facturas con cobros en Stripe',
-              'Alertas de anomalías fiscales detectadas por Kia',
-              'Acceso a tus facturas emitidas y recibidas desde el panel',
+              'Informe de IVA por trimestre y estimación del Modelo 303',
+              'Balance de situación y cuenta de pérdidas y ganancias',
+              'Movimientos bancarios y conciliación con cobros de Stripe',
+              'Asientos contables y libro diario con detección de anomalías',
+              'Facturas emitidas y recibidas accesibles desde el panel',
+              'Consultas sobre contactos, productos, proyectos y empleados',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c88b25]" />

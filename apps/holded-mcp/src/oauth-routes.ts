@@ -1275,11 +1275,12 @@ function consentPage(
 
       <div class="scopes">
         <div class="scopes-title">Permisos solicitados</div>
-        <div class="scope">Leer facturas, presupuestos y documentos</div>
-        <div class="scope">Leer y buscar contactos y clientes</div>
-        <div class="scope">Leer productos e inventario</div>
-        <div class="scope">Leer proyectos y tareas</div>
-        <div class="scope">Leer contabilidad y diario</div>
+        <div class="scope">Leer facturas emitidas, recibidas y documentos</div>
+        <div class="scope">Informes de IVA, balance y cuenta de P&amp;G</div>
+        <div class="scope">Asientos contables y libro diario</div>
+        <div class="scope">Movimientos bancarios y tesoreria</div>
+        <div class="scope">Leer contactos, productos e inventario</div>
+        <div class="scope">Leer proyectos, tareas y empleados</div>
         <div class="scope">Crear borradores de factura (con tu confirmacion)</div>
       </div>
 

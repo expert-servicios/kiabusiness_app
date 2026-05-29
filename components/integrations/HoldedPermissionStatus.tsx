@@ -11,16 +11,20 @@ export interface HoldedPermissions {
   bankMovements     : boolean;
   inboxDocuments    : boolean;
   writeInbox        : boolean;
+  accountingReports : boolean;
+  accountingEntries : boolean;
 }
 
 const PERMISSION_LABELS: Array<{ key: keyof HoldedPermissions; label: string; required: boolean }> = [
-  { key: 'salesInvoices',    label: 'Facturas emitidas',         required: true  },
-  { key: 'purchaseInvoices', label: 'Facturas recibidas',        required: true  },
-  { key: 'taxes',            label: 'Impuestos',                 required: true  },
-  { key: 'contacts',         label: 'Contactos',                 required: false },
-  { key: 'bankAccounts',     label: 'Cuentas bancarias',         required: false },
-  { key: 'bankMovements',    label: 'Movimientos bancarios',     required: false },
-  { key: 'inboxDocuments',   label: 'Bandeja de entrada',        required: false },
+  { key: 'salesInvoices',     label: 'Facturas emitidas',               required: true  },
+  { key: 'purchaseInvoices',  label: 'Facturas recibidas',              required: true  },
+  { key: 'taxes',             label: 'Impuestos configurados',          required: true  },
+  { key: 'accountingReports', label: 'Informes contables (IVA, P&G, Balance)', required: true  },
+  { key: 'accountingEntries', label: 'Asientos contables',              required: true  },
+  { key: 'contacts',          label: 'Contactos y clientes',            required: false },
+  { key: 'bankAccounts',      label: 'Cuentas bancarias',               required: false },
+  { key: 'bankMovements',     label: 'Movimientos bancarios',           required: false },
+  { key: 'inboxDocuments',    label: 'Bandeja de entrada',              required: false },
 ];
 
 interface Props {

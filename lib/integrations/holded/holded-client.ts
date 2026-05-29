@@ -91,6 +91,8 @@ export interface HoldedPermissions {
   bankMovements      : boolean;
   inboxDocuments     : boolean;
   writeInbox         : boolean;
+  accountingReports  : boolean;
+  accountingEntries  : boolean;
 }
 
 // ── Rate-limit helper ─────────────────────────────────────────────────────────
@@ -167,15 +169,20 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
   // ── Permission detection ────────────────────────────────────────────────────
 
   async function detectPermissions(): Promise<HoldedPermissions> {
+    const getAccounting = <T>(path: string) =>
+      holdedFetch<T>(apiKey, 'GET', `https://api.holded.com/api/accounting/v1${path}`);
+
     const checks: Array<{ key: keyof HoldedPermissions; probe: () => Promise<unknown> }> = [
-      { key: 'contacts',         probe: () => get('/contacts?page=1') },
-      { key: 'salesInvoices',    probe: () => get('/documents/invoice?page=1') },
-      { key: 'purchaseInvoices', probe: () => get('/documents/purchase?page=1') },
-      { key: 'taxes',            probe: () => get('/taxes') },
-      { key: 'bankAccounts',     probe: () => get('/treasury/accounts') },
-      { key: 'bankMovements',    probe: () => get('/treasury/movements?page=1') },
-      { key: 'inboxDocuments',   probe: () => get('/documents/inbox?page=1') },
-      { key: 'writeInbox',       probe: () => Promise.resolve(false) }, // requires actual write test
+      { key: 'contacts',          probe: () => get('/contacts?page=1') },
+      { key: 'salesInvoices',     probe: () => get('/documents/invoice?page=1') },
+      { key: 'purchaseInvoices',  probe: () => get('/documents/purchase?page=1') },
+      { key: 'taxes',             probe: () => get('/taxes') },
+      { key: 'bankAccounts',      probe: () => get('/treasury/accounts') },
+      { key: 'bankMovements',     probe: () => get('/treasury/movements?page=1') },
+      { key: 'inboxDocuments',    probe: () => get('/documents/inbox?page=1') },
+      { key: 'writeInbox',        probe: () => Promise.resolve(false) },
+      { key: 'accountingReports', probe: () => getAccounting(`/reports/vat?year=${new Date().getFullYear()}`) },
+      { key: 'accountingEntries', probe: () => getAccounting('/entries?page=1') },
     ];
 
     const permissions = {} as HoldedPermissions;
@@ -205,6 +212,7 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
           contacts: false, salesInvoices: false, purchaseInvoices: false,
           taxes: false, bankAccounts: false, bankMovements: false,
           inboxDocuments: false, writeInbox: false,
+          accountingReports: false, accountingEntries: false,
         },
         warnings: [holdedErrorMessage(err)],
       };

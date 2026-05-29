@@ -53,6 +53,20 @@ const PERMISSION_DEFS: PermissionDef[] = [
     defaultOn  : true,
   },
   {
+    key        : 'accountingReports',
+    label      : 'Informes contables (IVA, P&G, Balance)',
+    description: 'Informe de IVA por trimestre, cuenta de pérdidas y ganancias y balance de situación.',
+    required   : true,
+    defaultOn  : true,
+  },
+  {
+    key        : 'accountingEntries',
+    label      : 'Asientos contables',
+    description: 'Lectura del libro diario y asientos para análisis y detección de anomalías.',
+    required   : true,
+    defaultOn  : true,
+  },
+  {
     key        : 'contacts',
     label      : 'Contactos y clientes',
     description: 'Para vincular facturas con tus clientes y proveedores.',
