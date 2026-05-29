@@ -23,6 +23,7 @@ export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   ]));
   checks.push(checkDecisionLogsFlag());
   checks.push(checkFeatureFlagCoherence());
+  checks.push(await checkHoldedMcpBridge());
   return checks;
 }
 
@@ -253,4 +254,53 @@ function technicalResult(params: {
     latencyMs: params.latencyMs,
     error: params.error ?? null,
   };
+}
+
+async function checkHoldedMcpBridge(): Promise<KiaHealthCheckResult> {
+  const hasSharedSecret = !!process.env.HOLDED_MCP_SHARED_SECRET?.trim();
+  const mcpBaseUrl      = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL?.trim();
+  const hasBaseUrl      = !!mcpBaseUrl;
+
+  if (!hasSharedSecret || !hasBaseUrl) {
+    return {
+      checkId : 'holded_mcp_bridge_config',
+      title   : 'Holded MCP bridge configurado',
+      category: 'technical',
+      severity: 'warning',
+      status  : 'warning',
+      actual  : { hasSharedSecret, hasBaseUrl },
+      error   : !hasSharedSecret
+        ? 'HOLDED_MCP_SHARED_SECRET no configurado'
+        : 'NEXT_PUBLIC_HOLDED_MCP_BASE_URL no configurado',
+    };
+  }
+
+  // Probe the MCP server OAuth discovery endpoint
+  const discoveryUrl = `${mcpBaseUrl.replace(/\/$/, '')}/.well-known/oauth-authorization-server`;
+  const t0 = Date.now();
+  try {
+    const res = await fetch(discoveryUrl, { signal: AbortSignal.timeout(5000) });
+    const latencyMs = Date.now() - t0;
+    const ok = res.ok && res.headers.get('content-type')?.includes('json');
+    return {
+      checkId  : 'holded_mcp_bridge_config',
+      title    : 'Holded MCP bridge configurado y accesible',
+      category : 'technical',
+      severity : 'warning',
+      status   : ok ? 'passed' : 'warning',
+      actual   : { hasSharedSecret, hasBaseUrl, discoveryStatus: res.status },
+      latencyMs,
+      error    : ok ? null : `MCP server devolvió ${res.status} en ${discoveryUrl}`,
+    };
+  } catch (err) {
+    return {
+      checkId : 'holded_mcp_bridge_config',
+      title   : 'Holded MCP bridge configurado y accesible',
+      category: 'technical',
+      severity: 'warning',
+      status  : 'warning',
+      actual  : { hasSharedSecret, hasBaseUrl },
+      error   : `No se pudo conectar con MCP server: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 }

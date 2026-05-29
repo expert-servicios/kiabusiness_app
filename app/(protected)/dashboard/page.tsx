@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import {
   AlertCircle, ArrowRight, Building2, CheckCircle2,
-  ChevronRight, Clock, FileText, FolderOpen, MessageCircle, Plus, Zap
+  ChevronRight, Clock, FileText, FolderOpen, MessageCircle, Plus, Plug, Zap
 } from 'lucide-react';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
@@ -87,21 +87,25 @@ function getPrimaryAction(
   return null;
 }
 
+interface HoldedStatus { connected: boolean; status: string; last4: string | null; lastSync: string | null }
+
 export default async function DashboardPage() {
-  const [quotesData, casesData, subsData, companiesData, profileData] = await Promise.all([
+  const [quotesData, casesData, subsData, companiesData, profileData, holdedData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
     fetchWithCookies('/api/cases'),
     fetchWithCookies('/api/subscriptions'),
     fetchWithCookies('/api/companies'),
-    fetchWithCookies('/api/profile')
+    fetchWithCookies('/api/profile'),
+    fetchWithCookies('/api/integrations/holded/status'),
   ]);
 
   const quotes: QuoteItem[] = quotesData?.quotes ?? [];
   const cases: CaseItem[] = casesData?.cases ?? [];
   const subscriptions: SubItem[] = subsData?.subscriptions ?? [];
   const hasCompany = (companiesData?.companies?.length ?? 0) > 0;
-  const profile = profileData?.profile ?? null;
-  const firstName = profile?.full_name?.split(' ')[0] ?? null;
+  const profile    = profileData?.profile ?? null;
+  const firstName  = profile?.full_name?.split(' ')[0] ?? null;
+  const holded     = (holdedData as HoldedStatus | null);
 
   const activeCases = cases.filter((c) => c.state !== 'finalizado');
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0);
@@ -226,6 +230,37 @@ export default async function DashboardPage() {
             </p>
           </Link>
         </div>
+
+        {/* ── HOLDED INTEGRATION STATUS ── */}
+        <Link
+          href="/dashboard/integraciones/holded"
+          className={`flex items-center justify-between gap-4 rounded-2xl border p-4 transition hover:shadow-sm ${
+            holded?.connected
+              ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-300'
+              : 'border-[#e8dfc8] bg-white hover:border-[#c88b25]/40'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${holded?.connected ? 'bg-emerald-100' : 'bg-[#c88b25]/10'}`}>
+              <Plug className={`h-4 w-4 ${holded?.connected ? 'text-emerald-600' : 'text-[#c88b25]'}`} />
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${holded?.connected ? 'text-emerald-800' : 'text-[#3d3528]'}`}>
+                {holded?.connected ? 'Holded conectado' : 'Conecta Holded para ver tu contabilidad en tiempo real'}
+              </p>
+              {holded?.connected && holded.lastSync && (
+                <p className="text-xs text-[#7a6e5f]">
+                  Última sincronización: {new Date(holded.lastSync).toLocaleDateString('es-ES')}
+                  {holded.last4 && ` · API key ••••${holded.last4}`}
+                </p>
+              )}
+              {!holded?.connected && (
+                <p className="text-xs text-[#a89880]">IVA estimado, facturas, saldos y alertas fiscales</p>
+              )}
+            </div>
+          </div>
+          <ArrowRight className={`h-4 w-4 shrink-0 ${holded?.connected ? 'text-emerald-500' : 'text-[#c88b25]'}`} />
+        </Link>
 
         {/* ── EXPEDIENTES ACTIVOS ── */}
         {activeCases.length > 0 && (

@@ -84,6 +84,19 @@ export const kiaToolValidators = {
   get_company_status_snapshot: z.object({
     companyId: z.string().uuid().optional(),
   }).strict(),
+  // ── Holded data tools (require active client integration) ─────────────────
+  get_holded_invoices: z.object({
+    docType  : z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
+    limit    : z.number().int().min(1).max(20).default(10),
+    since    : z.string().optional(), // ISO date — filter by date
+  }).strict(),
+  get_holded_contacts: z.object({
+    query    : z.string().max(100).optional(), // search term
+    limit    : z.number().int().min(1).max(20).default(10),
+  }).strict(),
+  get_holded_bank_balance: z.object({
+    limit    : z.number().int().min(1).max(10).default(5),
+  }).strict(),
   create_kia_decision_log: emptyObjectSchema,
 } satisfies Record<string, z.ZodTypeAny>;
 
@@ -109,6 +122,9 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   generate_profile_link: 'Generate secure profile/login link.',
   generate_holded_connection_link: 'Generate secure Holded connection panel link.',
   get_company_status_snapshot: 'Return safe company/accounting snapshot summary if available.',
+  get_holded_invoices: 'List recent Holded invoices or purchases for the client. Requires active Holded integration.',
+  get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
+  get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
 };
 
