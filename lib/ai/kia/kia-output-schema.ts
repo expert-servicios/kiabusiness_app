@@ -12,6 +12,7 @@ export const KIA_TASK_TYPES = [
   'company_status_summary',
   'next_best_action',
   'checkout_decision',
+  'generate_report',
 ] as const;
 
 export type KiaTaskType = (typeof KIA_TASK_TYPES)[number];
@@ -40,6 +41,8 @@ export const KIA_INTENTS = [
   'company_data_confirm',
   'company_data_reject',
   'company_data_edit',
+  'report_request',
+  'export_report',
   'unknown',
 ] as const;
 
@@ -62,6 +65,8 @@ export const KIA_NEXT_ACTIONS = [
   'needs_review',
   'send_company_lookup_link',
   'show_company_suggestion',
+  'generate_report',
+  'show_report_link',
 ] as const;
 
 export const KIA_QUICK_REPLY_KINDS = [

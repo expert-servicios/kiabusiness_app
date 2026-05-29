@@ -7,6 +7,7 @@ import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from '
 import type { KiaContext } from './kia-context-builder';
 import { redactJson, safeErrorMessage } from './kia-redaction';
 import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
+import { generateCompanyReport } from '@/lib/reports/report-generator';
 
 export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaContext): Promise<KiaToolResult> {
   try {
@@ -150,6 +151,37 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         }
 
         return fail(toolCall.name, 'Tool branch unreachable');
+      }
+
+      case 'generate_company_report': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No se puede generar el informe sin un cliente identificado.');
+
+        const companyId = (context.company as Record<string, unknown> | null)?.id as string | null ?? null;
+        const integrationId = await findHoldedIntegrationId(admin, context);
+        if (!integrationId) {
+          return fail(toolCall.name, 'Holded no está conectado. Usa generate_holded_connection_link para que el cliente lo vincule primero.');
+        }
+
+        try {
+          const result = await generateCompanyReport({
+            clientId,
+            companyId,
+            integrationId,
+            period     : typeof args.period === 'string' ? args.period : undefined,
+            lang       : (args.lang as 'es' | 'ru') ?? 'es',
+            generatedBy: 'kia',
+          });
+          return ok(toolCall.name, {
+            reportId : result.reportId,
+            reportUrl: result.reportUrl,
+            title    : result.title,
+            period   : result.period,
+            message  : `Informe generado correctamente para el periodo ${result.period}.`,
+          });
+        } catch (err) {
+          return fail(toolCall.name, `Error generando el informe: ${safeErrorMessage(err)}`);
+        }
       }
 
       default:

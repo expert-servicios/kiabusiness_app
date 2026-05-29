@@ -97,6 +97,11 @@ export const kiaToolValidators = {
   get_holded_bank_balance: z.object({
     limit    : z.number().int().min(1).max(10).default(5),
   }).strict(),
+  generate_company_report: z.object({
+    reportType: z.enum(['empresa_status']).default('empresa_status'),
+    period    : z.string().optional(),
+    lang      : z.enum(['es', 'ru']).default('es'),
+  }).strict(),
   create_kia_decision_log: emptyObjectSchema,
 } satisfies Record<string, z.ZodTypeAny>;
 
@@ -125,6 +130,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_holded_invoices: 'List recent Holded invoices or purchases for the client. Requires active Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
+  generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
 };
 
