@@ -16,6 +16,12 @@ export interface KiaContextInput {
   selectedMessageId?: string;
   syntheticRecentMessages?: KiaContext['conversation']['recentMessages'];
   syntheticSelectedMessage?: KiaContext['conversation']['selectedMessage'];
+  /** Dashboard copilot: current page path e.g. '/dashboard/empresa', '/dashboard/expedientes/abc123' */
+  currentPage?: string;
+  /** Dashboard copilot: what task the user is performing e.g. 'editing_company', 'viewing_case' */
+  currentTask?: string;
+  /** Dashboard copilot: arbitrary page-specific data (caseId, reportId, etc.) */
+  pageData?: Record<string, unknown>;
 }
 
 export interface KiaContext {

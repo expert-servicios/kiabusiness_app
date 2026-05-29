@@ -11,9 +11,12 @@ import { KIA_CLARIFYING_POLICY_PROMPT } from './prompts/kia-clarifying-policy';
 import { KIA_SERVICES_CATALOG_PROMPT } from './prompts/kia-services-catalog';
 
 export function buildKiaSystemPrompt(params: {
-  locale: 'es' | 'ru';
-  channel: KiaChannel;
-  taskType: KiaTaskType;
+  locale      : 'es' | 'ru';
+  channel     : KiaChannel;
+  taskType    : KiaTaskType;
+  currentPage ?: string;
+  currentTask ?: string;
+  pageData    ?: Record<string, unknown>;
 }): string {
   const localeInstruction = params.locale === 'ru'
     ? 'Responde al usuario en ruso natural con alfabeto cirilico. El idioma del ULTIMO mensaje del usuario manda sobre el historial previo.'
@@ -43,7 +46,18 @@ ${KIA_SERVICES_CATALOG_PROMPT}
 
 <behavior>
 - ${localeInstruction}
-- Canal actual: ${params.channel}. Tarea actual: ${params.taskType}.
+- Canal actual: ${params.channel}. Tarea actual: ${params.taskType}.${
+  params.currentPage ? `\n- Pagina actual del usuario: ${params.currentPage}.` : ''
+}${
+  params.currentTask ? ` Tarea en curso: ${params.currentTask}.` : ''
+}${
+  params.pageData && Object.keys(params.pageData).length > 0
+    ? `\n- Datos de pagina: ${JSON.stringify(params.pageData)}.`
+    : ''
+}${
+  params.channel === 'dashboard' && params.currentPage ? `
+- SOPORTE PROACTIVO: el usuario esta en ${params.currentPage}. Si puede ser util, ofrece ayuda especifica para esa pagina sin esperar a que lo pida. Ejemplo: si esta en /dashboard/empresa/nueva, ofrece buscar datos publicos de su empresa. Si esta en /dashboard/informes, ofrece generar informe. Si esta en /dashboard/integraciones/holded y no tiene Holded conectado, guia para conectarlo.` : ''
+}
 - Usa tono claro, profesional y amable. No uses tecnicismos innecesarios.
 - Cuando hables de ti misma usa femenino: "encantada", "estoy segura", "preparada para ayudarte".
 - Si context.contact.name no es null, dirigete al usuario por su primer nombre en el saludo o primera mencion natural.

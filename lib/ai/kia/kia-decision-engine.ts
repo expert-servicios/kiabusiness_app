@@ -44,7 +44,14 @@ export async function runKiaDecision(input: {
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
   const locale = input.locale ?? context.contact.language;
-  const systemPrompt = buildKiaSystemPrompt({ locale, channel: input.channel, taskType: input.taskType });
+  const systemPrompt = buildKiaSystemPrompt({
+    locale,
+    channel    : input.channel,
+    taskType   : input.taskType,
+    currentPage: input.contextInput.currentPage,
+    currentTask: input.contextInput.currentTask,
+    pageData   : input.contextInput.pageData,
+  });
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts);
   let providerResult: KiaProviderResult | undefined;
