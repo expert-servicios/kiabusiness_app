@@ -184,9 +184,15 @@ function checkDecisionLogsFlag(): KiaHealthCheckResult {
   });
 }
 
+function featureFlag(name: string, defaultValue: boolean): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  if (!value) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(value);
+}
+
 function checkFeatureFlagCoherence(): KiaHealthCheckResult {
-  const structured = process.env.KIA_STRUCTURED_AI_ENABLED?.toLowerCase() === 'true';
-  const router = process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
+  const structured = featureFlag('KIA_STRUCTURED_AI_ENABLED', true);
+  const router = featureFlag('KIA_AI_PROVIDER_ROUTER_ENABLED', true);
   const tools = process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true';
   const ok = !structured || router;
   const warning = tools && process.env.KIA_HEALTH_ALLOW_TOOLS_ENABLED_WARNING?.toLowerCase() !== 'false';

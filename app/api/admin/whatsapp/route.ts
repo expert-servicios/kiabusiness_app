@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
+import { sendWhatsAppInteractive, sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
 import { z } from 'zod';
 
 async function requireAdmin(request: NextRequest) {
@@ -156,6 +156,10 @@ export async function GET(request: NextRequest) {
 const replySchema = z.object({
   phone:            z.string().min(1),
   body:             z.string().max(4096).optional(),
+  quickReplies:     z.array(z.object({
+    id:    z.string().min(1).max(256),
+    title: z.string().min(1).max(20),
+  })).min(2).max(3).optional(),
   mediaUrl:         z.string().url().optional(),
   mediaType:        z.enum(['image', 'document', 'audio', 'video']).optional(),
   mediaFilename:    z.string().max(255).optional(),
@@ -163,6 +167,34 @@ const replySchema = z.object({
   caseId:           z.string().uuid().optional(),
   replyToMessageId: z.string().uuid().optional(),
 });
+
+const WABA_INTERACTIVE_BODY_MAX = 1024;
+
+function fitInteractiveBody(body: string): string {
+  if (body.length <= WABA_INTERACTIVE_BODY_MAX) return body;
+  return `${body.slice(0, WABA_INTERACTIVE_BODY_MAX - 4).trimEnd()} ...`;
+}
+
+function normalizeAdminQuickReplies(
+  replies: Array<{ id: string; title: string }> | undefined,
+): Array<{ id: string; title: string }> {
+  if (!replies || replies.length < 2) return [];
+  const normalized = replies
+    .slice(0, 3)
+    .map((reply, index) => ({
+      id: reply.id.trim() || `admin_quick_${index}`,
+      title: reply.title.trim().slice(0, 20),
+    }))
+    .filter((reply) => reply.id && reply.title);
+
+  if (normalized.length < 2) return [];
+  const last = normalized[normalized.length - 1];
+  const lastTitle = last.title.toLowerCase();
+  if (last.id !== 'btn_other' && lastTitle !== 'otro' && lastTitle !== 'другое' && lastTitle !== 'другой') {
+    normalized[normalized.length - 1] = { id: 'btn_other', title: /[А-Яа-яЁё]/.test(normalized.map((r) => r.title).join(' ')) ? 'Другое' : 'Otro' };
+  }
+  return normalized;
+}
 
 // POST — admin manual reply (text or media)
 export async function POST(request: NextRequest) {
@@ -175,7 +207,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
   }
 
-  const { phone, body, mediaUrl, mediaType, mediaFilename, caption, caseId, replyToMessageId } = parsed.data;
+  const { phone, body, quickReplies, mediaUrl, mediaType, mediaFilename, caption, caseId, replyToMessageId } = parsed.data;
 
   if (!body && !mediaUrl) {
     return NextResponse.json({ error: 'Se requiere texto o adjunto' }, { status: 400 });
@@ -235,14 +267,22 @@ export async function POST(request: NextRequest) {
     .or(`phone.ilike.%${normalized.slice(-9)}%,whatsapp_number.ilike.%${normalized.slice(-9)}%`)
     .maybeSingle();
 
-  const result = await sendWhatsAppMessage({
-    to: phone,
-    body:          finalBody,
-    mediaUrl,
-    mediaType,
-    mediaFilename,
-    caption:       finalCaption,
-  });
+  const buttons = !mediaUrl ? normalizeAdminQuickReplies(quickReplies) : [];
+  const result = buttons.length >= 2 && finalBody
+    ? await sendWhatsAppInteractive({
+        to: phone,
+        body: fitInteractiveBody(finalBody),
+        footer: 'EXPERT 💼',
+        buttons,
+      })
+    : await sendWhatsAppMessage({
+        to: phone,
+        body:          finalBody,
+        mediaUrl,
+        mediaType,
+        mediaFilename,
+        caption:       finalCaption,
+      });
 
   if (!result.success) {
     return NextResponse.json({ error: result.error, detail: result.detail }, { status: 500 });
@@ -252,7 +292,9 @@ export async function POST(request: NextRequest) {
     clientId:                   profile?.id,
     phoneNumber:                normalized,
     direction:                  'outbound',
-    body:                       finalBody ?? finalCaption ?? `[${mediaType}]`,
+    body:                       buttons.length >= 2 && finalBody
+      ? `[Admin:buttons] ${fitInteractiveBody(finalBody)} | ${buttons.map((button) => button.title).join(' / ')}`
+      : finalBody ?? finalCaption ?? `[${mediaType}]`,
     whatsappMessageId:          result.messageId,
     caseId,
     mediaUrl,

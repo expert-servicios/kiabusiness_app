@@ -59,6 +59,25 @@ export const KIA_HEALTH_CANARY_TESTS: KiaHealthCheck[] = [
     },
   },
   {
+    id: 'holded_public_prices',
+    category: 'behavioral',
+    severity: 'critical',
+    title: 'Precios Holded publicados se explican sin viabilidad',
+    input: {
+      channel: 'waba',
+      contactStatus: 'lead',
+      message: 'Dime los precios de Holded',
+      context: { serviceSlug: 'holded-pack-starter' },
+    },
+    expected: {
+      intentAny: ['readiness', 'service_selection'],
+      nextActionAny: ['run_readiness', 'ask_one_question', 'reply_only', 'show_menu'],
+      mustContain: ['499', '899', '1.199'],
+      mustNotContain: ['comprobar viabilidad', 'viabilidad jurídica'],
+      requiresManualReview: false,
+    },
+  },
+  {
     id: 'social_roots_viability',
     category: 'behavioral',
     severity: 'warning',

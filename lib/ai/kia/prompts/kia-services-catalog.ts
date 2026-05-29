@@ -56,12 +56,14 @@ PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
   Si menciona laboral, alto volumen, inventario, e-commerce, operaciones internacionales o varias sociedades: Plan Personalizado.
 
 HOLDED — readiness:
-  holded-pack-starter           → readiness | Pack Starter Holded — CASO ESPECIAL: contrateable sin Holded previo; la readiness evalua idoneidad, no bloquea por falta de cuenta
-  holded-migracion-sin-inventario → readiness | Migracion a Holded sin inventario
-  holded-migracion-con-inventario → readiness | Migracion a Holded con inventario / stock
+  holded-pack-starter           → readiness | Pack Starter Holded 499 EUR + IVA — CASO ESPECIAL: contrateable sin Holded previo; la readiness evalua idoneidad, no bloquea por falta de cuenta
+  holded-migracion-sin-inventario → readiness | Migracion a Holded sin inventario 899 EUR + IVA
+  holded-migracion-con-inventario → readiness | Migracion a Holded con inventario / stock 1.199 EUR + IVA
   holded-modulo-laboral         → readiness | Modulo laboral Holded (nominas, SS)
   holded-modulo-formacion       → readiness | Formacion practica Holded
   holded-integraciones-api      → readiness | Integraciones API Holded
+  Si pregunta por precio de Holded, responde con el precio publico exacto cuando exista y ofrece preparar readiness.
+  No uses "comprobar viabilidad" para Holded. Usa "preparar", "configurar", "readiness" o "revisar requisitos".
 
 CERTIFICADO DIGITAL — direct_checkout:
   certificado-digital-persona-fisica    | 90 EUR + IVA  | Autonomos, particulares, cualquier persona fisica

@@ -67,7 +67,7 @@ export async function runKiaDecision(input: {
         temperature: 0.2,
       });
 
-      decision = applyBackendPolicyGuards(parseDecision(providerResult, input.taskType, context), input, context);
+      decision = applyBackendPolicyGuards(parseDecision(providerResult, input.taskType, context, locale), input, context);
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
@@ -75,6 +75,7 @@ export async function runKiaDecision(input: {
           systemPrompt,
           message: input.message,
           context,
+          locale,
           repeatedText: repeated.text,
         });
         if (retry.decision) {
@@ -95,6 +96,7 @@ export async function runKiaDecision(input: {
         systemPrompt,
         badOutput: providerResult?.rawText ?? providerResult?.error ?? safeErrorMessage(err),
         context,
+        locale,
       });
       if (repaired.decision) {
         providerResult = repaired.providerResult ?? providerResult;
@@ -143,7 +145,8 @@ export async function runKiaDecision(input: {
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
   const quickReplyAllowedActions: KiaDecision['nextAction'][] = ['ask_one_question', 'show_menu', 'reply_only'];
-  const shouldKeepQuickReplies = channel === 'waba' && quickReplyAllowedActions.includes(decision.nextAction);
+  const shouldKeepQuickReplies = (channel === 'waba' || decision.taskType === 'admin_ai_compose')
+    && quickReplyAllowedActions.includes(decision.nextAction);
   const quickReplies = shouldKeepQuickReplies
     ? normalizeKiaQuickReplies(decision.quickReplies, locale, { ensureOther: true })
     : [];
@@ -250,12 +253,13 @@ function buildUserPayload(message: string, context: KiaContext, recentAssistantT
   ].join('\n');
 }
 
-function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType, context: KiaContext): KiaDecision {
+function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType, context: KiaContext, locale: 'es' | 'ru'): KiaDecision {
   if (providerResult.error) throw new Error(providerResult.error);
   const candidate = normalizeDecisionCandidate(
     providerResult.parsedJson ?? extractJsonObject(providerResult.rawText ?? ''),
     taskType,
     context,
+    locale,
   );
   const parsed = kiaDecisionSchema.safeParse(candidate);
   if (!parsed.success) {
@@ -270,7 +274,7 @@ function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType,
   return parsed.data;
 }
 
-function normalizeDecisionCandidate(candidate: unknown, taskType: KiaTaskType, context: KiaContext): unknown {
+function normalizeDecisionCandidate(candidate: unknown, taskType: KiaTaskType, context: KiaContext, locale: 'es' | 'ru'): unknown {
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return candidate;
   const record = { ...(candidate as Record<string, unknown>) };
 
@@ -285,7 +289,7 @@ function normalizeDecisionCandidate(candidate: unknown, taskType: KiaTaskType, c
     Array.isArray(record.quickReplies)
       ? record.quickReplies as Array<{ id?: string; title?: string; kind?: KiaDecision['quickReplies'][number]['kind'] }>
       : [],
-    context.contact.language,
+    locale,
     { ensureOther: true },
   );
   record.toolRequests = Array.isArray(record.toolRequests) ? record.toolRequests.map(normalizeToolRequest).filter(Boolean) : [];
@@ -476,6 +480,7 @@ async function tryRepairDecision(input: {
   systemPrompt: string;
   badOutput: string;
   context: KiaContext;
+  locale: 'es' | 'ru';
 }): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
   try {
     const repair = await runKiaProviderRequest({
@@ -499,7 +504,7 @@ async function tryRepairDecision(input: {
       maxTokens: 800,
       temperature: 0,
     });
-    return { decision: parseDecision(repair, input.taskType, input.context), providerResult: repair };
+    return { decision: parseDecision(repair, input.taskType, input.context, input.locale), providerResult: repair };
   } catch {
     return { decision: null };
   }
@@ -510,6 +515,7 @@ async function retryAvoidingRepetition(input: {
   systemPrompt: string;
   message: string;
   context: KiaContext;
+  locale: 'es' | 'ru';
   repeatedText: string;
 }): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
   try {
@@ -538,7 +544,7 @@ async function retryAvoidingRepetition(input: {
       maxTokens: 800,
       temperature: 0.45,
     });
-    return { decision: parseDecision(providerResult, input.taskType, input.context), providerResult };
+    return { decision: parseDecision(providerResult, input.taskType, input.context, input.locale), providerResult };
   } catch {
     return { decision: null };
   }

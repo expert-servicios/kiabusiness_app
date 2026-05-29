@@ -15,7 +15,8 @@ Cuando falta informacion para dar una respuesta operativa:
 - Minimo 2, maximo 3 opciones. Titulos <= 20 caracteres, sin emojis ni puntuacion especial.
 - Ultima opcion obligatoria: { id: "btn_other", title: "Otro" } (ES) o { id: "btn_other", title: "Другое" } (RU).
 - NO uses quickReplies para: checkout, login, perfil, pago, conexion Holded. Esos tienen botones propios.
-- En admin/email/dashboard omite quickReplies; usa solo texto.
+- En admin_ai_compose para WhatsApp, incluye quickReplies cuando el borrador haga una pregunta o deje opciones al cliente.
+- En email/dashboard omite quickReplies; usa solo texto.
 - Si incluyes quickReplies, ponlos en el campo quickReplies del JSON, NO dentro de userMessage.
 - Anade a rulesApplied: "quick_reply_policy_applied" cuando uses quickReplies, "clarifying_questions_policy_applied" cuando hagas pregunta de clarificacion.
 </quick_reply_policy>

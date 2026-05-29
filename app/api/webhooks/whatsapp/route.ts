@@ -190,10 +190,10 @@ async function persistSessionUpdates(admin: any, phone: string, updates: Partial
 // ── Send a single Kia reply ───────────────────────────────────────────────────
 
 function cleanKiaOutboundForSimilarity(body: string): string {
-  return body
-    .replace(/^\[[^\]]+\]\s*/i, '')
-    .split(/\s+\|\s+/)[0]
-    .trim();
+  const interactiveLog = body.match(/^\[[^\]]+\]\s*([\s\S]*?)\s+\|\s+[^\n]+$/);
+  if (interactiveLog?.[1]) return interactiveLog[1].trim();
+
+  return body.replace(/^\[(?:Kia(?::AI|:list)?|Kia:doc_select|Cat[aá]logo)\]\s*/i, '').trim();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,6 +219,7 @@ function withKiaReplyBody(reply: KiaReply, body: string): KiaReply {
 
 const CYRILLIC_RE = /[\u0400-\u04FF]/;
 const URL_RE = /https?:\/\/\S+/g;
+const WABA_INTERACTIVE_BODY_MAX = 1024;
 
 function localizeButtonTitle(title: string, lang: KiaLang): string {
   const normalized = title.trim().toLowerCase();
@@ -227,10 +228,22 @@ function localizeButtonTitle(title: string, lang: KiaLang): string {
       'llamada 15 min': 'Звонок 15 мин',
       'reservar llamada': 'Звонок 15 мин',
       'tengo dudas': 'Есть вопрос',
-      'escríbeme aquí': 'Написать здесь',
-      'escribeme aqui': 'Написать здесь',
+      'escríbeme aquí': 'Написать',
+      'escribeme aqui': 'Написать',
+      'escribir aquí': 'Написать',
+      'responder': 'Написать',
       'contratar ahora': 'Заказать',
       'contratar online': 'Заказать онлайн',
+      'preparar contratación': 'Подготовить',
+      'preparar contratacion': 'Подготовить',
+      'preparar migración': 'Подготовить',
+      'preparar migracion': 'Подготовить',
+      'prueba 14 días gratis': 'Проба 14 дней',
+      'prueba 14 dias gratis': 'Проба 14 дней',
+      'prueba holded': 'Проба Holded',
+      'solicitar presupuesto': 'Смета',
+      'ver precios': 'Цены',
+      'ver planes': 'Планы',
       'ver servicio': 'Об услуге',
       'otro': 'Другое',
       'no sé / otro': 'Другое',
@@ -244,18 +257,104 @@ function localizeButtonTitle(title: string, lang: KiaLang): string {
     'другой': 'Otro',
     'звонок 15 мин': 'Llamada 15 min',
     'есть вопрос': 'Tengo dudas',
+    'написать': 'Escribir aquí',
+    'написать здесь': 'Escribir aquí',
+    'подготовить': 'Preparar',
+    'проба 14 дней': 'Prueba 14 días',
+    'смета': 'Presupuesto',
+    'цены': 'Ver precios',
+    'планы': 'Ver planes',
   };
   return map[normalized] ?? title;
 }
 
-function localizeKiaReplyControls(reply: KiaReply, lang: KiaLang): KiaReply {
-  if (reply.type !== 'buttons') return reply;
-  return {
-    ...reply,
-    buttons: reply.buttons.map((button) => ({
-      ...button,
-      title: localizeButtonTitle(button.title, lang).slice(0, 20),
+function fitInteractiveBody(body: string): string {
+  if (body.length <= WABA_INTERACTIVE_BODY_MAX) return body;
+
+  const urls = body.match(URL_RE) ?? [];
+  const firstUrl = urls[0] ?? '';
+  const suffix = firstUrl ? `\n\n${firstUrl}\n\n...` : '\n\n...';
+  const maxPrefix = Math.max(240, WABA_INTERACTIVE_BODY_MAX - suffix.length);
+  return `${body.slice(0, maxPrefix).trimEnd()}${suffix}`.slice(0, WABA_INTERACTIVE_BODY_MAX);
+}
+
+function textQuickReplyButtons(lang: KiaLang): { id: string; title: string }[] {
+  return quickRepliesToButtons(normalizeKiaQuickReplies([
+    { id: 'btn_write_here', title: lang === 'ru' ? 'Написать' : 'Escribir aquí', kind: 'secondary' },
+    { id: 'btn_other', title: lang === 'ru' ? 'Другое' : 'Otro', kind: 'other' },
+  ], lang, { ensureOther: true }));
+}
+
+function normalizeButtonReplies(buttons: { id: string; title: string }[], lang: KiaLang): { id: string; title: string }[] {
+  return quickRepliesToButtons(normalizeKiaQuickReplies(
+    buttons.map((button) => ({
+      id: button.id,
+      title: localizeButtonTitle(button.title, lang),
+      kind: button.id === 'btn_other' ? 'other' as const : 'secondary' as const,
     })),
+    lang,
+    { ensureOther: true },
+  ));
+}
+
+function normalizeListRows(
+  sections: Extract<KiaReply, { type: 'list' }>['sections'],
+  lang: KiaLang,
+): Extract<KiaReply, { type: 'list' }>['sections'] {
+  const otherTitle = lang === 'ru' ? 'Другое' : 'Otro';
+  const otherDescription = lang === 'ru'
+    ? 'Написать свой вариант'
+    : 'Escribir otra opción';
+  const normalized = sections.map((section) => ({
+    ...section,
+    rows: section.rows.map((row) => ({
+      ...row,
+      title: localizeButtonTitle(row.title, lang).slice(0, 24),
+    })),
+  }));
+  const hasOther = normalized.some((section) =>
+    section.rows.some((row) => row.id === 'btn_other' || ['otro', 'другое', 'другой'].includes(row.title.trim().toLowerCase())),
+  );
+  if (hasOther) return normalized;
+
+  const lastSection = normalized[normalized.length - 1];
+  if (!lastSection) {
+    return [{
+      title: lang === 'ru' ? 'ДРУГОЕ' : 'OTRA OPCION',
+      rows: [{ id: 'btn_other', title: otherTitle, description: otherDescription }],
+    }];
+  }
+
+  const otherRow = { id: 'btn_other', title: otherTitle, description: otherDescription };
+  const rows = lastSection.rows.length >= 10
+    ? [...lastSection.rows.slice(0, 9), otherRow]
+    : [...lastSection.rows, otherRow];
+  return [
+    ...normalized.slice(0, -1),
+    { ...lastSection, rows },
+  ];
+}
+
+function normalizeKiaReplyControls(reply: KiaReply, lang: KiaLang): KiaReply {
+  if (reply.type === 'buttons') {
+    return {
+      ...reply,
+      body: fitInteractiveBody(reply.body),
+      buttons: normalizeButtonReplies(reply.buttons, lang),
+    };
+  }
+  if (reply.type === 'list') {
+    return {
+      ...reply,
+      body: fitInteractiveBody(reply.body),
+      sections: normalizeListRows(reply.sections, lang),
+    };
+  }
+  return {
+    type: 'buttons',
+    body: fitInteractiveBody(reply.body),
+    footer: 'EXPERT 💼',
+    buttons: textQuickReplyButtons(lang),
   };
 }
 
@@ -389,7 +488,7 @@ async function prepareKiaReplyForSending({
   currentUserMessage?: string;
   lang: KiaLang;
 }): Promise<KiaReply> {
-  reply = await enforceKiaReplyLanguage(localizeKiaReplyControls(reply, lang), lang);
+  reply = await enforceKiaReplyLanguage(normalizeKiaReplyControls(reply, lang), lang);
   const recentAssistantTexts = await loadRecentKiaOutboundTexts(admin, phone, 6);
   reply = enforceKiaVoice(reply, lang, recentAssistantTexts);
   reply = await enforceKiaReplyLanguage(reply, lang);
@@ -630,10 +729,16 @@ interface KiaAiContext {
   contactCtx         ?: KiaContactContext;
 }
 
+function featureFlag(name: string, defaultValue: boolean): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  if (!value) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(value);
+}
+
 function isStructuredKiaAiEnabled(): boolean {
-  return process.env.KIA_STRUCTURED_AI_ENABLED?.toLowerCase() === 'true'
-    && process.env.KIA_STRUCTURED_AI_WABA_ENABLED?.toLowerCase() === 'true'
-    && process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
+  return featureFlag('KIA_STRUCTURED_AI_ENABLED', true)
+    && featureFlag('KIA_STRUCTURED_AI_WABA_ENABLED', true)
+    && featureFlag('KIA_AI_PROVIDER_ROUTER_ENABLED', true);
 }
 
 function recentAssistantTextsFromWabaHistory(history: KiaAiContext['conversationHistory']): string[] {
@@ -658,7 +763,12 @@ function wabaHistorySpeakerLabel(message: { direction: string; body: string; ai_
 function formatWabaHistoryForPrompt(history: KiaAiContext['conversationHistory'], limit = 10): string {
   return history
     .slice(-limit)
-    .map((message) => `${wabaHistorySpeakerLabel(message)}: ${message.body}`)
+    .map((message) => {
+      const text = message.direction === 'outbound'
+        ? cleanKiaOutboundForSimilarity(message.body)
+        : message.body;
+      return `${wabaHistorySpeakerLabel(message)}: ${text}`;
+    })
     .join('\n');
 }
 
@@ -666,8 +776,62 @@ function humanAdminStyleExamples(history: KiaAiContext['conversationHistory']): 
   return history
     .filter((message) => message.direction === 'outbound' && !isKiaAuthoredWabaHistoryMessage(message))
     .slice(-6)
-    .map((message, index) => `${index + 1}. ${message.body.slice(0, 500)}`)
+    .map((message, index) => `${index + 1}. ${cleanKiaOutboundForSimilarity(message.body).slice(0, 500)}`)
     .join('\n');
+}
+
+function isHoldedContext(params: {
+  msgBody: string;
+  session: KiaSession;
+  conversationHistory: KiaAiContext['conversationHistory'];
+}): boolean {
+  const text = [
+    params.msgBody,
+    params.session.service_id ?? '',
+    params.session.data?.area ?? '',
+    params.session.data?.selected_service ?? '',
+    ...params.conversationHistory.slice(-4).map((message) => message.body),
+  ].join(' ').toLowerCase();
+
+  return /\bholded\b|pack starter|migraci[oó]n|inventario|api key|erp/.test(text);
+}
+
+function isPriceQuestion(text: string): boolean {
+  return /\b(precio|precios|cu[aá]nto cuesta|coste|tarifa|pagar|presupuesto|importe)\b/i.test(text)
+    || /(цена|стоим|сколько стоит|тариф|оплат|бюджет)/i.test(text);
+}
+
+function buildHoldedPriceInteractive(lang: KiaLang): { body: string; buttons: { id: string; title: string }[] } {
+  const body = lang === 'ru'
+    ? [
+      'Я Kia, виртуальная ассистентка EXPERT 😊',
+      '',
+      'По Holded у нас есть такие опубликованные цены:',
+      '*Pack Starter* — 499 EUR + IVA',
+      '*Миграция без склада* — 899 EUR + IVA',
+      '*Миграция со складом* — 1.199 EUR + IVA',
+      '',
+      'Для Holded я использую подготовку/readiness, не юридическую проверку viability. Что посмотрим дальше?',
+    ].join('\n')
+    : [
+      'Soy Kia, asistente virtual de EXPERT 😊',
+      '',
+      'Para Holded tenemos estos precios publicados:',
+      '*Pack Starter* — 499 € + IVA',
+      '*Migración sin inventario* — 899 € + IVA',
+      '*Migración con inventario* — 1.199 € + IVA',
+      '',
+      'Para Holded preparo el caso con readiness, no con viabilidad jurídica. ¿Qué quieres revisar ahora?',
+    ].join('\n');
+
+  return {
+    body,
+    buttons: quickRepliesToButtons(normalizeKiaQuickReplies([
+      { id: 'btn_holded_prepare', title: lang === 'ru' ? 'Подготовить' : 'Preparar', kind: 'readiness' },
+      { id: 'btn_monthly_plans', title: lang === 'ru' ? 'Планы' : 'Ver planes', kind: 'secondary' },
+      { id: 'btn_other', title: lang === 'ru' ? 'Другое' : 'Otro', kind: 'other' },
+    ], lang, { ensureOther: true })),
+  };
 }
 
 async function generateKiaAiResponse({
@@ -678,6 +842,10 @@ async function generateKiaAiResponse({
   const languageInstruction = lang === 'ru'
     ? 'ruso. Responde ÚNICAMENTE en ruso con alfabeto cirílico. NUNCA uses español ni otro idioma en la misma respuesta.'
     : 'español. Responde ÚNICAMENTE en español. NUNCA uses ruso ni otro idioma en la misma respuesta.';
+
+  if (isPriceQuestion(msgBody) && isHoldedContext({ msgBody, session, conversationHistory })) {
+    return { reply: null, interactive: buildHoldedPriceInteractive(lang) };
+  }
 
   const officialSourceContext = await buildOfficialSourceContext(
     [formatWabaHistoryForPrompt(conversationHistory, 3), `Cliente: ${msgBody}`].filter(Boolean).join('\n'),
@@ -810,25 +978,27 @@ ALCANCE ESTRICTO — OBLIGATORIO:
 FORMATO DE RESPUESTA — ELIGE UNO:
 ═══════════════════════════════════════
 
-OPCIÓN A — TEXTO (la mayoría de casos):
+OPCIÓN A — TEXTO (solo si la respuesta es una explicación concreta y no necesita elección):
 Responde directamente con texto claro y conciso. Máximo 3 párrafos cortos.
 Empieza de forma natural como Kia, asistente virtual de EXPERT, sin repetir siempre la misma apertura.
 Termina con un siguiente paso natural solo si encaja con el contexto. Firma solo si queda natural: "Kia · EXPERT 💼"
 
-OPCIÓN B — BOTONES INTERACTIVOS (solo cuando necesitas contexto antes de responder):
+OPCIÓN B — BOTONES INTERACTIVOS (preferida en WhatsApp):
 Responde ÚNICAMENTE con este JSON exacto, sin texto antes ni después:
 {"type":"btns","body":"Tu mensaje aquí","buttons":["Botón 1","Botón 2","Botón 3"]}
-Reglas: mínimo 2, máximo 3 botones. Cada botón ≤ 20 caracteres, sin emojis ni puntuación especial.
+Reglas: mínimo 2, máximo 3 botones. Cada botón ≤ 20 caracteres, sin emojis ni puntuación especial. El último botón debe ser siempre "Otro" en español o "Другое" en ruso.
 
 CUÁNDO usar botones:
 ✓ Consulta muy vaga sin contexto ("necesito ayuda", "¿qué servicios tenéis?")
 ✓ Pregunta de precio sin especificar servicio ("¿cuánto cuesta?")
 ✓ Si detectas interes real pero faltan datos fiables, ofrece login/registro, presupuesto o cita en el portal seguro
+✓ Si haces una pregunta aclaratoria
+✓ Si el usuario puede elegir entre servicio, plan, llamada, presupuesto, panel o escribir libremente
 
 CUÁNDO NO usar botones:
-✗ Si el historial ya muestra "[Kia]" o "[Kia:list]" — el cliente ya navegó el menú; responde con texto
-✗ Si la consulta es concreta (nombre de servicio, pregunta técnica específica)
-✗ Si ya sabes lo que necesita por el historial
+✗ Si la consulta requiere una explicación técnica, fiscal o legal larga sin decisión inmediata
+✗ Si ya sabes lo que necesita y solo debes dar una instrucción concreta
+Aunque el historial ya tenga botones, NO repitas el mismo menú literal: ofrece una variante breve y conserva "Otro"/"Другое" como última opción.
 
 IDIOMA: ${languageInstruction}
 NEGRITA en WhatsApp: *texto* (UN asterisco, NO **texto**)
@@ -844,7 +1014,8 @@ REGLAS:
 - Si requiere decision profesional compleja, da primero orientacion util y despues ofrece reserva de llamada/reunion: https://expertconsulting.es/auth/login?next=%2Fcita
 - Si hay urgencia legal (requerimiento, sancion, denegacion, recurso, inspeccion, embargo, multa), da pasos iniciales prudentes y recomienda llamada/reunion de 15 minutos.
 - [NEEDS_REVIEW] es ultimo recurso tecnico, no flujo comercial. Usalo solo si no puedes dar ninguna respuesta segura o hay ambiguedad extrema.
-- PRECIOS: NUNCA des precios, rangos ni estimaciones (ni exactos ni aproximados). Todos los precios de EXPERT son fijos y exactos, disponibles en https://expertconsulting.es/planes. Ante cualquier pregunta de precio, indica esa URL. Si el servicio no aparece en planes, envía a https://expertconsulting.es/auth/login?next=%2Fsolicitar-presupuesto
+- PRECIOS: puedes dar precios públicos exactos cuando estén definidos. Plan Supervisión 49 €/mes + IVA; Plan Avanzado 99 €/mes + IVA; Plan Colaborativo 199 €/mes + IVA; Pack Starter Holded 499 € + IVA; Migración Holded sin inventario 899 € + IVA; Migración Holded con inventario 1.199 € + IVA. Si el alcance es personalizado, alto volumen o no está definido, envía a https://expertconsulting.es/auth/login?next=%2Fsolicitar-presupuesto
+- HOLDED Y PLANES: nunca digas "comprobar viabilidad" para Holded, migraciones o planes mensuales. Usa preparación/readiness, conexión Holded, prueba Holded o Pack Starter.
 - Nunca inventes plazos ni documentos
 - Maximo 2 intercambios de clarificacion antes de cerrar con accion concreta. En cada turno de clarificacion haz UNA SOLA pregunta. Ofrece botones con la ultima opcion siendo "Otro". Si el usuario pulsa "Otro" o escribe "otro"/"другое", invitale a describir libremente sin crear expediente.
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
@@ -896,7 +1067,7 @@ ${antiRepeatInstruction}`;
 
   const messages: WabaAiMessage[] = conversationHistory.map((h) => ({
     role:    h.direction === 'inbound' ? 'user' : 'assistant',
-    content: `${wabaHistorySpeakerLabel(h)}: ${h.body}`,
+    content: `${wabaHistorySpeakerLabel(h)}: ${h.direction === 'outbound' ? cleanKiaOutboundForSimilarity(h.body) : h.body}`,
   }));
   messages.push({ role: 'user', content: msgBody });
 

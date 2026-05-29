@@ -1,6 +1,6 @@
 # Kia Implementation Progress
 
-Ultima actualizacion: 2026-05-27
+Ultima actualizacion: 2026-05-29
 
 ## Estado general
 
@@ -23,6 +23,12 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Quick replies estructuradas en `KiaDecision`, normalizador `Otro` / `Другое` y manejo de `btn_other`.
 - Guardia de idioma por ultimo mensaje: el `locale` explicito del ultimo inbound manda sobre el historial.
 - Voz de Kia reforzada: se presenta como Kia, asistente virtual de EXPERT, y habla de si misma en femenino.
+- WABA normaliza todas las salidas por `sendKiaReply`: texto, botones y listas salen con respuestas rapidas y ultima opcion libre `Otro` / `Другое`.
+- El fallback legacy deja de bloquear botones despues de un menu; ahora evita repetir el mismo menu y mantiene escape libre.
+- Corregido el caso de nombre ruso: una consulta que empieza por `Как...` o menciona Holded no se guarda como nombre; pasa a fallback IA en ruso.
+- Precios Holded publicados fijados en Kia: Pack Starter 499 EUR + IVA, migracion sin inventario 899 EUR + IVA y migracion con inventario 1.199 EUR + IVA; se usa readiness, no viabilidad.
+- Copiloto/Admin Compose usa structured AI activo por defecto si la flag esta en blanco, normaliza la voz de Kia y devuelve quick replies para WhatsApp.
+- Admin Inbox puede enviar los quick replies sugeridos por Copiloto como botones reales de WhatsApp; la ultima opcion se fuerza a `Otro` / `Другое`.
 - Compatibilidad temporal del API de anomalías Health con esquema antiguo (`resolved`) y nuevo (`status`).
 - Conector Claude/Holded MCP incorporado como app aislada en `apps/holded-mcp`, con landing y paginas legales publicas bajo `/holded/conectores/claude`.
 
@@ -36,6 +42,39 @@ npm run build
 ```
 
 Resultado local anterior: typecheck, 161 evals de Kia, 21 fixtures de Kia Auditor y build pasan.
+Resultado 2026-05-28: ESLint focalizado pasa, `npm run kia:eval` pasa 161/161 y `npm run kia:auditor:test` pasa 21/21. `npm run typecheck` se intento dos veces, pero excedio el timeout y dejo procesos `tsc`; se pararon los procesos de typecheck colgados. Una comprobacion TS aislada posterior falla por `components/integrations/HoldedConsentModal.tsx`, pendiente de la tarea Holded, no por los cambios de Kia.
+
+## Vercel CLI 2026-05-28
+
+Se revisaron y fijaron en Production:
+
+```text
+KIA_STRUCTURED_AI_ENABLED=true
+KIA_STRUCTURED_AI_WABA_ENABLED=true
+KIA_STRUCTURED_AI_ADMIN_ENABLED=true
+KIA_AI_PROVIDER_ROUTER_ENABLED=true
+KIA_AI_DECISION_LOGS_ENABLED=true
+KIA_AI_TOOLS_ENABLED=false
+```
+
+Nota: estos valores quedan en Vercel para siguientes despliegues. El codigo local tambien trata valores en blanco como defaults seguros: structured AI/router activos y tools apagadas.
+
+## Pasada logica 2026-05-29
+
+- `KiaDecision` normaliza quick replies con el idioma efectivo del ultimo mensaje (`locale`) tambien en parse, repair retry y anti-repetition retry. Evita que un contacto con idioma historico distinto reciba `Otro` / `Другое` en el idioma equivocado.
+- WABA y Copiloto limpian los logs interactivos antes de pasarlos al prompt o al detector de repeticion. Kia ya no aprende ni compara contra sufijos tipo `| Preparar / Otro`.
+- Copiloto mantiene vacio como vacio: si la IA no genera texto, no se convierte artificialmente en un saludo de Kia.
+- El limpiador WABA ya no recorta mensajes humanos normales que contengan `|`; solo elimina sufijos de logs interactivos cuando detecta prefijo de sistema.
+
+Validado:
+
+```bash
+npx eslint --no-warn-ignored app/api/webhooks/whatsapp/route.ts app/api/admin/whatsapp/ai-compose/route.ts lib/ai/kia/kia-decision-engine.ts
+npm run kia:eval
+npm run kia:auditor:test
+```
+
+Resultado: lint focalizado OK, 161/161 evals OK y 21/21 fixtures Auditor OK.
 
 ## Ejecucion 2026-05-27
 

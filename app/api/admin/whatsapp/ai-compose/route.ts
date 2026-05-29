@@ -4,6 +4,7 @@ import { buildOfficialSourceContext } from '@/lib/integrations/official-sources'
 import { generateWabaAiText, getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { buildNoRepeatInstruction } from '@/lib/ai/kia/kia-response-variation';
+import { normalizeKiaQuickReplies, quickRepliesToButtons } from '@/lib/ai/kia/kia-quick-replies';
 import { KIA_CLARIFYING_POLICY_PROMPT } from '@/lib/ai/kia/prompts/kia-clarifying-policy';
 import { formatChecklistForPrompt, getChecklistsByCategory, getServiceChecklist } from '@/lib/utils/service-checklists';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
@@ -62,10 +63,16 @@ function detectLocale(text: string): 'es' | 'ru' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'es';
 }
 
+function featureFlag(name: string, defaultValue: boolean): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  if (!value) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(value);
+}
+
 function isStructuredAiEnabled(): boolean {
-  return process.env.KIA_STRUCTURED_AI_ENABLED?.toLowerCase() === 'true'
-    && process.env.KIA_STRUCTURED_AI_ADMIN_ENABLED?.toLowerCase() === 'true'
-    && process.env.KIA_AI_PROVIDER_ROUTER_ENABLED?.toLowerCase() !== 'false';
+  return featureFlag('KIA_STRUCTURED_AI_ENABLED', true)
+    && featureFlag('KIA_STRUCTURED_AI_ADMIN_ENABLED', true)
+    && featureFlag('KIA_AI_PROVIDER_ROUTER_ENABLED', true);
 }
 
 function isKiaAuthoredHistoryMessage(message: { direction: 'inbound' | 'outbound'; body: string; ai_responded?: boolean }): boolean {
@@ -79,12 +86,53 @@ function historySpeakerLabel(message: { direction: 'inbound' | 'outbound'; body:
   return isKiaAuthoredHistoryMessage(message) ? 'Kia' : 'Admin humano';
 }
 
+function cleanHistoryBodyForPrompt(body: string): string {
+  const withoutInteractiveLog = body.match(/^\[(?:Admin:buttons|Kia(?::AI|:list)?|Cat[aá]logo)\]\s*([\s\S]*?)\s\|\s[^\n]+$/i)?.[1]
+    ?? body.replace(/^\[(?:Kia(?::AI|:list)?|Cat[aá]logo)\]\s*/i, '');
+  return withoutInteractiveLog.trim();
+}
+
 function recentOutboundTexts(history: Array<{ direction: 'inbound' | 'outbound'; body: string; ai_responded?: boolean }>): string[] {
   return history
     .filter((message) => message.direction === 'outbound')
-    .map((message) => message.body.trim())
+    .map((message) => cleanHistoryBodyForPrompt(message.body))
     .filter(Boolean)
     .slice(-6);
+}
+
+function normalizeKiaCopilotDraft(text: string, locale: 'es' | 'ru'): string {
+  const cleaned = cleanMarkdownForWhatsApp(text);
+  if (!cleaned) return '';
+
+  let draft = cleaned
+    .replace(/\bAsesor[ií]a EXPERT 💼\b/gi, 'Kia · EXPERT 💼')
+    .replace(/\bequipo EXPERT\b/gi, 'EXPERT')
+    .replace(/\bencantado\b/gi, 'encantada')
+    .replace(/\bestoy seguro\b/gi, 'estoy segura')
+    .replace(/\bpreparado para ayudarte\b/gi, 'preparada para ayudarte');
+
+  if (!/\bKia\b/i.test(draft)) {
+    draft = locale === 'ru'
+      ? `Я Kia, виртуальная ассистентка EXPERT 😊\n\n${draft}`
+      : `Soy Kia, asistente virtual de EXPERT 😊\n\n${draft}`;
+  }
+
+  return draft.trim();
+}
+
+function fallbackQuickReplies(locale: 'es' | 'ru'): { id: string; title: string }[] {
+  return quickRepliesToButtons(normalizeKiaQuickReplies([
+    { id: 'btn_write_here', title: locale === 'ru' ? 'Написать' : 'Escribir aquí', kind: 'secondary' },
+    { id: 'btn_other', title: locale === 'ru' ? 'Другое' : 'Otro', kind: 'other' },
+  ], locale, { ensureOther: true }));
+}
+
+function normalizeDraftQuickReplies(
+  replies: Array<{ id?: string; title?: string; kind?: 'primary' | 'secondary' | 'other' | 'call' | 'checkout' | 'profile' | 'holded' | 'viability' | 'readiness' }> | undefined,
+  locale: 'es' | 'ru',
+): { id: string; title: string }[] {
+  const normalized = quickRepliesToButtons(normalizeKiaQuickReplies(replies, locale, { ensureOther: true }));
+  return normalized.length >= 2 ? normalized : fallbackQuickReplies(locale);
 }
 
 export async function POST(request: NextRequest) {
@@ -154,17 +202,18 @@ export async function POST(request: NextRequest) {
     }
 
     const historyText = history.slice(-25)
-      .map((m) => `${historySpeakerLabel(m)}: ${m.body}`)
+      .map((m) => `${historySpeakerLabel(m)}: ${cleanHistoryBodyForPrompt(m.body)}`)
       .join('\n');
     const humanStyleExamples = history
       .filter((m) => m.direction === 'outbound' && !isKiaAuthoredHistoryMessage(m))
       .slice(-6)
-      .map((m, index) => `${index + 1}. ${m.body.slice(0, 500)}`)
+      .map((m, index) => `${index + 1}. ${cleanHistoryBodyForPrompt(m.body).slice(0, 500)}`)
       .join('\n');
     const antiRepeatInstruction = buildNoRepeatInstruction(recentOutboundTexts(history));
 
     const lastInbound = [...history].reverse().find((m) => m.direction === 'inbound')?.body ?? '';
     const languageProbe = lastInbound || intent || '';
+    const locale = detectLocale(languageProbe);
     const languageInstruction = detectLanguageInstruction(languageProbe);
 
     const replyToBlock = replyTo
@@ -212,9 +261,9 @@ ${antiRepeatInstruction}`;
         messages: [{ role: 'user', content: 'Edita y traduce el borrador.' }],
         maxTokens: 500,
       });
-      const draft = cleanMarkdownForWhatsApp(ai?.text?.trim() ?? '');
+      const draft = normalizeKiaCopilotDraft(ai?.text?.trim() ?? '', locale);
       if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
-      return NextResponse.json({ draft });
+      return NextResponse.json({ draft, quickReplies: fallbackQuickReplies(locale) });
     }
 
     // ── COMPOSE mode: generate fresh response ────────────────────
@@ -240,6 +289,7 @@ ${antiRepeatInstruction}`;
           'Reglas de identidad: redacta como Kia, asistente virtual de EXPERT, en femenino. No firmes como equipo EXPERT ni finjas ser humana.',
           humanStyleExamples ? `RESPUESTAS HUMANAS/ADMIN PREVIAS PARA APRENDER TONO Y CONTINUIDAD, SIN COPIAR LITERALMENTE:\n${humanStyleExamples}` : '',
           'Reglas de formato: WhatsApp breve, maximo 3 parrafos, sin markdown complejo, accion concreta.',
+          'Si el borrador hace una pregunta o deja opcion al cliente, incluye quickReplies en KiaDecision. La ultima debe ser btn_other.',
         ].filter(Boolean).join('\n\n');
 
         const structured = await runKiaDecision({
@@ -254,14 +304,16 @@ ${antiRepeatInstruction}`;
             serviceSlug: serviceId,
             latestMessage: lastInbound || intent || '',
           },
-          locale: detectLocale(languageProbe),
+          locale,
           allowTools: false,
         });
 
-        const draft = cleanMarkdownForWhatsApp(structured.userMessage);
+        const draft = normalizeKiaCopilotDraft(structured.userMessage, locale);
         if (draft) {
+          const quickReplies = normalizeDraftQuickReplies(structured.decision.quickReplies, locale);
           return NextResponse.json({
             draft,
+            quickReplies,
             structured: true,
             decision: {
               intent: structured.decision.intent,
@@ -306,12 +358,13 @@ ACTITUD:
 - Usa las respuestas de "Admin humano" del historial como ejemplos de tono y continuidad, sin copiarlas literalmente.
 - Si el contexto lo permite, termina con una CTA suave: reservar cita, ver planes, pedir presupuesto o ver Holded.
 - Si el mensaje habla de Holded, menciona que EXPERT es Partner Oficial, ofrece demo gratuita y enlaza la página.
-- Máximo 3 párrafos cortos. Firma como "Asesoría EXPERT 💼" si es apropiado.
+- Máximo 3 párrafos cortos. Firma como "Kia · EXPERT 💼" si es apropiado.
 - FORMATO WHATSAPP: negrita con *asterisco simple*, NO con **doble asterisco**. Cursiva con _guión bajo_. NUNCA uses ##, ***, ni listas markdown.
 - Si hay fuentes oficiales disponibles, usalas como apoyo y comparte 1 o 2 enlaces oficiales utiles.
 - No digas que has comprobado informacion oficial si no aparece en FUENTES OFICIALES DISPONIBLES.
 - Lee TODA LA CONVERSACIÓN RECIENTE antes de redactar. No repitas información ya dada. Muestra continuidad y memoria: si el cliente ya proporcionó un dato, no lo vuelvas a pedir.
 - Evita repetir frases ya usadas por EXPERT/Kia en este hilo. Si el mensaje anterior ya ofrecio cita, portal o enlace, cambia el enfoque y aporta el siguiente dato util.
+- Si haces una pregunta o dejas opciones al cliente, prepara respuestas rapidas; la ultima opcion siempre debe ser "Otro" o "Другое".
 
 ${KIA_CLARIFYING_POLICY_PROMPT}
 
@@ -330,11 +383,11 @@ ${historyText || 'Sin historial previo.'}`;
       messages: [{ role: 'user', content: 'Redacta el siguiente mensaje para este cliente.' }],
       maxTokens: 350,
     });
-    const draft = cleanMarkdownForWhatsApp(ai?.text ?? '');
+    const draft = normalizeKiaCopilotDraft(ai?.text ?? '', locale);
 
     if (!draft) return NextResponse.json({ error: 'La IA no generó respuesta' }, { status: 500 });
 
-    return NextResponse.json({ draft });
+    return NextResponse.json({ draft, quickReplies: fallbackQuickReplies(locale) });
   } catch (err) {
     console.error('[WA ai-compose]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

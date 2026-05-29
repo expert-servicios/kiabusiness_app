@@ -263,6 +263,8 @@ function LinkClientModal({ phone, onLinked, onClose }: {
 
 interface WaCase { id: string; service: string; state: string }
 
+type WaQuickReply = { id: string; title: string };
+
 interface WaMessage {
   id: string;
   direction: 'inbound' | 'outbound';
@@ -313,11 +315,16 @@ function messageSnippet(msg: Pick<WaMessage, 'body' | 'media_type'>, max = 120) 
   if (msg.media_type === 'audio') return '🎤 Audio';
   if (msg.media_type === 'video') return '🎥 Vídeo';
   if (msg.media_type) return '📎 Documento';
-  return msg.body.replace(/\s+/g, ' ').trim().slice(0, max);
+  return stripInteractiveLogPrefix(msg.body).replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function stripInteractiveLogPrefix(body: string) {
+  const adminButtons = body.match(/^\[Admin:buttons\]\s*([\s\S]*?)\s\|\s[^\n]+$/);
+  return adminButtons?.[1] ?? body;
 }
 
 function stripVisualQuote(body: string) {
-  return body.replace(/^_Respondiendo a (?:Cliente|EXPERT): «[^»]{0,140}»_\n\n/, '');
+  return stripInteractiveLogPrefix(body).replace(/^_Respondiendo a (?:Cliente|EXPERT): «[^»]{0,140}»_\n\n/, '');
 }
 
 function Avatar({ name, isClient }: { name: string | null; isClient: boolean }) {
@@ -781,6 +788,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [inboxToast, setInboxToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const [replyTo, setReplyTo] = useState<WaMessage | null>(null);
+  const [aiQuickReplies, setAiQuickReplies] = useState<WaQuickReply[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -828,6 +836,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setSelected(phone);
     setError(null);
     setReply('');
+    setAiQuickReplies([]);
     setPendingFile(null);
     setReplyTo(null);
     fetch('/api/admin/whatsapp', {
@@ -891,6 +900,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error IA'); return; }
       setReply(data.draft ?? '');
+      setAiQuickReplies(Array.isArray(data.quickReplies) ? data.quickReplies.slice(0, 3) : []);
       textareaRef.current?.focus();
     } catch {
       setError('Error al generar borrador.');
@@ -912,6 +922,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         if (text) payload.caption = text;
       } else {
         payload.body = text;
+        if (aiQuickReplies.length >= 2) payload.quickReplies = aiQuickReplies;
       }
       const res = await fetch('/api/admin/whatsapp', {
         method: 'POST',
@@ -927,7 +938,11 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       const newMsg: WaMessage = {
         id: crypto.randomUUID(),
         direction: 'outbound',
-        body: pendingFile ? (text || `[${pendingFile.waType}]`) : text,
+        body: pendingFile
+          ? (text || `[${pendingFile.waType}]`)
+          : aiQuickReplies.length >= 2
+            ? `[Admin:buttons] ${text} | ${aiQuickReplies.map((button) => button.title).join(' / ')}`
+            : text,
         created_at: new Date().toISOString(),
         needs_review: false,
         ai_responded: false,
@@ -950,6 +965,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
         };
       }));
       setReply('');
+      setAiQuickReplies([]);
       setPendingFile(null);
       setReplyTo(null);
       textareaRef.current?.focus();
@@ -1034,6 +1050,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
 
   const insertQuickReply = (text: string) => {
     setReply(text);
+    setAiQuickReplies([]);
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
@@ -1453,6 +1470,28 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
                 </button>
               </div>
 
+              {aiQuickReplies.length >= 2 && !pendingFile && (
+                <div className="flex items-center gap-1 overflow-x-auto px-1 pt-1">
+                  {aiQuickReplies.map((button) => (
+                    <span
+                      key={`${button.id}-${button.title}`}
+                      className="shrink-0 rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#29384a]"
+                    >
+                      {button.title}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setAiQuickReplies([])}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#54656f] hover:bg-[#d8cbb5]/50"
+                    aria-label="Quitar respuestas rápidas"
+                    title="Quitar respuestas rápidas"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
               {/* Toolbar — below textarea, all buttons visible on all screen sizes */}
               <div className="flex items-center gap-0.5 px-1">
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
@@ -1509,7 +1548,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       {showWorkflow && activeConv && (
         <WaServiceWorkflow
           clientName={activeConv.clientName ?? ''}
-          onInsert={(text) => { setReply(text); setTimeout(() => textareaRef.current?.focus(), 50); }}
+          onInsert={(text) => { setReply(text); setAiQuickReplies([]); setTimeout(() => textareaRef.current?.focus(), 50); }}
           onClose={() => setShowWorkflow(false)}
         />
       )}

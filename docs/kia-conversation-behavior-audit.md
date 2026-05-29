@@ -1,9 +1,33 @@
 # Kia Conversation Behavior Audit
 
 Fecha: 2026-05-24
-Actualizacion: 2026-05-25
+Actualizacion: 2026-05-29
 
 Estado: auditoria previa + implementacion incremental en curso. No sustituye Kia Engine, Kia Decision Engine, WABA, Readiness, Viability, Checkout, Holded, Health Check ni Kia Auditor.
+
+## Progreso 2026-05-29
+
+Implementado en esta pasada:
+
+- El idioma efectivo del ultimo mensaje se usa tambien al normalizar quick replies durante parse/retry/repair de `KiaDecision`.
+- WABA y Copiloto limpian logs interactivos antes de alimentar prompts, estilo humano y anti-repeticion.
+- Copiloto no transforma una respuesta IA vacia en un saludo valido de Kia.
+- El limpiador de historial WABA conserva mensajes humanos normales con `|` y solo recorta sufijos cuando detecta logs interactivos.
+
+## Progreso 2026-05-28
+
+Implementado en esta pasada:
+
+- `sendKiaReply` ya conecta el normalizador global de controles: texto, botones y listas salen por WABA con respuestas rapidas y `Otro` / `Другое` como ultima opcion.
+- La IA estructurada para WABA queda activa por defecto salvo flag explicito en `false`; `waba-ai` legacy sigue como fallback.
+- El fallback legacy deja de prohibir botones cuando ya hubo un menu: ahora evita repetir el mismo menu y conserva la opcion libre.
+- Se corrigio el caso real de ruso: si el ultimo mensaje esta en ruso, Kia responde en ruso; si estaba esperando nombre y recibe una consulta real, no guarda la primera palabra como nombre ni entra en bucle.
+- `btn_write_here` y `btn_other` llevan al mismo escape de escritura libre, sin crear expediente ni `needs_review`.
+- Holded tiene respuesta determinista de precios publicados: Pack Starter 499 EUR + IVA, migracion sin inventario 899 EUR + IVA y migracion con inventario 1.199 EUR + IVA, siempre con readiness y nunca con viabilidad juridica.
+- Kia Health incorpora canary `holded_public_prices` para vigilar ese fallo real.
+- `.env.example` documenta WABA estructurado activo por defecto, manteniendo tools criticas apagadas.
+- Copiloto/Admin Compose deja de depender de flags vacias: structured AI queda activo por defecto, devuelve `quickReplies` y Admin Inbox puede enviarlas como botones reales.
+- Vercel Production queda revisado y fijado con structured AI WABA/Admin en `true`, provider router/logs en `true` y tools criticas en `false`.
 
 ## Progreso 2026-05-25
 
@@ -82,7 +106,7 @@ Esto cubre bien los flujos estructurados.
 - pasa contexto de cliente/lead, expedientes y obligaciones;
 - hace retry si el texto generado se parece al historial.
 
-Este fallback ya esta alineado con la regla de no parecer repetitiva, aunque no fuerza todavia quick replies con "Otro".
+Este fallback ya esta alineado con la regla de no parecer repetitiva y ahora normaliza quick replies con "Otro" / "Другое" antes de enviar.
 
 ### Admin AI Compose
 
@@ -93,7 +117,7 @@ Este fallback ya esta alineado con la regla de no parecer repetitiva, aunque no 
 - `buildNoRepeatInstruction(recentOutboundTexts(history))`;
 - instrucciones para no contestar todo el hilo cuando hay mensaje seleccionado.
 
-La base es buena para continuidad, pero falta formalizar preguntas aclaratorias y quick replies.
+La base es buena para continuidad; las preguntas aclaratorias y quick replies ya estan formalizadas en el contrato estructurado, aunque la UI admin puede seguir mejorandose.
 
 ### Kia Health
 

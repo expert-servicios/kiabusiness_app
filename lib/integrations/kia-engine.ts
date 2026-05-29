@@ -50,8 +50,12 @@ const NAME_STOP_WORDS = new Set([
   'soy', 'hola', 'si', 'sí', 'no', 'mi', 'nombre', 'es', 'llamar', 'me', 'llamo',
   'buenas', 'buenos', 'dias', 'tardes', 'noches', 'ok', 'okey', 'vale', 'bien',
   'quiero', 'necesito', 'gracias', 'adios', 'hey', 'ola', 'eh', 'pues', 'que',
+  'qué', 'como', 'cómo', 'donde', 'dónde', 'cuando', 'cuándo', 'cuanto', 'cuánto',
+  'servicio', 'precio', 'precios', 'holded', 'factura', 'documento', 'tramite',
   'un', 'una', 'el', 'la', 'de', 'en', 'por', 'para', 'con', 'y', 'o',
   'привет', 'меня', 'зовут', 'я', 'мое', 'имя', 'да', 'нет', 'ок', 'окей',
+  'как', 'что', 'где', 'когда', 'сколько', 'почему', 'зачем', 'куда', 'в',
+  'хочу', 'нужно', 'нужна', 'услуга', 'услуги', 'цена', 'холдед', 'документ',
 ]);
 
 function normalizeWord(w: string): string {
@@ -70,6 +74,15 @@ function normalizeWord(w: string): string {
  *   "Katia"             → "Katia"
  */
 export function extractValidName(text: string): string | null {
+  const normalizedRaw = normalizeIntentText(text);
+  if (/[?¿]/.test(text)) return null;
+  if (/^(que|como|donde|cuando|cuanto|por que|quien|cual|какой|какая|какие|как|что|где|когда|сколько|почему|зачем|куда)\b/i.test(normalizedRaw)) {
+    return null;
+  }
+  if (/\b(holded|servicio|precio|precios|factura|documento|renta|irpf|iva|tramite|expediente|холдед|услуг|цена|документ|налог|счет)\b/i.test(normalizedRaw)) {
+    return null;
+  }
+
   const cleaned = text.replace(/[^\w\sáéíóúÁÉÍÓÚüÜñÑА-Яа-яЁё.'-]/g, ' ').trim();
   if (cleaned.length < 2 || cleaned.length > 80) return null;
 
@@ -1536,8 +1549,8 @@ export function processKiaStep(
   }
   if (interaction === 'btn_write_here') {
     return {
-      replies    : [freeConsultPrompt(lang)],
-      updates    : { flow: 'consult', step: 'free_consult', escalated: false },
+      replies    : [otherFreeTextPrompt(lang)],
+      updates    : { flow: 'consult', step: 'free_text_other', escalated: false },
       sideEffects: {},
     };
   }
@@ -1732,7 +1745,7 @@ export function processKiaStep(
     const askName: KiaReply = {
       type: 'text',
       body: l === 'ru'
-        ? '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?'
+        ? '🙋😊 Приятно познакомиться! Как мне к вам обращаться?'
         : '🙋😊 ¡Encantada de conocerte! ¿Cómo quieres que te llame?',
     };
     return {
@@ -1746,10 +1759,18 @@ export function processKiaStep(
     const l = langChanged ? detectedLang : lang;
     const validName = extractValidName(msgBody);
     if (!validName) {
+      if (/[?¿]/.test(msgBody) || isBusinessOrAdviceIntent(msgBody)) {
+        return {
+          replies    : [],
+          updates    : { flow: 'consult', step: 'free_consult', lang: l },
+          sideEffects: { needsAiFallback: true },
+        };
+      }
+
       const retry: KiaReply = {
         type: 'text',
         body: l === 'ru'
-          ? '😊 ¿Cómo quieres que te llame? Escríbeme solo tu nombre (ej. "María" o "Juan García").'
+          ? '😊 Как мне к вам обращаться? Напишите только имя, например “Мария” или “Иван”.'
           : '😊 ¿Cómo quieres que te llame? Escríbeme solo tu nombre (ej. "María" o "Juan García").',
       };
       return { replies: [retry], updates: { lang: l }, sideEffects: {} };
