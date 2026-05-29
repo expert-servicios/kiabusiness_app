@@ -347,6 +347,42 @@ export class HoldedClient {
     return this.request<unknown[]>('/api/invoicing/v1/treasury');
   }
 
+  async listBankMovements(accountId: string, params?: Record<string, string>) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request<unknown[]>(`/api/invoicing/v1/treasury/${accountId}/movements${qs}`);
+  }
+
+  // ── Contabilidad — Informes ───────────────────────────────────────────────
+
+  /** Informe de IVA (Modelo 303 estimado). period: q1|q2|q3|q4|1-12 */
+  async getVatReport(params: { year: string; period?: string }) {
+    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    return this.request<unknown>(`/api/accounting/v1/reports/vat?${qs}`);
+  }
+
+  /** Balance de situación a una fecha */
+  async getBalanceSheet(params: { startDate: string; endDate: string }) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request<unknown>(`/api/accounting/v1/reports/balancesheet?${qs}`);
+  }
+
+  /** Cuenta de pérdidas y ganancias (P&L) */
+  async getProfitLoss(params: { startDate: string; endDate: string }) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request<unknown>(`/api/accounting/v1/reports/profitloss?${qs}`);
+  }
+
+  // ── Asientos contables ────────────────────────────────────────────────────
+
+  async listAccountingEntries(params?: Record<string, string>) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request<unknown[]>(`/api/accounting/v1/entries${qs}`);
+  }
+
+  async getAccountingEntry(entryId: string) {
+    return this.request<unknown>(`/api/accounting/v1/entries/${entryId}`);
+  }
+
   // ── Utilidad: validar API key ────────────────────────────────────────────
 
   async validateApiKey(): Promise<boolean> {

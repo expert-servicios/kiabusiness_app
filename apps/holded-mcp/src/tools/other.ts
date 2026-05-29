@@ -447,4 +447,120 @@ export function registerTreasuryTools(server: McpServer, getClient: () => Holded
       return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
     }
   );
+
+  server.tool(
+    'list_bank_movements',
+    'Returns bank movements (transactions) for a specific Holded treasury account. Read-only. ' +
+      'Use list_treasury_accounts first to get the accountId. Results are paginated.',
+    {
+      accountId: z.string().min(1).describe('Holded treasury account ID (from list_treasury_accounts).'),
+      page     : z.string().optional().describe('Page number as string (default "1").'),
+    },
+    readOnlyAnnotations('list_bank_movements'),
+    async ({ accountId, page }) => {
+      const params: Record<string, string> = {};
+      if (page) params.page = page;
+      const data = await getClient().listBankMovements(accountId, params);
+      const movements = Array.isArray(data) ? data : [];
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ movements, count: movements.length }, null, 2) }],
+      };
+    }
+  );
+}
+
+// ── Informes de contabilidad ──────────────────────────────────────────────────
+
+export function registerAccountingReportTools(server: McpServer, getClient: () => HoldedClient) {
+  server.tool(
+    'get_vat_report',
+    'Returns the Holded VAT report (IVA) for a given year and period. Read-only. ' +
+      'Useful for estimating Modelo 303. period values: q1, q2, q3, q4 (quarters) or 1-12 (months). ' +
+      'If period is omitted, Holded returns the full-year breakdown.',
+    {
+      year  : z.string().regex(/^\d{4}$/).describe('Four-digit year, e.g. "2025".'),
+      period: z.string().optional().describe('q1 | q2 | q3 | q4 | 1-12. Omit for full year.'),
+    },
+    readOnlyAnnotations('get_vat_report'),
+    async ({ year, period }) => {
+      const params: { year: string; period?: string } = { year };
+      if (period) params.period = period;
+      const data = await getClient().getVatReport(params);
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'get_balance_sheet',
+    'Returns the Holded balance sheet (balance de situación) for a date range. Read-only. ' +
+      'Shows assets, liabilities and equity at the given end date.',
+    {
+      startDate: z.string().describe('Start date in YYYY-MM-DD format.'),
+      endDate  : z.string().describe('End date in YYYY-MM-DD format.'),
+    },
+    readOnlyAnnotations('get_balance_sheet'),
+    async ({ startDate, endDate }) => {
+      const data = await getClient().getBalanceSheet({ startDate, endDate });
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'get_profit_loss',
+    'Returns the Holded profit and loss statement (cuenta de pérdidas y ganancias) for a date range. Read-only. ' +
+      'Shows revenues, expenses and net profit/loss for the period.',
+    {
+      startDate: z.string().describe('Start date in YYYY-MM-DD format.'),
+      endDate  : z.string().describe('End date in YYYY-MM-DD format.'),
+    },
+    readOnlyAnnotations('get_profit_loss'),
+    async ({ startDate, endDate }) => {
+      const data = await getClient().getProfitLoss({ startDate, endDate });
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'list_accounting_entries',
+    'Returns Holded accounting entries (asientos contables) for a date range. Read-only. ' +
+      'Filter by account code using the account parameter.',
+    {
+      startDate: z.string().optional().describe('Start date YYYY-MM-DD. Defaults to Jan 1 of current year.'),
+      endDate  : z.string().optional().describe('End date YYYY-MM-DD. Defaults to today.'),
+      account  : z.string().optional().describe('Filter by account code (e.g. "4300" for clients).'),
+      page     : z.string().optional().describe('Page number as string.'),
+    },
+    readOnlyAnnotations('list_accounting_entries'),
+    async ({ startDate, endDate, account, page }) => {
+      const now   = new Date();
+      const start = startDate ?? `${now.getFullYear()}-01-01`;
+      const end   = endDate   ?? now.toISOString().slice(0, 10);
+      const params: Record<string, string> = { startDate: start, endDate: end };
+      if (account) params.account = account;
+      if (page)    params.page    = page;
+      const data    = await getClient().listAccountingEntries(params);
+      const entries = Array.isArray(data) ? data : [];
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ entries, count: entries.length }, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    'get_accounting_entry',
+    'Returns the full detail of a specific Holded accounting entry (asiento) by ID. Read-only.',
+    {
+      entryId: z.string().min(1).describe('Holded accounting entry ID.'),
+    },
+    readOnlyAnnotations('get_accounting_entry'),
+    withControlledErrors(
+      'get_accounting_entry',
+      'accounting entry',
+      ({ entryId }) => entryId,
+      async ({ entryId }) => {
+        const data = await getClient().getAccountingEntry(entryId);
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      }
+    )
+  );
 }

@@ -4,6 +4,7 @@ import { registerContactsTools } from './contacts.js';
 import { registerInvoicingTools, type ToolContext } from './invoicing.js';
 import {
   registerAccountingTools,
+  registerAccountingReportTools,
   registerCatalogsTools,
   registerProductsTools,
   registerProjectsTools,
@@ -68,6 +69,7 @@ export function registerProductionTools(
   registerCatalogsTools(filtered, getClient);
   registerProjectsTools(filtered, getClient);
   registerAccountingTools(filtered, getClient);
+  registerAccountingReportTools(filtered, getClient);
   registerTeamTools(filtered, getClient);
   registerTreasuryTools(filtered, getClient);
 }

@@ -24,6 +24,12 @@ export const READ_ONLY_TOOL_NAMES = [
   'list_employees',
   'get_employee',
   'list_treasury_accounts',
+  'list_bank_movements',
+  'get_vat_report',
+  'get_balance_sheet',
+  'get_profit_loss',
+  'list_accounting_entries',
+  'get_accounting_entry',
 ] as const;
 
 export const WRITE_TOOL_NAMES = ['create_invoice_draft'] as const;
@@ -78,8 +84,14 @@ export const TOOL_TITLES: Record<(typeof PRODUCTION_TOOL_NAMES)[number], string>
   get_daily_book: 'Get Holded daily book',
   list_employees: 'List Holded employees',
   get_employee: 'Get Holded employee',
-  list_treasury_accounts: 'List Holded treasury accounts',
-  create_invoice_draft: 'Create Holded draft invoice',
+  list_treasury_accounts    : 'List Holded treasury accounts',
+  list_bank_movements       : 'List Holded bank movements',
+  get_vat_report            : 'Get Holded VAT report',
+  get_balance_sheet         : 'Get Holded balance sheet',
+  get_profit_loss           : 'Get Holded profit and loss statement',
+  list_accounting_entries   : 'List Holded accounting entries',
+  get_accounting_entry      : 'Get Holded accounting entry',
+  create_invoice_draft      : 'Create Holded draft invoice',
 };
 
 /**
@@ -122,8 +134,14 @@ export const TOOL_HUMAN_DESCRIPTIONS: Record<(typeof PRODUCTION_TOOL_NAMES)[numb
   get_daily_book: 'Obtiene el libro diario o registro diario contable.',
   list_employees: 'Lista empleados activos disponibles en Holded.',
   get_employee: 'Obtiene el detalle de un empleado concreto.',
-  list_treasury_accounts: 'Lista cuentas de tesoreria con su saldo actual.',
-  create_invoice_draft:
+  list_treasury_accounts    : 'Lista cuentas de tesoreria con su saldo actual.',
+  list_bank_movements       : 'Lista movimientos bancarios de una cuenta de tesoreria concreta.',
+  get_vat_report            : 'Obtiene el informe de IVA (Modelo 303 estimado) por año y periodo.',
+  get_balance_sheet         : 'Obtiene el balance de situacion en un rango de fechas.',
+  get_profit_loss           : 'Obtiene la cuenta de perdidas y ganancias (P&L) en un rango de fechas.',
+  list_accounting_entries   : 'Lista asientos contables en un rango de fechas, con filtro opcional por cuenta.',
+  get_accounting_entry      : 'Obtiene el detalle completo de un asiento contable.',
+  create_invoice_draft      :
     'Crea un borrador de factura solo en estado draft (approveDoc=false forzado) para revision posterior en Holded.',
 };
 
