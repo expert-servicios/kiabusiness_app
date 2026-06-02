@@ -299,9 +299,15 @@ Tareas:
 
 ## Fase 8 - IA supervisada
 
-Estado: pendiente.
+Estado: en curso.
 
 Tipo: automatizacion, operacion, escalabilidad SaaS.
+
+Entregado:
+
+- Kia con logica "preguntar primero, responder despues": preguntas de diagnostico antes de dar informacion especifica. Ver IMP-018.
+- Conocimiento Holded Academy integrado en Kia: modulos, tarifas, integraciones, FAQs curadas + busqueda viva en help.holded.com (Opcion A). Ver IMP-018.
+- Opcion B (RAG pgvector para cobertura completa de Holded Academy): reservada para cuando el volumen de preguntas tecnicas lo justifique.
 
 Tareas:
 
@@ -316,6 +322,7 @@ Tareas:
   - automatica permitida,
   - borrador para revision,
   - requiere intervencion humana.
+- [Futuro] Opcion B Holded Academy: crawler periodico -> chunks -> embeddings -> Supabase pgvector -> busqueda semantica en tiempo real para preguntas tecnicas de configuracion Holded.
 
 ## Fase 9 - Multi-tenant minimo
 

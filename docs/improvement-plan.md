@@ -446,6 +446,133 @@ Criterio de aceptacion:
 - Alertas de pago fallido visibles y accionables.
 - Resumen diario admin.
 
+### IMP-018 - Conocimiento Holded Academy en Kia (Opcion A)
+
+Estado: [x]
+
+Tipo: IA, producto, WhatsApp, Holded.
+
+Objetivo: que Kia responda preguntas sobre funcionamiento de Holded, tarifas, modulos e integraciones sin necesitar a un humano, usando documentacion curada + busqueda viva en Holded Academy.
+
+Enfoque elegido: Opcion A (inmediata). Opcion B (RAG con pgvector) queda reservada para cuando el volumen de preguntas tecnicas "como configurar X en Holded" justifique la infraestructura.
+
+Archivos principales:
+
+- `lib/integrations/official-sources.ts` — extendido con dominios, triggers y fallbacks de Holded
+- `lib/ai/kia/prompts/kia-holded-knowledge.ts` — NUEVO: conocimiento curado (modulos, tarifas EXPERT+Holded, integraciones, FAQs)
+- `lib/ai/kia/kia-system-prompt.ts` — inyeccion condicional del conocimiento Holded cuando el contexto lo requiere
+
+Criterio de aceptacion:
+
+- Kia responde correctamente preguntas sobre modulos Holded (facturacion, contabilidad, RRHH, inventario, proyectos, CRM, banco).
+- Kia da precios correctos de paquetes EXPERT+Holded y diferencia los planes propios de Holded.
+- Kia conoce las integraciones disponibles (Stripe, GoCardless, Shopify, WooCommerce, Amazon, Zapier, API).
+- Preguntas sobre Holded activan busqueda viva en help.holded.com y www.holded.com.
+- Kia no confunde "viabilidad juridica" con "readiness Holded".
+- Si la pregunta es muy tecnica o requiere configuracion especifica, recomienda llamada de 15 min o Pack Starter.
+
+Verificacion:
+
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [ ] Prueba manual WABA: "¿Qué modulos tiene Holded?"
+- [ ] Prueba manual WABA: "¿Cuanto cuesta Holded con EXPERT?"
+- [ ] Prueba manual WABA: "¿Holded tiene control de horario?"
+- [ ] Prueba manual WABA: "¿Con que se integra Holded?"
+
+Notas:
+
+- Implementado 2026-06-02: official-sources extendido con Holded; kia-holded-knowledge.ts creado con modulos, tarifas, integraciones y FAQs; inyeccion condicional en system prompt cuando el contexto es Holded.
+- Opcion B (RAG pgvector): crawling de Holded Academy -> chunks -> embeddings -> Supabase pgvector -> busqueda semantica en tiempo real. Pendiente para cuando el volumen de preguntas tecnicas justifique la infraestructura adicional.
+
+### IMP-019 - Conocimiento AEAT y Seguridad Social en Kia
+
+Estado: [x]
+
+Tipo: IA, producto, WhatsApp, fiscal, laboral.
+
+Objetivo: que Kia responda preguntas sobre IRPF, IVA, modelos fiscales, campana de la renta, autónomos en Hacienda, cuotas SS, RETA, vida laboral y prestaciones desde conocimiento curado + búsqueda viva en las sedes oficiales.
+
+Mismo patron que IMP-018 (Holded Academy): archivos de conocimiento curado + deteccion de contexto para inyeccion condicional en el system prompt.
+
+Archivos principales:
+
+- `lib/ai/kia/prompts/kia-aeat-knowledge.ts` — NUEVO: IRPF/renta, IVA trimestral, modelos autonomo (036/037/130/303/390/720/151), plazos, acceso digital, reglas Kia
+- `lib/ai/kia/prompts/kia-ss-knowledge.ts` — NUEVO: RETA (alta/baja/cuotas), cuota reducida nuevos autonomos, vida laboral, IT, cese de actividad, empleados, portales oficiales
+- `lib/ai/kia/kia-system-prompt.ts` — inyeccion condicional de AEAT y SS segun contexto del mensaje/servicio
+- `lib/ai/kia/kia-decision-engine.ts` — deteccion de contexto AEAT/SS via regex sobre mensaje y slug de servicio
+
+Criterio de aceptacion:
+
+- Kia responde correctamente: campana renta, como obtener referencia, quien debe declarar, plazos IVA, modelo 036, tarifa plana autonomo, cuotas RETA, vida laboral.
+- Kia distingue orientacion (lo que puede dar) de presentacion (lo que hace EXPERT o el cliente con certificado digital).
+- Para requerimientos, sanciones o inspecciones de Hacienda: orienta + recomienda llamada urgente.
+- No afirma cuotas o plazos exactos sin indicar que deben verificarse para el ejercicio actual.
+- El conocimiento solo se inyecta cuando el mensaje/servicio tiene contexto fiscal o de SS (no gasta tokens en preguntas no relacionadas).
+
+Verificacion:
+
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [ ] Prueba WABA: "Cuando empieza la campana de la renta?"
+- [ ] Prueba WABA: "Cuanto pago de cuota de autonomo?"
+- [ ] Prueba WABA: "Como pido la vida laboral?"
+- [ ] Prueba WABA: "Que es el modelo 303?"
+- [ ] Prueba WABA: "Me ha llegado una inspeccion de Hacienda"
+
+Notas:
+
+- Implementado 2026-06-02: kia-aeat-knowledge.ts y kia-ss-knowledge.ts creados; deteccion de contexto por regex; inyeccion condicional en system prompt y decision engine.
+
+### IMP-020 - Mapa completo de fuentes publicas oficiales en Kia
+
+Estado: [x]
+
+Tipo: IA, producto, WhatsApp, fiscal, trafico, justicia, empresa, registros.
+
+Objetivo: que Kia pueda orientar desde fuentes oficiales en todos los tramites que EXPERT gestiona o que los clientes preguntan con frecuencia, cubriendo DGT, Justicia/Registros, PAE/CIRCE y tributos autonomicos.
+
+Decisiones de diseno tomadas:
+- CCAA: todas las CCAA (EXPERT opera en toda Espana). Se implementan las 5 principales (Madrid, Cataluna, Andalucia, Valencia, Pais Vasco) + nota general sobre el resto.
+- PAE: Kia orienta a hacerlo solo si el cliente tiene certificado digital; si no, recomienda EXPERT.
+- DGT: toda Espana, sin restriccion geografica.
+- Justicia (antecedentes, certificados): EXPERT orienta; el cliente los gestiona por su cuenta.
+
+Archivos principales:
+
+- `lib/ai/kia/prompts/kia-dgt-knowledge.ts` — NUEVO: transferencias, matriculacion, canje permiso extranjero, baja vehiculo, informe de puntos, miDGT, sede DGT
+- `lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts` — NUEVO: antecedentes penales (online/presencial/extranjero), certificado nacimiento, apostilla La Haya, registro civil, denominacion social negativa (RMC), nota simple registro propiedad
+- `lib/ai/kia/prompts/kia-pae-knowledge.ts` — NUEVO: PAE Electronico / CIRCE para alta autonomo online y constitucion SL online, cuando hacerlo solo vs EXPERT, requisitos, pasos
+- `lib/ai/kia/prompts/kia-ccaa-knowledge.ts` — NUEVO: ITP (transmisiones patrimoniales), ISD (sucesiones y donaciones), AJD (actos juridicos documentados), Impuesto de Patrimonio — tipos y diferencias por CCAA (Madrid, Cataluna, Andalucia, Valencia, Pais Vasco) + nota sobre organismos locales (SUMA Alicante, Patronatos, etc.)
+- `lib/ai/kia/kia-system-prompt.ts` — inyeccion condicional de los 4 nuevos modulos
+- `lib/ai/kia/kia-decision-engine.ts` — deteccion de contexto por regex para cada modulo
+- `lib/integrations/official-sources.ts` — nuevos dominios (sede.dgt.gob.es, rmc.es, paeelectronico.es, etc.) y nuevos fallback sources
+
+Criterio de aceptacion:
+
+- DGT: Kia explica transferencia de vehiculo, canje de permiso extranjero, informe de puntos y miDGT.
+- Justicia: Kia explica como pedir antecedentes penales online (con y sin certificado digital) y como apostillar documentos.
+- PAE: Kia orienta a crear SL o darse de alta de autonomo online si tiene certificado digital; si no, propone EXPERT.
+- CCAA: Kia conoce las diferencias de ITP/ISD entre CCAA principales para dar orientacion fiscal en compraventas y herencias.
+- Todos los modulos solo se inyectan cuando el contexto del mensaje lo requiere (eficiencia de tokens).
+
+Verificacion:
+
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [ ] Prueba WABA: "Como hago la transferencia de un coche?"
+- [ ] Prueba WABA: "Necesito los antecedentes penales para el arraigo"
+- [ ] Prueba WABA: "Quiero crear una SL yo solo online"
+- [ ] Prueba WABA: "Cuanto se paga de herencia en Madrid vs Cataluna?"
+- [ ] Prueba WABA: "Cuanto cuesta la nota simple de un piso?"
+
+Notas:
+
+- Implementado 2026-06-02.
+- Para tributos autonomicos de CCAA no cubiertas (Canarias, Baleares, Extremadura, etc.): se incluye nota general con el procedimiento comun y se recomienda consulta con EXPERT.
+- SUMA Alicante y organismos locales similares (IBI, IAE, IVTM): se menciona su existencia en el modulo CCAA como nota sobre tributos locales.
+- Opcion futura: si se amplia el servicio notarial/herencias, ampliar CCAA con tablas de tipos actualizadas.
+
 ## Orden recomendado de implementacion
 
 1. IMP-001, IMP-006 e IMP-007: cerrar entrada externa y auth.

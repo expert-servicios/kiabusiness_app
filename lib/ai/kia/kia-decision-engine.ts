@@ -44,13 +44,22 @@ export async function runKiaDecision(input: {
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
   const locale = input.locale ?? context.contact.language;
+  const msg  = input.message;
+  const slug = input.contextInput.serviceSlug ?? '';
   const systemPrompt = buildKiaSystemPrompt({
     locale,
-    channel    : input.channel,
-    taskType   : input.taskType,
-    currentPage: input.contextInput.currentPage,
-    currentTask: input.contextInput.currentTask,
-    pageData   : input.contextInput.pageData,
+    channel        : input.channel,
+    taskType       : input.taskType,
+    currentPage    : input.contextInput.currentPage,
+    currentTask    : input.contextInput.currentTask,
+    pageData       : input.contextInput.pageData,
+    includeHolded  : /\bholded\b|pack starter|migraci[oó]n holded|control horario|холдед/i.test(msg)  || /holded/i.test(slug),
+    includeAeat    : /\b(irpf|renta|iva|hacienda|aeat|modelo\s*\d{2,3}|tributar|declaraci[oó]n.*renta|fiscal|036|037|130|303|390|720|151|no residente|irnr|renta web)\b/i.test(msg) || /irpf|iva|fiscal|no.residente|modelo.72|modelo.15|autonomo.gestion/i.test(slug),
+    includeSs      : /\b(seguridad social|reta|cotizaci[oó]n|cuota.*aut[oó]nom|vida laboral|importass|cese de actividad|tarifa plana|baja.*laboral|alta.*aut[oó]nom|inss|tgss)\b/i.test(msg) || /alta.autonomo|autonomo|reta/i.test(slug),
+    includeDgt     : /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|baja.*vehiculo|multa.*trafico|permiso de circulacion|capitania)\b/i.test(msg) || /trafico|capitania/i.test(slug),
+    includeJusticia: /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas)\b/i.test(msg) || /constitucion.sl|arraigo|nacionalidad|notaria|herencia/i.test(slug),
+    includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
+    includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
   });
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts);

@@ -834,6 +834,129 @@ function buildHoldedPriceInteractive(lang: KiaLang): { body: string; buttons: { 
   };
 }
 
+function hasHoldedWord(text: string): boolean {
+  const lower = text.toLowerCase();
+  return /\bholded\b/.test(lower) || lower.includes('\u0445\u043e\u043b\u0434\u0435\u0434');
+}
+
+function hasHoldedSessionHint(session: KiaSession): boolean {
+  return [
+    session.service_id ?? '',
+    session.data?.area ?? '',
+    session.data?.selected_service ?? '',
+  ].some((value) => /holded/i.test(value));
+}
+
+function isHoldedLaborQuestion(text: string): boolean {
+  if (!hasHoldedWord(text)) return false;
+  const lower = text.toLowerCase();
+  const spanish = /(laboral|emplead|trabajador|fich|control horario|registro horario|jornada|entrada|salida|ausencia|rrhh|recursos humanos)/i.test(lower);
+  const russian = [
+    '\u043b\u0430\u0431\u043e\u0440\u0430\u043b',
+    '\u0441\u043e\u0442\u0440\u0443\u0434\u043d',
+    '\u0440\u0430\u0431\u043e\u0442\u043d',
+    '\u043e\u0442\u043c\u0435\u0447',
+    '\u043f\u0440\u0438\u0445\u043e\u0434',
+    '\u0443\u0445\u043e\u0434',
+    '\u0440\u0430\u0431\u043e\u0447',
+    '\u0443\u0447\u0435\u0442 \u0432\u0440\u0435\u043c',
+    '\u0443\u0447\u0451\u0442 \u0432\u0440\u0435\u043c',
+    '\u0442\u0430\u0431\u0435\u043b',
+    '\u043a\u0430\u0434\u0440',
+  ].some((term) => lower.includes(term));
+  return spanish || russian;
+}
+
+function isHoldedGeneralInfoQuestion(text: string): boolean {
+  if (!hasHoldedWord(text)) return false;
+  return /(\?|¿|que es|como funciona|para que sirve|funciones|funcionalidades|modulos|incluye|informacion|info|explica)/i.test(text)
+    || /[\u0400-\u04FF]/.test(text);
+}
+
+function buildHoldedLaborInteractive(lang: KiaLang): { body: string; buttons: { id: string; title: string }[] } {
+  const controlUrl = 'https://www.holded.com/es/gestion-de-recursos-humanos/control-horario';
+  const faqUrl = 'https://help.holded.com/es/articles/12700544-preguntas-frecuentes-sobre-el-uso-de-mi-zona-para-empleados';
+  const expertUrl = 'https://expertconsulting.es/holded';
+  const body = lang === 'ru'
+    ? [
+      '\u042f Kia, \u0432\u0438\u0440\u0442\u0443\u0430\u043b\u044c\u043d\u0430\u044f \u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\u043a\u0430 EXPERT 😊',
+      '',
+      '\u0414\u0430, \u0443 Holded \u0435\u0441\u0442\u044c \u0431\u043b\u043e\u043a HR/\u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a\u0438 \u0438 *control horario*: \u0444\u0438\u043a\u0441\u0430\u0446\u0438\u044f \u0432\u0440\u0435\u043c\u0435\u043d\u0438 \u0432\u0445\u043e\u0434\u0430/\u0432\u044b\u0445\u043e\u0434\u0430, \u043f\u0430\u0443\u0437, \u043e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0438\u0439 \u0438 \u043e\u0442\u0447\u0435\u0442\u043e\u0432.',
+      '',
+      'Holded \u043f\u0443\u0431\u043b\u0438\u043a\u0443\u0435\u0442, \u0447\u0442\u043e \u044d\u0442\u043e\u0442 \u0443\u0447\u0435\u0442 \u043f\u0440\u0435\u0434\u0443\u0441\u043c\u043e\u0442\u0440\u0435\u043d \u0434\u043b\u044f \u0430\u0443\u0434\u0438\u0442\u0430 \u0438 \u0441\u043e\u0431\u043b\u044e\u0434\u0435\u043d\u0438\u044f \u0443\u0447\u0435\u0442\u0430 \u0440\u0430\u0431\u043e\u0447\u0435\u0433\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0438. \u041d\u043e \u044e\u0440\u0438\u0434\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u043f\u0440\u0438\u0433\u043e\u0434\u043d\u043e\u0441\u0442\u044c \u0437\u0430\u0432\u0438\u0441\u0438\u0442 \u043e\u0442 \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043a, \u043f\u043e\u043b\u0438\u0442\u0438\u043a \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0438 \u0438 \u0442\u043e\u0433\u043e, \u043a\u0430\u043a \u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a\u0438 \u0444\u0438\u043a\u0441\u0438\u0440\u0443\u044e\u0442 \u0432\u0440\u0435\u043c\u044f.',
+      '',
+      `Info Holded: ${controlUrl}`,
+      `FAQ empleados: ${faqUrl}`,
+      `EXPERT + Holded: ${expertUrl}`,
+    ].join('\n')
+    : [
+      'Soy Kia, asistente virtual de EXPERT 😊',
+      '',
+      'Si: Holded tiene bloque de equipo/HR y *control horario* para registrar entrada, salida, pausas, ausencias e informes.',
+      '',
+      'Holded publica que esos registros estan pensados para auditorias y cumplimiento del registro horario. Aun asi, el cumplimiento final depende de la configuracion, politica interna, privacidad y de no obligar al empleado a usar medios personales si no procede.',
+      '',
+      `Info Holded: ${controlUrl}`,
+      `FAQ empleados: ${faqUrl}`,
+      `EXPERT + Holded: ${expertUrl}`,
+    ].join('\n');
+
+  return {
+    body,
+    buttons: quickRepliesToButtons(normalizeKiaQuickReplies([
+      { id: 'btn_holded_prepare', title: lang === 'ru' ? '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430' : 'Configurar', kind: 'readiness' },
+      { id: 'btn_book_call', title: lang === 'ru' ? '\u0417\u0432\u043e\u043d\u043e\u043a' : 'Llamada 15 min', kind: 'call' },
+      { id: 'btn_other', title: lang === 'ru' ? '\u0414\u0440\u0443\u0433\u043e\u0435' : 'Otro', kind: 'other' },
+    ], lang, { ensureOther: true })),
+  };
+}
+
+function buildHoldedGeneralInteractive(lang: KiaLang): { body: string; buttons: { id: string; title: string }[] } {
+  const featuresUrl = 'https://www.holded.com/es/funcionalidades';
+  const expertUrl = 'https://expertconsulting.es/holded';
+  const body = lang === 'ru'
+    ? [
+      '\u042f Kia, \u0432\u0438\u0440\u0442\u0443\u0430\u043b\u044c\u043d\u0430\u044f \u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\u043a\u0430 EXPERT 😊',
+      '',
+      'Holded - \u044d\u0442\u043e ERP/\u0431\u0438\u0437\u043d\u0435\u0441-\u043f\u0430\u043d\u0435\u043b\u044c \u0434\u043b\u044f \u0441\u0447\u0435\u0442\u043e\u0432, \u0440\u0430\u0441\u0445\u043e\u0434\u043e\u0432, \u0431\u0430\u043d\u043a\u043e\u0432, \u0441\u043a\u043b\u0430\u0434\u0430, \u043f\u0440\u043e\u0435\u043a\u0442\u043e\u0432, \u043e\u0442\u0447\u0435\u0442\u043e\u0432 \u0438 \u0447\u0430\u0441\u0442\u0438 HR.',
+      '',
+      '\u041a\u0430\u043a Partner Oficial, EXPERT \u043f\u043e\u043c\u043e\u0433\u0430\u0435\u0442 \u0441 Pack Starter, \u043c\u0438\u0433\u0440\u0430\u0446\u0438\u0435\u0439, \u043e\u0431\u0443\u0447\u0435\u043d\u0438\u0435\u043c \u0438 \u0435\u0436\u0435\u043c\u0435\u0441\u044f\u0447\u043d\u044b\u043c\u0438 \u043f\u043b\u0430\u043d\u0430\u043c\u0438.',
+      `Holded: ${featuresUrl}`,
+      `EXPERT + Holded: ${expertUrl}`,
+    ].join('\n')
+    : [
+      'Soy Kia, asistente virtual de EXPERT 😊',
+      '',
+      'Holded es un ERP/panel de gestion para facturacion, gastos, bancos, inventario, proyectos, reporting y parte de equipo/HR.',
+      '',
+      'Como Partner Oficial, EXPERT puede ayudarte con Pack Starter, migracion, formacion y planes mensuales con Holded conectado.',
+      `Holded: ${featuresUrl}`,
+      `EXPERT + Holded: ${expertUrl}`,
+    ].join('\n');
+
+  return {
+    body,
+    buttons: quickRepliesToButtons(normalizeKiaQuickReplies([
+      { id: 'btn_holded_prepare', title: lang === 'ru' ? '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430' : 'Configurar', kind: 'readiness' },
+      { id: 'btn_holded_trial', title: lang === 'ru' ? '\u041f\u0440\u043e\u0431\u0430 14 \u0434\u043d\u0435\u0439' : 'Prueba 14 dias', kind: 'holded' },
+      { id: 'btn_other', title: lang === 'ru' ? '\u0414\u0440\u0443\u0433\u043e\u0435' : 'Otro', kind: 'other' },
+    ], lang, { ensureOther: true })),
+  };
+}
+
+function buildDirectHoldedInteractive(
+  msgBody: string,
+  lang: KiaLang,
+  session: KiaSession,
+): { body: string; buttons: { id: string; title: string }[] } | null {
+  if (isHoldedLaborQuestion(msgBody)) return buildHoldedLaborInteractive(lang);
+  if (isPriceQuestion(msgBody) && (hasHoldedWord(msgBody) || hasHoldedSessionHint(session))) {
+    return buildHoldedPriceInteractive(lang);
+  }
+  if (isHoldedGeneralInfoQuestion(msgBody)) return buildHoldedGeneralInteractive(lang);
+  return null;
+}
+
 async function generateKiaAiResponse({
   clientId, phone, msgBody, session, conversationHistory, contactCtx,
 }: KiaAiContext): Promise<{ reply: string | null; interactive?: { body: string; buttons: { id: string; title: string }[] } }> {
@@ -988,16 +1111,38 @@ Responde ÚNICAMENTE con este JSON exacto, sin texto antes ni después:
 {"type":"btns","body":"Tu mensaje aquí","buttons":["Botón 1","Botón 2","Botón 3"]}
 Reglas: mínimo 2, máximo 3 botones. Cada botón ≤ 20 caracteres, sin emojis ni puntuación especial. El último botón debe ser siempre "Otro" en español o "Другое" en ruso.
 
+LÓGICA PRINCIPAL — PREGUNTAR PRIMERO, RESPONDER DESPUÉS:
+Antes de dar información específica sobre un servicio o trámite, Kia diagnostica primero la situación concreta del cliente. Una pregunta de diagnóstico al inicio es SIEMPRE mejor que una respuesta genérica que no se ajusta a la situación real.
+
+CUÁNDO preguntar primero (usa botones con pregunta de diagnóstico):
+✓ Servicio mencionado de forma genérica: "quiero la renta", "necesito residencia", "quiero el arraigo", "necesito certificado digital".
+✓ La respuesta correcta cambia según la situación del cliente y el cliente no la ha dado todavía.
+✓ El cliente dice "no sé qué necesito" o pide orientación general.
+✓ Consulta muy vaga sin contexto ("necesito ayuda", "¿qué servicios tenéis?").
+✓ Si haces una pregunta de diagnóstico o aclaratoria.
+
+PREGUNTAS DE DIAGNÓSTICO POR SERVICIO (la más determinante):
+- IRPF / Renta genérica → "¿La declaración es para ti como persona física, como autónomo, o para una empresa?"
+- Arraigo genérico → "¿Cuánto tiempo llevas en España de forma continuada?" (social 3+, familiar o laboral)
+- Residencia genérica → "¿Es primera vez, una renovación de TIE, o un cambio de tipo de permiso?"
+- Certificado digital genérico → "¿El certificado es para ti como persona física o para tu empresa?"
+- Empresa / Autónomo genérico → "¿Ya tienes actividad en marcha o estás pensando en empezar?"
+
+CUÁNDO responder directamente sin preguntar:
+✓ El cliente ya ha dado su situación concreta en el mismo mensaje.
+✓ Pregunta de precio sobre un servicio ya identificado sin ambigüedad.
+✓ Ya se preguntó en este hilo y las respuestas son suficientes para actuar.
+✓ El cliente tiene expediente activo y consulta sobre su propio trámite.
+✓ Urgencia clara (requerimiento, sanción, embargo): orienta y recomienda llamada sin más preguntas.
+
 CUÁNDO usar botones:
-✓ Consulta muy vaga sin contexto ("necesito ayuda", "¿qué servicios tenéis?")
-✓ Pregunta de precio sin especificar servicio ("¿cuánto cuesta?")
-✓ Si detectas interes real pero faltan datos fiables, ofrece login/registro, presupuesto o cita en el portal seguro
-✓ Si haces una pregunta aclaratoria
-✓ Si el usuario puede elegir entre servicio, plan, llamada, presupuesto, panel o escribir libremente
+✓ Siempre que hagas una pregunta de diagnóstico o aclaratoria.
+✓ Si detectas interés real pero faltan datos fiables, ofrece login/presupuesto o cita en el portal seguro.
+✓ Si el usuario puede elegir entre servicio, plan, llamada, presupuesto, panel o escribir libremente.
 
 CUÁNDO NO usar botones:
-✗ Si la consulta requiere una explicación técnica, fiscal o legal larga sin decisión inmediata
-✗ Si ya sabes lo que necesita y solo debes dar una instrucción concreta
+✗ Si la consulta ya tiene suficiente contexto y solo debes dar información concreta.
+✗ Si la consulta requiere una explicación técnica larga sin decisión inmediata.
 Aunque el historial ya tenga botones, NO repitas el mismo menú literal: ofrece una variante breve y conserva "Otro"/"Другое" como última opción.
 
 IDIOMA: ${languageInstruction}
@@ -1498,8 +1643,33 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Run the Kia state machine (language detection is handled inside)
+      // Direct Holded knowledge guard: answer concrete Holded questions before
+      // the menu state machine can fall back to a generic greeting.
       const currentMessageLang = detectLatestMessageLanguage(msgBody, session.lang);
+      const directHolded = buildDirectHoldedInteractive(msgBody, currentMessageLang, session);
+      if (!buttonId && directHolded) {
+        await sendKiaReply({
+          type: 'buttons',
+          body: directHolded.body,
+          footer: 'EXPERT 💼',
+          buttons: directHolded.buttons,
+        }, from, clientId, admin, {
+          aiResponded: true,
+          currentUserMessage: msgBody,
+          lang: currentMessageLang,
+          logPrefix: 'Kia:Holded',
+        });
+        await persistSessionUpdates(admin, from, {
+          flow: 'consult',
+          step: 'holded_info',
+          lang: currentMessageLang,
+          service_id: session.service_id ?? 'svc_holded_starter',
+          data: { ...session.data, area: 'holded', last_holded_info: 'true' },
+        });
+        continue;
+      }
+
+      // Run the Kia state machine (language detection is handled inside)
       const { replies, updates, sideEffects } = processKiaStep(session, msgBody, buttonId, clientName, {
         status              : contactCtx.status,
         openCases           : contactCtx.openCases,

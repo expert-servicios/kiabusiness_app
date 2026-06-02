@@ -45,6 +45,30 @@ const OFFICIAL_DOMAINS = [
   'www.poderjudicial.es',
   'registradores.org',
   'www.registradores.org',
+  // Holded — documentacion oficial del software ERP
+  'www.holded.com',
+  'help.holded.com',
+  // DGT
+  'sede.dgt.gob.es',
+  'www.dgt.es',
+  // PAE / CIRCE
+  'paeelectronico.es',
+  'www.circe.es',
+  // Registro Mercantil Central
+  'www.rmc.es',
+  'rmc.es',
+  // Registros (Registro Mercantil + Propiedad) — ya cubierto por registradores.org
+  // Comunidades Autonomas — tributos
+  'atv.gva.es',              // Valencia
+  'atc.gencat.cat',          // Cataluna
+  'www.atc.gencat.cat',
+  'www.madrid.org',          // Madrid
+  'www.bizkaia.eus',         // Pais Vasco - Bizkaia
+  'www.gipuzkoa.eus',        // Pais Vasco - Gipuzkoa
+  'www.araba.eus',           // Pais Vasco - Alava
+  'www.juntadeandalucia.es', // Andalucia
+  // Organismos locales de recaudacion
+  'www.suma.es',             // SUMA Alicante
 ];
 
 const OFFICIAL_SOURCE_TRIGGERS = [
@@ -57,6 +81,22 @@ const OFFICIAL_SOURCE_TRIGGERS = [
   /\b(mercantil|registro mercantil|sociedad limitada|constituci[oó]n de sociedad|estatutos|escritura|poder notarial|apoderado|notar[ií]a|herencia|sucesi[oó]n|compraventa)\b/i,
   /[А-Яа-яЁё].*(налог|деклара|доход|рента|ипрф|ндфл|автоном|социал|страх|резиден|внж|ниэ|nie)/i,
   /\b(tax|income|tax return|social security|residence permit|digital certificate)\b/i,
+  // Holded — preguntas sobre el software ERP
+  /\bholded\b/i,
+  /\b(erp|facturaci[oó]n|contabilidad holded|inventario holded|proyectos holded|crm holded|control horario|rrhh holded|conciliaci[oó]n bancaria|multiempresa)\b/i,
+  /\b(pack starter|migraci[oó]n holded|formaci[oó]n holded|onboarding holded|plan supervision|plan avanzado|plan colaborativo)\b/i,
+  /\b(holded academy|ayuda holded|como usar holded|configurar holded|importar holded|integrar holded)\b/i,
+  /(холдед|holded)/i,
+  // DGT — trafico y vehiculos
+  /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|carnet.*puntos|baja.*vehiculo|circulacion|multa.*trafico|trafico.*multa|ivtm)\b/i,
+  /\b(permiso de circulacion|ficha tecnica|itv.*vehiculo|vehiculo.*itv|placa|matricula)\b/i,
+  // Justicia, Registros, Apostilla
+  /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|nacimiento.*certificado|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas|cuentas.*deposito)\b/i,
+  /\b(mjusticia|rmc|registradores|registro mercantil central)\b/i,
+  // PAE / CIRCE — creacion de empresa online
+  /\b(pae electronico|circe|crear empresa online|sl online|alta autonomo online|ventanilla unica)\b/i,
+  // Tributos autonomicos — ITP, ISD, AJD, Patrimonio
+  /\b(itp|transmisiones patrimoniales|isd|sucesiones.*donaciones|donaciones.*sucesiones|impuesto.*herencia|herencia.*impuesto|ajd|actos juridicos documentados|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*ccaa|hacienda.*comunidad)\b/i,
 ];
 
 const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
@@ -150,6 +190,125 @@ const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
     url: 'https://clave.gob.es/',
     snippet: 'Informacion oficial sobre Cl@ve, certificados e identificacion electronica.',
     keywords: [/cl@ve|clave pin|certificado digital|identificaci[oó]n|sede electr[oó]nica/i],
+  },
+  // ── DGT ──────────────────────────────────────────────────────────────────────
+  {
+    title: 'DGT - Sede Electronica de Trafico',
+    url: 'https://sede.dgt.gob.es/',
+    snippet: 'Tramites DGT online: transferencias de vehiculo, matriculacion, canje de permiso de conducir extranjero, informe de puntos, baja de vehiculo, duplicados y notificaciones.',
+    keywords: [/dgt|trafico|transferencia.*vehiculo|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|baja.*vehiculo|multa.*trafico|permiso de circulacion/i],
+  },
+  // ── PAE / CIRCE ───────────────────────────────────────────────────────────────
+  {
+    title: 'PAE Electronico / CIRCE - Creacion de empresa online',
+    url: 'https://paeelectronico.es/',
+    snippet: 'Portal oficial para crear una Sociedad Limitada (SL) online via CIRCE o tramitar el alta de autonomo sin desplazamientos. Requiere certificado digital.',
+    keywords: [/pae|circe|crear empresa online|sl online|alta autonomo online|ventanilla unica.*empresa|constitucion.*sl.*online/i],
+  },
+  // ── Registro Mercantil Central ────────────────────────────────────────────────
+  {
+    title: 'Registro Mercantil Central - Denominacion Social',
+    url: 'https://www.rmc.es/',
+    snippet: 'Solicitud de certificado de denominacion social negativa (paso previo para crear una SL). Tramite online. Plazo 3-5 dias. Hasta 5 nombres alternativos por solicitud.',
+    keywords: [/denominacion social|rmc|registro mercantil central|nombre.*sociedad|sociedad.*nombre/i],
+  },
+  // ── Justicia / Registros ──────────────────────────────────────────────────────
+  {
+    title: 'Ministerio de Justicia - Sede Electronica',
+    url: 'https://sede.mjusticia.gob.es/',
+    snippet: 'Certificado de antecedentes penales (online con certificado digital o Cl@ve, gratuito), certificados del Registro Civil (nacimiento, matrimonio, defuncion), apostilla electronica.',
+    keywords: [/antecedentes penales|registro civil|apostilla|mjusticia|certificado.*nacimiento|certificado.*matrimonio/i],
+  },
+  {
+    title: 'Registradores de Espana - Nota Simple y Registro Mercantil',
+    url: 'https://www.registradores.org/',
+    snippet: 'Nota simple del Registro de la Propiedad online (titularidad, cargas, hipotecas de un inmueble). Tambien notas simples del Registro Mercantil. Coste aproximado 9-12 EUR. Entrega en horas.',
+    keywords: [/nota simple|registro.*propiedad|cargas.*inmueble|inmueble.*cargas|registradores|deposito.*cuentas/i],
+  },
+  // ── Tributos autonomicos ──────────────────────────────────────────────────────
+  {
+    title: 'Tributos autonomicos - ITP, ISD y AJD en España',
+    url: 'https://www.agenciatributaria.es/',
+    snippet: [
+      'Los impuestos de transmisiones (ITP), sucesiones y donaciones (ISD) y actos juridicos documentados (AJD) son gestionados por cada CCAA.',
+      'ITP en compraventas de segunda mano: 6% Madrid, 7-10% Andalucia, 10% Valencia y Cataluna, 4% Pais Vasco (aprox, verificar).',
+      'ISD herencias: bonificacion 99% en Madrid y Andalucia para familiares directos; tipos significativos en Cataluna y otras CCAA.',
+      'Sedes: Valencia atv.gva.es | Cataluna atc.gencat.cat | Andalucia juntadeandalucia.es | Madrid madrid.org.',
+    ].join(' '),
+    keywords: [/itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|patrimonio.*ccaa/i],
+  },
+  {
+    title: 'SUMA - Gestion Tributaria Alicante (IBI, IVTM, IAE)',
+    url: 'https://www.suma.es/',
+    snippet: 'Organismo de recaudacion de impuestos locales en la provincia de Alicante: IBI (impuesto sobre bienes inmuebles), IVTM (impuesto de circulacion de vehiculos) e IAE.',
+    keywords: [/suma.*alicante|alicante.*suma|ibi.*alicante|alicante.*ibi|ivtm.*alicante/i],
+  },
+  // ── Holded ────────────────────────────────────────────────────────────────────
+  {
+    title: 'Holded - Funcionalidades del ERP',
+    url: 'https://www.holded.com/es/funcionalidades',
+    snippet: [
+      'Holded es un ERP en la nube para pymes y autonomos con los siguientes modulos:',
+      '• Facturacion: facturas, presupuestos, proformas, gastos, tickets de gasto.',
+      '• Contabilidad: asientos automaticos, cuentas, libros oficiales (mayor, diario), modelos fiscales (303, 390, 111, 115, 347).',
+      '• Inventario: almacenes, productos, variantes, pedidos de compra y venta.',
+      '• Proyectos: proyectos, tareas, seguimiento de tiempo trabajado.',
+      '• Equipo / RRHH: empleados, control horario (entrada/salida/pausas), ausencias, informes de presencia.',
+      '• CRM: contactos, oportunidades, funnels de ventas.',
+      '• Banco / Tesoreria: movimientos bancarios, conciliacion automatica, previsiones de cobros y pagos.',
+      '• Multiempresa: gestion de varias sociedades desde una sola cuenta.',
+    ].join('\n'),
+    keywords: [/holded|erp|facturaci[oó]n holded|contabilidad holded|inventario|modulos holded|funcionalidades holded|que (tiene|incluye) holded/i],
+  },
+  {
+    title: 'Holded - Integraciones',
+    url: 'https://www.holded.com/es/integraciones',
+    snippet: [
+      'Holded se integra de forma nativa o via API/Zapier con:',
+      '• Bancos y pagos: GoCardless (open banking), Stripe.',
+      '• E-commerce: Shopify, WooCommerce, Amazon, PrestaShop.',
+      '• Automatizacion: Zapier (conecta con mas de 5.000 apps).',
+      '• API REST propia para integraciones personalizadas.',
+      '• Importacion de datos desde Excel/CSV para migracion desde otros softwares.',
+    ].join('\n'),
+    keywords: [/integrac[ií][oó]n holded|holded.*integra|integra.*holded|shopify.*holded|woocommerce.*holded|stripe.*holded|gocardless.*holded|zapier.*holded|api holded/i],
+  },
+  {
+    title: 'Holded - Precios y planes propios',
+    url: 'https://www.holded.com/es/precios',
+    snippet: [
+      'Holded tiene planes propios del software (sin EXPERT):',
+      '• Basic, Essential, Premium — desde aproximadamente 29-99 EUR/mes segun modulos y numero de usuarios.',
+      '• Prueba gratuita 14 dias sin tarjeta de credito.',
+      '',
+      'EXPERT como Partner Oficial ofrece paquetes con Holded incluido o complementados:',
+      '• Pack Starter / Onboarding Holded: 499 EUR + IVA (configuracion inicial + formacion basica).',
+      '• Migracion completa sin inventario: 899 EUR + IVA.',
+      '• Migracion completa con inventario: 1.199 EUR + IVA.',
+      '• Formacion Holded por horas: precio segun sesiones.',
+      '• Plan Supervision EXPERT: 49 EUR/mes + IVA (revision contable, sin presentacion de impuestos).',
+      '• Plan Avanzado EXPERT: 99 EUR/mes + IVA (revision + impuestos basicos).',
+      '• Plan Colaborativo EXPERT: 199 EUR/mes + IVA (gestion completa, informes, soporte prioritario).',
+    ].join('\n'),
+    keywords: [/precio.*holded|holded.*precio|cuanto cuesta holded|tarifa holded|plan.*holded|holded.*plan|pack starter|migraci[oó]n holded|supervision|avanzado|colaborativo/i],
+  },
+  {
+    title: 'Holded Academy - Centro de ayuda',
+    url: 'https://help.holded.com/es/',
+    snippet: 'Documentacion oficial de Holded: guias paso a paso, tutoriales, preguntas frecuentes y novedades de todos los modulos del ERP.',
+    keywords: [/holded academy|ayuda holded|como.*holded|configurar holded|tutorial holded|guia holded|help holded/i],
+  },
+  {
+    title: 'Holded - Control horario y RRHH',
+    url: 'https://www.holded.com/es/gestion-de-recursos-humanos/control-horario',
+    snippet: [
+      'El modulo de RRHH de Holded incluye control horario (registro de entrada/salida/pausas/ausencias) y gestion de empleados.',
+      'El registro horario en Holded esta disenado para cumplimiento del registro de jornada laboral obligatorio en Espana segun el Real Decreto-ley 8/2019.',
+      'Los empleados pueden fichar desde la app movil o desde "Mi zona".',
+      'El administrador accede a informes de presencia, ausencias y horas trabajadas.',
+      'Nota: la validez legal depende de la configuracion correcta y de las politicas internas de la empresa.',
+    ].join('\n'),
+    keywords: [/control horario|fichaje|holded.*rrhh|rrhh.*holded|holded.*empleado|registro horario|jornada laboral|ausencias holded|entrada.*salida holded/i],
   },
 ];
 
