@@ -1049,6 +1049,114 @@ export function citaRequestAdmin(params: {
   };
 }
 
+// ── Daily admin summary ───────────────────────────────────────────────────────
+
+export interface DailySummaryData {
+  date             : string;
+  casesBlocked     : Array<{ id: string; service: string; client: string; daysPending: number }>;
+  casesAwaitingDocs: Array<{ id: string; service: string; client: string; daysPending: number }>;
+  quotesOpen       : Array<{ id: string; title: string; client: string; amount: number; daysOpen: number }>;
+  paymentsFailedSubs: Array<{ client: string; plan: string }>;
+  newLeads24h      : number;
+  newMessages24h   : number;
+  holdedJobsFailed : number;
+}
+
+export function dailyAdminSummary(data: DailySummaryData) {
+  const hasAlerts =
+    data.casesBlocked.length > 0 ||
+    data.casesAwaitingDocs.length > 0 ||
+    data.quotesOpen.length > 0 ||
+    data.paymentsFailedSubs.length > 0;
+
+  const urgentBadge = (n: number, label: string) =>
+    n > 0
+      ? `<span style="display:inline-block;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">${n} ${label}</span>`
+      : '';
+
+  const caseRows = (items: DailySummaryData['casesBlocked']) =>
+    items.map((c) => `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#07111d;">${escapeHtml(c.service)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#29384a;">${escapeHtml(c.client)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:12px;color:#dc2626;font-weight:600;">${c.daysPending}d</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;">
+          <a href="${BRAND.appUrl}/admin/expedientes/${c.id}" style="color:#c88b25;font-size:12px;">Ver</a>
+        </td>
+      </tr>`).join('');
+
+  const quoteRows = data.quotesOpen.map((q) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#07111d;">${escapeHtml(q.title)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#29384a;">${escapeHtml(q.client)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#c88b25;font-weight:600;">€${q.amount.toFixed(0)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:12px;color:#d97706;">${q.daysOpen}d</td>
+    </tr>`).join('');
+
+  const failedSubRows = data.paymentsFailedSubs.map((s) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#07111d;">${escapeHtml(s.client)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#dc2626;">${escapeHtml(s.plan)}</td>
+    </tr>`).join('');
+
+  const tableWrapper = (rows: string) =>
+    `<table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #d8cbb5;margin-bottom:20px;">${rows}</table>`;
+
+  const sections: string[] = [];
+
+  if (data.casesBlocked.length > 0) {
+    sections.push(`
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#dc2626;">🔴 Expedientes bloqueados${urgentBadge(data.casesBlocked.length, '')}</p>
+      ${tableWrapper(caseRows(data.casesBlocked))}`);
+  }
+
+  if (data.casesAwaitingDocs.length > 0) {
+    sections.push(`
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#d97706;">📂 Documentación pendiente${urgentBadge(data.casesAwaitingDocs.length, '')}</p>
+      ${tableWrapper(caseRows(data.casesAwaitingDocs))}`);
+  }
+
+  if (data.quotesOpen.length > 0) {
+    sections.push(`
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#29384a;">💼 Presupuestos sin responder</p>
+      ${tableWrapper(quoteRows)}`);
+  }
+
+  if (data.paymentsFailedSubs.length > 0) {
+    sections.push(`
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#dc2626;">💳 Pagos fallidos en suscripciones</p>
+      ${tableWrapper(failedSubRows)}`);
+  }
+
+  const kpisHtml = `
+    <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+      ${[
+        { label: 'Leads nuevos 24h', value: data.newLeads24h, color: data.newLeads24h > 0 ? '#c88b25' : '#29384a' },
+        { label: 'Mensajes nuevos 24h', value: data.newMessages24h, color: data.newMessages24h > 0 ? '#c88b25' : '#29384a' },
+        { label: 'Syncs Holded fallidos', value: data.holdedJobsFailed, color: data.holdedJobsFailed > 0 ? '#dc2626' : '#29384a' },
+      ].map((kpi) => `
+        <div style="flex:1;min-width:130px;background:#f8f4eb;border-radius:10px;padding:14px 16px;border:1px solid #d8cbb5;">
+          <p style="margin:0 0 4px;font-size:11px;color:#8899aa;text-transform:uppercase;letter-spacing:0.08em;">${kpi.label}</p>
+          <p style="margin:0;font-size:24px;font-weight:700;color:${kpi.color};">${kpi.value}</p>
+        </div>`).join('')}
+    </div>`;
+
+  const subject = hasAlerts
+    ? `⚠️ Resumen EXPERT ${data.date} — ${data.casesBlocked.length + data.casesAwaitingDocs.length} exp. requieren atención`
+    : `✅ Resumen EXPERT ${data.date} — Todo al día`;
+
+  return {
+    subject,
+    html: base('Resumen operativo diario', `
+      ${heading(`Resumen operativo · ${data.date}`)}
+      ${kpisHtml}
+      ${sections.length > 0 ? sections.join('') : para('<strong style="color:#16a34a;">✅ Todo al día — no hay expedientes ni presupuestos pendientes de atención urgente.</strong>')}
+      ${btn('Abrir panel admin', `${BRAND.appUrl}/admin`)}
+      ${para('<small style="color:#8899aa;">Este resumen se genera automáticamente cada mañana. Accede al panel para gestionar cada elemento.</small>')}
+    `),
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',

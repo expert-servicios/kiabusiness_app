@@ -442,16 +442,33 @@ Criterio de aceptacion:
 
 ### IMP-015 - Automatizaciones operativas visibles
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: automatizacion, retencion, operacion.
 
-Criterio de aceptacion:
+Solucion implementada (2026-06-02):
+- Emails automaticos al cliente cuando admin cambia el status del expediente (PATCH /api/admin/cases/[id]):
+  * pendiente_cliente → caseDocsRequired (solicitud de documentacion)
+  * en_revision → caseDocsReceived (documentacion recibida)
+  * listo_para_presentar → caseInProgress (en tramitacion activa)
+  * presentado → casePendingExternal (presentado ante organismo)
+  * finalizado → caseDelivered + reviewRequest (entregado + solicitud resena)
+- Resumen diario admin (cron /api/cron/daily-summary, 08:30 UTC):
+  * Expedientes bloqueados
+  * Expedientes esperando docs > 3 dias
+  * Presupuestos abiertos > 5 dias sin respuesta
+  * Suscripciones con pago fallido
+  * Leads nuevos 24h, mensajes WhatsApp nuevos 24h, jobs Holded fallidos
+  * Email destinatario configurable via ADMIN_SUMMARY_EMAIL
+- Template dailyAdminSummary en lib/email/templates.ts con asunto adaptativo (⚠️ si hay alertas, ✅ si todo OK).
+- vercel.json: schedule 30 8 * * * para daily-summary.
 
-- Recordatorios de documentacion pendiente.
-- Seguimiento de presupuestos abiertos.
-- Alertas de pago fallido visibles y accionables.
-- Resumen diario admin.
+Archivos principales:
+
+- `app/api/admin/cases/[id]/route.ts` — emails en PATCH de status
+- `app/api/cron/daily-summary/route.ts` — NUEVO cron resumen diario
+- `lib/email/templates.ts` — dailyAdminSummary
+- `vercel.json` — schedule daily-summary
 
 ### IMP-018 - Conocimiento Holded Academy en Kia (Opcion A)
 

@@ -4,6 +4,77 @@ import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
+import { sendEmail } from '@/lib/email/send';
+import {
+  caseDocsRequired,
+  caseDocsReceived,
+  caseInProgress,
+  casePendingExternal,
+  caseResolutionReceived,
+  caseDelivered,
+  reviewRequest,
+} from '@/lib/email/templates';
+
+// ── Status → client email mapping ──────────────────────────────────────────
+// Sends the appropriate template when admin transitions the case status.
+// fire-and-forget: email failure never blocks the status update.
+async function sendCaseStatusEmail(params: {
+  newStatus: CaseStatus;
+  clientEmail: string;
+  clientName: string;
+  service: string;
+  adminNote: string | null;
+  caseId: string;
+}): Promise<void> {
+  const { newStatus, clientEmail, clientName, service, adminNote, caseId } = params;
+  const funFact = ''; // placeholder — no fun fact for status emails
+
+  let tpl: { subject: string; html: string } | null = null;
+
+  switch (newStatus) {
+    case 'pendiente_cliente':
+      tpl = caseDocsRequired(clientName, service, [], adminNote, funFact);
+      break;
+    case 'en_revision':
+      tpl = caseDocsReceived(clientName, service, adminNote, funFact);
+      break;
+    case 'listo_para_presentar':
+      tpl = caseInProgress(clientName, service, adminNote, funFact);
+      break;
+    case 'presentado':
+      tpl = casePendingExternal(clientName, service, null, adminNote, funFact);
+      break;
+    case 'finalizado': {
+      const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
+      const reviewTpl    = reviewRequest(clientName, service);
+      // Send delivered + review request (fire-and-forget each)
+      void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
+      void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+      return;
+    }
+    default:
+      return; // nuevo, bloqueado — no client email
+  }
+
+  if (tpl) {
+    void sendEmail({ to: clientEmail, eventType: `case.${newStatus}`, ...tpl, metadata: { caseId } });
+  }
+}
+
+// Fetch client email + name for a given userId
+async function getClientInfo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin: any,
+  userId: string
+): Promise<{ email: string; name: string } | null> {
+  const [authResult, profileResult] = await Promise.all([
+    admin.auth.admin.getUserById(userId),
+    admin.from('profiles').select('full_name').eq('id', userId).single(),
+  ]);
+  const email = authResult.data?.user?.email;
+  if (!email) return null;
+  return { email, name: profileResult.data?.full_name ?? email.split('@')[0] };
+}
 
 export async function GET(
   request: NextRequest,
@@ -100,7 +171,7 @@ export async function PATCH(
     // Validate status transition if status is being updated
     if (body.status) {
       const { data: current } = await admin
-        .from('cases').select('status, service_id, client_id').eq('id', id).single();
+        .from('cases').select('status, service_id, client_id, service, admin_note').eq('id', id).single();
 
       if (!current) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
 
@@ -122,6 +193,21 @@ export async function PATCH(
 
       const { error: updateErr } = await admin.from('cases').update(updatePayload).eq('id', id);
       if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+      // Send client notification email (fire-and-forget — never blocks the response)
+      if (body.status !== fromStatus) {
+        const clientInfo = await getClientInfo(admin, current.client_id);
+        if (clientInfo) {
+          void sendCaseStatusEmail({
+            newStatus: body.status,
+            clientEmail: clientInfo.email,
+            clientName: clientInfo.name,
+            service: current.service ?? 'Trámite EXPERT',
+            adminNote: body.admin_note ?? null,
+            caseId: id,
+          }).catch((err) => console.error('[cases PATCH] email error:', err));
+        }
+      }
 
       // Register profitability event (fire-and-forget)
       const serviceId = current.service_id ?? 'unknown';
