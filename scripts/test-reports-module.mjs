@@ -186,34 +186,70 @@ async function holdedGet(path) {
 
 try {
   // Contacts
-  const contacts_r = await holdedGet('/contacts?page=1');
+  const contacts_r = await holdedGet('/contacts?limit=100');
   contacts_r.ok
     ? ok(`GET /contacts → ${contacts_r.status} (${Array.isArray(contacts_r.body) ? contacts_r.body.length : '?'} contacts)`)
     : ko(`GET /contacts → ${contacts_r.status}`);
 
-  // Sales invoices
-  const invoices_r = await holdedGet('/documents/invoice?limit=5');
-  invoices_r.ok
-    ? ok(`GET /documents/invoice → ${invoices_r.status} (${Array.isArray(invoices_r.body) ? invoices_r.body.length : '?'} docs)`)
-    : ko(`GET /documents/invoice → ${invoices_r.status}`);
+  // Sales invoices — full page (no limit hack)
+  const invoices_r = await holdedGet('/documents/invoice?page=1&limit=100');
+  if (invoices_r.ok) {
+    const docs = Array.isArray(invoices_r.body) ? invoices_r.body : [];
+    ok(`GET /documents/invoice → ${invoices_r.status} (${docs.length} docs en página 1)`);
+
+    // Verify date is Unix timestamp
+    const first = docs[0];
+    if (first) {
+      const ts = Number(first.date);
+      const dateStr = new Date(ts * 1000).toLocaleDateString('es-ES');
+      !isNaN(ts) && ts > 1000000000
+        ? ok(`Fecha Unix timestamp: ${ts} → ${dateStr}`)
+        : ko(`Fecha inesperada: ${first.date}`);
+
+      // Verify status is numeric
+      typeof first.status === 'number'
+        ? ok(`Status es número: ${first.status}`)
+        : ko(`Status inesperado: ${first.status} (tipo ${typeof first.status})`);
+
+      // Verify paymentsPending field exists
+      'paymentsPending' in first
+        ? ok(`paymentsPending existe: ${first.paymentsPending}`)
+        : wr(`paymentsPending no encontrado en primer documento`);
+    }
+
+    // Count by status
+    const drafts  = docs.filter(d => d.status === 0).length;
+    const approved = docs.filter(d => d.status === 1).length;
+    const partial  = docs.filter(d => d.status === 2).length;
+    ok(`Desglose: ${drafts} borradores, ${approved} aprobadas, ${partial} parcialmente cobradas`);
+
+    // Unpaid logic: status !== 0 AND paymentsPending > 0.05
+    const realUnpaid = docs.filter(d => d.status !== 0 && Number(d.paymentsPending ?? 0) > 0.05).length;
+    ok(`Facturas con saldo pendiente real (>0.05€): ${realUnpaid}`);
+  } else {
+    ko(`GET /documents/invoice → ${invoices_r.status}`);
+  }
 
   // Purchase invoices
-  const purchases_r = await holdedGet('/documents/purchase?limit=5');
-  purchases_r.ok
-    ? ok(`GET /documents/purchase → ${purchases_r.status}`)
-    : ko(`GET /documents/purchase → ${purchases_r.status}`);
+  const purchases_r = await holdedGet('/documents/purchase?page=1&limit=100');
+  if (purchases_r.ok) {
+    const docs = Array.isArray(purchases_r.body) ? purchases_r.body : [];
+    ok(`GET /documents/purchase → ${purchases_r.status} (${docs.length} docs)`);
+  } else {
+    ko(`GET /documents/purchase → ${purchases_r.status}`);
+  }
 
   // Treasury
   const treasury_r = await holdedGet('/treasury');
   treasury_r.ok
-    ? ok(`GET /treasury → ${treasury_r.status} (${Array.isArray(treasury_r.body) ? treasury_r.body.length : '?'} accounts)`)
+    ? ok(`GET /treasury → ${treasury_r.status} (${Array.isArray(treasury_r.body) ? treasury_r.body.length : '?'} cuentas)`)
     : ko(`GET /treasury → ${treasury_r.status}`);
 
-  // Taxes (new permission)
+  // Taxes
   const taxes_r = await holdedGet('/taxes');
   taxes_r.ok
     ? ok(`GET /taxes → ${taxes_r.status}`)
-    : wr(`GET /taxes → ${taxes_r.status} (may require accountingReports permission)`);
+    : wr(`GET /taxes → ${taxes_r.status}`);
 
 } catch (err) {
   ko(`Holded API network error: ${err.message}`);

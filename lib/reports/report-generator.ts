@@ -102,16 +102,61 @@ function safeFetch(url: string, hdrs: HeadersInit): Promise<unknown[]> {
     .catch(() => []);
 }
 
+/** Fetches all pages of a Holded document list (page=1,2,… until empty). */
+async function fetchAllHoldedDocs(baseUrl: string, docType: string, hdrs: HeadersInit): Promise<RawDoc[]> {
+  const all: RawDoc[] = [];
+  for (let page = 1; page <= 20; page++) {   // cap at 20 pages (2000 docs) to prevent infinite loop
+    const docs = await safeFetch(`${baseUrl}/documents/${docType}?page=${page}&limit=100`, hdrs) as RawDoc[];
+    if (!docs.length) break;
+    all.push(...docs);
+    if (docs.length < 100) break;             // last page — no need to fetch next
+  }
+  return all;
+}
+
 type RawDoc = Record<string, unknown>;
+
+// ── Holded field normalizers ──────────────────────────────────────────────────
+
+/** Holded dates are Unix timestamps in seconds, not ISO strings. */
+function holdedDate(val: unknown): string {
+  const num = Number(val);
+  if (!num || isNaN(num)) return String(val ?? '');
+  return new Date(num * 1000).toLocaleDateString('es-ES', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+}
+
+/**
+ * Holded invoice/purchase status:
+ *   0 = draft (borrador)
+ *   1 = approved — check paymentsPending to know if paid
+ *   2 = partially paid (usually a floating-point rounding residual)
+ * The authoritative "is paid?" check is paymentsPending <= threshold.
+ */
+function holdedStatus(d: RawDoc): string {
+  const statusCode  = Number(d.status ?? 0);
+  const pending     = Number(d.paymentsPending ?? 0);
+  const total       = Number(d.total ?? 0);
+  if (statusCode === 0) return 'borrador';
+  if (pending <= 0.05) return 'cobrada';          // fully paid (allow 0.05€ float tolerance)
+  if (pending < total) return 'parcialmente cobrada';
+  return 'pendiente';
+}
+
+/** An invoice is "unpaid" when it's not a draft AND has meaningful pending amount. */
+function isUnpaid(d: RawDoc): boolean {
+  return Number(d.status ?? 0) !== 0 && Number(d.paymentsPending ?? 0) > 0.05;
+}
 
 function toInvoiceSummary(docs: RawDoc[]): InvoiceSummaryItem[] {
   return docs.map((d) => ({
     id     : String(d.id ?? ''),
     number : String(d.docNumber ?? d.number ?? ''),
-    date   : String(d.date ?? ''),
+    date   : holdedDate(d.date),
     contact: String(d.contactName ?? d.contact ?? ''),
     total  : Number(d.total ?? 0),
-    status : String(d.status ?? ''),
+    status : holdedStatus(d),
   }));
 }
 
@@ -213,12 +258,12 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   const hdrs   = buildHoldedHeaders(auth.apiKey);
   const base   = auth.baseUrl;
 
-  // ── Fetch Holded data in parallel ─────────────────────────────────────────
+  // ── Fetch Holded data in parallel (full pagination) ──────────────────────
   const [rawSales, rawPurchases, rawBank, rawContacts] = await Promise.all([
-    safeFetch(`${base}/documents/invoice?limit=50`, hdrs)   as Promise<RawDoc[]>,
-    safeFetch(`${base}/documents/purchase?limit=50`, hdrs)  as Promise<RawDoc[]>,
-    safeFetch(`${base}/treasury`, hdrs)                      as Promise<RawDoc[]>,
-    safeFetch(`${base}/contacts?limit=30`, hdrs)             as Promise<RawDoc[]>,
+    fetchAllHoldedDocs(base, 'invoice', hdrs),
+    fetchAllHoldedDocs(base, 'purchase', hdrs),
+    safeFetch(`${base}/treasury`, hdrs)        as Promise<RawDoc[]>,
+    safeFetch(`${base}/contacts?limit=100`, hdrs) as Promise<RawDoc[]>,
   ]);
 
   // ── Fetch internal data ────────────────────────────────────────────────────
@@ -237,14 +282,19 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
     .maybeSingle();
 
   // ── Build report data ──────────────────────────────────────────────────────
+  // Exclude drafts (status=0) from financial totals — they're not real invoices yet
+  const confirmedSales     = rawSales.filter(d => Number(d.status ?? 0) !== 0);
+  const confirmedPurchases = rawPurchases.filter(d => Number(d.status ?? 0) !== 0);
+
+  // Show all invoices in the table (including drafts, clearly labelled)
   const salesInvoices    = toInvoiceSummary(rawSales).slice(0, 20);
   const purchaseInvoices = toInvoiceSummary(rawPurchases).slice(0, 20);
 
-  const totalSales     = rawSales.reduce((s, d) => s + Number(d.total ?? 0), 0);
-  const totalPurchases = rawPurchases.reduce((s, d) => s + Number(d.total ?? 0), 0);
+  const totalSales     = confirmedSales.reduce((s, d) => s + Number(d.total ?? 0), 0);
+  const totalPurchases = confirmedPurchases.reduce((s, d) => s + Number(d.total ?? 0), 0);
   const totalBank      = rawBank.reduce((s, a) => s + Number(a.balance ?? 0), 0);
-  const unpaid         = rawSales.filter(d => String(d.status) !== 'paid' && String(d.status) !== 'pagada').length;
-  const pendingPurch   = rawPurchases.filter(d => String(d.status) !== 'paid' && String(d.status) !== 'pagada').length;
+  const unpaid         = confirmedSales.filter(isUnpaid).length;
+  const pendingPurch   = confirmedPurchases.filter(isUnpaid).length;
 
   const kpis: ReportKPIs = {
     totalSales,

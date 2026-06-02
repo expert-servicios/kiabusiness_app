@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
 
+const LEGAL_FORMS = ['autonomo', 'sl', 'sa', 'slne', 'cb', 'cooperativa', 'fundacion', 'otra'] as const;
+
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -14,11 +16,12 @@ async function requireAdmin(request: NextRequest) {
 const patchSchema = z.object({
   razon_social:   z.string().min(1).max(200).optional(),
   cif_nif:        z.string().max(20).optional(),
-  forma_juridica: z.string().max(50).optional(),
+  forma_juridica: z.enum(LEGAL_FORMS).optional(),
   email:          z.string().email().optional().or(z.literal('')),
   phone:          z.string().max(30).optional(),
   ciudad:         z.string().max(100).optional(),
   direccion:      z.string().max(300).optional(),
+  stripe_customer_id: z.string().max(120).optional().nullable(),
   status:         z.enum(['active', 'inactive']).optional(),
 });
 
@@ -36,18 +39,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     for (const [k, v] of Object.entries(parsed.data)) {
-      if (v !== undefined) update[k] = v;
+      if (v === undefined) continue;
+      update[k === 'phone' ? 'telefono' : k] = v === '' ? null : v;
     }
 
     const { data, error } = await admin
       .from('companies')
       .update(update)
       .eq('id', id)
-      .select('id, razon_social, cif_nif, forma_juridica, ciudad, email, phone, status')
+      .select('id, razon_social, cif_nif, forma_juridica, ciudad, email, telefono, stripe_customer_id, status')
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, company: data });
+    return NextResponse.json({ ok: true, company: data ? { ...data, phone: data.telefono } : data });
   } catch (err) {
     console.error('[admin/companies PATCH]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
@@ -61,13 +65,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params;
 
-    // Remove profile_companies links first
-    await admin.from('profile_companies').delete().eq('company_id', id);
-
-    // Clear active_company_id on any profiles pointing to this company
+    // Keep historical links/mappings intact. Synchronized companies are soft-deleted.
     await admin.from('profiles').update({ active_company_id: null }).eq('active_company_id', id);
 
-    const { error } = await admin.from('companies').delete().eq('id', id);
+    const { error } = await admin
+      .from('companies')
+      .update({ status: 'inactive', updated_at: new Date().toISOString() })
+      .eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({ ok: true });

@@ -18,21 +18,39 @@ interface Profile {
   whatsapp_number: string | null;
   status: string;
   created_at: string;
+  stripe_customer_id: string | null;
+  profile_completed: boolean;
+  billing_ready: boolean;
+  habitual_address_ready: boolean;
+  active_company_id: string | null;
+  tax_id: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  province: string | null;
 }
 
 interface Case { id: string; service: string; category: string; state: string; opened_at: string; closed_at: string | null; admin_note: string | null }
-interface Sub  { id: string; plan: string; status: string; current_period_end: string | null; stripe_subscription_id: string | null }
+interface Sub  { id: string; plan: string; status: string; current_period_end: string | null; stripe_subscription_id: string | null; stripe_customer_id: string | null; stripe_price_id: string | null; company_id: string | null }
 interface Quote { id: string; service: string; status: string; amount_eur: number; created_at: string }
+interface Order { id: string; amount_eur: number; currency: string; status: string; stripe_payment_id: string | null; holded_invoice_id: string | null; holded_sync_error: string | null; source: string | null; service_slugs: string | null; metadata: Record<string, unknown> | null; created_at: string; company_id: string | null }
 interface WaMsg { id: string; direction: 'inbound' | 'outbound'; body: string; created_at: string; needs_review: boolean; ai_responded: boolean; media_type: string | null }
-interface Company { id: string; name: string; nif: string | null; address: string | null }
+interface Company { id: string; role: string; name: string; razon_social: string | null; nif: string | null; address: string | null; phone: string | null; email: string | null; status: string | null; stripe_customer_id: string | null }
+interface Integration { id: string; client_id: string | null; company_id: string | null; provider: string; mode: string; api_version: string | null; api_key_last4: string | null; permissions_detected: Record<string, boolean>; status: string; sync_mode: string; last_sync_at: string | null; last_success_at: string | null; last_error: string | null; created_at: string }
+interface Mapping { id: string; provider: string; local_entity: string; local_id: string; external_entity: string; external_id: string; company_id: string | null; updated_at: string }
+interface SyncEvent { id: string; provider: string; direction: string; operation: string; local_entity: string | null; local_id: string | null; external_entity: string | null; external_id: string | null; status: string; error: string | null; created_at: string; company_id: string | null; client_id: string | null }
 
 interface ClientData {
   profile:   Profile;
   cases:     Case[];
   subs:      Sub[];
   quotes:    Quote[];
+  orders:    Order[];
   messages:  WaMsg[];
   companies: Company[];
+  integrations: Integration[];
+  mappings: Mapping[];
+  syncEvents: SyncEvent[];
 }
 
 const STATE_LABEL: Record<string, string> = {
@@ -92,6 +110,20 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.E
   );
 }
 
+function Pill({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ok ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+      {label}
+    </span>
+  );
+}
+
+function ExternalId({ value }: { value: string | null }) {
+  return value
+    ? <span className="break-all font-mono text-[11px] text-[#29384a]">{value}</span>
+    : <span className="text-xs text-[#9ca3af]">—</span>;
+}
+
 export default function ClientePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -99,9 +131,27 @@ export default function ClientePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: '', phone: '', whatsapp_number: '', status: 'active' });
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    whatsapp_number: '',
+    status: 'active',
+    stripe_customer_id: '',
+    tax_id: '',
+    address: '',
+    city: '',
+    postal_code: '',
+    province: '',
+    profile_completed: false,
+    billing_ready: false,
+    habitual_address_ready: false,
+    active_company_id: '',
+  });
   const [saving, setSaving] = useState(false);
   const [showWa, setShowWa] = useState(false);
+  const [integrationBusy, setIntegrationBusy] = useState<string | null>(null);
+  const [integrationError, setIntegrationError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,9 +162,20 @@ export default function ClientePage() {
       setData(json);
       setEditForm({
         full_name:       json.profile.full_name ?? '',
+        email:           json.profile.email ?? '',
         phone:           json.profile.phone ?? '',
         whatsapp_number: json.profile.whatsapp_number ?? '',
         status:          json.profile.status ?? 'active',
+        stripe_customer_id: json.profile.stripe_customer_id ?? '',
+        tax_id:          json.profile.tax_id ?? '',
+        address:         json.profile.address ?? '',
+        city:            json.profile.city ?? '',
+        postal_code:     json.profile.postal_code ?? '',
+        province:        json.profile.province ?? '',
+        profile_completed: Boolean(json.profile.profile_completed),
+        billing_ready: Boolean(json.profile.billing_ready),
+        habitual_address_ready: Boolean(json.profile.habitual_address_ready),
+        active_company_id: json.profile.active_company_id ?? '',
       });
     } catch {
       setError('Error de conexión');
@@ -123,14 +184,26 @@ export default function ClientePage() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const handleSave = async () => {
     setSaving(true);
     const res = await fetch(`/api/admin/clientes/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm),
+      body: JSON.stringify({
+        ...editForm,
+        active_company_id: editForm.active_company_id || null,
+        stripe_customer_id: editForm.stripe_customer_id || null,
+        tax_id: editForm.tax_id || null,
+        address: editForm.address || null,
+        city: editForm.city || null,
+        postal_code: editForm.postal_code || null,
+        province: editForm.province || null,
+      }),
     });
     if (res.ok) {
       const json = await res.json();
@@ -138,6 +211,32 @@ export default function ClientePage() {
       setEditing(false);
     }
     setSaving(false);
+  };
+
+  const updateHoldedIntegration = async (
+    integrationId: string,
+    payload?: { status?: string; sync_mode?: string },
+    method: 'PATCH' | 'DELETE' = 'PATCH',
+  ) => {
+    setIntegrationBusy(integrationId);
+    setIntegrationError(null);
+    try {
+      const res = await fetch(`/api/admin/clientes/${id}/integrations/${integrationId}`, {
+        method,
+        headers: method === 'PATCH' ? { 'Content-Type': 'application/json' } : undefined,
+        body: method === 'PATCH' ? JSON.stringify(payload ?? {}) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setIntegrationError(json.error ?? 'No se pudo actualizar la integracion');
+        return;
+      }
+      await load();
+    } catch {
+      setIntegrationError('Error de conexion al actualizar Holded');
+    } finally {
+      setIntegrationBusy(null);
+    }
   };
 
   if (loading) return (
@@ -152,9 +251,10 @@ export default function ClientePage() {
     </div>
   );
 
-  const { profile, cases, subs, quotes, messages, companies } = data;
+  const { profile, cases, subs, quotes, orders, messages, companies, integrations, mappings, syncEvents } = data;
   const activeCases  = cases.filter((c) => c.state !== 'cerrado' && c.state !== 'finalizado');
   const activeSubs   = subs.filter((s) => s.status === 'active' || s.status === 'trialing');
+  const activeHolded = integrations.filter((integration) => integration.provider === 'holded' && integration.status === 'active');
   const initials     = (profile.full_name ?? profile.email).split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   const displayPhone = profile.whatsapp_number ?? profile.phone ?? null;
 
@@ -187,6 +287,10 @@ export default function ClientePage() {
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                   {profile.status === 'active' ? 'Activo' : 'Inactivo'}
                 </span>
+                <Pill label="Perfil" ok={profile.profile_completed} />
+                <Pill label="Facturación" ok={profile.billing_ready} />
+                <Pill label="Stripe" ok={Boolean(profile.stripe_customer_id || activeSubs.some((s) => s.stripe_customer_id))} />
+                <Pill label="Holded" ok={activeHolded.length > 0} />
               </div>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#29384a]">
                 <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{profile.email}</span>
@@ -252,6 +356,93 @@ export default function ClientePage() {
           ))}
         </div>
 
+        <Section title="Stripe / Holded" icon={CreditCard}>
+          <div className="grid gap-4 px-5 py-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-[#f0e8d8] bg-[#faf8f2] p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#29384a]/60">Stripe</p>
+                <Pill label={profile.stripe_customer_id ? 'Customer vinculado' : 'Sin customer'} ok={Boolean(profile.stripe_customer_id)} />
+              </div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <p className="text-xs font-semibold text-[#29384a]/60">Customer ID perfil</p>
+                  <ExternalId value={profile.stripe_customer_id} />
+                </div>
+                {subs.slice(0, 3).map((sub) => (
+                  <div key={sub.id} className="rounded-lg bg-white px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-[#07111d]">{sub.plan}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SUB_COLOR[sub.status] ?? 'bg-gray-100 text-gray-600'}`}>{sub.status}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-[#29384a]">Renueva: {fmtDate(sub.current_period_end)}</p>
+                    <p className="mt-1 break-all font-mono text-[10px] text-[#29384a]/70">{sub.stripe_subscription_id ?? 'Sin subscription ID'}</p>
+                  </div>
+                ))}
+                {subs.length === 0 && <p className="text-xs text-[#9ca3af]">Sin suscripciones Stripe registradas.</p>}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#f0e8d8] bg-[#faf8f2] p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#29384a]/60">Holded</p>
+                <Pill label={activeHolded.length ? 'Conectado' : 'No conectado'} ok={activeHolded.length > 0} />
+              </div>
+              {integrations.length === 0 ? (
+                <p className="text-xs text-[#9ca3af]">Sin integración Holded vinculada al cliente o sus empresas.</p>
+              ) : (
+                <div className="space-y-2">
+                  {integrationError && (
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{integrationError}</p>
+                  )}
+                  {integrations.map((integration) => (
+                    <div key={integration.id} className="rounded-lg bg-white px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-[#07111d]">{integration.mode === 'expert_account' ? 'Cuenta EXPERT' : 'Cuenta cliente'}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${integration.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>{integration.status}</span>
+                      </div>
+                      {integration.company_id && (
+                        <p className="mt-1 text-[#29384a]">
+                          Empresa: {companies.find((company) => company.id === integration.company_id)?.name ?? integration.company_id}
+                        </p>
+                      )}
+                      <p className="mt-1 text-[#29384a]">Modo sync: {integration.sync_mode}</p>
+                      <p className="mt-1 text-[#29384a]">API: {integration.api_key_last4 ? `••••${integration.api_key_last4}` : 'sin clave visible'}</p>
+                      {integration.last_success_at && <p className="mt-1 text-[#29384a]">Último OK: {fmtDate(integration.last_success_at)}</p>}
+                      {integration.last_error && <p className="mt-1 text-red-600">Error: {integration.last_error}</p>}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={integrationBusy === integration.id}
+                          onClick={() => integration.status === 'active'
+                            ? updateHoldedIntegration(integration.id, undefined, 'DELETE')
+                            : updateHoldedIntegration(integration.id, { status: 'active' })}
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
+                            integration.status === 'active'
+                              ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                              : 'bg-green-50 text-green-700 hover:bg-green-100'
+                          }`}
+                        >
+                          {integrationBusy === integration.id ? 'Guardando...' : integration.status === 'active' ? 'Desactivar' : 'Activar'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={integrationBusy === integration.id}
+                          onClick={() => updateHoldedIntegration(integration.id, {
+                            sync_mode: integration.sync_mode === 'read_only' ? 'read_write' : 'read_only',
+                          })}
+                          className="rounded-lg bg-[#f0e8d8] px-2.5 py-1 text-[11px] font-bold text-[#29384a] transition hover:bg-[#e7d9bd] disabled:opacity-50"
+                        >
+                          {integration.sync_mode === 'read_only' ? 'Permitir escritura' : 'Solo lectura'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Section>
+
         <div className="grid gap-5 lg:grid-cols-2">
 
           {/* ── EXPEDIENTES ── */}
@@ -299,6 +490,40 @@ export default function ClientePage() {
                         </span>
                       </div>
                     </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="Pedidos / pagos" icon={CreditCard}>
+            {orders.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-[#29384a]/60">Sin pedidos</p>
+            ) : (
+              <ul className="divide-y divide-[#f0e8d8]">
+                {orders.slice(0, 6).map((order) => (
+                  <li key={order.id} className="px-5 py-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#07111d]">
+                          {order.service_slugs ?? String(order.metadata?.service_title ?? order.source ?? 'Pedido')}
+                        </p>
+                        <p className="text-xs text-[#29384a]">{fmtDate(order.created_at)}</p>
+                        <p className="mt-1 break-all font-mono text-[10px] text-[#29384a]/70">
+                          Stripe: {order.stripe_payment_id ?? '—'}
+                        </p>
+                        <p className="break-all font-mono text-[10px] text-[#29384a]/70">
+                          Holded: {order.holded_invoice_id ?? '—'}
+                        </p>
+                        {order.holded_sync_error && <p className="mt-1 text-xs text-red-600">{order.holded_sync_error}</p>}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-[#c88b25]">{Number(order.amount_eur).toLocaleString('es-ES')} {order.currency}</p>
+                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${order.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -369,16 +594,71 @@ export default function ClientePage() {
               {companies.map((co) => (
                 <li key={co.id} className="flex items-center gap-4 px-5 py-4">
                   <Building2 className="h-4 w-4 shrink-0 text-[#c88b25]" />
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[#07111d]">{co.name}</p>
                     {co.nif && <p className="text-xs text-[#29384a]">NIF: {co.nif}</p>}
                     {co.address && <p className="text-xs text-[#29384a]">{co.address}</p>}
+                    {co.email && <p className="text-xs text-[#29384a]">{co.email}</p>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${co.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      {co.status ?? 'active'}
+                    </span>
+                    <p className="mt-1 font-mono text-[10px] text-[#29384a]/70">{co.stripe_customer_id ?? 'Sin Stripe company'}</p>
                   </div>
                 </li>
               ))}
             </ul>
           </Section>
         )}
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Section title="Mappings externos" icon={ExternalLink}>
+            {mappings.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-[#29384a]/60">Sin mappings externos</p>
+            ) : (
+              <ul className="divide-y divide-[#f0e8d8]">
+                {mappings.slice(0, 8).map((mapping) => (
+                  <li key={mapping.id} className="px-5 py-3 text-xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#07111d]">{mapping.provider} · {mapping.local_entity} → {mapping.external_entity}</p>
+                        <p className="mt-1 break-all font-mono text-[#29384a]/70">{mapping.external_id}</p>
+                      </div>
+                      <span className="shrink-0 text-[#29384a]/60">{fmtDate(mapping.updated_at)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          <Section title="Eventos sync" icon={RefreshCw}>
+            {syncEvents.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-[#29384a]/60">Sin eventos de sincronización</p>
+            ) : (
+              <ul className="divide-y divide-[#f0e8d8]">
+                {syncEvents.slice(0, 8).map((event) => (
+                  <li key={event.id} className="px-5 py-3 text-xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#07111d]">{event.provider} · {event.operation}</p>
+                        <p className="mt-1 text-[#29384a]">{event.direction} · {event.local_entity ?? 'local'} → {event.external_entity ?? 'external'}</p>
+                        {event.error && <p className="mt-1 text-red-600">{event.error}</p>}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.status === 'success' ? 'bg-green-100 text-green-800' : event.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {event.status}
+                        </span>
+                        <p className="mt-1 text-[#29384a]/60">{fmtDate(event.created_at)}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+        </div>
 
         {/* ── INFO CUENTA ── */}
         <Section title="Cuenta" icon={User}>
@@ -417,8 +697,15 @@ export default function ClientePage() {
             <div className="space-y-3">
               {([
                 { key: 'full_name',       label: 'Nombre completo', type: 'text' },
+                { key: 'email',           label: 'Email',           type: 'email' },
                 { key: 'phone',           label: 'Teléfono',        type: 'tel' },
                 { key: 'whatsapp_number', label: 'WhatsApp',        type: 'tel' },
+                { key: 'tax_id',          label: 'DNI / NIE / CIF', type: 'text' },
+                { key: 'address',         label: 'Dirección fiscal', type: 'text' },
+                { key: 'city',            label: 'Ciudad',          type: 'text' },
+                { key: 'postal_code',     label: 'Código postal',   type: 'text' },
+                { key: 'province',        label: 'Provincia',       type: 'text' },
+                { key: 'stripe_customer_id', label: 'Stripe customer ID', type: 'text' },
               ] as const).map(({ key, label, type }) => (
                 <div key={key}>
                   <label className="mb-1 block text-xs font-semibold text-[#07111d]">{label}</label>
@@ -431,6 +718,19 @@ export default function ClientePage() {
                 </div>
               ))}
               <div>
+                <label className="mb-1 block text-xs font-semibold text-[#07111d]">Empresa activa</label>
+                <select
+                  value={editForm.active_company_id}
+                  onChange={(e) => setEditForm((f) => ({ ...f, active_company_id: e.target.value }))}
+                  className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
+                >
+                  <option value="">Sin empresa activa</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="mb-1 block text-xs font-semibold text-[#07111d]">Estado</label>
                 <select
                   value={editForm.status}
@@ -440,6 +740,22 @@ export default function ClientePage() {
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
                 </select>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {([
+                  ['profile_completed', 'Perfil completo'],
+                  ['billing_ready', 'Facturación lista'],
+                  ['habitual_address_ready', 'Domicilio habitual'],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a]">
+                    <input
+                      type="checkbox"
+                      checked={editForm[key]}
+                      onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.checked }))}
+                    />
+                    {label}
+                  </label>
+                ))}
               </div>
             </div>
             <button

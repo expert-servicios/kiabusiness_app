@@ -192,12 +192,21 @@ function clearLowIntentForBusiness(session: KiaSession): Record<string, string> 
   };
 }
 
-function lowIntentBoundaryReply(lang: KiaLang, alreadyKnown: boolean): KiaReply {
-  const body = alreadyKnown
-    ? 'Sigo por aquí si necesitas algo de EXPERT: fiscal, legal, laboral, empresa, extranjería o documentos. Para conversación de entretenimiento no voy a alargar el hilo. EXPERT 💼'
-    : 'Te leo 😊 Para bromas, pruebas o conversación de entretenimiento no quiero hacerte perder tiempo ni quedarme en bucle. Si tienes una duda fiscal, legal, laboral, de empresa o documentos, escríbemela y te ayudo. EXPERT 💼';
+function lowIntentBoundaryReply(lang: KiaLang, alreadyKnown: boolean, previousCount = 0): KiaReply | null {
+  if (alreadyKnown && previousCount >= 2) return null;
 
-  return { type: 'text', body: lang === 'ru' ? body : body };
+  const esVariants = [
+    'Te leo 😊 Para bromas, pruebas o conversacion de entretenimiento no quiero hacerte perder tiempo ni quedarme en bucle. Si tienes una duda fiscal, legal, laboral, de empresa o documentos, escribemela y te ayudo. Kia · EXPERT 💼',
+    'Dejo este hilo en pausa para no repetirme 😊 Cuando tengas una consulta real de EXPERT, por ejemplo fiscal, laboral, empresa, extranjeria, documentos u Holded, escribemela y la reviso. Kia · EXPERT 💼',
+  ];
+  const ruVariants = [
+    '\u042f \u0442\u0435\u0431\u044f \u0447\u0438\u0442\u0430\u044e 😊 \u0427\u0442\u043e\u0431\u044b \u043d\u0435 \u0437\u0430\u0446\u0438\u043a\u043b\u0438\u0432\u0430\u0442\u044c \u0434\u0438\u0430\u043b\u043e\u0433, \u0434\u043b\u044f \u0448\u0443\u0442\u043e\u043a \u0438 \u0442\u0435\u0441\u0442\u043e\u0432 \u044f \u043d\u0435 \u0431\u0443\u0434\u0443 \u043f\u0440\u043e\u0434\u043b\u0435\u0432\u0430\u0442\u044c \u0432\u0435\u0442\u043a\u0443. \u0415\u0441\u043b\u0438 \u0435\u0441\u0442\u044c \u0432\u043e\u043f\u0440\u043e\u0441 \u043f\u043e EXPERT, \u043d\u0430\u043f\u0438\u0448\u0438 - \u043f\u043e\u043c\u043e\u0433\u0443. Kia · EXPERT 💼',
+    '\u041f\u043e\u0441\u0442\u0430\u0432\u043b\u044e \u044d\u0442\u043e\u0442 \u0447\u0430\u0442 \u043d\u0430 \u043f\u0430\u0443\u0437\u0443, \u0447\u0442\u043e\u0431\u044b \u043d\u0435 \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u0442\u044c\u0441\u044f 😊 \u041a\u043e\u0433\u0434\u0430 \u0431\u0443\u0434\u0435\u0442 \u0432\u043e\u043f\u0440\u043e\u0441 \u043f\u043e \u043d\u0430\u043b\u043e\u0433\u0430\u043c, \u0431\u0438\u0437\u043d\u0435\u0441\u0443, \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043c \u0438\u043b\u0438 Holded, \u043d\u0430\u043f\u0438\u0448\u0438 \u0435\u0433\u043e \u043f\u0440\u044f\u043c\u043e. Kia · EXPERT 💼',
+  ];
+  const variants = lang === 'ru' ? ruVariants : esVariants;
+  const body = variants[alreadyKnown ? 1 : 0] ?? variants[0]!;
+
+  return { type: 'text', body };
 }
 
 // ── Service definitions ───────────────────────────────────────────────────────
@@ -1626,8 +1635,10 @@ export function processKiaStep(
   if (lowIntentReason || knownLowIntent) {
     const l = langChanged ? detectedLang : lang;
     const reason = lowIntentReason ?? session.data?.kia_low_intent_reason ?? 'low_intent';
+    const previousCount = Number.parseInt(session.data?.kia_low_intent_count ?? '0', 10);
+    const boundaryReply = lowIntentBoundaryReply(l, knownLowIntent, Number.isFinite(previousCount) ? previousCount : 0);
     return {
-      replies    : [lowIntentBoundaryReply(l, knownLowIntent)],
+      replies    : boundaryReply ? [boundaryReply] : [],
       updates    : {
         flow: 'welcome',
         step: 'low_intent',

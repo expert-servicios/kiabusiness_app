@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Fetch all client profiles
     const { data: profiles, error: profErr } = await admin
       .from('profiles')
-      .select('id,full_name,phone,whatsapp_number,role,status,created_at')
+      .select('id,full_name,email,phone,whatsapp_number,role,status,created_at,stripe_customer_id')
       .eq('role', 'client')
       .order('created_at', { ascending: false });
 
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
       (authUsers.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
     );
 
-    // Parallel: cases count, subscriptions, last WA message
-    const [casesRes, subsRes, waRes] = await Promise.all([
+    // Parallel: cases count, subscriptions, last WA message, company links and integrations
+    const [casesRes, subsRes, waRes, companyLinksRes, directIntegrationsRes] = await Promise.all([
       clientIds.length
         ? admin
             .from('cases')
@@ -52,11 +52,37 @@ export async function GET(request: NextRequest) {
             .in('client_id', clientIds)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] }),
+      clientIds.length
+        ? admin
+            .from('profile_companies')
+            .select('profile_id, company_id')
+            .in('profile_id', clientIds)
+        : Promise.resolve({ data: [] }),
+      clientIds.length
+        ? admin
+            .from('client_integrations')
+            .select('client_id, company_id, provider, status')
+            .eq('provider', 'holded')
+            .eq('status', 'active')
+            .in('client_id', clientIds)
+        : Promise.resolve({ data: [] }),
     ]);
 
     const casesData   = casesRes.data ?? [];
     const subsData    = subsRes.data  ?? [];
     const waData      = waRes.data    ?? [];
+    const companyLinks = companyLinksRes.data ?? [];
+    const directIntegrations = directIntegrationsRes.data ?? [];
+    const companyIds = [...new Set(companyLinks.map((row: { company_id: string }) => row.company_id).filter(Boolean))];
+    const companyIntegrationsRes = companyIds.length
+      ? await admin
+          .from('client_integrations')
+          .select('company_id, provider, status')
+          .eq('provider', 'holded')
+          .eq('status', 'active')
+          .in('company_id', companyIds)
+      : { data: [] };
+    const companyIntegrations = companyIntegrationsRes.data ?? [];
 
     // Build lookup maps
     const casesByClient  = new Map<string, { total: number; active: number }>();
@@ -77,11 +103,27 @@ export async function GET(request: NextRequest) {
       const id = w.client_id as string;
       if (!lastWaByClient.has(id)) lastWaByClient.set(id, w.created_at as string);
     }
+    const companyIdsByClient = new Map<string, string[]>();
+    for (const row of companyLinks) {
+      const profileId = row.profile_id as string;
+      const companyId = row.company_id as string;
+      companyIdsByClient.set(profileId, [...(companyIdsByClient.get(profileId) ?? []), companyId]);
+    }
+    const directHoldedClientIds = new Set(
+      directIntegrations
+        .map((row: { client_id: string | null }) => row.client_id)
+        .filter(Boolean) as string[],
+    );
+    const holdedCompanyIds = new Set(
+      companyIntegrations
+        .map((row: { company_id: string | null }) => row.company_id)
+        .filter(Boolean) as string[],
+    );
 
     const clients = (profiles ?? []).map((p) => ({
       id:           p.id,
       full_name:    p.full_name,
-      email:        emailById.get(p.id) ?? '',
+      email:        emailById.get(p.id) ?? p.email ?? '',
       phone:        p.phone,
       whatsapp_number: p.whatsapp_number,
       status:       p.status ?? 'active',
@@ -90,6 +132,9 @@ export async function GET(request: NextRequest) {
       activeCases:  casesByClient.get(p.id)?.active ?? 0,
       plan:         subByClient.get(p.id) ?? null,
       lastWhatsApp: lastWaByClient.get(p.id) ?? null,
+      stripeCustomerId: p.stripe_customer_id ?? null,
+      holdedConnected: directHoldedClientIds.has(p.id)
+        || (companyIdsByClient.get(p.id) ?? []).some((companyId) => holdedCompanyIds.has(companyId)),
     }));
 
     return NextResponse.json({ clients });

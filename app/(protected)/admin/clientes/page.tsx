@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  Building2, Calendar, CreditCard, ExternalLink, FolderOpen, Mail,
-  MessageSquare, Phone, Plus, RefreshCw, Search, Trash2, Users,
+  BadgeCheck, Building2, Calendar, CreditCard, ExternalLink, FolderOpen, Mail,
+  Edit2, MessageSquare, Phone, Plus, RefreshCw, Search, Trash2, Users,
   X, ChevronDown, ChevronUp, ChevronsUpDown, UserCircle2,
 } from 'lucide-react';
 import { WaTemplateModal } from '@/components/admin/WaTemplateModal';
@@ -23,6 +23,8 @@ interface Persona {
   activeCases: number;
   plan: string | null;
   lastWhatsApp: string | null;
+  stripeCustomerId: string | null;
+  holdedConnected: boolean;
 }
 
 interface Empresa {
@@ -30,9 +32,11 @@ interface Empresa {
   razon_social: string | null;
   cif_nif: string | null;
   forma_juridica: string | null;
+  direccion: string | null;
   ciudad: string | null;
   email: string | null;
   phone: string | null;
+  stripe_customer_id: string | null;
   status: string;
   created_at: string;
   memberCount: number;
@@ -63,7 +67,30 @@ const PLAN_CLS: Record<string, string> = {
   'Plan Delegado': 'bg-purple-100 text-purple-700',
   'Plan Premium': 'bg-purple-100 text-purple-700',
 };
-const FORMAS_JURIDICAS = ['SL', 'SA', 'SLU', 'SAU', 'SLL', 'Autónomo', 'Comunidad de Bienes', 'Asociación', 'Fundación', 'Otra'];
+const FORMAS_JURIDICAS = [
+  { value: 'autonomo', label: 'Autónomo' },
+  { value: 'sl', label: 'SL' },
+  { value: 'sa', label: 'SA' },
+  { value: 'slne', label: 'SLNE' },
+  { value: 'cb', label: 'Comunidad de Bienes' },
+  { value: 'cooperativa', label: 'Cooperativa' },
+  { value: 'fundacion', label: 'Fundación' },
+  { value: 'otra', label: 'Otra' },
+];
+
+function legalFormLabel(value: string | null) {
+  return FORMAS_JURIDICAS.find((form) => form.value === value)?.label ?? value ?? '—';
+}
+
+function planKey(value: string | null) {
+  const label = value ? (PLAN_LABEL[value] ?? value).toLowerCase() : '';
+  if (!label) return 'none';
+  if (label.includes('supervisi')) return 'supervision';
+  if (label.includes('avanzado')) return 'avanzado';
+  if (label.includes('colaborativo')) return 'colaborativo';
+  if (label.includes('personalizado')) return 'personalizado';
+  return value ?? 'none';
+}
 
 function fmt(d: string | null) {
   if (!d) return '—';
@@ -197,7 +224,7 @@ function NuevaPersonaModal({ onClose, onCreated }: { onClose: () => void; onCrea
 
 function NuevaEmpresaModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState({
-    razon_social: '', cif_nif: '', forma_juridica: 'SL',
+    razon_social: '', cif_nif: '', forma_juridica: 'sl',
     email: '', phone: '', ciudad: '', direccion: '',
   });
   const [loading, setLoading] = useState(false);
@@ -286,7 +313,7 @@ function NuevaEmpresaModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 onChange={(e) => set('forma_juridica', e.target.value)}
                 className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]"
               >
-                {FORMAS_JURIDICAS.map((f) => <option key={f}>{f}</option>)}
+                {FORMAS_JURIDICAS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </label>
           </div>
@@ -327,6 +354,141 @@ function NuevaEmpresaModal({ onClose, onCreated }: { onClose: () => void; onCrea
   );
 }
 
+function EditarEmpresaModal({ company, onClose, onSaved }: {
+  company: Empresa;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    razon_social: company.razon_social ?? '',
+    cif_nif: company.cif_nif ?? '',
+    forma_juridica: company.forma_juridica ?? 'sl',
+    email: company.email ?? '',
+    phone: company.phone ?? '',
+    ciudad: company.ciudad ?? '',
+    direccion: company.direccion ?? '',
+    stripe_customer_id: company.stripe_customer_id ?? '',
+    status: company.status ?? 'active',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.razon_social) { setError('La razón social es requerida'); return; }
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`/api/admin/companies/${company.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razon_social: form.razon_social,
+          cif_nif: form.cif_nif || null,
+          forma_juridica: form.forma_juridica,
+          email: form.email || '',
+          phone: form.phone || null,
+          ciudad: form.ciudad || null,
+          direccion: form.direccion || null,
+          stripe_customer_id: form.stripe_customer_id || null,
+          status: form.status,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Error al guardar'); return; }
+      onSaved();
+    } catch {
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-serif text-lg font-bold text-[#07111d]">
+            <Building2 className="h-5 w-5 text-[#d7a33a]" /> Editar empresa
+          </h2>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-1 text-[#9ca3af] hover:bg-[#f0e9d8]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Razón social *</span>
+            <input
+              type="text"
+              value={form.razon_social}
+              onChange={(e) => set('razon_social', e.target.value)}
+              className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[#29384a]">CIF / NIF</span>
+              <input type="text" value={form.cif_nif} onChange={(e) => set('cif_nif', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[#29384a]">Forma jurídica</span>
+              <select value={form.forma_juridica} onChange={(e) => set('forma_juridica', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]">
+                {FORMAS_JURIDICAS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Email de contacto</span>
+            <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Teléfono</span>
+            <input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Ciudad</span>
+            <input type="text" value={form.ciudad} onChange={(e) => set('ciudad', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Dirección</span>
+            <input type="text" value={form.direccion} onChange={(e) => set('direccion', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Stripe customer ID</span>
+            <input type="text" value={form.stripe_customer_id} onChange={(e) => set('stripe_customer_id', e.target.value)} placeholder="cus_..." className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 font-mono text-xs outline-none focus:border-[#d7a33a]" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[#29384a]">Estado</span>
+            <select value={form.status} onChange={(e) => set('status', e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#d7a33a]">
+              <option value="active">Activa</option>
+              <option value="inactive">Inactiva</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-[#d8cbb5] py-2 text-sm font-semibold text-[#29384a] hover:border-[#c88b25]">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-[#07111d] py-2 text-sm font-bold text-white transition hover:bg-[#1a2d42] disabled:opacity-50">
+            {loading ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ── Modal: Asignar persona a empresa ─────────────────────────────────────────
 
 function AsignarPersonaModal({ company, onClose, onAssigned }: {
@@ -340,7 +502,10 @@ function AsignarPersonaModal({ company, onClose, onAssigned }: {
   const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
+    if (query.length < 2) {
+      const t = window.setTimeout(() => setResults([]), 0);
+      return () => window.clearTimeout(t);
+    }
     const t = setTimeout(async () => {
       setLoading(true);
       try {
@@ -426,7 +591,7 @@ function DeleteConfirm({ label, onConfirm, onClose }: { label: string; onConfirm
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="mb-2 font-serif text-lg font-bold text-[#07111d]">¿Eliminar cliente?</h3>
+        <h3 className="mb-2 font-serif text-lg font-bold text-[#07111d]">¿Desactivar registro?</h3>
         <p className="mb-5 text-sm text-[#29384a]">
           Se desactivará <strong>{label}</strong>. Esta acción se puede revertir.
         </p>
@@ -440,7 +605,7 @@ function DeleteConfirm({ label, onConfirm, onClose }: { label: string; onConfirm
             onClick={async () => { setLoading(true); await onConfirm(); setLoading(false); }}
             className="flex-1 rounded-xl bg-red-600 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
           >
-            {loading ? 'Eliminando…' : 'Eliminar'}
+            {loading ? 'Desactivando…' : 'Desactivar'}
           </button>
         </div>
       </div>
@@ -473,6 +638,7 @@ export default function AdminClientesPage() {
   const [sortDirE, setSortDirE] = useState<SortDir>('asc');
   const [showNuevaEmpresa, setShowNuevaEmpresa] = useState(false);
   const [asignarEmpresa, setAsignarEmpresa] = useState<Empresa | null>(null);
+  const [editEmpresa, setEditEmpresa] = useState<Empresa | null>(null);
   const [deleteEmpresa, setDeleteEmpresa] = useState<Empresa | null>(null);
 
   const loadPersonas = useCallback(async () => {
@@ -497,8 +663,14 @@ export default function AdminClientesPage() {
     }
   }, []);
 
-  useEffect(() => { loadPersonas(); }, [loadPersonas]);
-  useEffect(() => { loadEmpresas(); }, [loadEmpresas]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadPersonas(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadPersonas]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadEmpresas(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadEmpresas]);
 
   const toggleSortP = (key: SortKey) => {
     if (sortKeyP === key) setSortDirP((d) => d === 'asc' ? 'desc' : 'asc');
@@ -513,7 +685,7 @@ export default function AdminClientesPage() {
     .filter((c) => {
       const q = searchP.toLowerCase();
       const matchQ = !q || (c.full_name ?? '').toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.phone ?? '').includes(q);
-      const matchPlan = filterPlan === 'all' || c.plan === filterPlan || (filterPlan === 'none' && !c.plan);
+      const matchPlan = filterPlan === 'all' || planKey(c.plan) === filterPlan || (filterPlan === 'none' && !c.plan);
       const matchActive = filterActive === 'all' || (filterActive === 'active' && c.activeCases > 0) || (filterActive === 'inactive' && c.activeCases === 0);
       return matchQ && matchPlan && matchActive;
     })
@@ -540,7 +712,6 @@ export default function AdminClientesPage() {
       return sortDirE === 'asc' ? cmp : -cmp;
     });
 
-  const withPhone   = personas.filter((c) => c.phone || c.whatsapp_number).length;
   const withSub     = personas.filter((c) => c.plan).length;
   const withCases   = personas.filter((c) => c.activeCases > 0).length;
 
@@ -632,9 +803,9 @@ export default function AdminClientesPage() {
               </div>
               <select aria-label="Filtrar por plan" value={filterPlan} onChange={(e) => setFilterPlan(e.target.value)} className="rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-sm outline-none focus:border-[#d7a33a]">
                 <option value="all">Todos los planes</option>
-                <option value="gratuito">Gratuito</option>
-                <option value="Plan Avanzado">Avanzado</option>
-                <option value="Plan Colaborativo">Colaborativo</option>
+                <option value="supervision">Supervisión</option>
+                <option value="avanzado">Avanzado</option>
+                <option value="colaborativo">Colaborativo</option>
                 <option value="none">Sin suscripción</option>
               </select>
               <select aria-label="Filtrar por expedientes" value={filterActive} onChange={(e) => setFilterActive(e.target.value)} className="rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-sm outline-none focus:border-[#d7a33a]">
@@ -656,6 +827,7 @@ export default function AdminClientesPage() {
                       <th scope="col" className="px-4 py-3">Contacto</th>
                       <th scope="col" className="px-4 py-3 text-center"><SortBtn col="Exped." active={sortKeyP === 'totalCases'} dir={sortDirP} onClick={() => toggleSortP('totalCases')} /></th>
                       <th scope="col" className="px-4 py-3 text-center"><SortBtn col="Plan" active={sortKeyP === 'plan'} dir={sortDirP} onClick={() => toggleSortP('plan')} /></th>
+                      <th scope="col" className="px-4 py-3">Sync</th>
                       <th scope="col" className="px-4 py-3"><SortBtn col="Alta" active={sortKeyP === 'created_at'} dir={sortDirP} onClick={() => toggleSortP('created_at')} /></th>
                       <th scope="col" className="px-4 py-3">Último WA</th>
                       <th scope="col" className="px-4 py-3 text-right">Acciones</th>
@@ -663,7 +835,7 @@ export default function AdminClientesPage() {
                   </thead>
                   <tbody>
                     {filteredPersonas.length === 0 && (
-                      <tr><td colSpan={7} className="py-16 text-center text-sm text-[#29384a]">Sin resultados.</td></tr>
+                      <tr><td colSpan={8} className="py-16 text-center text-sm text-[#29384a]">Sin resultados.</td></tr>
                     )}
                     {filteredPersonas.map((c) => (
                       <tr key={c.id} className="border-b border-[#f8f4eb] transition hover:bg-[#faf7f0]">
@@ -698,6 +870,16 @@ export default function AdminClientesPage() {
                               {PLAN_LABEL[c.plan] ?? c.plan}
                             </span>
                           ) : <span className="text-xs text-[#9ca3af]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.stripeCustomerId ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
+                              <CreditCard className="h-3 w-3" /> Stripe
+                            </span>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.holdedConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                              <BadgeCheck className="h-3 w-3" /> Holded
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-[#29384a] whitespace-nowrap">
                           <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-[#d8cbb5]" />{fmt(c.created_at)}</span>
@@ -779,7 +961,7 @@ export default function AdminClientesPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-[#07111d]">{e.razon_social ?? '—'}</p>
-                              {e.forma_juridica && <p className="truncate text-xs text-[#29384a]">{e.forma_juridica}</p>}
+                              {e.forma_juridica && <p className="truncate text-xs text-[#29384a]">{legalFormLabel(e.forma_juridica)}</p>}
                             </div>
                           </div>
                         </td>
@@ -795,6 +977,11 @@ export default function AdminClientesPage() {
                           ) : e.phone ? (
                             <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" />{e.phone}</span>
                           ) : <span className="italic text-[#9ca3af]">Sin contacto</span>}
+                          {e.stripe_customer_id && (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                              <CreditCard className="h-3 w-3" /> Stripe
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${e.memberCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -814,12 +1001,20 @@ export default function AdminClientesPage() {
                             >
                               <Users className="h-4 w-4" />
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditEmpresa(e)}
+                              title="Editar empresa"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8]"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
                             {e.email && (
                               <a href={`mailto:${e.email}`} title="Email" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8]">
                                 <Mail className="h-4 w-4" />
                               </a>
                             )}
-                            <button type="button" onClick={() => setDeleteEmpresa(e)} title="Eliminar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9ca3af] transition hover:bg-red-50 hover:text-red-500">
+                            <button type="button" onClick={() => setDeleteEmpresa(e)} title="Desactivar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9ca3af] transition hover:bg-red-50 hover:text-red-500">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -852,6 +1047,13 @@ export default function AdminClientesPage() {
           company={asignarEmpresa}
           onClose={() => setAsignarEmpresa(null)}
           onAssigned={() => { setAsignarEmpresa(null); loadEmpresas(); }}
+        />
+      )}
+      {editEmpresa && (
+        <EditarEmpresaModal
+          company={editEmpresa}
+          onClose={() => setEditEmpresa(null)}
+          onSaved={() => { setEditEmpresa(null); loadEmpresas(); }}
         />
       )}
       {deletePersona && (

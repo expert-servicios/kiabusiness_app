@@ -95,8 +95,7 @@ export async function POST(request: NextRequest) {
         telefono:        d.telefono,
         email:           d.email,
         web:             d.web,
-        name:            d.razon_social,   // keep legacy column in sync
-        user_id:         user.id,
+        created_by:      user.id,
       })
       .select('*')
       .single();
