@@ -69,30 +69,25 @@ Notas:
 
 ### IMP-002 - Blindar secretos de `client_integrations`
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: seguridad, Supabase, escalabilidad SaaS.
 
-Riesgo: `client_integrations.encrypted_api_key` esta en una tabla expuesta con `grant select` a `authenticated`. RLS limita filas, pero no columnas. Un cliente podria leer su ciphertext si usa la Data API directamente.
+Riesgo original: `client_integrations.encrypted_api_key` estaba en una tabla expuesta con `grant select` a `authenticated`. RLS limita filas, pero no columnas.
+
+Solucion implementada: migracion `20260524183212_client_integration_secrets` (ya aplicada en Supabase remoto):
+- Crea tabla `client_integration_secrets` sin ningun `GRANT` a `authenticated` (RLS habilitado sin politicas = bloqueo total).
+- Migra datos existentes.
+- Elimina `encrypted_api_key` de `client_integrations` con `ALTER TABLE DROP COLUMN`.
+- Solo `service_role` tiene acceso a los secretos para descifrado server-side.
+
+Verificacion: la columna `encrypted_api_key` ya no existe en `client_integrations` en Supabase remoto (confirmado 2026-06-02: `REVOKE SELECT (encrypted_api_key)` fallo con "column does not exist" — la columna ya fue eliminada por la migracion anterior).
 
 Archivos principales:
 
-- `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql`
-- `lib/integrations/holded/holded-auth.ts`
+- `supabase/migrations/20260524120000_client_integration_secrets.sql`
+- `lib/integrations/holded/holded-auth.ts` — lee de `client_integration_secrets` via service_role
 - `lib/security/encryption.ts`
-
-Criterio de aceptacion:
-
-- `authenticated` no puede seleccionar `encrypted_api_key`.
-- El frontend solo puede leer columnas seguras (`api_key_last4`, estado, permisos, timestamps).
-- La lectura server-side para descifrar sigue usando service role o schema privado.
-- Existe query de verificacion documentada.
-
-Opciones validas:
-
-- Mover secretos a tabla privada no expuesta.
-- Crear vista segura con `security_invoker = true` y revocar acceso directo a la tabla.
-- Separar `client_integrations` publico de `client_integration_secrets`.
 
 ### IMP-003 - Proteger endpoints publicos con coste o enriquecimiento externo
 
@@ -219,23 +214,26 @@ Notas:
 
 ### IMP-008 - Escapar HTML en contenido generado por usuario
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: seguridad, comunicacion.
 
-Riesgo: algunas plantillas de email insertan campos del usuario sin escapar, por ejemplo contacto y presupuestos.
+Riesgo original: plantillas de email interpolaban campos de usuario directamente en HTML sin escapar. `contactMessage` y `quoteReceivedAdmin` eran los casos criticos (formularios publicos).
+
+Solucion implementada (2026-06-02): `escapeHtml()` aplicado sistematicamente en `lib/email/templates.ts`:
+- Tier 1 (formularios publicos): `contactMessage`, `quoteReceivedAdmin`, `presupuestoAvanzadoAdmin`, `citaRequestAdmin` — `nombre`, `email`, `mensaje`, `asunto`, `telefono`, y todos los campos de entrada de usuario.
+- Tier 2 (defensa en profundidad, datos post-auth): `welcomeEmail`, `quoteReceivedClient`, `quoteResponded`, `quoteAcceptedAdmin`, `paymentConfirmed`, `caseStatusUpdated`, `serviceCompleted`, `reviewRequest`, `subscriptionCreated`, `subscriptionPaymentFailed`, `contactAutoReply`, `holdedMigrationConfirmed`, `holdedFormacionConfirmed`, `documentRequired`.
+- Las plantillas mas nuevas (caseOpened, caseDocsRequired, etc.) ya usaban `escapeHtml` correctamente.
+- La funcion `escapeHtml` ya existia en el archivo — solo faltaba aplicarla consistentemente.
 
 Archivos principales:
 
 - `lib/email/templates.ts`
-- `app/api/contact/route.ts`
-- `app/api/quotes/route.ts`
 
-Criterio de aceptacion:
+Verificacion:
 
-- Todo contenido de usuario se escapa antes de interpolar HTML.
-- Solo helpers controlados generan HTML permitido.
-- Emails de prueba mantienen formato correcto.
+- [x] `npm run typecheck`
+- [x] `npm run build`
 
 ## P1 - Calidad, CI y mantenimiento
 

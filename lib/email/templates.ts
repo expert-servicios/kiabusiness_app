@@ -72,7 +72,7 @@ export function welcomeEmail(name: string) {
     subject: 'Bienvenido/a a EXPERT — tu área privada está lista',
     html: base('Bienvenido a EXPERT', `
       ${heading('¡Bienvenido/a a EXPERT!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Tu cuenta está activa. Desde tu área privada puedes consultar el estado de tus expedientes, subir documentación, revisar presupuestos y gestionar tus suscripciones, todo en un solo lugar.')}
       ${table(
         detail('Expedientes', 'Estado en tiempo real de cada trámite'),
@@ -92,9 +92,9 @@ export function quoteReceivedClient(name: string, services: string) {
     subject: 'Hemos recibido tu solicitud de presupuesto — EXPERT',
     html: base('Solicitud recibida', `
       ${heading('¡Solicitud recibida!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu solicitud de presupuesto y la estamos revisando. Nos pondremos en contacto contigo en un plazo de 24 horas hábiles con una propuesta personalizada.')}
-      ${table(detail('Servicios solicitados', services))}
+      ${table(detail('Servicios solicitados', escapeHtml(services)))}
       ${para('Si tienes alguna pregunta urgente, puedes escribirnos directamente.')}
       ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
     `)
@@ -103,16 +103,18 @@ export function quoteReceivedClient(name: string, services: string) {
 
 // ── 2. Quote received (admin) ────────────────────────────────────────────────
 export function quoteReceivedAdmin(name: string, email: string, services: string, description: string) {
+  const safeName  = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
   return {
-    subject: `Nueva solicitud de presupuesto de ${name}`,
+    subject: `Nueva solicitud de presupuesto de ${safeName}`,
     html: base('Nueva solicitud', `
       ${heading('Nueva solicitud de presupuesto')}
-      ${para('Se ha recibido una nueva solicitud desde el sitio web.')}
+      ${para('Se ha recibida una nueva solicitud desde el sitio web.')}
       ${table(
-        detail('Nombre', name),
-        detail('Email', email),
-        detail('Servicios', services),
-        detail('Descripción', description || '—')
+        detail('Nombre', safeName),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Servicios', escapeHtml(services)),
+        detail('Descripción', escapeHtml(description) || '—')
       )}
       ${btn('Gestionar en el panel', `${BRAND.appUrl}/admin/presupuestos`)}
     `)
@@ -128,7 +130,7 @@ export function quoteResponded(name: string, amount: number, expiresAt: string |
     subject: 'Tu presupuesto personalizado está listo — EXPERT',
     html: base('Presupuesto listo', `
       ${heading('Tu presupuesto está listo')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos preparado una propuesta personalizada para los servicios que solicitaste. Puedes revisarla y aceptar el pago desde tu área privada.')}
       ${table(
         detail('Importe', `€${amount.toFixed(2)}`),
@@ -142,11 +144,12 @@ export function quoteResponded(name: string, amount: number, expiresAt: string |
 
 // ── 4. Quote accepted — cliente ha aceptado, pendiente de pago ───────────────
 export function quoteAcceptedAdmin(name: string, amount: number) {
+  const safeName = escapeHtml(name);
   return {
-    subject: `Presupuesto aceptado por ${name}`,
+    subject: `Presupuesto aceptado por ${safeName}`,
     html: base('Presupuesto aceptado', `
       ${heading('Presupuesto aceptado')}
-      ${para(`<strong>${name}</strong> ha aceptado el presupuesto de <strong>€${amount.toFixed(2)}</strong> y está pendiente de pago.`)}
+      ${para(`<strong>${safeName}</strong> ha aceptado el presupuesto de <strong>€${amount.toFixed(2)}</strong> y está pendiente de pago.`)}
       ${btn('Ver en el panel', `${BRAND.appUrl}/admin/presupuestos`)}
     `)
   };
@@ -158,10 +161,10 @@ export function paymentConfirmed(name: string, amount: number, service: string) 
     subject: 'Pago recibido — comenzamos tu expediente',
     html: base('Pago confirmado', `
       ${heading('¡Pago confirmado!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu pago correctamente. Tu expediente ha sido creado y ya podemos comenzar a trabajar en tu trámite.')}
       ${table(
-        detail('Servicio', service),
+        detail('Servicio', escapeHtml(service)),
         detail('Importe abonado', `€${amount.toFixed(2)}`)
       )}
       ${para('En breve nos pondremos en contacto para informarte sobre la documentación necesaria. También puedes seguir el estado de tu expediente desde tu área privada.')}
@@ -203,15 +206,15 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 export function caseStatusUpdated(name: string, service: string, newState: string) {
-  const label = STATE_LABELS[newState] ?? newState;
+  const label = STATE_LABELS[newState] ?? escapeHtml(newState);
   return {
     subject: `Actualización de tu expediente: ${label}`,
     html: base('Estado actualizado', `
       ${heading('Tu expediente ha avanzado')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Queremos informarte de que el estado de tu expediente ha sido actualizado.')}
       ${table(
-        detail('Servicio', service),
+        detail('Servicio', escapeHtml(service)),
         detail('Nuevo estado', `<strong style="color:#c88b25;">${label}</strong>`)
       )}
       ${para('Puedes consultar todos los detalles desde tu área privada.')}
@@ -226,8 +229,8 @@ export function serviceCompleted(name: string, service: string) {
     subject: 'Tu servicio ha sido completado con éxito — EXPERT',
     html: base('Servicio completado', `
       ${heading('¡Trámite completado!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`Nos complace comunicarte que el trámite <strong>${service}</strong> ha sido completado satisfactoriamente.`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Nos complace comunicarte que el trámite <strong>${escapeHtml(service)}</strong> ha sido completado satisfactoriamente.`)}
       ${para('Ha sido un placer trabajar contigo. Si en el futuro necesitas cualquier otro servicio, estaremos aquí para ayudarte.')}
       ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
     `)
@@ -240,8 +243,8 @@ export function reviewRequest(name: string, service: string) {
     subject: '¿Cómo fue tu experiencia con EXPERT?',
     html: base('Solicitud de reseña', `
       ${heading('¿Cómo fue tu experiencia?')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`Tu expediente de <strong>${service}</strong> ha finalizado. Nos gustaría conocer tu opinión sobre el servicio recibido — tu valoración nos ayuda a mejorar y a llegar a más personas.`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha finalizado. Nos gustaría conocer tu opinión sobre el servicio recibido — tu valoración nos ayuda a mejorar y a llegar a más personas.`)}
       ${para('Solo te tomará 2 minutos.')}
       ${btn('Dejar mi valoración', `${BRAND.appUrl}/gracias/opinion`)}
       ${para('<small style="color:#8899aa;">Si no deseas dejar una valoración, ignora este correo.</small>')}
@@ -254,14 +257,15 @@ export function subscriptionCreated(name: string, planName: string, periodEnd: s
   const renewal = periodEnd
     ? new Date(periodEnd).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'próximamente';
+  const safePlan = escapeHtml(planName);
   return {
-    subject: `Tu suscripción ${planName} está activa — EXPERT`,
+    subject: `Tu suscripción ${safePlan} está activa — EXPERT`,
     html: base('Suscripción activa', `
       ${heading('¡Bienvenido a tu plan EXPERT!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`Tu suscripción <strong>${planName}</strong> está activa. A partir de ahora nos ocupamos de tus trámites de forma continua.`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu suscripción <strong>${safePlan}</strong> está activa. A partir de ahora nos ocupamos de tus trámites de forma continua.`)}
       ${table(
-        detail('Plan activo', planName),
+        detail('Plan activo', safePlan),
         detail('Próxima renovación', renewal)
       )}
       ${para('Puedes gestionar tu suscripción, descargar facturas o cancelar en cualquier momento desde el portal de facturación.')}
@@ -276,8 +280,8 @@ export function subscriptionPaymentFailed(name: string, planName: string) {
     subject: 'No hemos podido procesar el pago de tu suscripción — EXPERT',
     html: base('Pago fallido', `
       ${heading('Problema con el pago')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`No hemos podido procesar el pago de tu suscripción <strong>${planName}</strong>. Por favor, actualiza tu método de pago para que el servicio no se interrumpa.`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`No hemos podido procesar el pago de tu suscripción <strong>${escapeHtml(planName)}</strong>. Por favor, actualiza tu método de pago para que el servicio no se interrumpa.`)}
       ${btn('Actualizar método de pago', `${BRAND.appUrl}/dashboard/suscripciones`)}
       ${para('<small style="color:#8899aa;">Si ya has resuelto el problema, ignora este correo. El sistema reintentará el cobro automáticamente.</small>')}
     `)
@@ -286,19 +290,23 @@ export function subscriptionPaymentFailed(name: string, planName: string) {
 
 // ── 11. Contact form — admin notification ─────────────────────────────────────
 export function contactMessage(nombre: string, email: string, asunto: string, mensaje: string, telefono?: string) {
+  const safeNombre = escapeHtml(nombre);
+  const safeEmail  = escapeHtml(email);
+  const safeAsunto = escapeHtml(asunto);
+  const safeMensaje= escapeHtml(mensaje);
   return {
-    subject: `Formulario de contacto: ${nombre}`,
+    subject: `Formulario de contacto: ${safeNombre}`,
     html: base('Nuevo contacto', `
       ${heading('Nuevo mensaje de contacto')}
       ${para('Has recibido un mensaje desde el formulario de contacto del sitio web.')}
       ${table(
-        detail('Nombre', nombre),
-        detail('Email', `<a href="mailto:${email}" style="color:#c88b25;">${email}</a>`),
-        ...(telefono ? [detail('Teléfono', telefono)] : []),
-        ...(asunto ? [detail('Área', asunto)] : []),
-        detail('Mensaje', `<span style="white-space:pre-wrap;">${mensaje}</span>`)
+        detail('Nombre', safeNombre),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        ...(telefono ? [detail('Teléfono', escapeHtml(telefono))] : []),
+        ...(asunto ? [detail('Área', safeAsunto)] : []),
+        detail('Mensaje', `<span style="white-space:pre-wrap;">${safeMensaje}</span>`)
       )}
-      ${btn('Responder por email', `mailto:${email}`)}
+      ${btn('Responder por email', `mailto:${safeEmail}`)}
     `)
   };
 }
@@ -309,9 +317,9 @@ export function contactAutoReply(nombre: string, asunto: string) {
     subject: 'Hemos recibido tu mensaje — EXPERT',
     html: base('Mensaje recibido', `
       ${heading('¡Mensaje recibido!')}
-      ${para(`Hola <strong>${nombre}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(nombre)}</strong>,`)}
       ${para('Gracias por ponerte en contacto con nosotros. Hemos recibido tu consulta y te responderemos en menos de <strong>24 horas hábiles</strong>.')}
-      ${asunto ? table(detail('Área consultada', asunto)) : ''}
+      ${asunto ? table(detail('Área consultada', escapeHtml(asunto))) : ''}
       ${para('Si tu consulta es urgente, puedes escribirnos directamente por WhatsApp:')}
       ${btn('Escribir por WhatsApp', 'https://wa.me/34696550480')}
       ${para('<small style="color:#8899aa;">Si no enviaste este mensaje, ignora este correo.</small>')}
@@ -325,8 +333,8 @@ export function holdedMigrationConfirmed(name: string, packageName: string, cale
     subject: '¡Tu migración a Holded ha comenzado! Reserva tu sesión de formación',
     html: base('Migración a Holded confirmada', `
       ${heading('¡Tu compra está confirmada!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`Hemos recibido tu pago para el <strong>${packageName}</strong>. En las próximas 24 horas hábiles nos pondremos en contacto para coordinar el inicio de la migración.`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido tu pago para el <strong>${escapeHtml(packageName)}</strong>. En las próximas 24 horas hábiles nos pondremos en contacto para coordinar el inicio de la migración.`)}
       ${para('Mientras tanto, reserva ya tu sesión de formación incluida (2 horas de onboarding) en el horario que mejor te venga:')}
       ${btn('Reservar sesión de formación', calendlyUrl)}
       ${para('<small style="color:#8899aa;">Si tienes alguna pregunta antes de la primera sesión, responde a este correo y te atendemos.</small>')}
@@ -340,7 +348,7 @@ export function holdedFormacionConfirmed(name: string, calendlyUrl: string) {
     subject: '¡Sesión de formación Holded confirmada! Reserva tu horario',
     html: base('Formación Holded confirmada', `
       ${heading('¡Tu sesión de formación está lista!')}
-      ${para(`Hola <strong>${name}</strong>,`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu pago para la sesión de formación en Holded (2 horas). Ahora solo tienes que elegir el día y hora que mejor te conviene:')}
       ${btn('Reservar mi sesión de formación', calendlyUrl)}
       ${table(
@@ -355,13 +363,13 @@ export function holdedFormacionConfirmed(name: string, calendlyUrl: string) {
 
 // ── 15. Document required ─────────────────────────────────────────────────────
 export function documentRequired(name: string, service: string, docs: string[]) {
-  const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${d}</li>`).join('');
+  const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${escapeHtml(d)}</li>`).join('');
   return {
     subject: 'Documentación necesaria para tu expediente — EXPERT',
     html: base('Documentación requerida', `
       ${heading('Necesitamos documentación')}
-      ${para(`Hola <strong>${name}</strong>,`)}
-      ${para(`Para continuar con tu expediente de <strong>${service}</strong>, necesitamos que nos proporciones los siguientes documentos:`)}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Para continuar con tu expediente de <strong>${escapeHtml(service)}</strong>, necesitamos que nos proporciones los siguientes documentos:`)}
       <ul style="margin:16px 0;padding-left:20px;">${list}</ul>
       ${para('Puedes subir los archivos directamente desde tu área privada de forma segura.')}
       ${btn('Subir documentos', `${BRAND.appUrl}/dashboard/expedientes`)}
@@ -827,24 +835,25 @@ export function presupuestoAvanzadoAdmin(data: {
   services: string[];
   message?: string;
 }) {
-  const servicesList = data.services.join(', ');
+  const safeEmail = escapeHtml(data.email);
+  const servicesList = data.services.map(escapeHtml).join(', ');
   return {
-    subject: `Nueva solicitud de presupuesto personalizado — ${data.companyName}`,
+    subject: `Nueva solicitud de presupuesto personalizado — ${escapeHtml(data.companyName)}`,
     html: base('Nueva solicitud presupuesto avanzado', `
       ${heading('Nueva solicitud de presupuesto')}
       ${para('Se ha recibido una nueva solicitud de presupuesto personalizado:')}
       ${table(
         detail('Nombre', escapeHtml(data.name)),
-        detail('Email', data.email),
-        detail('Teléfono', data.phone),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Teléfono', escapeHtml(data.phone)),
         detail('Empresa', escapeHtml(data.companyName)),
-        ...(data.companyType ? [detail('Tipo de empresa', data.companyType)] : []),
-        ...(data.taxId ? [detail('CIF / NIF', data.taxId)] : []),
-        ...(data.employees ? [detail('Empleados', data.employees)] : []),
-        ...(data.annualBilling ? [detail('Facturación anual', data.annualBilling)] : []),
-        ...(data.currentSoftware ? [detail('Software actual', data.currentSoftware)] : []),
-        ...(data.urgency ? [detail('Urgencia', data.urgency)] : []),
-        detail('Servicios solicitados', escapeHtml(servicesList))
+        ...(data.companyType    ? [detail('Tipo de empresa',    escapeHtml(data.companyType))]    : []),
+        ...(data.taxId          ? [detail('CIF / NIF',          escapeHtml(data.taxId))]          : []),
+        ...(data.employees      ? [detail('Empleados',          escapeHtml(data.employees))]      : []),
+        ...(data.annualBilling  ? [detail('Facturación anual',  escapeHtml(data.annualBilling))]  : []),
+        ...(data.currentSoftware? [detail('Software actual',    escapeHtml(data.currentSoftware))]: []),
+        ...(data.urgency        ? [detail('Urgencia',           escapeHtml(data.urgency))]        : []),
+        detail('Servicios solicitados', servicesList)
       )}
       ${data.message ? noteBlock(data.message) : ''}
       ${btn('Gestionar solicitud', `${BRAND.appUrl}/admin`)}
@@ -1020,15 +1029,16 @@ export function citaRequestAdmin(params: {
   notes?: string | null;
   appointmentId: string;
 }) {
+  const safeEmail = escapeHtml(params.email);
   return {
-    subject: `Nueva solicitud de cita — ${params.name}`,
+    subject: `Nueva solicitud de cita — ${escapeHtml(params.name)}`,
     html: base('Nueva solicitud de cita', `
       ${heading('Nueva solicitud de cita')}
       ${para('Se ha recibido una nueva solicitud de cita desde el sitio web:')}
       ${table(
         detail('Nombre', escapeHtml(params.name)),
-        detail('Email', params.email),
-        ...(params.phone ? [detail('Teléfono', params.phone)] : []),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        ...(params.phone ? [detail('Teléfono', escapeHtml(params.phone))] : []),
         detail('Servicio', escapeHtml(params.service)),
         detail('Fecha preferida', escapeHtml(params.preferredDate)),
         detail('Franja', escapeHtml(params.preferredTime)),
