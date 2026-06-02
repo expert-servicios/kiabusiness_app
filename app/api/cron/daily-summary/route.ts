@@ -6,7 +6,17 @@ import { dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates'
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
 
-const ADMIN_EMAIL = process.env.ADMIN_SUMMARY_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? 'info@expertconsulting.es';
+// Supports comma-separated list: "a@x.com,b@y.com"
+// Also strips display-name format: "EXPERT <info@x.com>" → "info@x.com"
+function parseAdminRecipients(): string[] {
+  const raw = process.env.ADMIN_SUMMARY_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? 'info@expertconsulting.es';
+  return raw
+    .split(',')
+    .map((e) => e.trim().replace(/^[^<]*<([^>]+)>$/, '$1'))
+    .filter(Boolean);
+}
+
+const ADMIN_RECIPIENTS = parseAdminRecipients();
 
 // Cases blocking threshold: flag if awaiting docs or blocked for >3 days
 const DAYS_PENDING_THRESHOLD = 3;
@@ -151,10 +161,9 @@ export async function GET(request: NextRequest) {
   };
 
   const tpl = dailyAdminSummary(summaryData);
-  const recipient = Array.isArray(ADMIN_EMAIL) ? ADMIN_EMAIL : ADMIN_EMAIL.replace(/^[^<]+<|>$/g, '') || ADMIN_EMAIL;
 
   await sendEmail({
-    to: recipient,
+    to: ADMIN_RECIPIENTS,
     eventType: 'admin.daily_summary',
     ...tpl,
     metadata: {
@@ -164,6 +173,6 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  console.info('[cron/daily-summary] sent to', recipient, summaryData);
+  console.info('[cron/daily-summary] sent to', ADMIN_RECIPIENTS, summaryData);
   return NextResponse.json({ ok: true, ...summaryData });
 }
