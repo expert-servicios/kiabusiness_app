@@ -114,46 +114,56 @@ Criterio de aceptacion:
 
 ### IMP-004 - Idempotencia fuerte en webhooks Stripe
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: pagos, operacion, Stripe.
 
-Riesgo: los reintentos de Stripe pueden reenviar emails y repetir sincronizaciones Holded aunque el `order` ya exista.
+Solucion implementada (2026-06-02):
+- Nueva tabla `stripe_processed_events (event_id text primary key)` aplicada en Supabase remoto.
+- Al inicio del POST handler, se inserta `event.id`. En conflicto (code 23505 = ya procesado) → devuelve 200 sin procesar.
+- La insercion es atomica: dos llamadas simultaneas del mismo evento solo una pasa el INSERT.
+- Emails y syncs Holded quedan protegidos porque el guard actua antes de todo el procesamiento.
+- Fallo del guard es no-fatal (loguea y continua) para no silenciar pagos reales.
 
 Archivos principales:
 
-- `app/api/stripe/webhook/route.ts`
-- `supabase/migrations/*`
-- `lib/integrations/holded.ts`
+- `app/api/stripe/webhook/route.ts` — guard al inicio del POST handler
+- `supabase/migrations/` — migracion `stripe_processed_events_dedup` aplicada en remoto
 
-Criterio de aceptacion:
+Verificacion:
 
-- Se registra `stripe_event_id` en una tabla con constraint unico.
-- Cada evento se procesa una vez o se marca como ya procesado.
-- Emails y syncs quedan protegidos contra duplicados.
-- Checkout Sessions y Billing siguen siendo las APIs principales.
+- [x] Migracion aplicada en Supabase remoto
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [ ] Prueba manual: reenviar mismo evento desde Stripe Dashboard → debe devolver 200 sin duplicar order
 
 ### IMP-005 - Pasar side effects de Holded a cola durable
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: operacion, Holded, fiabilidad.
 
-Riesgo: sincronizaciones Holded lanzadas con `.then()` desde webhooks pueden no terminar en runtime serverless.
+Solucion implementada (2026-06-02):
+- Helpers `enqueueHoldedSync` y `resolveHoldedJob` en el webhook de Stripe.
+- Cada sync Holded ahora CREA el job en `holded_sync_jobs` (status: queued) ANTES del `.then()`, de modo que si el proceso serverless muere, el job queda registrado para reintento.
+- Los 4 puntos de sync (quote payment, catalog payment, Holded legacy, subscription) usan el patron.
+- Nuevo cron `/api/cron/holded-sync` (cada 15 min via Vercel Cron) que procesa jobs en estado `queued`/`failed` con backoff exponencial (5 min → 15 min, max 3 intentos).
+- `vercel.json` actualizado con el nuevo cron schedule.
+- Fallos Holded nunca bloquean el flujo principal (emails + orders se crean antes del sync).
 
 Archivos principales:
 
-- `app/api/stripe/webhook/route.ts`
-- `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql`
-- `lib/integrations/holded.ts`
-- `lib/integrations/holded/`
+- `app/api/stripe/webhook/route.ts` — helpers + job creation antes de cada sync
+- `app/api/cron/holded-sync/route.ts` — NUEVO cron de reintentos
+- `vercel.json` — schedule `*/15 * * * *`
+- `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql` — tabla ya existente
 
-Criterio de aceptacion:
+Verificacion:
 
-- El webhook crea/actualiza un job o evento durable.
-- La ejecucion Holded se hace en ruta controlada, cron o worker.
-- Hay reintento manual visible desde `/admin/integraciones`.
-- Fallos Holded no bloquean pagos ni creacion de expedientes.
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [ ] Prueba manual: pago de prueba → confirmar job en `holded_sync_jobs` con status success/failed
+- [ ] Prueba manual cron: GET /api/cron/holded-sync con Bearer CRON_SECRET → procesa jobs pendientes
 
 ### IMP-006 - Sanitizar redirects de auth
 

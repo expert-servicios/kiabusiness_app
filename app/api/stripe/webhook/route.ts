@@ -122,6 +122,42 @@ async function getClientEmail(userId: string): Promise<{ email: string; name: st
   return { email, name: profile?.full_name ?? email.split('@')[0] };
 }
 
+// ── IMP-005: Durable Holded job queue helpers ─────────────────────────────────
+
+async function enqueueHoldedSync(
+  supabaseAdmin: SupabaseAdmin,
+  jobType: string,
+  metadata: Record<string, unknown>,
+): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from('holded_sync_jobs')
+    .insert({ job_type: jobType, status: 'queued', attempts: 0, metadata })
+    .select('id')
+    .single();
+  if (error) {
+    console.error('[holded queue] enqueue failed:', error.message);
+    return null;
+  }
+  return data?.id ?? null;
+}
+
+async function resolveHoldedJob(
+  supabaseAdmin: SupabaseAdmin,
+  jobId: string | null,
+  status: 'success' | 'failed',
+  errorMsg?: string,
+): Promise<void> {
+  if (!jobId) return;
+  await supabaseAdmin.from('holded_sync_jobs').update({
+    status,
+    finished_at: new Date().toISOString(),
+    attempts: 1,
+    ...(errorMsg ? { error: errorMsg.slice(0, 500) } : {}),
+  }).eq('id', jobId);
+}
+
+// ── Order Holded trace helper ─────────────────────────────────────────────────
+
 async function updateOrderHoldedResult(
   supabaseAdmin: SupabaseAdmin,
   orderId: string | undefined,
@@ -172,6 +208,24 @@ export async function POST(req: NextRequest) {
   }
 
   const supabaseAdmin = getSupabaseAdmin();
+
+  // ── IMP-004: Event-level idempotency guard ────────────────────────────────
+  // Stripe retries webhooks for up to 3 days. We record the event_id before
+  // any processing so that concurrent or repeated deliveries are rejected
+  // atomically (unique constraint → code 23505 → return 200 immediately).
+  const { error: dedupError } = await supabaseAdmin
+    .from('stripe_processed_events')
+    .insert({ event_id: event.id, event_type: event.type });
+
+  if (dedupError) {
+    if (dedupError.code === '23505') {
+      console.log('[stripe webhook] duplicate event', event.id, '— already processed, skipping');
+      return NextResponse.json({ received: true });
+    }
+    // Log but don't block: dedup failure is non-fatal (better to process twice
+    // than to silently drop a payment event)
+    console.error('[stripe webhook] event dedup insert failed:', dedupError.message);
+  }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -268,7 +322,13 @@ export async function POST(req: NextRequest) {
                 metadata: { quote_id: quoteId, session_id: session.id }
               });
 
-              // Holded sync (non-blocking — errors don't affect main flow)
+              // IMP-005: enqueue job BEFORE the async call so it survives
+              // if the serverless function is killed before .then() runs.
+              const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
+                clientName, clientEmail,
+                description: quote.title ?? 'Servicio EXPERT',
+                amountEur, orderId: newOrder?.id, localEntity: 'orders',
+              });
               syncOrderToHolded({
                 clientName,
                 clientEmail,
@@ -277,11 +337,13 @@ export async function POST(req: NextRequest) {
                 orderId: newOrder?.id,
                 localEntity: 'orders'
               }).then((result) => {
+                void resolveHoldedJob(supabaseAdmin, quoteJobId, 'success');
                 updateOrderHoldedResult(supabaseAdmin, newOrder?.id, result, orderMetadata).catch((err) => {
                   console.error('[webhook] holded trace update failed:', err);
                 });
               }).catch((err) => {
                 console.error('[webhook] holded sync failed:', err);
+                void resolveHoldedJob(supabaseAdmin, quoteJobId, 'failed', err instanceof Error ? err.message : String(err));
                 updateOrderHoldedResult(
                   supabaseAdmin,
                   newOrder?.id,
@@ -389,6 +451,11 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        const catalogJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
+          clientName: customerName, clientEmail: customerEmail,
+          description: serviceName, amountEur,
+          orderId: catalogOrderId ?? session.id, localEntity: 'orders',
+        });
         syncOrderToHolded({
           clientName: customerName,
           clientEmail: customerEmail,
@@ -397,11 +464,13 @@ export async function POST(req: NextRequest) {
           orderId: catalogOrderId ?? session.id,
           localEntity: 'orders'
         }).then((result) => {
+          void resolveHoldedJob(supabaseAdmin, catalogJobId, 'success');
           updateOrderHoldedResult(supabaseAdmin, catalogOrderId, result, catalogOrderMetadata).catch((err) => {
             console.error('[webhook] holded trace update (catalog) failed:', err);
           });
         }).catch((err) => {
           console.error('[webhook] holded sync (catalog) failed:', err);
+          void resolveHoldedJob(supabaseAdmin, catalogJobId, 'failed', err instanceof Error ? err.message : String(err));
           updateOrderHoldedResult(
             supabaseAdmin,
             catalogOrderId,
@@ -431,15 +500,22 @@ export async function POST(req: NextRequest) {
             ...tpl,
             metadata: { session_id: session.id, package_name: packageName }
           });
-          // Holded sync — migración
-          syncOrderToHolded({
-            clientName: customerName,
-            clientEmail: customerEmail,
-            description: packageName,
-            amountEur: holdedAmountEur,
-            orderId: session.id,
-            localEntity: 'stripe_checkout_sessions'
-          }).catch((err) => console.error('[webhook] holded sync (migration) failed:', err));
+          // IMP-005: queue first, then fire-and-forget
+          void enqueueHoldedSync(supabaseAdmin, 'sync_holded_migration', {
+            clientName: customerName, clientEmail: customerEmail,
+            description: packageName, amountEur: holdedAmountEur,
+            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+          }).then((migJobId) => {
+            syncOrderToHolded({
+              clientName: customerName, clientEmail: customerEmail,
+              description: packageName, amountEur: holdedAmountEur,
+              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            }).then(() => resolveHoldedJob(supabaseAdmin, migJobId, 'success'))
+              .catch((err) => {
+                console.error('[webhook] holded sync (migration) failed:', err);
+                return resolveHoldedJob(supabaseAdmin, migJobId, 'failed', err instanceof Error ? err.message : String(err));
+              });
+          });
         } else {
           const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
           await sendEmail({
@@ -448,15 +524,22 @@ export async function POST(req: NextRequest) {
             ...tpl,
             metadata: { session_id: session.id }
           });
-          // Holded sync — formación
-          syncOrderToHolded({
-            clientName: customerName,
-            clientEmail: customerEmail,
-            description: 'Formación EXPERT — sesión 2 h',
-            amountEur: holdedAmountEur,
-            orderId: session.id,
-            localEntity: 'stripe_checkout_sessions'
-          }).catch((err) => console.error('[webhook] holded sync (formacion) failed:', err));
+          // IMP-005: queue first, then fire-and-forget
+          void enqueueHoldedSync(supabaseAdmin, 'sync_holded_formacion', {
+            clientName: customerName, clientEmail: customerEmail,
+            description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
+            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+          }).then((formJobId) => {
+            syncOrderToHolded({
+              clientName: customerName, clientEmail: customerEmail,
+              description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
+              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            }).then(() => resolveHoldedJob(supabaseAdmin, formJobId, 'success'))
+              .catch((err) => {
+                console.error('[webhook] holded sync (formacion) failed:', err);
+                return resolveHoldedJob(supabaseAdmin, formJobId, 'failed', err instanceof Error ? err.message : String(err));
+              });
+          });
         }
       }
     }
@@ -498,6 +581,11 @@ export async function POST(req: NextRequest) {
         const monthlyAmount = sub.items.data[0]?.price.unit_amount
           ? sub.items.data[0].price.unit_amount / 100
           : 0;
+        const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
+          clientName: clientInfo.name, clientEmail: clientInfo.email,
+          planName: subscriptionRecord.planName, amountEur: monthlyAmount,
+          subscriptionId: sub.id, localEntity: 'stripe_subscriptions',
+        });
         syncSubscriptionToHolded({
           clientName: clientInfo.name,
           clientEmail: clientInfo.email,
@@ -506,6 +594,7 @@ export async function POST(req: NextRequest) {
           subscriptionId: sub.id,
           localEntity: 'stripe_subscriptions'
         }).then((result) => {
+          void resolveHoldedJob(supabaseAdmin, subJobId, 'success');
           if (result.invoiceId) {
             supabaseAdmin.from('subscriptions').update({
               metadata: {
@@ -517,7 +606,10 @@ export async function POST(req: NextRequest) {
               }
             }).eq('stripe_subscription_id', sub.id).then(() => {});
           }
-        }).catch((err) => console.error('[webhook] holded sync (subscription) failed:', err));
+        }).catch((err) => {
+          console.error('[webhook] holded sync (subscription) failed:', err);
+          void resolveHoldedJob(supabaseAdmin, subJobId, 'failed', err instanceof Error ? err.message : String(err));
+        });
       }
     }
   }

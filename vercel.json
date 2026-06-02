@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/kia-health",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/holded-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
