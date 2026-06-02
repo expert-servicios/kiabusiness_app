@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireAdminClient } from '@/lib/auth/require-admin';
 import { downloadAndStoreWhatsAppMedia } from '@/lib/integrations/whatsapp';
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await requireAdminClient(request);
+    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
     const { conversationId } = await request.json() as { conversationId: string };
     if (!conversationId) return NextResponse.json({ error: 'conversationId required' }, { status: 400 });
 
-    const admin = getSupabaseAdmin();
     const { data: conv, error } = await admin
       .from('whatsapp_conversations')
       .select('id, phone_number, client_id, media_type, meta_media_id, media_url')

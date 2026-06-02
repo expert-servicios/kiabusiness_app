@@ -17,7 +17,10 @@ const bodySchema = z.object({
 
 function verifyInternalSecret(request: NextRequest): boolean {
   const secret = process.env.INTERNAL_API_SECRET;
-  if (!secret) return true; // not configured → only internal calls reach this
+  if (!secret) {
+    console.error('[kia/report/generate] INTERNAL_API_SECRET not configured');
+    return false;
+  }
   return request.headers.get('x-internal-secret') === secret;
 }
 

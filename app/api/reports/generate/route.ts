@@ -27,6 +27,19 @@ export async function POST(request: NextRequest) {
 
   const { period, lang, generatedBy, clientId: adminClientId } = parsed.data;
   const admin    = getSupabaseAdmin();
+
+  if (adminClientId && adminClientId !== user.id) {
+    const { data: actorProfile } = await admin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (actorProfile?.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+  }
+
   const clientId = adminClientId ?? user.id;
 
   // Resolve company

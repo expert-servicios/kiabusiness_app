@@ -14,12 +14,25 @@
  *      the __session cookie + redirect back to MCP
  */
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { Shield, Loader2, LogIn, AlertCircle } from 'lucide-react';
 
+// Suspense wrapper required because useSearchParams() opts out of static rendering
 export default function HoldedClaudeBridgePage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center bg-[#f8f4eb]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#c88b25]" />
+      </main>
+    }>
+      <HoldedClaudeBridgeContent />
+    </Suspense>
+  );
+}
+
+function HoldedClaudeBridgeContent() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const next         = searchParams.get('next') ?? '';
@@ -122,3 +135,4 @@ export default function HoldedClaudeBridgePage() {
     </main>
   );
 }
+
