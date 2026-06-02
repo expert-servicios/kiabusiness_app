@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, Clock3, Mail, Calendar, PlugZap, RefreshCw, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { StripeSyncPanel } from '@/components/admin/StripeSyncPanel';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SyncEvent {
@@ -245,6 +246,9 @@ export default async function AdminIntegracionesPage() {
             </div>
           ) : null}
         </section>
+
+        {/* ── Stripe sync ── */}
+        <StripeSyncPanel />
 
         {/* ── Google integrations ── */}
         <section className="mb-6 grid gap-4 sm:grid-cols-2">
