@@ -5,6 +5,8 @@ import { evaluateViability } from '@/lib/integrations/ai';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getResendClient } from '@/lib/integrations/resend';
 import { getCatalogService } from '@/lib/utils/catalog';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
+import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 
 const bodySchema = z.object({
   serviceSlug: z.string().min(1),
@@ -13,15 +15,43 @@ const bodySchema = z.object({
   clientPhone: z.string().optional(),
   gdprConsent: z.boolean(),
   answers: z.record(z.string(), z.union([z.string(), z.boolean()])),
-  docStatus: z.record(z.string(), z.enum(['have', 'missing', 'need_help']))
+  docStatus: z.record(z.string(), z.enum(['have', 'missing', 'need_help'])),
+  recaptcha_token: z.string().optional(),
+  hp_url: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = bodySchema.parse(await request.json());
+    const clientIp = getClientIp(request.headers);
+
+    if (!checkRateLimit(`viability:${clientIp}`)) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, { status: 429 });
+    }
 
     if (!body.gdprConsent) {
       return NextResponse.json({ error: 'Se requiere consentimiento GDPR.' }, { status: 400 });
+    }
+
+    const answerText = Object.values(body.answers)
+      .map((value) => String(value))
+      .join(' ');
+    const spam = checkSpam({
+      name: body.clientName,
+      email: body.clientEmail,
+      subject: body.serviceSlug,
+      message: answerText,
+    });
+    if (body.hp_url?.trim() || spam.isSpam) {
+      return NextResponse.json({ error: 'No se pudo procesar la solicitud.' }, { status: 400 });
+    }
+
+    const recaptcha = await verifyRecaptchaToken({
+      token: body.recaptcha_token ?? '',
+      action: 'viability_check',
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'No se pudo verificar la solicitud.' }, { status: 403 });
     }
 
     const check = getViabilityCheck(body.serviceSlug);

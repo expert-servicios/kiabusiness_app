@@ -3,6 +3,7 @@
 import { useState, useCallback, Fragment } from 'react';
 import { X, ChevronRight, ChevronLeft, Loader2, CheckCircle2, XCircle, AlertCircle, ShoppingCart, MessageSquare } from 'lucide-react';
 import type { ViabilityCheck, VQuestion, VDoc } from '@/lib/data/viability-checks';
+import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -383,6 +384,7 @@ export function ViabilityModal({ check, serviceSlug, onClose }: ViabilityModalPr
     setLoading(true);
     setError(null);
     try {
+      const recaptcha_token = await getRecaptchaToken('viability_check');
       const res = await fetch('/api/services/viabilidad', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -393,7 +395,8 @@ export function ViabilityModal({ check, serviceSlug, onClose }: ViabilityModalPr
           clientPhone: personal.phone || undefined,
           gdprConsent: personal.gdprConsent,
           answers,
-          docStatus
+          docStatus,
+          recaptcha_token
         })
       });
       const data = await res.json() as ViabilityResponse & { error?: string };
