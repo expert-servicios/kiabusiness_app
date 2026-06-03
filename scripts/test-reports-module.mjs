@@ -7,7 +7,7 @@
  *   2. Report generator logic (KPI calculations, data transforms)
  *   3. Holded API connectivity with test key
  *   4. Supabase table structure (kia_financial_reports)
- *   5. Export libraries (xlsx, docx) — PDF skipped (browser env)
+ *   5. Export libraries (jszip xlsx, docx) — PDF skipped (browser env)
  *
  * Usage: node scripts/test-reports-module.mjs
  *
@@ -16,7 +16,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
@@ -328,32 +328,28 @@ if (!supabaseUrl || !supabaseKey) {
 
 // ── 5. Export libraries ───────────────────────────────────────────────────────
 
-section('5. Export libraries (xlsx + docx)');
+section('5. Export libraries (jszip xlsx + docx)');
 
-// Test xlsx
+// Test minimal OOXML ZIP structure
 try {
-  const wb = XLSX.utils.book_new();
-  const wsData = [
-    ['Empresa', 'Mi Empresa SL'],
-    ['Ventas',  18000],
-    ['Gastos',  3000],
-    ['IVA',     3150],
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), 'Resumen');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Nº','Total'],['F-001',1000]]), 'Facturas');
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  zip.file('xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Resumen" sheetId="1" r:id="rId1"/></sheets></workbook>');
+  zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+  zip.file('xl/worksheets/sheet1.xml', '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Empresa</t></is></c><c r="B1" t="inlineStr"><is><t>Mi Empresa SL</t></is></c></row></sheetData></worksheet>');
 
-  const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+  const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
   buffer.length > 1000
-    ? ok(`xlsx: workbook generated (${buffer.length} bytes, 2 sheets)`)
-    : ko(`xlsx: buffer too small (${buffer.length} bytes)`);
+    ? ok(`xlsx zip: workbook generated (${buffer.length} bytes)`)
+    : ko(`xlsx zip: buffer too small (${buffer.length} bytes)`);
 
-  // Re-read the buffer to verify integrity
-  const wb2 = XLSX.read(buffer, { type: 'buffer' });
-  wb2.SheetNames.length === 2
-    ? ok(`xlsx: re-read OK — sheets: ${wb2.SheetNames.join(', ')}`)
-    : ko(`xlsx: re-read failed — got ${wb2.SheetNames.length} sheets`);
+  const parsed = await JSZip.loadAsync(buffer);
+  parsed.file('xl/workbook.xml') && parsed.file('xl/worksheets/sheet1.xml')
+    ? ok('xlsx zip: workbook entries present')
+    : ko('xlsx zip: missing required workbook entries');
 } catch (e) {
-  ko(`xlsx error: ${e.message}`);
+  ko(`xlsx zip error: ${e.message}`);
 }
 
 // Test docx

@@ -25,13 +25,33 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
+  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+  const isAuthPath = pathname === '/auth/login' || pathname === '/auth/signup';
+
+  if (user && (isProtectedPath || isAuthPath)) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.status === 'inactive') {
+      if (isProtectedPath) {
+        const loginUrl = new URL('/auth/login', request.url);
+        loginUrl.searchParams.set('error', 'inactive');
+        return NextResponse.redirect(loginUrl);
+      }
+      return response;
+    }
+  }
+
   // Redirect authenticated users away from auth pages
-  if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {
+  if (user && isAuthPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Protect /dashboard and /admin — admin role check is in app/(protected)/admin/layout.tsx
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin'))) {
+  if (!user && isProtectedPath) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
