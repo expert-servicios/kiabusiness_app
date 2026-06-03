@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
 import { syncClientToHolded } from '@/lib/integrations/holded';
+import { upsertStripeCustomer } from '@/lib/integrations/stripe';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -237,18 +238,33 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Background: sync contact to Holded when name/email/phone changes
+    // Background: sync contact changes to Holded and Stripe
     const contactFields = ['full_name', 'email', 'phone'];
     const contactChanged = contactFields.some((f) => f in (parsed.data as Record<string, unknown>));
-    if (contactChanged && (data.full_name || data.email)) {
+    if (contactChanged) {
       const email = parsed.data.email ?? data.email ?? '';
       if (email) {
+        // Holded contact upsert
         syncClientToHolded({
           profileId: id,
           name: data.full_name ?? email.split('@')[0],
           email,
           phone: data.phone ?? undefined,
         }).catch((e) => console.error('[clientes PATCH] holded sync:', e));
+
+        // Stripe customer upsert — create if missing, update name/phone if changed
+        upsertStripeCustomer({
+          profileId: id,
+          name: data.full_name ?? null,
+          email,
+          phone: data.phone ?? undefined,
+          existingCustomerId: data.stripe_customer_id ?? undefined,
+        }).then(async (customerId) => {
+          if (customerId && !data.stripe_customer_id) {
+            // Save newly created Stripe customer ID to profile
+            await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', id);
+          }
+        }).catch((e) => console.error('[clientes PATCH] stripe sync:', e));
       }
     }
 
