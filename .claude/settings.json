@@ -148,7 +148,20 @@
       "Read(//d/ksenia_expert/app/**)",
       "PowerShell(Get-ChildItem -Path 'd:\\\\ksenia_expert\\\\app\\\\\\(protected\\)\\\\dashboard' -Recurse -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"d:\\\\ksenia_expert\\\\app\\\\\", \"\"\\) })",
       "WebFetch(domain:sede.agenciatributaria.gob.es)",
-      "WebFetch(domain:clave.gob.es)"
+      "WebFetch(domain:clave.gob.es)",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\app\\\\api\\\\company\\\\associate\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\ksenia_expert\\\\components\\\\dashboard\\\\company\")",
+      "PowerShell(cd d:\\\\ksenia_expert; npx tsc --noEmit --skipLibCheck 2>&1; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\ksenia_expert; git add app/api/company/associate/ app/api/company/resolve/route.ts app/\\(protected\\)/dashboard/empresa/nueva/page.tsx components/dashboard/company/ lib/integrations/ckan/ lib/integrations/company-data-resolver.ts lib/ai/kia/kia-output-schema.ts lib/ai/kia/health/kia-canary-tests.ts supabase/migrations/20260528100000_company_open_data_tables.sql docs/company-open-data-ckan-audit.md; git status --short)",
+      "PowerShell(cd d:\\\\ksenia_expert; git push origin main 2>&1; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\ksenia_expert; npm install jose --save 2>&1 | tail -5; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\ksenia_expert; npm install jose --save 2>&1 | Select-Object -Last 5; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\ksenia_expert; node_modules\\\\.bin\\\\tsc --noEmit --skipLibCheck 2>&1 | Select-Object -First 30; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(cd d:\\\\ksenia_expert; git commit -m \"feat\\(holded-mcp\\): EXPERT bridge endpoints + auth flow\"; echo \"EXIT:$LASTEXITCODE\")",
+      "PowerShell(vercel env rm HOLDED_MCP_SHARED_SECRET  production --yes 2>&1)",
+      "PowerShell(vercel env rm HOLDED_MCP_SESSION_SECRET production --yes 2>&1)",
+      "PowerShell(cd d:\\\\ksenia_expert\\\\apps\\\\holded-mcp; $latest = \\(vercel ls production 2>&1 | Select-String \"expert-holded-r\" | Select-Object -First 1\\).ToString\\(\\).Trim\\(\\).Split\\(\" \"\\)[2]; echo \"Latest: $latest\"; vercel redeploy $latest 2>&1 | Select-Object -Last 6)",
+      "PowerShell(cd d:\\\\ksenia_expert; \\(Get-Content \"lib\\\\ai\\\\kia\\\\health\\\\kia-health-checks.ts\" | Measure-Object -Line\\).Lines)"
     ],
     "additionalDirectories": [
       "c:\\Users\\info\\.claude\\projects\\c--Users-info-OneDrive-Documentos-EXPERT-Nueva-Pagina-web-ksenia-expert\\memory",
