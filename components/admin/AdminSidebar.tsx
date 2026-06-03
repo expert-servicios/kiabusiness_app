@@ -1,77 +1,79 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import {
-  ChevronDown, ChevronLeft, ChevronRight, CreditCard,
-  FolderOpen, LayoutDashboard, LogOut, Menu, Plug,
-  UserPlus, Users, X, Zap, ShieldCheck,
+  CreditCard, FolderOpen, LayoutDashboard,
+  Menu, Plug, UserPlus, Users, X, Zap, ShieldCheck,
+  Settings, User,
 } from 'lucide-react';
-import { PushSubscribeButton } from './PushSubscribeButton';
+import { AdminUserDrawer } from './AdminUserDrawer';
 
 interface NavItem { label: string; href: string; badge?: number }
-interface NavGroup { label: string; icon: React.ElementType; items: NavItem[] }
+interface NavGroup { label: string; short: string; icon: React.ElementType; items: NavItem[] }
 
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Clientes',
+    short: 'Clientes',
     icon: Users,
     items: [
       { label: 'Clientes', href: '/admin/clientes' },
       { label: 'Usuarios', href: '/admin/usuarios' },
       { label: 'Onboarding', href: '/admin/onboarding' },
       { label: 'Calendario', href: '/admin/calendario-fiscal' },
-    ]
+    ],
   },
   {
     label: 'Operaciones',
+    short: 'Ops',
     icon: FolderOpen,
     items: [
       { label: 'Expedientes', href: '/admin/expedientes' },
       { label: 'Documentos', href: '/admin/documentos' },
       { label: 'Citas', href: '/admin/citas' },
       { label: 'Presupuestos', href: '/admin/presupuestos' },
-      { label: 'WhatsApp', href: '/admin/whatsapp' },
-      { label: 'Correo', href: '/admin/correo' },
-    ]
+    ],
   },
   {
     label: 'Facturación',
+    short: 'Factura',
     icon: CreditCard,
     items: [
       { label: 'Suscripciones', href: '/admin/suscripciones' },
       { label: 'Pagos Stripe', href: '/admin/pagos' },
       { label: 'Emails', href: '/admin/emails' },
-    ]
+    ],
   },
   {
     label: 'Marketing',
+    short: 'Mktg',
     icon: Zap,
     items: [
       { label: 'Leads SaaS', href: '/admin/saas-leads' },
       { label: 'Holded Demos', href: '/admin/holded-demos' },
-    ]
+    ],
   },
   {
     label: 'Equipo',
+    short: 'Equipo',
     icon: UserPlus,
     items: [
       { label: 'Equipo y accesos', href: '/admin/equipo' },
-    ]
+    ],
   },
   {
     label: 'Sistema',
+    short: 'Sistema',
     icon: Plug,
     items: [
       { label: 'Panel Gerente', href: '/admin/executive' },
       { label: 'Rentabilidad', href: '/admin/rentabilidad' },
       { label: 'Kia Health', href: '/admin/kia-health' },
       { label: 'Kia Auditor', href: '/admin/kia-auditor' },
-      { label: 'Integraciones', href: '/admin/integraciones' },
       { label: 'Reportes', href: '/admin/reportes' },
-    ]
+    ],
   },
 ];
 
@@ -83,74 +85,74 @@ interface Props {
 
 export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [rail, setRail] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(NAV_GROUPS[0].label);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Auto-select tab based on current route
   useEffect(() => {
-    const saved = localStorage.getItem('adminSidebarRail');
-    if (saved === 'true') setRail(true);
-  }, []);
+    const match = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+    if (match) setActiveTab(match.label);
+  }, [pathname]);
 
-  const toggleRail = () => {
-    setRail((prev) => {
-      const next = !prev;
-      localStorage.setItem('adminSidebarRail', String(next));
-      return next;
-    });
+  // Persist tab selection
+  useEffect(() => {
+    const saved = localStorage.getItem('adminSidebarTab');
+    if (saved && NAV_GROUPS.some((g) => g.label === saved)) {
+      // Only apply saved tab if current route doesn't override it
+      const routeMatch = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+      if (!routeMatch) setActiveTab(saved);
+    }
+  }, [pathname]);
+
+  const saveTab = (label: string) => {
+    setActiveTab(label);
+    localStorage.setItem('adminSidebarTab', label);
   };
-
-  const displayName = userName ?? userEmail.split('@')[0];
-
-  const toggleGroup = (label: string) =>
-    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
-  const handleLogout = async () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createBrowserClient(url, key);
-    await supabase.auth.signOut();
-    router.push('/auth/login');
-  };
+  const displayName = userName ?? userEmail.split('@')[0];
+  const activeGroup = NAV_GROUPS.find((g) => g.label === activeTab) ?? NAV_GROUPS[0];
 
-  // SidebarContent renders full or rail mode depending on isRail prop
-  function SidebarContent({ isRail }: { isRail: boolean }) {
+  function SidebarContent({ isMobile = false }: { isMobile?: boolean }) {
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className={`flex items-center border-b border-white/8 py-4 ${isRail ? 'justify-center px-2' : 'gap-2.5 px-4'}`}>
+        <div className="flex items-center gap-2.5 border-b border-white/8 px-4 py-4">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#D4A017]">
             <ShieldCheck className="h-4 w-4 text-[#07111d]" />
           </div>
-          {!isRail && (
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">Expert</p>
-              <p className="text-[10px] text-white/40">Panel de administración</p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">Expert</p>
+            <p className="text-[10px] text-white/40">Panel de administración</p>
+          </div>
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="ml-auto rounded-lg p-1 text-white/40 hover:bg-white/8 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
           )}
         </div>
 
         {/* Dashboard link */}
-        <div className={`pt-3 ${isRail ? 'px-2' : 'px-3'}`}>
+        <div className="px-3 pt-3">
           <Link
             href="/admin"
             onClick={() => setMobileOpen(false)}
-            title={isRail ? 'Dashboard' : undefined}
-            className={`flex items-center rounded-lg py-2 text-sm font-semibold transition ${
-              isRail ? 'justify-center px-2' : 'gap-2.5 px-3'
-            } ${
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
               isActive('/admin')
                 ? 'bg-[#D4A017]/15 text-[#D4A017]'
                 : 'text-white/70 hover:bg-white/6 hover:text-white'
             }`}
           >
             <LayoutDashboard className="h-4 w-4 shrink-0" />
-            {!isRail && 'Dashboard'}
-            {!isRail && urgentCount > 0 && (
+            Dashboard
+            {urgentCount > 0 && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
                 {urgentCount}
               </span>
@@ -158,121 +160,77 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
           </Link>
         </div>
 
-        {/* Nav groups */}
-        <nav className={`flex-1 overflow-y-auto py-2 space-y-0.5 ${isRail ? 'px-2' : 'px-3'}`}>
+        {/* Category tabs */}
+        <div className="mx-3 mt-3 flex rounded-xl bg-white/4 p-1">
           {NAV_GROUPS.map((group) => {
             const Icon = group.icon;
-            const groupActive = group.items.some((item) => isActive(item.href));
-
-            if (isRail) {
-              return (
-                <Link
-                  key={group.label}
-                  href={group.items[0].href}
-                  onClick={() => setMobileOpen(false)}
-                  title={group.label}
-                  className={`flex justify-center rounded-lg p-2.5 transition ${
-                    groupActive
-                      ? 'bg-[#D4A017]/12 text-[#D4A017]'
-                      : 'text-white/40 hover:bg-white/6 hover:text-white/80'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </Link>
-              );
-            }
-
-            const isOpen = collapsed[group.label] !== true;
+            const isSelected = activeTab === group.label;
+            const hasActive = group.items.some((i) => isActive(i.href));
             return (
-              <div key={group.label}>
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.label)}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                    groupActive ? 'text-white/90' : 'text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">{group.label}</span>
-                  {isOpen
-                    ? <ChevronDown className="h-3 w-3" />
-                    : <ChevronRight className="h-3 w-3" />}
-                </button>
-
-                {isOpen && (
-                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/8 pl-3">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
-                          isActive(item.href)
-                            ? 'bg-[#D4A017]/12 font-semibold text-[#D4A017]'
-                            : 'text-white/60 hover:bg-white/5 hover:text-white'
-                        }`}
-                      >
-                        {item.label}
-                        {item.badge ? (
-                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] font-bold text-[#D4A017]">
-                            {item.badge}
-                          </span>
-                        ) : null}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={group.label}
+                type="button"
+                title={group.label}
+                onClick={() => saveTab(group.label)}
+                className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 transition ${
+                  isSelected
+                    ? 'bg-[#D4A017]/20 text-[#D4A017]'
+                    : hasActive
+                    ? 'text-[#D4A017]/70 hover:text-[#D4A017]'
+                    : 'text-white/35 hover:text-white/70'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </button>
             );
           })}
+        </div>
+
+        {/* Active category label */}
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+            {activeGroup.label}
+          </span>
+        </div>
+
+        {/* Nav items for active tab */}
+        <nav className="flex-1 overflow-y-auto px-3 pb-2 space-y-0.5">
+          {activeGroup.items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                isActive(item.href)
+                  ? 'bg-[#D4A017]/12 font-semibold text-[#D4A017]'
+                  : 'text-white/65 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              {item.label}
+              {item.badge ? (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] font-bold text-[#D4A017]">
+                  {item.badge}
+                </span>
+              ) : null}
+            </Link>
+          ))}
         </nav>
 
-        {/* Footer */}
-        <div className={`border-t border-white/8 py-3 space-y-1 ${isRail ? 'px-2' : 'px-3'}`}>
-          {!isRail && (
-            <div className="mb-2 rounded-lg bg-white/4 px-3 py-2">
+        {/* Footer — user avatar + actions */}
+        <div className="border-t border-white/8 px-3 py-3">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-white/4 px-3 py-2.5 text-left transition hover:bg-white/8"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4A017]/20 text-[#D4A017]">
+              <User className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-white/80">{displayName}</p>
               <p className="truncate text-[10px] text-white/40">{userEmail}</p>
             </div>
-          )}
-
-          {!isRail && <PushSubscribeButton />}
-
-          {!isRail && (
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 hover:text-white"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
-              Vista de cliente
-            </Link>
-          )}
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            title={isRail ? 'Cerrar sesión' : undefined}
-            className={`flex w-full items-center rounded-lg py-2 text-xs font-semibold text-white/40 transition hover:bg-white/8 hover:text-red-400 ${
-              isRail ? 'justify-center px-2' : 'gap-2 px-3'
-            }`}
-          >
-            <LogOut className="h-3.5 w-3.5 shrink-0" />
-            {!isRail && 'Cerrar sesión'}
-          </button>
-
-          {/* Rail toggle — desktop only (hidden in mobile drawer) */}
-          <button
-            type="button"
-            onClick={toggleRail}
-            title={isRail ? 'Expandir menú' : 'Contraer menú'}
-            className={`hidden lg:flex w-full items-center rounded-lg py-2 text-white/25 transition hover:bg-white/6 hover:text-white/60 ${
-              isRail ? 'justify-center px-2' : 'gap-2 px-3'
-            }`}
-          >
-            {isRail
-              ? <ChevronRight className="h-3.5 w-3.5" />
-              : <><ChevronLeft className="h-3.5 w-3.5" /><span className="text-[11px]">Contraer</span></>}
+            <Settings className="h-3.5 w-3.5 shrink-0 text-white/30" />
           </button>
         </div>
       </div>
@@ -292,32 +250,51 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setMobileOpen((o) => !o)}
-          className="rounded-lg p-1.5 text-white/60 hover:bg-white/8 hover:text-white"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="rounded-lg p-1.5 text-white/60 hover:bg-white/8 hover:text-white"
+          >
+            <User className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileOpen((o) => !o)}
+            className="rounded-lg p-1.5 text-white/60 hover:bg-white/8 hover:text-white"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
-      {/* ── MOBILE drawer — full screen, always full (non-rail) ── */}
+      {/* ── MOBILE drawer ── */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
       <aside
-        className={`fixed inset-0 z-50 bg-[#07111d] transition-transform duration-300 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#07111d] transition-transform duration-300 lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <SidebarContent isRail={false} />
+        <SidebarContent isMobile />
       </aside>
 
-      {/* ── DESKTOP sidebar — width transitions with rail state ── */}
-      <aside
-        className={`hidden lg:flex lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#07111d] lg:sticky lg:top-0 lg:h-screen overflow-hidden transition-[width] duration-200 ease-in-out ${
-          rail ? 'lg:w-14' : 'lg:w-56'
-        }`}
-      >
-        <SidebarContent isRail={rail} />
+      {/* ── DESKTOP sidebar ── */}
+      <aside className="hidden lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#07111d] lg:sticky lg:top-0 lg:h-screen overflow-hidden">
+        <SidebarContent />
       </aside>
+
+      {/* ── User settings drawer ── */}
+      <AdminUserDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        userName={userName}
+        userEmail={userEmail}
+      />
     </>
   );
 }

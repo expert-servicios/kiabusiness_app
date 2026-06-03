@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
+import { AdminRightPanel } from '@/components/admin/AdminRightPanel';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
@@ -41,9 +42,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   const { data: profile } = await getSupabaseAdmin()
     .from('profiles')
-    .select('id,role,full_name')
+    .select('id,role,status,full_name')
     .eq('id', user.id)
     .single();
+
+  if (profile?.status === 'inactive') {
+    redirect('/auth/login?error=inactive');
+  }
 
   if (profile?.role !== 'admin' && profile?.role !== 'owner') {
     redirect('/dashboard');
@@ -75,6 +80,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
         {children}
       </div>
+      <AdminRightPanel />
       <AdminMobileNav urgentCount={urgentCount} />
     </div>
   );

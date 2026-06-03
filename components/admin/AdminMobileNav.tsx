@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, MessageCircle, Users, Calendar } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CreditCard, Users, Calendar } from 'lucide-react';
 
 const TABS = [
   { href: '/admin', label: 'Inicio', icon: LayoutDashboard, exact: true },
-  { href: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle, exact: false },
   { href: '/admin/expedientes', label: 'Tramites', icon: FolderOpen, exact: false },
-  { href: '/admin/usuarios', label: 'Clientes', icon: Users, exact: false },
+  { href: '/admin/clientes', label: 'Clientes', icon: Users, exact: false },
   { href: '/admin/calendario-fiscal', label: 'Agenda', icon: Calendar, exact: false },
+  { href: '/admin/pagos', label: 'Factura', icon: CreditCard, exact: false },
 ];
 
 export function AdminMobileNav({ urgentCount = 0 }: { urgentCount?: number }) {
