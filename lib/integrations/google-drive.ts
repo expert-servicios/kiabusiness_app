@@ -40,6 +40,66 @@ export interface DriveSyncResult {
   webViewLink: string;
 }
 
+export interface DriveFileSummary {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string;
+  size: string | null;
+  createdTime: string | null;
+}
+
+export async function listDriveFilesForClient(
+  clientName: string,
+  serviceName?: string
+): Promise<DriveFileSummary[]> {
+  const rootFolderId = process.env.GOOGLE_DRIVE_CLIENTS_FOLDER_ID;
+  const drive = await getDriveClient();
+  if (!drive || !rootFolderId) return [];
+
+  try {
+    const safeName = (n: string) => n.replace(/['"\\]/g, '_').slice(0, 100);
+
+    // Find client folder
+    const clientRes = await drive.files.list({
+      q: `name='${safeName(clientName)}' and mimeType='application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed=false`,
+      fields: 'files(id)',
+      spaces: 'drive',
+      pageSize: 1,
+    });
+    const clientFolderId: string | undefined = clientRes.data.files?.[0]?.id;
+    if (!clientFolderId) return [];
+
+    let searchParentId = clientFolderId;
+
+    // Optionally drill into service subfolder
+    if (serviceName) {
+      const svcRes = await drive.files.list({
+        q: `name='${safeName(serviceName)}' and mimeType='application/vnd.google-apps.folder' and '${clientFolderId}' in parents and trashed=false`,
+        fields: 'files(id)',
+        spaces: 'drive',
+        pageSize: 1,
+      });
+      const svcFolderId: string | undefined = svcRes.data.files?.[0]?.id;
+      if (svcFolderId) searchParentId = svcFolderId;
+    }
+
+    // List files
+    const filesRes = await drive.files.list({
+      q: `'${searchParentId}' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'`,
+      fields: 'files(id,name,mimeType,webViewLink,size,createdTime)',
+      orderBy: 'createdTime desc',
+      pageSize: 50,
+      spaces: 'drive',
+    });
+
+    return (filesRes.data.files ?? []) as DriveFileSummary[];
+  } catch (err) {
+    console.error('[Drive] listDriveFilesForClient error:', err);
+    return [];
+  }
+}
+
 export async function syncDocumentToDrive({
   fileBuffer,
   fileName,

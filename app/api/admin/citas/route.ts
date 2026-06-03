@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
+import { upsertCalendarEventSA, deleteCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -78,12 +79,39 @@ export async function PATCH(request: NextRequest) {
       .from('appointments')
       .update(updatePayload)
       .eq('id', id)
-      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,status')
+      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,status,google_event_id')
       .single();
 
     if (error || !appt) {
       console.error('[admin/citas] PATCH:', error);
       return NextResponse.json({ error: 'No se pudo actualizar' }, { status: 500 });
+    }
+
+    // Background: sync to Google Calendar when confirmed or cancelled
+    if (hasCalendarSA()) {
+      if (appt.status === 'confirmed' && appt.confirmed_date && appt.confirmed_time) {
+        const [h, m] = (appt.confirmed_time as string).split(':');
+        const endH = String((parseInt(h) * 60 + parseInt(m) + 60) / 60 | 0).padStart(2, '0');
+        const endM = String((parseInt(m) + 60) % 60).padStart(2, '0');
+        upsertCalendarEventSA(
+          {
+            summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+            description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
+            date: appt.confirmed_date as string,
+            startTime: (appt.confirmed_time as string).slice(0, 5),
+            endTime: `${endH}:${endM}`,
+            reminderMinutesBefore: [1440, 60], // 1 day + 1 hour before
+          },
+          (appt.google_event_id as string | null) ?? undefined
+        ).then((eventId) => {
+          if (eventId) {
+            admin.from('appointments').update({ google_event_id: eventId }).eq('id', appt.id).then(() => null, () => null);
+          }
+        }).catch((e) => console.error('[citas] calendar sync:', e));
+      } else if (appt.status === 'cancelled' && appt.google_event_id) {
+        deleteCalendarEventSA(appt.google_event_id as string)
+          .catch((e) => console.error('[citas] calendar delete:', e));
+      }
     }
 
     // Send confirmation email if requested and status is confirmed

@@ -5,6 +5,7 @@ import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
 import { sendEmail } from '@/lib/email/send';
+import { upsertCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
 import {
   caseDocsRequired,
   caseDocsReceived,
@@ -241,8 +242,35 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
     }
 
-    const { error: updateErr } = await admin.from('cases').update(updatePayload).eq('id', id);
+    const { data: updatedCase, error: updateErr } = await admin
+      .from('cases')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('service, category, client_id, google_calendar_event_id')
+      .single();
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+    // Background: sync due_date to Google Calendar as a reminder
+    if (body.due_date && hasCalendarSA() && updatedCase) {
+      const dateOnly = body.due_date.slice(0, 10);
+      const clientInfo = await getClientInfo(admin, updatedCase.client_id).catch(() => null);
+      upsertCalendarEventSA(
+        {
+          summary: `⚠️ Vencimiento: ${updatedCase.service ?? updatedCase.category}`,
+          description: clientInfo
+            ? `Cliente: ${clientInfo.name} (${clientInfo.email})\nExpediente: ${id}`
+            : `Expediente: ${id}`,
+          date: dateOnly,
+          reminderDaysBefore: [7, 1],
+        },
+        (updatedCase.google_calendar_event_id as string | null) ?? undefined
+      ).then((eventId) => {
+        if (eventId) {
+          admin.from('cases').update({ google_calendar_event_id: eventId }).eq('id', id)
+            .then(() => null, () => null);
+        }
+      }).catch((e) => console.error('[cases PATCH] calendar sync:', e));
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
