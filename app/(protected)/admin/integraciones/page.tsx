@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, Clock3, Mail, Calendar, PlugZap, RefreshCw, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { StripeSyncPanel } from '@/components/admin/StripeSyncPanel';
+import { HoldedPullButton } from '@/components/admin/HoldedPullButton';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SyncEvent {
@@ -245,6 +246,9 @@ export default async function AdminIntegracionesPage() {
               </span>
             </div>
           ) : null}
+
+          {/* Pull sync button — client component */}
+          <HoldedPullButton />
         </section>
 
         {/* ── Stripe sync ── */}

@@ -143,6 +143,186 @@ export function getHoldedRuntimeConfig() {
   };
 }
 
+// ── Pull helpers: read data FROM Holded ──────────────────────────────────────
+
+export interface HoldedContactFull {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  mobile?: string;
+  type?: number;
+  code?: string;
+}
+
+export interface HoldedInvoiceSummary {
+  id: string;
+  docNumber: string;
+  contactId: string;
+  contactName?: string;
+  total: number;
+  status: number; // 0=draft,1=outstanding,2=paid,etc.
+  date: number;   // unix timestamp
+}
+
+export async function listHoldedContacts(
+  opts?: { page?: number; pageSize?: number }
+): Promise<HoldedContactFull[]> {
+  if (!isConfigured()) return [];
+  const params = new URLSearchParams();
+  if (opts?.page) params.set('page', String(opts.page));
+  const qs = params.toString() ? `?${params}` : '';
+  const data = await holdedFetch<HoldedContactFull[] | { data?: HoldedContactFull[] }>(
+    'GET', `/contacts${qs}`
+  );
+  return Array.isArray(data) ? data : (data.data ?? []);
+}
+
+export async function listHoldedInvoices(
+  opts?: { page?: number; status?: 'outstanding' | 'paid' }
+): Promise<HoldedInvoiceSummary[]> {
+  if (!isConfigured()) return [];
+  const params = new URLSearchParams();
+  if (opts?.page) params.set('page', String(opts.page));
+  if (opts?.status) params.set('status', opts.status);
+  const qs = params.toString() ? `?${params}` : '';
+  const data = await holdedFetch<HoldedInvoiceSummary[] | { data?: HoldedInvoiceSummary[] }>(
+    'GET', `/documents/invoice${qs}`
+  );
+  return Array.isArray(data) ? data : (data.data ?? []);
+}
+
+// ── Admin-triggered contact sync ─────────────────────────────────────────────
+
+export async function syncClientToHolded(params: {
+  profileId: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+}): Promise<HoldedSyncResult> {
+  const syncEventId = await createSyncEvent({
+    direction: 'to_external',
+    operation: 'sync_client_contact',
+    localEntity: 'profiles',
+    localId: params.profileId,
+    externalEntity: 'holded_contact',
+    requestPayload: { email: params.email, name: params.name },
+  });
+
+  if (!isConfigured()) {
+    await updateSyncEvent(syncEventId, { status: 'skipped', error: 'HOLDED_API_KEY not set' });
+    return { contactId: null, invoiceId: null, syncEventId };
+  }
+
+  try {
+    const contactId = await upsertContact({ name: params.name, email: params.email, phone: params.phone });
+
+    // Store external mapping so it doesn't get duplicated
+    const supabase = getSupabaseAdmin();
+    await supabase.from('external_mappings').upsert(
+      {
+        provider: 'holded',
+        local_entity: 'profiles',
+        local_id: params.profileId,
+        external_entity: 'holded_contact',
+        external_id: contactId,
+      },
+      { onConflict: 'provider,local_entity,local_id,external_entity' }
+    ).then(() => null, () => null);
+
+    await updateSyncEvent(syncEventId, { status: 'success', externalId: contactId, responsePayload: { contactId } });
+    return { contactId, invoiceId: null, syncEventId };
+  } catch (error) {
+    const msg = errorMessage(error);
+    await updateSyncEvent(syncEventId, { status: 'failed', error: msg });
+    console.error('[holded] syncClientToHolded error:', msg);
+    return { contactId: null, invoiceId: null, syncEventId, error: msg };
+  }
+}
+
+// ── Estimate (presupuesto) creation ──────────────────────────────────────────
+
+export async function createEstimate(params: {
+  contactId: string;
+  description: string;
+  amountEur: number;
+  reference?: string;
+}): Promise<string> {
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const body: Record<string, unknown> = {
+    contactId: params.contactId,
+    desc: params.description,
+    date: nowUnix,
+    items: [{ name: params.description, units: 1, subtotal: params.amountEur }],
+  };
+  if (params.reference) body.notes = `Ref: ${params.reference}`;
+  const data = await holdedFetch<{ id: string }>('POST', '/documents/estimate', body);
+  return data.id;
+}
+
+export async function syncQuoteAsEstimate(params: {
+  quoteId: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string | null;
+  title: string;
+  amountEur: number;
+}): Promise<HoldedSyncResult> {
+  const syncEventId = await createSyncEvent({
+    direction: 'to_external',
+    operation: 'sync_quote_estimate',
+    localEntity: 'quotes',
+    localId: params.quoteId,
+    externalEntity: 'holded_estimate',
+    requestPayload: { clientEmail: params.clientEmail, title: params.title, amountEur: params.amountEur },
+  });
+
+  if (!isConfigured()) {
+    await updateSyncEvent(syncEventId, { status: 'skipped', error: 'HOLDED_API_KEY not set' });
+    return { contactId: null, invoiceId: null, syncEventId };
+  }
+
+  try {
+    const contactId = await upsertContact({
+      name: params.clientName,
+      email: params.clientEmail,
+      phone: params.clientPhone,
+    });
+
+    const estimateId = await createEstimate({
+      contactId,
+      description: params.title,
+      amountEur: params.amountEur,
+      reference: params.quoteId,
+    });
+
+    // Save mapping
+    const supabase = getSupabaseAdmin();
+    await supabase.from('external_mappings').upsert(
+      {
+        provider: 'holded',
+        local_entity: 'quotes',
+        local_id: params.quoteId,
+        external_entity: 'holded_estimate',
+        external_id: estimateId,
+      },
+      { onConflict: 'provider,local_entity,local_id,external_entity' }
+    ).then(() => null, () => null);
+
+    await updateSyncEvent(syncEventId, {
+      status: 'success',
+      externalId: estimateId,
+      responsePayload: { contactId, estimateId },
+    });
+    return { contactId, invoiceId: estimateId, syncEventId };
+  } catch (error) {
+    const msg = errorMessage(error);
+    await updateSyncEvent(syncEventId, { status: 'failed', error: msg });
+    console.error('[holded] syncQuoteAsEstimate error:', msg);
+    return { contactId: null, invoiceId: null, syncEventId, error: msg };
+  }
+}
+
 // ── Listing helpers (used by status probe) ────────────────────────────────────
 
 export async function listDocuments(

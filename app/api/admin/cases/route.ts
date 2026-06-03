@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
+import { syncProjectToHolded } from '@/lib/integrations/holded';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -8,7 +9,7 @@ async function requireAdmin(request: NextRequest) {
   if (!user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? admin : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -91,6 +92,24 @@ export async function POST(request: NextRequest) {
       console.error('[admin/cases POST]', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Background: sync new case as Holded project
+    admin.auth.admin.getUserById(client_id).then(({ data: authUser }) => {
+      const { data: profileData, error: pErr } = { data: null as null, error: null as null };
+      void pErr;
+      return admin.from('profiles').select('full_name,phone').eq('id', client_id).maybeSingle()
+        .then(({ data: prof }) => {
+          syncProjectToHolded({
+            caseId: newCase.id,
+            service,
+            category,
+            state: 'pendiente',
+            clientName: prof?.full_name ?? null,
+            clientEmail: authUser?.user?.email ?? null,
+            clientPhone: prof?.phone ?? null,
+          }).catch((e) => console.error('[cases POST] holded sync:', e));
+        });
+    }).catch((e) => console.error('[cases POST] profile fetch:', e));
 
     return NextResponse.json({ case: newCase }, { status: 201 });
   } catch (err) {

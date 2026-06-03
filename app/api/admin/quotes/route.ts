@@ -7,6 +7,7 @@ import { quoteWithPaymentLink } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { syncQuoteAsEstimate } from '@/lib/integrations/holded';
 
 const quoteSchema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
@@ -25,7 +26,7 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
     .from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? user.id : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? user.id : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -178,6 +179,16 @@ export async function POST(request: NextRequest) {
       entity_id: quote.id,
       metadata: { client_email: clientEmail, amount_eur: amountEur, stripe_session: session.id }
     }).then(() => {});
+
+    // Background: create Holded estimate (presupuesto) for this quote
+    syncQuoteAsEstimate({
+      quoteId: quote.id,
+      clientName,
+      clientEmail,
+      clientPhone: null,
+      title,
+      amountEur,
+    }).catch((e) => console.error('[admin/quotes] holded estimate sync:', e));
 
     return NextResponse.json({ ok: true, quoteId: quote.id, stripeUrl: session.url });
   } catch (err) {
