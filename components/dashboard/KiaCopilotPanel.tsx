@@ -1,91 +1,111 @@
 'use client';
 
 /**
- * KiaCopilotPanel
- *
  * Floating Kia copilot panel for the client dashboard.
- * Detects the current page and task via usePathname() to provide
- * context-aware proactive suggestions.
  *
- * - Appears as a floating button (bottom-right)
- * - Expands into a chat panel
- * - Auto-sends a proactive greeting on first open based on current page
- * - Sends currentPage + currentTask to /api/kia/copilot
+ * The panel sends page context to /api/kia/copilot and can render lightweight
+ * artifacts returned by Kia tools: report links, secure links and small tables.
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bot, X, Send, Loader2, ChevronDown, Sparkles } from 'lucide-react';
-
-// ── Page context mapping ──────────────────────────────────────────────────────
+import {
+  BarChart3,
+  Bot,
+  ChevronDown,
+  ExternalLink,
+  Link as LinkIcon,
+  Loader2,
+  Send,
+  Sparkles,
+  Table2,
+  X,
+} from 'lucide-react';
 
 interface PageCtx {
-  task       : string;
-  proactive  : string; // initial message Kia sends on open
+  task: string;
+  proactive: string;
 }
 
 const PAGE_CONTEXTS: Array<{ pattern: RegExp; ctx: PageCtx }> = [
   {
     pattern: /^\/dashboard\/empresa\/nueva/,
     ctx: {
-      task     : 'creating_company',
-      proactive: '¡Hola! Veo que estás añadiendo una empresa. ¿Quieres que busque sus datos fiscales en fuentes públicas (CIF, dirección, razón social)?',
+      task: 'creating_company',
+      proactive:
+        'Hola, soy Kia, asistente virtual de EXPERT. Veo que estas anadiendo una empresa. Puedo ayudarte a revisar datos fiscales y fuentes publicas antes de guardarla.',
     },
   },
   {
     pattern: /^\/dashboard\/empresa/,
     ctx: {
-      task     : 'editing_company',
-      proactive: 'Estoy aquí si necesitas ayuda con los datos de tu empresa o quieres que los verifique contra el registro público.',
+      task: 'editing_company',
+      proactive:
+        'Soy Kia. Estoy aqui si necesitas revisar datos de empresa, fuentes publicas o coherencia fiscal.',
     },
   },
   {
     pattern: /^\/dashboard\/informes\/[^/]+/,
     ctx: {
-      task     : 'viewing_report',
-      proactive: '¿Tienes alguna pregunta sobre este informe? Puedo explicarte cualquier cifra o detectar anomalías.',
+      task: 'viewing_report',
+      proactive:
+        'Soy Kia. Puedes preguntarme por cualquier cifra de este informe; tambien puedo ayudarte a detectar anomalias.',
     },
   },
   {
     pattern: /^\/dashboard\/informes/,
     ctx: {
-      task     : 'browsing_reports',
-      proactive: '¿Quieres que genere un informe de estado de empresa? Incluye IVA estimado, saldos bancarios, top clientes y alertas contables.',
+      task: 'browsing_reports',
+      proactive:
+        'Soy Kia. Puedo generar un informe visual con datos de Holded: IVA estimado, ventas, gastos, bancos, clientes principales y alertas.',
+    },
+  },
+  {
+    pattern: /^\/dashboard\/estado-empresa/,
+    ctx: {
+      task: 'company_status_dashboard',
+      proactive:
+        'Soy Kia. Estoy preparada para explicar este Estado de empresa o generar un informe visual con graficos a partir de Holded.',
     },
   },
   {
     pattern: /^\/dashboard\/integraciones\/holded/,
     ctx: {
-      task     : 'holded_integration',
-      proactive: '¿Necesitas ayuda para conectar Holded? Te guío paso a paso: necesitas la API key de tu cuenta de Holded.',
+      task: 'holded_integration',
+      proactive:
+        'Soy Kia. Te guio para conectar Holded desde el Panel Cliente seguro; no hace falta enviar claves por chat.',
     },
   },
   {
     pattern: /^\/dashboard\/expedientes\/[^/]+/,
     ctx: {
-      task     : 'viewing_case',
-      proactive: '¿En qué puedo ayudarte con este expediente? Puedo revisar el estado, los documentos pendientes o explicar los próximos pasos.',
+      task: 'viewing_case',
+      proactive:
+        'Soy Kia. Puedo revisar el estado del expediente, documentos pendientes o proximos pasos.',
     },
   },
   {
     pattern: /^\/dashboard\/expedientes/,
     ctx: {
-      task     : 'browsing_cases',
-      proactive: '¿Tienes dudas sobre alguno de tus expedientes? Dime el servicio y te digo en qué punto está.',
+      task: 'browsing_cases',
+      proactive:
+        'Soy Kia. Si tienes dudas sobre un expediente, dime cual y reviso el siguiente paso util.',
     },
   },
   {
     pattern: /^\/dashboard\/suscripciones/,
     ctx: {
-      task     : 'viewing_subscriptions',
-      proactive: '¿Quieres información sobre tu plan actual o comparar opciones? Puedo explicarte qué incluye cada plan.',
+      task: 'viewing_subscriptions',
+      proactive:
+        'Soy Kia. Puedo explicarte tu plan actual, comparar opciones o revisar si Holded esta preparado.',
     },
   },
   {
     pattern: /^\/dashboard$/,
     ctx: {
-      task     : 'dashboard_home',
-      proactive: '¡Hola! Soy Kia, tu asistente de EXPERT. ¿En qué puedo ayudarte hoy?',
+      task: 'dashboard_home',
+      proactive:
+        'Hola, soy Kia, asistente virtual de EXPERT. Estoy preparada para ayudarte con expedientes, Holded, informes o servicios.',
     },
   },
 ];
@@ -95,61 +115,58 @@ function getPageCtx(pathname: string): PageCtx {
     if (pattern.test(pathname)) return ctx;
   }
   return {
-    task     : 'browsing_dashboard',
-    proactive: '¡Hola! Soy Kia. ¿En qué puedo ayudarte?',
+    task: 'browsing_dashboard',
+    proactive:
+      'Hola, soy Kia, asistente virtual de EXPERT. Cuentame que necesitas y te guio paso a paso.',
   };
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+type CopilotArtifact =
+  | { type: 'report'; title: string; url: string; period?: string; cta: string }
+  | { type: 'table'; title: string; columns: string[]; rows: Array<Record<string, unknown>> }
+  | { type: 'link'; title: string; url: string; cta: string; tone?: 'warning' | 'info' };
 
 interface Message {
-  role   : 'user' | 'kia';
-  text   : string;
+  role: 'user' | 'kia';
+  text: string;
+  artifacts?: CopilotArtifact[];
   loading?: boolean;
 }
 
 interface QuickReply {
-  id   : string;
+  id: string;
   title: string;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export function KiaCopilotPanel() {
-  const pathname  = usePathname();
-  const pageCtx   = getPageCtx(pathname);
+  const pathname = usePathname();
+  const pageCtx = getPageCtx(pathname);
 
-  const [open,       setOpen]       = useState(false);
-  const [input,      setInput]      = useState('');
-  const [messages,   setMessages]   = useState<Message[]>([]);
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
-  const [loading,    setLoading]    = useState(false);
-  const [proactiveSent, setProactiveSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef       = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Reset proactive flag on page change
-  useEffect(() => {
-    setProactiveSent(false);
-  }, [pathname]);
-
-  // Send proactive message when panel opens
-  useEffect(() => {
-    if (open && !proactiveSent && messages.length === 0) {
-      setProactiveSent(true);
+  function handleToggleOpen() {
+    const nextOpen = !open;
+    setOpen(nextOpen);
+    if (nextOpen && messages.length === 0) {
       setMessages([{ role: 'kia', text: pageCtx.proactive }]);
     }
-  }, [open, proactiveSent, messages.length, pageCtx.proactive]);
+  }
 
   const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || loading) return;
+    const cleanText = text.trim();
+    if (!cleanText || loading) return;
 
-    const userMsg: Message = { role: 'user', text: text.trim() };
+    const userMsg: Message = { role: 'user', text: cleanText };
     const loadingMsg: Message = { role: 'kia', text: '', loading: true };
 
     setMessages((prev) => [...prev, userMsg, loadingMsg]);
@@ -158,32 +175,44 @@ export function KiaCopilotPanel() {
     setLoading(true);
 
     const history = messages
-      .filter((m) => !m.loading)
+      .filter((message) => !message.loading)
       .slice(-8)
-      .map((m) => ({ role: m.role === 'kia' ? 'assistant' : 'user' as const, text: m.text }));
+      .map((message) => ({
+        role: message.role === 'kia' ? 'assistant' as const : 'user' as const,
+        text: message.text,
+      }));
 
     try {
       const res = await fetch('/api/kia/copilot', {
-        method : 'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          message    : text.trim(),
+        body: JSON.stringify({
+          message: cleanText,
           currentPage: pathname,
           currentTask: pageCtx.task,
           history,
         }),
       });
-      const data = await res.json() as { message?: string; quickReplies?: QuickReply[]; error?: string };
+      const data = await res.json() as {
+        message?: string;
+        quickReplies?: QuickReply[];
+        artifacts?: CopilotArtifact[];
+        error?: string;
+      };
 
       setMessages((prev) => [
-        ...prev.slice(0, -1), // remove loading
-        { role: 'kia', text: data.message ?? data.error ?? 'Lo siento, algo salió mal.' },
+        ...prev.slice(0, -1),
+        {
+          role: 'kia',
+          text: data.message ?? data.error ?? 'Lo siento, algo salio mal.',
+          artifacts: data.artifacts ?? [],
+        },
       ]);
       setQuickReplies(data.quickReplies ?? []);
     } catch {
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: 'kia', text: 'No pude conectar con el servidor. Inténtalo de nuevo.' },
+        { role: 'kia', text: 'No pude conectar con el servidor. Intentalo de nuevo.' },
       ]);
     } finally {
       setLoading(false);
@@ -191,36 +220,34 @@ export function KiaCopilotPanel() {
     }
   }, [loading, messages, pathname, pageCtx.task]);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       sendMessage(input);
     }
   }
 
   return (
     <>
-      {/* Floating button */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggleOpen}
         aria-label="Abrir asistente Kia"
-        className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#c88b25] text-white shadow-lg transition hover:bg-[#b07820] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#c88b25]/50"
+        className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#c88b25] text-white shadow-lg transition hover:scale-105 hover:bg-[#b07820] focus:outline-none focus:ring-2 focus:ring-[#c88b25]/50"
       >
         {open ? <ChevronDown size={20} /> : <Bot size={20} />}
       </button>
 
-      {/* Panel */}
       {open && (
         <div className="fixed bottom-20 right-5 z-40 flex w-[340px] flex-col overflow-hidden rounded-2xl border border-[#e8dfc8] bg-white shadow-2xl sm:w-[380px]">
-
-          {/* Header */}
           <div className="flex items-center justify-between bg-[#c88b25] px-4 py-3">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-white/80" />
               <div>
                 <p className="text-sm font-bold text-white">Kia</p>
-                <p className="text-[10px] text-white/70">Asistente EXPERT · {pageCtx.task.replace(/_/g, ' ')}</p>
+                <p className="text-[10px] text-white/70">
+                  Asistente EXPERT · {pageCtx.task.replace(/_/g, ' ')}
+                </p>
               </div>
             </div>
             <button
@@ -233,50 +260,53 @@ export function KiaCopilotPanel() {
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-72">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-[#c88b25] text-white rounded-br-sm'
-                    : 'bg-[#f8f4eb] text-[#3d3528] rounded-bl-sm'
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 max-h-80">
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm ${
+                  message.role === 'user'
+                    ? 'rounded-br-sm bg-[#c88b25] text-white'
+                    : 'rounded-bl-sm bg-[#f8f4eb] text-[#3d3528]'
                 }`}>
-                  {msg.loading
-                    ? <Loader2 size={14} className="animate-spin text-[#c88b25]" />
-                    : msg.text
-                  }
+                  {message.loading ? (
+                    <Loader2 size={14} className="animate-spin text-[#c88b25]" />
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-wrap">{message.text}</p>
+                      {message.artifacts && message.artifacts.length > 0 && (
+                        <CopilotArtifacts artifacts={message.artifacts} />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick replies */}
           {quickReplies.length > 0 && (
             <div className="flex flex-wrap gap-1.5 border-t border-[#f0e8d8] px-4 py-2">
-              {quickReplies.map((qr) => (
+              {quickReplies.map((reply) => (
                 <button
-                  key={qr.id}
+                  key={reply.id}
                   type="button"
-                  onClick={() => sendMessage(qr.title)}
+                  onClick={() => sendMessage(reply.title)}
                   disabled={loading}
                   className="rounded-full border border-[#e8dfc8] bg-white px-3 py-1 text-xs font-medium text-[#3d3528] transition hover:bg-[#f8f4eb] disabled:opacity-50"
                 >
-                  {qr.title}
+                  {reply.title}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Input */}
           <div className="flex items-end gap-2 border-t border-[#f0e8d8] px-3 py-2">
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe tu pregunta…"
+              placeholder="Escribe tu pregunta..."
               rows={1}
               disabled={loading}
               className="flex-1 resize-none rounded-xl border border-[#e8dfc8] bg-[#faf9f6] px-3 py-2 text-sm text-[#3d3528] outline-none placeholder:text-[#c8b89a] focus:border-[#c88b25] disabled:opacity-50"
@@ -294,5 +324,90 @@ export function KiaCopilotPanel() {
         </div>
       )}
     </>
+  );
+}
+
+function CopilotArtifacts({ artifacts }: { artifacts: CopilotArtifact[] }) {
+  return (
+    <div className="mt-2 space-y-2">
+      {artifacts.map((artifact, index) => {
+        if (artifact.type === 'report') {
+          return (
+            <a
+              key={`${artifact.type}-${index}`}
+              href={artifact.url}
+              className="block rounded-xl border border-[#d8cbb5] bg-white p-3 text-[#3d3528] shadow-sm transition hover:border-[#c88b25]"
+            >
+              <div className="flex items-start gap-2">
+                <BarChart3 className="mt-0.5 h-4 w-4 shrink-0 text-[#c88b25]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold">{artifact.title}</p>
+                  {artifact.period && <p className="mt-0.5 text-[10px] text-[#7a6e5f]">{artifact.period}</p>}
+                  <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#a97320]">
+                    {artifact.cta} <ExternalLink className="h-3 w-3" />
+                  </span>
+                </div>
+              </div>
+            </a>
+          );
+        }
+
+        if (artifact.type === 'link') {
+          return (
+            <a
+              key={`${artifact.type}-${index}`}
+              href={artifact.url}
+              className={`block rounded-xl border p-3 shadow-sm transition ${
+                artifact.tone === 'warning'
+                  ? 'border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300'
+                  : 'border-[#d8cbb5] bg-white text-[#3d3528] hover:border-[#c88b25]'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <LinkIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold">{artifact.title}</p>
+                  <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">
+                    {artifact.cta} <ExternalLink className="h-3 w-3" />
+                  </span>
+                </div>
+              </div>
+            </a>
+          );
+        }
+
+        return (
+          <div
+            key={`${artifact.type}-${index}`}
+            className="rounded-xl border border-[#d8cbb5] bg-white p-3 text-[#3d3528] shadow-sm"
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <Table2 className="h-4 w-4 text-[#c88b25]" />
+              <p className="text-xs font-bold">{artifact.title}</p>
+            </div>
+            <div className="max-h-40 overflow-auto">
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="text-left text-[#7a6e5f]">
+                    {artifact.columns.map((column) => (
+                      <th key={column} className="pb-1 pr-2 font-semibold">{column}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f0e8d8]">
+                  {artifact.rows.slice(0, 6).map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {artifact.columns.map((column) => (
+                        <td key={column} className="py-1 pr-2">{String(row[column] ?? '-')}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const [profileRow, companiesData] = await Promise.all([
     getSupabaseAdmin()
       .from('profiles')
-      .select('id,role,full_name,active_company_id')
+      .select('id,role,status,full_name,active_company_id')
       .eq('id', user.id)
       .single()
       .then((r) => r.data),
@@ -50,6 +50,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   ]);
 
   const companies = companiesData?.companies ?? [];
+  if (profileRow?.status === 'inactive') redirect('/auth/login?error=inactive');
 
   return (
     <div className="flex min-h-screen">

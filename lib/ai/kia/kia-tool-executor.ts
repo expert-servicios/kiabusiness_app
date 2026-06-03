@@ -210,7 +210,7 @@ async function findHoldedIntegrationId(
   context: KiaContext,
 ): Promise<string | null> {
   const clientId  = context.contact?.clientId  ?? null;
-  const companyId = (context.company as Record<string, unknown> | null)?.companyId as string | null ?? null;
+  const companyId = context.company?.id ?? null;
 
   let query = admin
     .from('client_integrations')

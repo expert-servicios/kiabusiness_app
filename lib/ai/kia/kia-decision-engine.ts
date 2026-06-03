@@ -24,6 +24,7 @@ import {
   getRecentAssistantTextsFromContext,
 } from './kia-response-variation';
 import { normalizeKiaQuickReplies } from './kia-quick-replies';
+import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 
 export interface KiaDecisionResult {
   decision: KiaDecision;
@@ -41,6 +42,8 @@ export async function runKiaDecision(input: {
   contextInput: KiaContextInput;
   locale?: 'es' | 'ru';
   allowTools?: boolean;
+  forceToolExecution?: boolean;
+  allowedToolNames?: string[];
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
   const locale = input.locale ?? context.contact.language;
@@ -62,7 +65,14 @@ export async function runKiaDecision(input: {
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
   });
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
-  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts);
+  const officialSourceContext = await buildOfficialSourceContext(input.message).catch((err) => {
+    console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
+    return '';
+  });
+  const allowedToolDefinitions = input.allowedToolNames?.length
+    ? KIA_TOOL_DEFINITIONS.filter((tool) => input.allowedToolNames?.includes(tool.name))
+    : KIA_TOOL_DEFINITIONS;
+  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext);
   let providerResult: KiaProviderResult | undefined;
   let decision: KiaDecision;
   let usedFallback = false;
@@ -77,7 +87,7 @@ export async function runKiaDecision(input: {
         systemPrompt,
         messages: [{ role: 'user', content: promptPayload }],
         responseSchema: KIA_DECISION_JSON_SCHEMA,
-        tools: input.allowTools ? KIA_TOOL_DEFINITIONS : undefined,
+        tools: input.allowTools ? allowedToolDefinitions : undefined,
         effort: defaultEffortForTask(input.taskType),
         maxTokens: 900,
         temperature: 0.2,
@@ -131,9 +141,20 @@ export async function runKiaDecision(input: {
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
   const toolResults: KiaToolResult[] = [];
-  const allowToolExecution = input.allowTools === true && process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true';
+  const allowToolExecution = input.allowTools === true && (
+    input.forceToolExecution === true ||
+    process.env.KIA_AI_TOOLS_ENABLED?.toLowerCase() === 'true'
+  );
   if (allowToolExecution) {
     for (const request of decision.toolRequests) {
+      if (input.allowedToolNames?.length && !input.allowedToolNames.includes(request.toolName)) {
+        toolResults.push({
+          toolName: request.toolName,
+          ok: false,
+          error: `Tool not allowed for ${input.channel}: ${request.toolName}`,
+        });
+        continue;
+      }
       toolResults.push(await executeKiaToolCall({ name: request.toolName, arguments: request.arguments }, context));
     }
   }
@@ -257,7 +278,12 @@ function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAct
   return { repaired, message: chars.join('').replace(/\s+\./g, '.').replace(/\.{2,}/g, '.').trim() };
 }
 
-function buildUserPayload(message: string, context: KiaContext, recentAssistantTexts: string[]): string {
+function buildUserPayload(
+  message: string,
+  context: KiaContext,
+  recentAssistantTexts: string[],
+  officialSourceContext: string,
+): string {
   return [
     '<input>',
     JSON.stringify(redactJson({
@@ -265,6 +291,7 @@ function buildUserPayload(message: string, context: KiaContext, recentAssistantT
       context,
     }), null, 2),
     '</input>',
+    officialSourceContext ? `<official_source_context>\n${officialSourceContext}\n</official_source_context>` : '',
     buildNoRepeatInstruction(recentAssistantTexts),
   ].join('\n');
 }
