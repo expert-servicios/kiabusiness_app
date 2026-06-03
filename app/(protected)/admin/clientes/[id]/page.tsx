@@ -6,9 +6,11 @@ import Link from 'next/link';
 import {
   ArrowLeft, Building2, Calendar, CheckCheck, CreditCard,
   Edit2, ExternalLink, FileText, FolderOpen, Mail, MessageCircle,
-  Phone, RefreshCw, Save, User, X, Zap
+  Phone, RefreshCw, Save, User, X, Zap,
+  Clock, Download, MessageSquare, Banknote, Activity,
 } from 'lucide-react';
 import { WaTemplateModal } from '@/components/admin/WaTemplateModal';
+import type { TimelineEvent } from '@/app/api/admin/clientes/[id]/timeline/route';
 
 interface Profile {
   id: string;
@@ -152,6 +154,32 @@ export default function ClientePage() {
   const [showWa, setShowWa] = useState(false);
   const [integrationBusy, setIntegrationBusy] = useState<string | null>(null);
   const [integrationError, setIntegrationError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'resumen' | 'timeline' | 'documentos'>('resumen');
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [documents, setDocuments] = useState<{ id: string; service: string; state: string; docs: { id: string; original_name: string; state: string; downloadUrl: string | null; created_at: string }[] }[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+
+  const loadTimeline = useCallback(async () => {
+    setTimelineLoading(true);
+    try {
+      const res = await fetch(`/api/admin/clientes/${id}/timeline`);
+      if (res.ok) { const d = await res.json(); setTimeline(d.events ?? []); }
+    } finally { setTimelineLoading(false); }
+  }, [id]);
+
+  const loadDocuments = useCallback(async () => {
+    setDocumentsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/clientes/${id}/timeline`, { method: 'POST' });
+      if (res.ok) { const d = await res.json(); setDocuments(d.byCase ?? []); }
+    } finally { setDocumentsLoading(false); }
+  }, [id]);
+
+  useEffect(() => {
+    if (activeTab === 'timeline' && timeline.length === 0 && !timelineLoading) loadTimeline();
+    if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments();
+  }, [activeTab, timeline.length, documents.length, timelineLoading, documentsLoading, loadTimeline, loadDocuments]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -247,7 +275,7 @@ export default function ClientePage() {
   if (error || !data) return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f8f4eb]">
       <p className="text-[#29384a]">{error ?? 'Error desconocido'}</p>
-      <button onClick={() => router.back()} className="text-sm font-semibold text-[#c88b25] underline">Volver</button>
+      <button type="button" onClick={() => router.back()} className="text-sm font-semibold text-[#c88b25] underline">Volver</button>
     </div>
   );
 
@@ -265,7 +293,7 @@ export default function ClientePage() {
       <div className="border-b border-[#d8cbb5] bg-white">
         <div className="mx-auto max-w-5xl px-6 py-5">
           <div className="flex items-start gap-4">
-            <button type="button" onClick={() => router.back()} className="mt-1 rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e8d8]">
+            <button type="button" title="Volver" onClick={() => router.back()} className="mt-1 rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e8d8]">
               <ArrowLeft className="h-5 w-5" />
             </button>
 
@@ -336,7 +364,172 @@ export default function ClientePage() {
         </div>
       </div>
 
+      {/* ── TABS ── */}
+      <div className="border-b border-[#d8cbb5] bg-white">
+        <div className="mx-auto max-w-5xl flex gap-1 px-6 pt-2">
+          {([
+            { id: 'resumen',    label: 'Resumen',    icon: User },
+            { id: 'timeline',   label: 'Timeline',   icon: Activity },
+            { id: 'documentos', label: 'Documentos', icon: FileText },
+          ] as const).map(({ id: tabId, label, icon: Icon }) => (
+            <button
+              key={tabId}
+              type="button"
+              onClick={() => setActiveTab(tabId)}
+              className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+                activeTab === tabId
+                  ? 'border-[#D4A017] text-[#07111d]'
+                  : 'border-transparent text-[#29384a]/60 hover:text-[#07111d]'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mx-auto max-w-5xl space-y-5 px-6 py-6">
+
+        {/* ── TIMELINE TAB ── */}
+        {activeTab === 'timeline' && (
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-bold text-[#07111d]">Historial completo</h2>
+              <button type="button" onClick={loadTimeline} className="flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-1.5 text-xs font-semibold text-[#29384a] hover:border-[#c88b25]">
+                <RefreshCw className={`h-3.5 w-3.5 ${timelineLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </button>
+            </div>
+            {timelineLoading ? (
+              <div className="flex items-center justify-center py-16"><RefreshCw className="h-5 w-5 animate-spin text-[#d7a33a]" /></div>
+            ) : timeline.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Clock className="h-10 w-10 text-[#d8cbb5]" />
+                <p className="mt-3 text-sm text-[#29384a]">Sin actividad registrada</p>
+              </div>
+            ) : (
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-[#d8cbb5]" />
+                <div className="space-y-1">
+                  {timeline.map((ev) => {
+                    const { dot, bg, text, label } = (() => {
+                      const m: Record<string, { dot: string; bg: string; text: string; label: string }> = {
+                        case:           { dot: 'bg-amber-400',  bg: 'bg-amber-50',  text: 'text-amber-700',  label: 'Expediente' },
+                        whatsapp_in:    { dot: 'bg-green-400',  bg: 'bg-green-50',  text: 'text-green-700',  label: 'WhatsApp ←' },
+                        whatsapp_out:   { dot: 'bg-green-600',  bg: 'bg-green-50',  text: 'text-green-800',  label: 'WhatsApp →' },
+                        email:          { dot: 'bg-blue-400',   bg: 'bg-blue-50',   text: 'text-blue-700',   label: 'Email' },
+                        payment:        { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Pago' },
+                        quote:          { dot: 'bg-purple-400', bg: 'bg-purple-50', text: 'text-purple-700', label: 'Presupuesto' },
+                        appointment:    { dot: 'bg-sky-400',    bg: 'bg-sky-50',    text: 'text-sky-700',    label: 'Cita' },
+                        document:       { dot: 'bg-slate-400',  bg: 'bg-slate-50',  text: 'text-slate-700',  label: 'Documento' },
+                        subscription:   { dot: 'bg-violet-400', bg: 'bg-violet-50', text: 'text-violet-700', label: 'Suscripción' },
+                        note:           { dot: 'bg-gray-400',   bg: 'bg-gray-50',   text: 'text-gray-700',   label: 'Nota' },
+                      };
+                      return m[ev.type] ?? m.note;
+                    })();
+                    const dt = new Date(ev.date);
+                    return (
+                      <div key={ev.id} className="relative flex gap-4">
+                        {/* Dot */}
+                        <div className={`relative z-10 ml-[14px] mt-3 flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full ring-2 ring-white ${dot}`} />
+                        {/* Content */}
+                        <div className={`flex-1 rounded-xl border border-[#f0e8d8] px-4 py-3 ${bg}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${bg} ${text} border border-current/20`}>{label}</span>
+                                {ev.link ? (
+                                  <Link href={ev.link} className="truncate text-sm font-semibold text-[#07111d] hover:underline">{ev.title}</Link>
+                                ) : (
+                                  <p className="truncate text-sm font-semibold text-[#07111d]">{ev.title}</p>
+                                )}
+                              </div>
+                              {ev.detail && <p className="mt-0.5 text-xs text-[#29384a]/70">{ev.detail}</p>}
+                            </div>
+                            <time className="shrink-0 text-[11px] text-[#29384a]/50">
+                              {dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                              {' '}
+                              {dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            </time>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── DOCUMENTOS TAB ── */}
+        {activeTab === 'documentos' && (
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-bold text-[#07111d]">Documentos</h2>
+              <button type="button" onClick={loadDocuments} className="flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-1.5 text-xs font-semibold text-[#29384a] hover:border-[#c88b25]">
+                <RefreshCw className={`h-3.5 w-3.5 ${documentsLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </button>
+            </div>
+            {documentsLoading ? (
+              <div className="flex items-center justify-center py-16"><RefreshCw className="h-5 w-5 animate-spin text-[#d7a33a]" /></div>
+            ) : documents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FileText className="h-10 w-10 text-[#d8cbb5]" />
+                <p className="mt-3 text-sm text-[#29384a]">Sin documentos</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {documents.map((caseGroup) => (
+                  <div key={caseGroup.id} className="rounded-2xl border border-[#d8cbb5] bg-white shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-[#f0e8d8] px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-[#c88b25]" />
+                        <Link href={`/admin/expedientes/${caseGroup.id}`} className="text-sm font-semibold text-[#07111d] hover:underline">{caseGroup.service}</Link>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATE_COLOR[caseGroup.state] ?? 'bg-gray-100 text-gray-600'}`}>
+                          {STATE_LABEL[caseGroup.state] ?? caseGroup.state}
+                        </span>
+                      </div>
+                      <span className="text-xs text-[#29384a]/60">{caseGroup.docs.length} doc{caseGroup.docs.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {caseGroup.docs.length === 0 ? (
+                      <p className="px-5 py-3 text-xs text-[#9ca3af]">Sin documentos en este expediente</p>
+                    ) : (
+                      <ul className="divide-y divide-[#f8f4eb]">
+                        {caseGroup.docs.map((doc) => (
+                          <li key={doc.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm text-[#07111d]">{doc.original_name}</p>
+                              <p className="text-[10px] text-[#29384a]/60">{new Date(doc.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${doc.state === 'aprobado' ? 'bg-green-100 text-green-700' : doc.state === 'rechazado' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {doc.state}
+                              </span>
+                              {doc.downloadUrl && (
+                                <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer"
+                                  title={`Descargar ${doc.original_name}`}
+                                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#d8cbb5] text-[#29384a] hover:border-[#c88b25]">
+                                  <Download className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── RESUMEN TAB ── */}
+        {activeTab === 'resumen' && <>
 
         {/* ── KPIs ── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -682,6 +875,7 @@ export default function ClientePage() {
           </div>
         </Section>
 
+        </> /* end resumen tab */}
       </div>
 
       {/* ── EDIT MODAL ── */}
@@ -690,7 +884,7 @@ export default function ClientePage() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-serif text-lg font-bold text-[#07111d]">Editar cliente</h2>
-              <button type="button" onClick={() => setEditing(false)} className="rounded-lg p-1 hover:bg-[#f0e8d8]">
+              <button type="button" title="Cerrar" onClick={() => setEditing(false)} className="rounded-lg p-1 hover:bg-[#f0e8d8]">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -708,9 +902,12 @@ export default function ClientePage() {
                 { key: 'stripe_customer_id', label: 'Stripe customer ID', type: 'text' },
               ] as const).map(({ key, label, type }) => (
                 <div key={key}>
-                  <label className="mb-1 block text-xs font-semibold text-[#07111d]">{label}</label>
+                  <label htmlFor={`edit-${key}`} className="mb-1 block text-xs font-semibold text-[#07111d]">{label}</label>
                   <input
+                    id={`edit-${key}`}
                     type={type}
+                    title={label}
+                    placeholder={label}
                     value={editForm[key]}
                     onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
                     className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
@@ -720,6 +917,8 @@ export default function ClientePage() {
               <div>
                 <label className="mb-1 block text-xs font-semibold text-[#07111d]">Empresa activa</label>
                 <select
+                  aria-label="Empresa activa"
+                  id="edit-active_company_id"
                   value={editForm.active_company_id}
                   onChange={(e) => setEditForm((f) => ({ ...f, active_company_id: e.target.value }))}
                   className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
@@ -733,6 +932,8 @@ export default function ClientePage() {
               <div>
                 <label className="mb-1 block text-xs font-semibold text-[#07111d]">Estado</label>
                 <select
+                  aria-label="Estado del cliente"
+                  id="edit-status"
                   value={editForm.status}
                   onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
                   className="w-full rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
