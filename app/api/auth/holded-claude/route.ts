@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   if (!user?.email) {
     // Not logged in — redirect to login, which will come back here
     const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('redirectTo', request.url);
+    loginUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl.toString());
   }
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(next);
   response.cookies.set(SESSION_COOKIE, token, {
-    httpOnly: false, // MCP server reads it via cookie header (server-side)
+    httpOnly: true, // MCP server reads it via cookie header (server-side), not browser JS
     secure  : true,
     sameSite: 'none', // Required for cross-site redirect flow
     maxAge  : SESSION_TTL_S,

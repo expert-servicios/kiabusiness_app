@@ -11,9 +11,10 @@ export async function requireAdminClient(request: NextRequest): Promise<Supabase
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
     .from('profiles')
-    .select('role')
+    .select('role,status')
     .eq('id', user.id)
     .single();
 
+  if (profile?.status === 'inactive') return null;
   return profile?.role === 'admin' || profile?.role === 'owner' ? admin : null;
 }

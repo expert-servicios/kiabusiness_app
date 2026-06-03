@@ -16,7 +16,7 @@ function getRedirectUri() {
   return absoluteAppUrl('/api/auth/ms365/callback');
 }
 
-export function getMs365AuthUrl() {
+export function getMs365AuthUrl(state?: string) {
   const params = new URLSearchParams({
     client_id: process.env.MS365_CLIENT_ID!,
     response_type: 'code',
@@ -25,6 +25,7 @@ export function getMs365AuthUrl() {
     response_mode: 'query',
     prompt: 'consent',
   });
+  if (state) params.set('state', state);
   return `${AUTH_BASE}/authorize?${params}`;
 }
 

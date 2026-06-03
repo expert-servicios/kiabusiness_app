@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
   }
 
   let redirectPath = next;
+  let shouldApplySessionCookies = true;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,41 +62,46 @@ export async function GET(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const { data: profile } = await admin
         .from('profiles')
-        .select('full_name, welcome_email_sent, role')
+        .select('full_name, welcome_email_sent, role, status')
         .eq('id', user.id)
         .single();
 
-      // Redirect admins to /admin unless the caller explicitly requested a different page
-      if (profile?.role === 'admin' && next === '/dashboard') {
-        redirectPath = '/admin';
-      }
+      if (profile?.status === 'inactive') {
+        redirectPath = '/auth/login?error=inactive';
+        shouldApplySessionCookies = false;
+      } else {
+        // Redirect admins to /admin unless the caller explicitly requested a different page
+        if ((profile?.role === 'admin' || profile?.role === 'owner') && next === '/dashboard') {
+          redirectPath = '/admin';
+        }
 
-      // Backfill display name from OAuth metadata on first login
-      const metaGivenName = user.user_metadata?.given_name as string | undefined;
-      const metaFullName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
-      const derivedFirstName = metaGivenName ?? metaFullName?.split(' ')[0];
+        // Backfill display name from OAuth metadata on first login
+        const metaGivenName = user.user_metadata?.given_name as string | undefined;
+        const metaFullName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
+        const derivedFirstName = metaGivenName ?? metaFullName?.split(' ')[0];
 
-      if (profile && !profile.full_name && derivedFirstName) {
-        await admin
-          .from('profiles')
-          .update({ full_name: derivedFirstName })
-          .eq('id', user.id);
-      }
+        if (profile && !profile.full_name && derivedFirstName) {
+          await admin
+            .from('profiles')
+            .update({ full_name: derivedFirstName })
+            .eq('id', user.id);
+        }
 
-      const displayName = profile?.full_name ?? derivedFirstName ?? user.email.split('@')[0];
+        const displayName = profile?.full_name ?? derivedFirstName ?? user.email.split('@')[0];
 
-      if (profile && !profile.welcome_email_sent) {
-        const tpl = welcomeEmail(displayName);
-        await sendEmail({
-          to: user.email,
-          eventType: 'user.welcome',
-          ...tpl,
-          metadata: { user_id: user.id }
-        });
-        await admin
-          .from('profiles')
-          .update({ welcome_email_sent: true })
-          .eq('id', user.id);
+        if (profile && !profile.welcome_email_sent) {
+          const tpl = welcomeEmail(displayName);
+          await sendEmail({
+            to: user.email,
+            eventType: 'user.welcome',
+            ...tpl,
+            metadata: { user_id: user.id }
+          });
+          await admin
+            .from('profiles')
+            .update({ welcome_email_sent: true })
+            .eq('id', user.id);
+        }
       }
     }
   } catch (emailError) {
@@ -106,10 +112,12 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(redirectUrl);
 
   // Apply session cookies to the final redirect response
-  collectedCookies.forEach(({ name, value, options }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response.cookies.set(name, value, options as any);
-  });
+  if (shouldApplySessionCookies) {
+    collectedCookies.forEach(({ name, value, options }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      response.cookies.set(name, value, options as any);
+    });
+  }
 
   return response;
 }

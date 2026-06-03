@@ -34,11 +34,15 @@ function LoginForm() {
   const searchParams  = useSearchParams();
   const next          = safeNextPath(searchParams.get('next'));
   const callbackUrl   = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(next)}`;
+  const routeError    = searchParams.get('error');
+  const initialError  = routeError === 'inactive'
+    ? 'Tu usuario está inactivo. Contacta con EXPERT para reactivar el acceso.'
+    : '';
 
   const [email,     setEmail]     = useState('');
   const [loading,   setLoading]   = useState<'magic' | 'google' | 'microsoft' | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [error,     setError]     = useState('');
+  const [error,     setError]     = useState(initialError);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
