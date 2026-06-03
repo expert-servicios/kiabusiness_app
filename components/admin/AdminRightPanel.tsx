@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, Mail, Bell, PanelRightOpen, PanelRightClose, Loader2 } from 'lucide-react';
+import { MessageCircle, Mail, Bell, PanelRightOpen, PanelRightClose, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { WhatsAppInbox } from './WhatsAppInbox';
 import { CorreoInbox } from './CorreoInbox';
 
@@ -135,19 +135,28 @@ const TABS: { id: PanelTab; label: string; icon: React.ElementType }[] = [
 // ── Main panel ─────────────────────────────────────────────────────────────────
 export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: number }) {
   const [open, setOpen] = useState(false);
+  const [wide, setWide] = useState(false);
   const [tab, setTab] = useState<PanelTab>('whatsapp');
-  // Track which tabs have been mounted to avoid re-fetching on tab switch
   const [mounted, setMounted] = useState<Set<PanelTab>>(new Set());
 
   useEffect(() => {
     const saved = localStorage.getItem('adminRightPanel');
     if (saved === 'open') setOpen(true);
+    if (localStorage.getItem('adminRightPanelWide') === 'true') setWide(true);
   }, []);
 
   const toggle = useCallback(() => {
     setOpen((prev) => {
       const next = !prev;
       localStorage.setItem('adminRightPanel', next ? 'open' : 'closed');
+      return next;
+    });
+  }, []);
+
+  const toggleWide = useCallback(() => {
+    setWide((prev) => {
+      const next = !prev;
+      localStorage.setItem('adminRightPanelWide', String(next));
       return next;
     });
   }, []);
@@ -184,7 +193,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
       {/* Panel */}
       <aside
         className={`hidden lg:flex flex-col shrink-0 border-l border-white/8 bg-[#07111d] sticky top-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out ${
-          open ? 'w-[420px]' : 'w-0'
+          open ? (wide ? 'w-[50vw]' : 'w-[420px]') : 'w-0'
         }`}
       >
         {open && (
@@ -211,6 +220,14 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
                   )}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={toggleWide}
+                title={wide ? 'Reducir panel' : 'Ampliar panel'}
+                className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
+              >
+                {wide ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              </button>
             </div>
 
             {/* Tab content — keep all mounted to preserve state */}

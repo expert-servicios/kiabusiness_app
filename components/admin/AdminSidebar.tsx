@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import {
   CreditCard, FolderOpen, LayoutDashboard,
   Menu, Plug, UserPlus, Users, X, Zap, ShieldCheck,
-  Settings, User,
+  Settings, User, Search,
 } from 'lucide-react';
 import { AdminUserDrawer } from './AdminUserDrawer';
 
@@ -139,8 +139,23 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
           )}
         </div>
 
-        {/* Dashboard link */}
+        {/* Global search trigger */}
         <div className="px-3 pt-3">
+          <button
+            type="button"
+            title="Búsqueda global (⌘K)"
+            aria-label="Abrir búsqueda global"
+            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+            className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-white/4 px-3 py-2 text-xs text-white/40 transition hover:bg-white/8 hover:text-white/70"
+          >
+            <Search className="h-3.5 w-3.5 shrink-0" />
+            <span className="flex-1 text-left">Buscar…</span>
+            <kbd className="rounded border border-white/10 px-1 py-0.5 text-[10px]">⌘K</kbd>
+          </button>
+        </div>
+
+        {/* Dashboard link */}
+        <div className="px-3 pt-2">
           <Link
             href="/admin"
             onClick={() => setMobileOpen(false)}

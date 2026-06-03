@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
 import { CASE_ACTION_GROUPS } from '@/lib/utils/case-states';
@@ -44,9 +45,29 @@ function matchesStateFilter(state: string, filter: string): boolean {
 }
 
 export function CaseListWithFilters({ cases }: { cases: Case[] }) {
-  const [search, setSearch] = useState('');
-  const [stateFilter, setStateFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read filters from URL
+  const search        = searchParams.get('q') ?? '';
+  const stateFilter   = searchParams.get('state') ?? 'all';
+  const categoryFilter = searchParams.get('cat') ?? 'all';
+
+  // Update a single URL param, preserving others
+  const setParam = useCallback((key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value || value === 'all') params.delete(key);
+    else params.set(key, value);
+    const qs = params.toString();
+    router.push(qs ? `?${qs}` : '?', { scroll: false });
+  }, [router, searchParams]);
+
+  const setSearch        = (v: string) => setParam('q', v);
+  const setStateFilter   = (v: string) => setParam('state', v);
+  const setCategoryFilter = (v: string) => setParam('cat', v);
+  const clearFilters = () => {
+    router.push('?', { scroll: false });
+  };
 
   const categories = useMemo(() => {
     const cats = [...new Set(cases.map((c) => c.category))].sort();
@@ -113,7 +134,7 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
         {hasFilters && (
           <button
             type="button"
-            onClick={() => { setSearch(''); setStateFilter('all'); setCategoryFilter('all'); }}
+            onClick={clearFilters}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#07111d]"
           >
             <X className="h-3 w-3" /> Limpiar

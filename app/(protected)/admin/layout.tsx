@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminRightPanel } from '@/components/admin/AdminRightPanel';
+import { GlobalSearch } from '@/components/admin/GlobalSearch';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
@@ -88,6 +89,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </div>
       <AdminRightPanel emailUnreadCount={emailUnreadCount} />
       <AdminMobileNav urgentCount={urgentCount} />
+      <GlobalSearch />
     </div>
   );
 }
