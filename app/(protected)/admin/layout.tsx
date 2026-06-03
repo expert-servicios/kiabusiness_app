@@ -56,10 +56,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   const enrichedProfile = { ...profile, email: user.email ?? '' };
 
-  const obligationsData = await fetchJson(
-    `/api/admin/fiscal-calendar?year=${new Date().getFullYear()}`,
-    cookieHeader
-  );
+  const [obligationsData, emailUnreadRaw] = await Promise.all([
+    fetchJson(`/api/admin/fiscal-calendar?year=${new Date().getFullYear()}`, cookieHeader),
+    getSupabaseAdmin()
+      .from('system_kv')
+      .select('value')
+      .eq('key', 'email_unread_count')
+      .maybeSingle(),
+  ]);
 
   // Count urgent (overdue or ≤7 days) pending obligations across all clients
   const today = new Date();
@@ -69,6 +73,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     const diff = Math.ceil((new Date(o.deadline).getTime() - today.getTime()) / 86400000);
     return diff <= 7;
   }).length;
+
+  const emailUnreadCount = Number(emailUnreadRaw?.data?.value ?? 0);
 
   return (
     <div className="flex min-h-screen bg-[#f8f4eb]">
@@ -80,7 +86,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
         {children}
       </div>
-      <AdminRightPanel />
+      <AdminRightPanel emailUnreadCount={emailUnreadCount} />
       <AdminMobileNav urgentCount={urgentCount} />
     </div>
   );

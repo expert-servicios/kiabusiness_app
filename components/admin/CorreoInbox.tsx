@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Mail, RefreshCw, ArrowLeft, Send, Link2, Search, X, Check } from 'lucide-react';
+import { Mail, RefreshCw, ArrowLeft, Send, Link2, Search, X, Check, PenSquare, Sparkles } from 'lucide-react';
 
 interface MailSummary {
   id: string;
@@ -92,6 +92,16 @@ export function CorreoInbox({
   const [linking, setLinking] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [suggestingAI, setSuggestingAI] = useState(false);
+
+  // Compose state
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [composeTopic, setComposeTopic] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeKiaLoading, setComposeKiaLoading] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
 
   const activeEmail = provider === 'gmail' ? gmailEmail : ms365Email;
   const activeConnected = provider === 'gmail' ? gmailConnected : ms365Connected;
@@ -196,6 +206,61 @@ export function CorreoInbox({
       setSendError('Error de conexión.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleKiaDraft = async () => {
+    setComposeKiaLoading(true);
+    setComposeError(null);
+    try {
+      const res = await fetch('/api/admin/correo/suggest-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          compose: true,
+          composeTo: composeTo.trim() || undefined,
+          composeTopic: composeTopic.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.subject && !composeSubject) setComposeSubject(data.subject);
+        if (data.suggestion) setComposeBody(data.suggestion);
+      }
+    } catch { /* silent */ }
+    setComposeKiaLoading(false);
+  };
+
+  const handleSendCompose = async () => {
+    if (!composeTo.trim() || !composeSubject.trim() || !composeBody.trim()) return;
+    setComposeSending(true);
+    setComposeError(null);
+    try {
+      const res = await fetch('/api/admin/correo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:   'compose',
+          provider,
+          to:       composeTo.trim(),
+          subject:  composeSubject.trim(),
+          body:     composeBody.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setComposeError(d.error ?? 'Error al enviar');
+        return;
+      }
+      setShowCompose(false);
+      setComposeTo('');
+      setComposeSubject('');
+      setComposeBody('');
+      setComposeTopic('');
+    } catch {
+      setComposeError('Error de conexión.');
+    } finally {
+      setComposeSending(false);
     }
   };
 
@@ -383,17 +448,28 @@ export function CorreoInbox({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-serif text-base font-bold text-[#07111d]">Correo</h1>
-            <p className="max-w-[200px] truncate text-[10px] text-[#29384a]/60">{activeEmail}</p>
+            <p className="max-w-[140px] truncate text-[10px] text-[#29384a]/60">{activeEmail}</p>
           </div>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
-            title="Actualizar"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setShowCompose(true); setComposeError(null); }}
+              className="flex items-center gap-1 rounded-lg bg-[#07111d] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1a2a3a]"
+              title="Nuevo correo"
+            >
+              <PenSquare className="h-3.5 w-3.5" />
+              Nuevo
+            </button>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
+              title="Actualizar"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
@@ -582,6 +658,109 @@ export function CorreoInbox({
           {ThreadPanel}
         </div>
       </div>
+
+      {showCompose && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"
+          onClick={() => setShowCompose(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-3xl bg-white sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
+              <div className="flex items-center gap-2">
+                <PenSquare className="h-4 w-4 text-[#c88b25]" />
+                <p className="font-semibold text-[#07111d]">Nuevo correo</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompose(false)}
+                className="rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e9d8]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3">
+              {/* Kia draft section */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={composeTopic}
+                  onChange={(e) => setComposeTopic(e.target.value)}
+                  placeholder="Tema o contexto para Kia (opcional)..."
+                  className="flex-1 rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
+                />
+                <button
+                  type="button"
+                  onClick={handleKiaDraft}
+                  disabled={composeKiaLoading}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#c88b25] px-3 py-2 text-sm font-semibold text-[#c88b25] transition hover:bg-[#c88b25]/10 disabled:opacity-40 whitespace-nowrap"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {composeKiaLoading ? 'Redactando...' : 'Kia redacta'}
+                </button>
+              </div>
+
+              {/* To */}
+              <input
+                type="email"
+                value={composeTo}
+                onChange={(e) => setComposeTo(e.target.value)}
+                placeholder="Para (email del destinatario)"
+                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
+              />
+
+              {/* Subject */}
+              <input
+                type="text"
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                placeholder="Asunto"
+                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
+              />
+
+              {/* Body */}
+              <textarea
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                placeholder="Cuerpo del correo..."
+                rows={6}
+                className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm outline-none focus:border-[#c88b25]"
+              />
+
+              {composeError && <p className="text-xs text-red-600">{composeError}</p>}
+
+              {/* Actions */}
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <p className="text-[10px] text-[#29384a]/50">
+                  Enviando desde: {activeEmail}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCompose(false)}
+                    className="rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm font-semibold text-[#29384a] transition hover:bg-[#f0e9d8]"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendCompose}
+                    disabled={composeSending || !composeTo || !composeSubject || !composeBody}
+                    className="flex items-center gap-2 rounded-xl bg-[#07111d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#1a2a3a] disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    {composeSending ? 'Enviando...' : 'Enviar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLinkModal && (
         <div

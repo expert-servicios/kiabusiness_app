@@ -72,12 +72,13 @@ async function getOAuth2Client(tokens?: GmailTokens): Promise<AnyGoogle> {
   return client;
 }
 
-export async function getGmailAuthUrl(): Promise<string> {
+export async function getGmailAuthUrl(state?: string): Promise<string> {
   const client = await getOAuth2Client();
   return client.generateAuthUrl({
     access_type: 'offline',
     scope: GMAIL_SCOPES,
     prompt: 'consent',
+    state,
   });
 }
 
@@ -264,30 +265,53 @@ async function _getThread(gmail: AnyGoogle, threadId: string): Promise<GmailMess
   });
 }
 
-async function _sendReply(
-  gmail: AnyGoogle,
-  opts: { threadId: string; to: string; subject: string; body: string; from?: string }
-): Promise<void> {
-  const subject = opts.subject.startsWith('Re:') ? opts.subject : `Re: ${opts.subject}`;
+function buildRawMime(opts: {
+  from?: string;
+  to: string;
+  subject: string;
+  body: string;
+  bodyHtml?: boolean;
+  threadId?: string;
+}): string {
   const fromLine = opts.from ? `From: ${opts.from}\r\n` : '';
+  const contentType = opts.bodyHtml
+    ? 'Content-Type: text/html; charset=utf-8'
+    : 'Content-Type: text/plain; charset=utf-8';
   const raw = [
     `${fromLine}To: ${opts.to}`,
-    `Subject: ${subject}`,
-    'Content-Type: text/plain; charset=utf-8',
+    `Subject: ${opts.subject}`,
+    contentType,
     'MIME-Version: 1.0',
     '',
     opts.body,
   ].join('\r\n');
-
-  const encoded = Buffer.from(raw)
+  return Buffer.from(raw)
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
+}
 
+async function _sendReply(
+  gmail: AnyGoogle,
+  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
+): Promise<void> {
+  const subject = opts.subject.startsWith('Re:') ? opts.subject : `Re: ${opts.subject}`;
+  const encoded = buildRawMime({ ...opts, subject });
   await gmail.users.messages.send({
     userId: 'me',
     requestBody: { raw: encoded, threadId: opts.threadId },
+  });
+}
+
+async function _sendNew(
+  gmail: AnyGoogle,
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
+): Promise<void> {
+  const encoded = buildRawMime(opts);
+  await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: { raw: encoded },
   });
 }
 
@@ -308,11 +332,30 @@ export async function getGmailThreadSA(threadId: string): Promise<GmailMessage[]
 }
 
 export async function sendGmailReplySA(
-  opts: { threadId: string; to: string; subject: string; body: string }
+  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean }
 ): Promise<void> {
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
   return _sendReply(gmail, { ...opts, from: GMAIL_SA_IMPERSONATE_EMAIL });
+}
+
+export async function sendNewGmailSA(
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
+): Promise<void> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _sendNew(gmail, { ...opts, from: GMAIL_SA_IMPERSONATE_EMAIL });
+}
+
+export async function getGmailUnreadCountSA(): Promise<number> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) return 0;
+  const res = await gmail.users.threads.list({
+    userId: 'me',
+    q: 'in:inbox is:unread',
+    maxResults: 1,
+  });
+  return res.data.resultSizeEstimate ?? 0;
 }
 
 // ── Public API — OAuth2 path ──────────────────────────────────────────────
@@ -341,11 +384,22 @@ export async function getGmailThread(
 
 export async function sendGmailReply(
   stored: GmailTokens,
-  opts: { threadId: string; to: string; subject: string; body: string }
+  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean }
 ): Promise<{ refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
   const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
   await _sendReply(gmail, opts);
+  return { refreshed };
+}
+
+export async function sendNewGmail(
+  stored: GmailTokens,
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
+): Promise<{ refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = (await import('googleapis')) as AnyGoogle;
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  await _sendNew(gmail, opts);
   return { refreshed };
 }

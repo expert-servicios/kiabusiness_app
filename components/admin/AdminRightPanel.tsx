@@ -133,7 +133,7 @@ const TABS: { id: PanelTab; label: string; icon: React.ElementType }[] = [
 ];
 
 // ── Main panel ─────────────────────────────────────────────────────────────────
-export function AdminRightPanel() {
+export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: number }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PanelTab>('whatsapp');
   // Track which tabs have been mounted to avoid re-fetching on tab switch
@@ -169,11 +169,16 @@ export function AdminRightPanel() {
         type="button"
         onClick={toggle}
         title={open ? 'Cerrar inbox' : 'Abrir inbox'}
-        className={`hidden lg:flex fixed right-0 z-30 items-center gap-1.5 rounded-l-xl border border-r-0 border-white/10 bg-[#07111d] px-2 py-3 text-white/40 shadow-lg transition hover:text-white/80 [writing-mode:vertical-rl] top-1/2 -translate-y-1/2`}
+        className="hidden lg:flex fixed right-0 z-30 flex-col items-center gap-1 rounded-l-xl border border-r-0 border-white/10 bg-[#07111d] px-2 py-3 text-white/40 shadow-lg transition hover:text-white/80 top-1/2 -translate-y-1/2"
       >
         {open
-          ? <PanelRightClose className="h-4 w-4 rotate-90" />
-          : <PanelRightOpen className="h-4 w-4 rotate-90" />}
+          ? <PanelRightClose className="h-4 w-4" />
+          : <PanelRightOpen className="h-4 w-4" />}
+        {!open && emailUnreadCount > 0 && (
+          <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[9px] font-bold text-white">
+            {emailUnreadCount > 99 ? '99+' : emailUnreadCount}
+          </span>
+        )}
       </button>
 
       {/* Panel */}
@@ -191,7 +196,7 @@ export function AdminRightPanel() {
                   key={id}
                   type="button"
                   onClick={() => handleTabChange(id)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
                     tab === id
                       ? 'bg-[#D4A017]/15 text-[#D4A017]'
                       : 'text-white/40 hover:text-white/70'
@@ -199,6 +204,11 @@ export function AdminRightPanel() {
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {label}
+                  {id === 'correo' && emailUnreadCount > 0 && (
+                    <span className="absolute right-1 top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-blue-500 px-0.5 text-[8px] font-bold text-white">
+                      {emailUnreadCount > 99 ? '99+' : emailUnreadCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

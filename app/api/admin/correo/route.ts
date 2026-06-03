@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listMails, getConversation, sendReply } from '@/lib/integrations/microsoft365';
 import {
-  listGmailMails, getGmailThread, sendGmailReply,
-  listGmailMailsSA, getGmailThreadSA, sendGmailReplySA,
+  listGmailMails, getGmailThread, sendGmailReply, sendNewGmail,
+  listGmailMailsSA, getGmailThreadSA, sendGmailReplySA, sendNewGmailSA,
   hasGmailSA, GMAIL_SA_IMPERSONATE_EMAIL,
 } from '@/lib/integrations/gmail';
 import type { GmailTokens } from '@/lib/integrations/gmail';
@@ -21,7 +21,7 @@ async function assertAdmin(request: NextRequest) {
   if (!user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return null;
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') return null;
   return { admin };
 }
 
@@ -173,7 +173,16 @@ const replySchema = z.object({
   conversationId: z.string().optional(),
   subject:        z.string().optional(),
   clientEmail:    z.string().optional(),
+  bodyHtml:       z.boolean().optional(),
   provider:       z.enum(['ms365', 'gmail']).optional(),
+});
+
+const composeSchema = z.object({
+  to:       z.string().email(),
+  subject:  z.string().min(1),
+  body:     z.string().min(1),
+  bodyHtml: z.boolean().optional(),
+  provider: z.enum(['ms365', 'gmail']).optional(),
 });
 
 const linkSchema = z.object({
@@ -231,6 +240,35 @@ export async function POST(request: NextRequest) {
       const stored = { access_token: ms365Row.access_token, refresh_token: ms365Row.refresh_token, expires_at: ms365Row.expires_at };
       const { refreshed } = await sendReply(stored, { messageId, comment });
       await saveMs365Refresh(admin, refreshed);
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  if (json.action === 'compose') {
+    const parsed = composeSchema.safeParse(json);
+    if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+    const { to, subject, body, bodyHtml, provider: prov } = parsed.data;
+
+    if (prov === 'gmail' || !prov) {
+      if (hasGmailSA()) {
+        try {
+          await sendNewGmailSA({ to, subject, body, bodyHtml });
+        } catch (err) {
+          console.error('[Gmail SA compose]', err);
+          return NextResponse.json({ error: 'Error al enviar correo (SA)' }, { status: 500 });
+        }
+      } else {
+        const gmailRow = await getGmailTokens(admin);
+        if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
+        const stored: GmailTokens = {
+          access_token:  gmailRow.access_token,
+          refresh_token: gmailRow.refresh_token,
+          expiry_date:   gmailRow.expiry_date,
+          email:         gmailRow.email,
+        };
+        const { refreshed } = await sendNewGmail(stored, { to, subject, body, bodyHtml });
+        await saveGmailRefresh(admin, refreshed);
+      }
     }
     return NextResponse.json({ success: true });
   }
