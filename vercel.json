@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/email-sync",
-      "schedule": "0 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/fiscal-reminders",
@@ -10,11 +10,11 @@
     },
     {
       "path": "/api/cron/kia-health",
-      "schedule": "0 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/holded-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 10 * * *"
     },
     {
       "path": "/api/cron/daily-summary",
