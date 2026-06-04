@@ -39,7 +39,7 @@ Reglas de ejecucion:
   - `lib/integrations/holded/`
   - `lib/security/`
   - `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql`
-- [x] Discrepancia cron Holded resuelta (2026-06-04): `vercel.json` restaurado a `*/15 * * * *` como documenta IMP-005. Nota: requiere Vercel Pro para ejecutarse con esta frecuencia.
+- [x] Discrepancia cron Holded resuelta (2026-06-04): se retira `*/15 * * * *` de Vercel Cron para mantener compatibilidad con Hobby. La frecuencia alta pasa a scheduler externo que llama `/api/cron/holded-sync` con `CRON_SECRET`.
 
 ## P0 - Seguridad y fiabilidad critica
 
@@ -158,15 +158,15 @@ Solucion implementada (2026-06-02):
 - Helpers `enqueueHoldedSync` y `resolveHoldedJob` en el webhook de Stripe.
 - Cada sync Holded ahora CREA el job en `holded_sync_jobs` (status: queued) ANTES del `.then()`, de modo que si el proceso serverless muere, el job queda registrado para reintento.
 - Los 4 puntos de sync (quote payment, catalog payment, Holded legacy, subscription) usan el patron.
-- Nuevo cron `/api/cron/holded-sync` (cada 15 min via Vercel Cron) que procesa jobs en estado `queued`/`failed` con backoff exponencial (5 min → 15 min, max 3 intentos).
-- `vercel.json` actualizado con el nuevo cron schedule.
+- Nuevo endpoint protegido `/api/cron/holded-sync` para procesar jobs en estado `queued`/`failed` con backoff exponencial (5 min → 15 min, max 3 intentos).
+- La ejecucion cada 15 minutos queda fuera de Vercel Cron en plan Hobby: debe llamarla un scheduler externo con `Authorization: Bearer CRON_SECRET`.
 - Fallos Holded nunca bloquean el flujo principal (emails + orders se crean antes del sync).
 
 Archivos principales:
 
 - `app/api/stripe/webhook/route.ts` — helpers + job creation antes de cada sync
-- `app/api/cron/holded-sync/route.ts` — NUEVO cron de reintentos
-- `vercel.json` — schedule `*/15 * * * *` (requiere Vercel Pro; en Free/Hobby el cron no se ejecuta con esta frecuencia)
+- `app/api/cron/holded-sync/route.ts` — endpoint protegido de reintentos
+- `vercel.json` — no incluye `holded-sync` frecuente; solo mantiene crons diarios compatibles con Vercel Hobby
 - `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql` — tabla ya existente
 
 Verificacion:
@@ -784,7 +784,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 ### Inmediato — ya completado en sesiones anteriores
 
-- [x] Verificar y corregir discrepancia cron Holded en `vercel.json` (2026-06-04).
+- [x] Verificar y corregir discrepancia cron Holded en `vercel.json` (2026-06-04): frecuencia alta movida a scheduler externo para no bloquear deploys Hobby.
 - [x] IMP-013: dominio canonico `expertconsulting.es`, sweep de metadata, emails, prompts Kia y README (2026-06-04).
 - [x] IMP-003: proteger endpoints publicos (viabilidad, company/resolve, newsletter) (2026-06-04).
 - [x] IMP-023: CI minimo GitHub Actions — `typecheck → lint → build` en cada push a `main` y PRs (2026-06-04).
@@ -796,7 +796,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 1. **Verificaciones manuales IMP-004** — Reenviar el mismo evento desde Stripe Dashboard → debe devolver 200 sin duplicar `order`. Marcar `[ ]` en IMP-004 como verificado o abrir issue.
 
-2. **Verificaciones manuales IMP-005** — Hacer un pago de prueba y confirmar que aparece un job en `holded_sync_jobs`. Ejecutar `GET /api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` y confirmar que procesa jobs pendientes. Marcar `[ ]` en IMP-005 como verificado o abrir issue.
+2. **Verificaciones manuales IMP-005** — Hacer un pago de prueba y confirmar que aparece un job en `holded_sync_jobs`. Ejecutar `GET /api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` desde el scheduler externo y confirmar que procesa jobs pendientes. Marcar `[ ]` en IMP-005 como verificado o abrir issue.
 
 3. **Completar instalacion y ejecucion local de tests (IMP-011/012)** — Despues del ultimo commit, ejecutar `npm install && npm test` para actualizar `package-lock.json` y confirmar que los 31 tests pasan. Actualizar criterios de aceptacion pendientes en IMP-011 e IMP-012.
 
