@@ -780,6 +780,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [refreshing, setRefreshing] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<{ url: string; waType: string; filename: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -869,12 +870,69 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     }
   };
 
+  const KIA_TOOL_LABELS: Record<string, string> = {
+    get_client_profile: 'perfil del cliente',
+    get_case_status: 'estado del expediente',
+    get_company_status_snapshot: 'estado contable',
+    get_holded_connection_status: 'conexión Holded',
+    get_service_registry_item: 'información del servicio',
+    run_readiness_check: 'checklist de viabilidad',
+    run_viability_check: 'viabilidad del servicio',
+    generate_checkout_gate_link: 'enlace de contratación',
+    generate_profile_link: 'enlace de perfil',
+    generate_holded_connection_link: 'enlace Holded',
+    extract_invoice_ocr: 'datos de la factura',
+    resolve_contact_context: 'contexto del contacto',
+    create_next_best_action: 'siguiente mejor acción',
+    create_internal_task: 'tarea interna',
+  };
+
   const handleAiCompose = async () => {
     if (!activeConv) return;
     setAiLoading(true);
+    setAiProgress(null);
     setError(null);
+
+    const isEditMode = reply.trim().length > 0;
+
     try {
-      const res = await fetch('/api/admin/whatsapp/ai-compose', {
+      if (isEditMode) {
+        // Edit mode: improve/translate admin's draft — regular endpoint
+        setAiProgress('Mejorando borrador…');
+        const res = await fetch('/api/admin/whatsapp/ai-compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: activeConv.clientId,
+            phone: activeConv.phone,
+            history: activeConv.messages.slice(-30).map((m) => ({
+              direction: m.direction,
+              body: stripVisualQuote(m.body),
+              ai_responded: m.ai_responded,
+            })),
+            intent: reply.trim(),
+            mode: 'edit',
+            ...(replyTo && {
+              replyTo: {
+                direction: replyTo.direction,
+                body: stripVisualQuote(replyTo.body),
+                created_at: replyTo.created_at,
+                media_type: replyTo.media_type ?? null,
+              },
+            }),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error ?? 'Error IA'); return; }
+        setReply(data.draft ?? '');
+        setAiQuickReplies(Array.isArray(data.quickReplies) ? data.quickReplies.slice(0, 3) : []);
+        textareaRef.current?.focus();
+        return;
+      }
+
+      // Compose mode: stream events from SSE endpoint
+      setAiProgress('Kia está pensando…');
+      const res = await fetch('/api/admin/whatsapp/ai-compose/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -885,26 +943,69 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             body: stripVisualQuote(m.body),
             ai_responded: m.ai_responded,
           })),
-          intent: reply.trim() || undefined,
-          mode: reply.trim() ? 'edit' : 'compose',
           ...(replyTo && {
             replyTo: {
-              direction:  replyTo.direction,
-              body:       stripVisualQuote(replyTo.body),
+              direction: replyTo.direction,
+              body: stripVisualQuote(replyTo.body),
               created_at: replyTo.created_at,
               media_type: replyTo.media_type ?? null,
             },
           }),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Error IA'); return; }
-      setReply(data.draft ?? '');
-      setAiQuickReplies(Array.isArray(data.quickReplies) ? data.quickReplies.slice(0, 3) : []);
-      textareaRef.current?.focus();
+
+      if (!res.ok || !res.body) {
+        setError('Error IA');
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(part.slice(6)) as {
+              type: string;
+              tool?: string;
+              ok?: boolean;
+              draft?: string;
+              quickReplies?: WaQuickReply[];
+              message?: string;
+            };
+            if (event.type === 'thinking') {
+              setAiProgress('Kia está pensando…');
+            } else if (event.type === 'classifying') {
+              setAiProgress('Analizando intención…');
+            } else if (event.type === 'tool_call' && event.tool) {
+              setAiProgress(`Consultando ${KIA_TOOL_LABELS[event.tool] ?? event.tool}…`);
+            } else if (event.type === 'judging') {
+              setAiProgress('Validando decisión…');
+            } else if (event.type === 'complete') {
+              setReply(event.draft ?? '');
+              setAiQuickReplies(Array.isArray(event.quickReplies) ? event.quickReplies.slice(0, 3) : []);
+              textareaRef.current?.focus();
+            } else if (event.type === 'error') {
+              setError(event.message ?? 'Error IA');
+            }
+          } catch { /* ignore malformed SSE chunks */ }
+        }
+      }
     } catch {
       setError('Error al generar borrador.');
-    } finally { setAiLoading(false); }
+    } finally {
+      setAiLoading(false);
+      setAiProgress(null);
+    }
   };
 
   const handleSend = async () => {
@@ -1424,7 +1525,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
             {aiLoading && (
               <div className="mb-1.5 flex items-center gap-1.5 px-1">
                 <RefreshCw className="h-3 w-3 animate-spin text-[#c88b25]" />
-                <span className="text-[11px] text-[#c88b25]">IA mejorando y traduciendo…</span>
+                <span className="text-[11px] text-[#c88b25]">{aiProgress ?? 'Generando respuesta…'}</span>
               </div>
             )}
             <div className="flex flex-col gap-1.5">
