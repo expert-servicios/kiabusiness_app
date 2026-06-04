@@ -1,0 +1,13 @@
+{
+  "suite": "f2-intent-classifier",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "description": "F2: intent classifier — ambiguous messages should request clarification, clear messages should not",
+  "cases": [
+    { "id": "IC1", "message": "Quiero información", "expected": { "nextAction": "ask_one_question" } },
+    { "id": "IC2", "message": "Ayuda", "expected": { "nextAction": "ask_one_question" } },
+    { "id": "IC3", "message": "Quiero declarar el IRPF de 2023 como autónomo", "expected": { "intent": "viability", "nextAction": "run_viability" } },
+    { "id": "IC4", "message": "Quiero conectar Holded para mi SL", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    { "id": "IC5", "message": "Esto", "expected": { "nextAction": "ask_one_question" } }
+  ]
+}

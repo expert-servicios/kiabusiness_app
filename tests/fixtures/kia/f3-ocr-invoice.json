@@ -1,0 +1,23 @@
+{
+  "suite": "f3-ocr-invoice",
+  "channel": "waba",
+  "contactStatus": "client",
+  "description": "F3: OCR invoice handling — messages with invoice context",
+  "cases": [
+    {
+      "id": "OCR1",
+      "message": "Te mando la factura de luz para que la registres",
+      "expected": { "nextAction": "reply_only" }
+    },
+    {
+      "id": "OCR2",
+      "message": "Aquí la factura del proveedor, importe 1200€ con IVA",
+      "expected": { "nextAction": "reply_only" }
+    },
+    {
+      "id": "OCR3",
+      "message": "Esta factura ya está pagada, ¿la contabilizáis?",
+      "expected": { "nextAction": "reply_only" }
+    }
+  ]
+}

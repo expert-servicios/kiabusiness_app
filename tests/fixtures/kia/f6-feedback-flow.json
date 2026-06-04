@@ -1,0 +1,11 @@
+{
+  "suite": "f6-feedback-flow",
+  "channel": "waba",
+  "contactStatus": "client",
+  "description": "F6: feedback loop — ensure feedback-related messages are handled gracefully",
+  "cases": [
+    { "id": "FB1", "message": "Muy buena respuesta, gracias", "expected": { "nextAction": "reply_only" } },
+    { "id": "FB2", "message": "No me ha ayudado esta respuesta", "expected": { "nextAction": "reply_only" } },
+    { "id": "FB3", "message": "Perfecto, justo lo que necesitaba", "expected": { "nextAction": "reply_only" } }
+  ]
+}

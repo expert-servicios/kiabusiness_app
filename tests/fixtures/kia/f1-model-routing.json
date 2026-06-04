@@ -1,0 +1,16 @@
+{
+  "suite": "f1-model-routing",
+  "channel": "waba",
+  "contactStatus": "lead",
+  "description": "F1: model routing — tasks that should resolve correctly regardless of model",
+  "expected": {
+    "forbidsNeedsReview": true
+  },
+  "cases": [
+    { "id": "MR1", "message": "Quiero declarar la renta", "expected": { "intent": "viability", "nextAction": "run_viability" } },
+    { "id": "MR2", "message": "Hola, buenos días", "expected": { "intent": "greeting", "nextAction": "reply_only" } },
+    { "id": "MR3", "message": "Quiero contratar Holded", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
+    { "id": "MR4", "message": "¿Cuánto cuesta el arraigo?", "expected": { "intent": "viability" } },
+    { "id": "MR5", "message": "Necesito renovar mi TIE", "expected": { "intent": "viability" } }
+  ]
+}
