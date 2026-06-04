@@ -1,6 +1,6 @@
 # Kia Implementation Progress
 
-Ultima actualizacion: 2026-05-29
+Ultima actualizacion: 2026-06-04
 
 ## Estado general
 
@@ -32,12 +32,28 @@ Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa increme
 - Compatibilidad temporal del API de anomalías Health con esquema antiguo (`resolved`) y nuevo (`status`).
 - Conector Claude/Holded MCP incorporado como app aislada en `apps/holded-mcp`, con landing y paginas legales publicas bajo `/holded/conectores/claude`.
 
+### F1-F8 Intelligence Roadmap — completado 2026-06-04
+
+| Fase | Modulo(s) | Estado |
+|------|-----------|--------|
+| F1 Model Routing | `kia-provider-router.ts` | Sonnet/Haiku/GPT-4o segun tarea |
+| F2 Intent Classifier | `kia-decision-engine.ts` | Haiku pre-clasificador, ambiguedad >= 0.7 → clarify |
+| F3 OCR + Judge | `kia-ocr-extractor.ts` | GPT-4o Vision + segunda opinion |
+| F4 SSE Streaming | `app/api/admin/whatsapp/ai-compose/stream/route.ts` | `text/event-stream` con eventos de progreso |
+| F5 RAG Memory | `kia-memory-store.ts`, `kia-memory-retriever.ts` | pgvector 1536, `text-embedding-3-small`, RPC |
+| F6 Feedback Loop | `kia-feedback-store.ts`, `kia-few-shot-provider.ts` | botones `kia_fb_g:`/`kia_fb_b:`, few-shot positivo |
+| F7 Sub-agentes | `kia-sub-agent-router.ts` | perfiles fiscal/holded/case con addendum |
+| F8 Cost Tracking | `kia-cost-tracker.ts` | tabla de precios, acumulacion por iteracion |
+
+Documentacion completa en `docs/kia-f1-f8-intelligence.md`.
+
 ## Verificado
 
 ```bash
 npm run typecheck
-npm run kia:eval
-npm run kia:auditor:test
+npm run kia:eval          # 182 casos (incluye F1-F8)
+npm run kia:f1f8:test     # validador offline F1-F8
+npm run kia:auditor:test  # 13 fixtures auditor
 npm run build
 ```
 
@@ -159,6 +175,8 @@ npm run build
 ```
 
 Resultado: typecheck OK, lint focalizado OK, 161 evals OK, 21 fixtures de Auditor OK y build Next OK.
+
+Resultado 2026-06-04: 182 evals Kia pasan, 13 fixtures auditor pasan, build limpio.
 
 ## Ejecucion 2026-05-24
 

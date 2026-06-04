@@ -16,16 +16,24 @@ Kia deja de depender solo de texto libre y gana una capa incremental de decision
 
 ## Modulos
 
-- `kia-system-prompt.ts`: prompt maestro con contrato XML.
-- `kia-context-builder.ts`: contexto pequeno y tipado desde Supabase y catalogo.
+- `kia-system-prompt.ts`: prompt maestro con contrato XML, few-shot y addendum de sub-agente.
+- `kia-context-builder.ts`: contexto pequeno y tipado desde Supabase y catalogo; carga memorias RAG en paralelo.
 - `kia-output-schema.ts`: `KiaDecision` validado con Zod.
-- `kia-provider-router.ts`: Anthropic/OpenAI con fallback.
+- `kia-provider-router.ts`: Anthropic/OpenAI con fallback; routing Sonnet/Haiku/GPT-4o por tarea.
 - `kia-tool-definitions.ts`: herramientas con schema estricto.
 - `kia-tool-executor.ts`: validacion server-side y ejecucion no critica.
 - `kia-decision-engine.ts`: orquestador de contexto, proveedor, reparacion, herramientas y logs.
-- `kia-decision-log.ts`: persistencia auditable.
+- `kia-decision-log.ts`: persistencia auditable con tokens, coste e iteraciones.
 - `kia-evals.ts`: base para fixtures y checks antes de pruebas reales.
 - `kia-response-variation.ts`: reglas anti-repeticion para comparar respuestas nuevas con mensajes recientes.
+- `kia-progress.ts`: tipos `KiaProgressEvent` para streaming SSE (F4).
+- `kia-memory-store.ts`: generacion de embedding y persistencia en `kia_memories` (F5).
+- `kia-memory-retriever.ts`: busqueda pgvector por similitud y formateo de bloque de contexto (F5).
+- `kia-feedback-store.ts`: parseo de botones `kia_fb_g:`/`kia_fb_b:` y persistencia de valoraciones (F6).
+- `kia-few-shot-provider.ts`: recuperacion de ejemplos positivos para inyeccion en prompt (F6).
+- `kia-sub-agent-router.ts`: seleccion de perfil fiscal/holded/case segun intent y tarea (F7).
+- `kia-cost-tracker.ts`: estimacion y acumulacion de costes por modelo e iteracion (F8).
+- `kia-ocr-extractor.ts`: extraccion OCR de facturas via GPT-4o Vision (F3).
 
 ## Anti-repeticion
 
@@ -55,8 +63,13 @@ KIA_STRUCTURED_AI_WABA_ENABLED=true
 KIA_AI_TOOLS_ENABLED=false
 KIA_AI_DOCUMENT_CLASSIFICATION_ENABLED=false
 KIA_AI_ACCOUNTING_SUMMARY_ENABLED=false
+KIA_AI_MEMORY_ENABLED=true
+KIA_AI_FEEDBACK_ENABLED=true
+KIA_AI_SUB_AGENTS_ENABLED=true
 ```
 
 `KIA_STRUCTURED_AI_ADMIN_ENABLED` y `KIA_STRUCTURED_AI_WABA_ENABLED` permiten apagar un canal sin apagar la arquitectura completa.
 
 La observabilidad operativa vive en `docs/kia-health-check.md` y `/admin/kia-health`.
+
+La documentacion de las fases F1-F8 vive en `docs/kia-f1-f8-intelligence.md`.
