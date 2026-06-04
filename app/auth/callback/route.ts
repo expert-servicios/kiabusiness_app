@@ -3,22 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { welcomeEmail } from '@/lib/email/templates';
-
-function safeRedirectPath(value: string | null): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
-    return '/dashboard';
-  }
-
-  try {
-    const parsed = new URL(value, 'https://expert.local');
-    if (parsed.origin !== 'https://expert.local') {
-      return '/dashboard';
-    }
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/dashboard';
-  }
-}
+import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);

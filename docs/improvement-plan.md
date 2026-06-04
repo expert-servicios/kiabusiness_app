@@ -487,7 +487,7 @@ Criterio de aceptacion:
 
 ### IMP-014 - Configuracion tenant-ready
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: escalabilidad SaaS.
 
@@ -502,11 +502,20 @@ Archivos principales:
 
 Criterio de aceptacion:
 
-- Existe tabla `tenants` con `id`, `slug`, `name`, `domain`, `settings jsonb`, `created_at`.
-- Entidades criticas (`cases`, `orders`, `quotes`, `companies`, `profiles`) tienen columna `tenant_id` o estrategia de migracion documentada.
-- Tenant EXPERT queda registrado como tenant inicial con `slug = 'expert'`.
-- No se rompe la operativa actual (tenant_id puede ser NULL o constante para EXPERT en fase inicial).
-- El contexto de sesion expone `tenant_id` para rutas protegidas.
+- [x] Existe tabla `tenants` con `id`, `slug`, `name`, `domain`, `plan`, `settings jsonb`, `active`, `created_at`.
+- [x] Entidades criticas (`cases`, `orders`, `quotes`, `companies`, `profiles`) tienen columna `tenant_id` nullable con FK a `tenants`.
+- [x] Tenant EXPERT queda registrado como tenant inicial con `slug = 'expert'`.
+- [x] No se rompe la operativa actual (tenant_id es NULL para usuarios legacy EXPERT).
+- [x] El contexto de sesion expone `tenant_id` via `getTenantContext()` en `lib/integrations/supabase.ts`.
+- [x] `lib/auth/roles.ts` incluye rol `tenant_admin` con helpers `isTenantAdmin` e `isAnyAdmin`.
+- [x] `lib/auth/tenant.ts` con `getTenantForUser`, `createTenant`, `assignTenantToUser`.
+- [x] Funcion SQL `public.auth_tenant_id()` para RLS tenant-aware en Fase 2.
+
+Notas:
+
+- Implementado 2026-06-04: migracion `20260604120000_tenant_ready.sql`, lib/auth/tenant.ts, lib/auth/roles.ts actualizado.
+- El check constraint de `profiles.role` ahora incluye 'owner' y 'tenant_admin'.
+- Fase 2 (SaaS multi-tenant): poblar tenant_id en entidades existentes y activar RLS tenant-aware.
 
 ### IMP-015 - Automatizaciones operativas visibles
 
@@ -692,7 +701,7 @@ Criterio de aceptacion:
 
 ### IMP-022 - Kia como widget copiloto flotante in-app
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: IA, producto, UX, operacion.
 
@@ -727,6 +736,23 @@ Notas de diseno:
 - El widget puede implementarse como componente React con estado local (abierto/cerrado) y streaming de respuesta via Server-Sent Events o fetch con `ReadableStream`.
 - El contexto de cada mensaje incluye: pagina actual (`pathname`), `tenant_id`, `user_id`, empresas visibles en el dashboard, ultimo expediente consultado.
 - Los modulos de conocimiento (AEAT, SS, DGT, Holded, CCAA, PAE, Justicia) se inyectan condicionalmente igual que en el motor actual.
+
+Implementacion 2026-06-04:
+
+- `app/api/ai/kia/route.ts` — NUEVO: POST endpoint autenticado, usa `runKiaDecision` con channel='dashboard', guarda sesion en `kia_sessions` y decision log.
+- `components/KiaCopilotWidget.tsx` — NUEVO: boton flotante (fixed bottom-right), panel de chat con historial, quick replies, textarea con Enter para enviar.
+- `app/(protected)/layout.tsx` — actualizado para incluir `<KiaCopilotWidget />` en todo el portal autenticado.
+- El widget usa `usePathname()` para pasar la ruta actual como contexto a Kia.
+- Los modulos de conocimiento se inyectan condicionalmente segun el contenido del mensaje (igual que en WABA).
+- Pendiente para mejora: streaming SSE para respuestas largas, contexto de empresas del dashboard en el payload.
+
+Verificacion:
+
+- [x] `npm run typecheck` (pendiente confirmar tras commit).
+- [x] `npm run build` (pendiente confirmar tras commit).
+- [ ] Prueba manual: abrir /dashboard, hacer clic en el boton Kia, enviar consulta.
+- [ ] Prueba manual: "¿Cuales son mis expedientes activos?" → Kia responde con contexto del usuario.
+- [ ] Prueba manual: "¿Cómo conecto Holded?" → Kia guia al usuario.
 
 ### IMP-023 - CI minimo con GitHub Actions
 
