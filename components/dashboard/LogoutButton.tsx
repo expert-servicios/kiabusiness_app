@@ -1,6 +1,6 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserSupabaseClient } from '@/lib/integrations/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
@@ -8,10 +8,7 @@ export function LogoutButton() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
     router.push('/auth/login');
   };

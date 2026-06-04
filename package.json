@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "holded-mcp:build": "npm --prefix apps/holded-mcp run build",
     "holded-mcp:test": "npm --prefix apps/holded-mcp test",
     "holded-mcp:dev": "npm --prefix apps/holded-mcp run dev",
@@ -20,7 +22,6 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@react-pdf/renderer": "^4.5.1",
     "@stripe/stripe-js": "^9.3.1",
-    "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
     "class-variance-authority": "^0.7.0",
@@ -42,6 +43,7 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "vitest": "^2.0.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
