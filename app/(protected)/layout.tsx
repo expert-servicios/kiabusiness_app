@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import KiaCopilotWidget from '@/components/KiaCopilotWidget';
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,6 +12,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="apple-mobile-web-app-title" content="EXPERT Portal" />
       {children}
+      {/* IMP-022: Kia copiloto flotante — visible en todo el portal autenticado */}
+      <KiaCopilotWidget />
     </>
   );
 }

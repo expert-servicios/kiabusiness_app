@@ -49,6 +49,32 @@ export function createServerSupabaseClient(request: NextRequest) {
   return client;
 }
 
+/**
+ * IMP-014: Contexto de tenant para route handlers autenticados.
+ * Devuelve user_id + tenant_id del usuario autenticado.
+ * tenant_id es null para usuarios legacy EXPERT sin tenant asignado.
+ */
+export async function getTenantContext(request: NextRequest): Promise<{
+  userId: string | null;
+  tenantId: string | null;
+}> {
+  const supabase = createServerSupabaseClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { userId: null, tenantId: null };
+
+  const admin = getSupabaseAdmin();
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('tenant_id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  return {
+    userId: user.id,
+    tenantId: profile?.tenant_id ?? null,
+  };
+}
+
 export async function getFirstAdminProfileId() {
   const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
