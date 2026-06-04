@@ -14,6 +14,10 @@ export async function saveKiaDecisionLog(input: {
   toolResults?: KiaToolResult[];
   rawInput?: unknown;
   error?: unknown;
+  tokensIn?: number;
+  tokensOut?: number;
+  estimatedCostUsd?: number;
+  loopIterations?: number;
 }): Promise<void> {
   if (process.env.KIA_AI_DECISION_LOGS_ENABLED?.toLowerCase() === 'false') return;
 
@@ -39,6 +43,10 @@ export async function saveKiaDecisionLog(input: {
       tool_calls: redactJson(input.toolCalls ?? []),
       tool_results_summary: redactJson(input.toolResults ?? []),
       error: input.error ? safeErrorMessage(input.error) : input.providerResult?.error ?? null,
+      tokens_in: input.tokensIn ?? null,
+      tokens_out: input.tokensOut ?? null,
+      estimated_cost_usd: input.estimatedCostUsd ?? null,
+      loop_iterations: input.loopIterations ?? 0,
     });
   } catch (error) {
     console.error('[Kia decision log] insert failed', safeErrorMessage(error));

@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
+import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 
 export interface KiaContextInput {
   channel: 'waba' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -70,6 +71,7 @@ export interface KiaContext {
     recentMessages: Array<{ role: 'user' | 'assistant' | 'admin'; text: string; createdAt: string }>;
     selectedMessage?: { id: string; text: string; direction: string; createdAt: string } | null;
   };
+  memories: KiaMemory[];
 }
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -85,7 +87,10 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const clientId = input.clientId ?? contact?.clientId ?? input.userId ?? null;
   const leadId = input.leadId ?? contact?.leadId ?? null;
 
-  const [profile, company, service, documents, conversation, selectedMessage, accounting] = await Promise.all([
+  const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
+  const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
+
+  const [profile, company, service, documents, conversation, selectedMessage, accounting, memories] = await Promise.all([
     loadProfile(admin, clientId, contact),
     loadCompany(admin, input.companyId, clientId),
     loadService(input.serviceSlug),
@@ -93,6 +98,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     loadConversation(admin, phone),
     loadSelectedMessage(admin, input.selectedMessageId),
     loadAccounting(admin, input.companyId),
+    shouldLoadMemories
+      ? retrieveKiaMemories({ query: input.latestMessage!, clientId, leadId, phone, openAiApiKey: openAiKey, supabase: admin }).catch(() => [] as KiaMemory[])
+      : Promise.resolve([] as KiaMemory[]),
   ]);
 
   return {
@@ -130,6 +138,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       recentMessages: input.syntheticRecentMessages?.length ? input.syntheticRecentMessages : conversation,
       selectedMessage: input.syntheticSelectedMessage ?? selectedMessage,
     },
+    memories,
   };
 }
 
