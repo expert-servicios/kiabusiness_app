@@ -202,6 +202,9 @@ function simulateDecision(fixture, testCase) {
   if (suite === 'needs-review') return needsReviewDecision(base, lower, id);
   if (suite === 'anti-tests') return antiTestDecision(base, lower);
   if (suite === 'russian-flow') return russianDecision(base, lower);
+  if (suite === 'f1-model-routing') return f1ModelRoutingDecision(base, lower);
+  if (suite === 'f2-intent-classifier') return f2IntentClassifierDecision(base, lower);
+  if (suite === 'f7-sub-agents') return f7SubAgentsDecision(base, lower);
 
   return base;
 }
@@ -338,6 +341,42 @@ function russianDecision(base, lower) {
   if (lower.includes('граждан')) return asDecision(ruBase, 'viability', 'run_viability', 'Проверим возможность оформления гражданства.', ['russian_language_preserved']);
   if (lower.includes('деклара')) return asDecision(ruBase, 'service_selection', 'show_menu', 'Помогу с декларацией IRPF и следующим шагом.', ['russian_language_preserved']);
   return asDecision(ruBase, 'greeting', 'show_menu', 'Здравствуйте. Чем я могу помочь?', ['russian_language_preserved']);
+}
+
+function f1ModelRoutingDecision(base, lower) {
+  if (/(hola|buenos dias|buenas tardes|buenas noches|saludos)/.test(lower)) {
+    return asDecision(base, 'greeting', 'reply_only', '¡Hola! Soy Kia, el asistente de EXPERT. ¿En qué puedo ayudarte?', ['greeting_handled']);
+  }
+  if (/(holded|contratar holded|conectar holded)/.test(lower)) {
+    return asDecision(base, 'readiness', 'run_readiness', 'Comprobamos tu preparación para Holded.', ['holded_uses_readiness_not_viability'], { dataToSave: { service: { flowType: 'readiness' } } });
+  }
+  if (/(renta|irpf|arraigo|tie|renovar|extranjeria|autonomo|fiscal|tributar)/.test(lower)) {
+    return asDecision(base, 'viability', 'run_viability', 'Comprobamos la viabilidad para tu gestión fiscal o de extranjería.', ['fiscal_legal_uses_viability']);
+  }
+  return base;
+}
+
+function f2IntentClassifierDecision(base, lower) {
+  if (/(holded|conectar holded)/.test(lower)) {
+    return asDecision(base, 'readiness', 'run_readiness', 'Comprobamos tu preparación para conectar Holded.', ['holded_uses_readiness_not_viability'], { dataToSave: { service: { flowType: 'readiness' } } });
+  }
+  if (/(irpf|declarar|renta|autonomo|hacienda|modelo \d|tributar)/.test(lower)) {
+    return asDecision(base, 'viability', 'run_viability', 'Iniciamos viabilidad para tu gestión fiscal.', ['fiscal_legal_uses_viability']);
+  }
+  return asDecision(base, 'unknown', 'ask_one_question', '¿Sobre qué necesitas ayuda? Cuéntame más para orientarte.', ['ambiguous_message_ask_clarification']);
+}
+
+function f7SubAgentsDecision(base, lower) {
+  if (/(modelo 720|modelo 303|requerimiento|hacienda|irpf|declaracion fiscal)/.test(lower)) {
+    return asDecision(base, 'viability', 'run_viability', 'Tramitamos la gestión fiscal correspondiente.', ['fiscal_sub_agent_activated', 'fiscal_legal_uses_viability']);
+  }
+  if (/(expediente|arraigo|resolucion|tramite|autorizacion)/.test(lower)) {
+    return asDecision(base, 'case_status', 'get_case_status', 'Consulto el estado del expediente.', ['case_sub_agent_activated', 'valid_case_status_flow']);
+  }
+  if (/(holded|plan de cuentas|modulos|formacion holded)/.test(lower)) {
+    return asDecision(base, 'readiness', 'run_readiness', 'Revisamos la configuración de Holded.', ['holded_sub_agent_activated', 'holded_uses_readiness_not_viability'], { dataToSave: { service: { flowType: 'readiness' } } });
+  }
+  return asDecision(base, 'case_status', 'get_case_status', 'Reviso tu expediente como cliente.', ['client_flow_not_lead']);
 }
 
 function asDecision(base, intent, nextAction, userMessage, rulesApplied, overrides = {}) {
