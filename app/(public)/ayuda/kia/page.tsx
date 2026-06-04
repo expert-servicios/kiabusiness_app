@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const WA_NUMBER   = '34696550480';
 const PORTAL_URL  = '/dashboard';
 const VIABILITY_URL = '/solicitar-presupuesto';
-const CALENDLY_URL = 'https://calendly.com/soy-kseniailicheva/30min?hide_event_type_details=1';
+const CALENDLY_URL = (process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? '') + '?hide_event_type_details=1';
 
 export default function KiaGuiaPage() {
   return (

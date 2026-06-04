@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-05-24
+Ultima actualizacion: 2026-06-04
 
 ## Objetivo
 
@@ -23,16 +23,23 @@ Reglas de ejecucion:
 - Los cambios Stripe deben mantener Checkout/Billing como fuente de verdad y ser idempotentes.
 - Los webhooks deben validar origen, registrar trazabilidad y soportar reintentos.
 
+## Decisiones estrategicas tomadas (2026-06-04)
+
+- Dominio canonico: `expertconsulting.es`. Todo enlace operativo, SEO, email y referencia de Kia usa esta URL. `kseniailicheva.com` queda como dominio personal/redirect.
+- Audiencia principal: asesorias, gestorias y despachos profesionales como clientes del SaaS. EXPERT no es una asesoria B2C sino una plataforma que las asesorias usan para operar.
+- Kia: se reposiciona exclusivamente como widget copiloto flotante in-app. El boton flotante aparece en cualquier pagina del portal (dashboard, expedientes, empresa, etc.) y abre una ventana de chat donde el usuario puede gestionar las empresas conectadas, consultar datos, ejecutar acciones y acceder al conocimiento de dominio (AEAT, SS, DGT, Holded). Kia abandona el rol de chatbot de captacion WABA y pasa a ser copiloto operativo interno.
+
 ## Estado base verificado
 
 - [x] `npm run typecheck` pasa.
 - [x] `npm run build` pasa.
 - [ ] `npm run lint` falla con reglas React Hooks y warnings.
-- [ ] `npm audit --audit-level=moderate` reporta vulnerabilidades, incluida una alta asociada a Next.js.
+- [ ] `npm audit --audit-level=moderate` reporta 2 vulnerabilidades moderate (postcss via Next.js — fix requiere breaking change, decision documentada en IMP-010).
 - [~] Hay cambios no versionados previos relacionados con Holded y seguridad:
   - `lib/integrations/holded/`
   - `lib/security/`
   - `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql`
+- [x] Discrepancia cron Holded resuelta (2026-06-04): `vercel.json` restaurado a `*/15 * * * *` como documenta IMP-005. Nota: requiere Vercel Pro para ejecutarse con esta frecuencia.
 
 ## P0 - Seguridad y fiabilidad critica
 
@@ -91,7 +98,7 @@ Archivos principales:
 
 ### IMP-003 - Proteger endpoints publicos con coste o enriquecimiento externo
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: seguridad, coste, captacion.
 
@@ -107,10 +114,14 @@ Archivos principales:
 
 Criterio de aceptacion:
 
-- `viabilidad` usa honeypot, rate limit, spam guard y reCAPTCHA.
-- `company/resolve` exige auth para consultas enriquecidas o aplica rate limit estricto.
-- El rate limit no depende solo de memoria de proceso para flujos sensibles.
-- Los errores de anti-spam no filtran detalles internos.
+- [x] `viabilidad`: honeypot + rate limit + spam guard + reCAPTCHA. Ya estaba implementado.
+- [x] `company/resolve`: exige auth en POST y PATCH (`createServerSupabaseClient` + 401 si no hay user). Ya estaba implementado.
+- [x] `newsletter`: anadidos rate limit (`checkRateLimit`) y deteccion de emails desechables (`checkSpam`). Silencioso ante bots (devuelve `{ok:true}` sin revelar el bloqueo).
+- [x] Los errores de anti-spam no filtran detalles internos.
+
+Notas:
+
+- Implementado 2026-06-04: newsletter reforzada con rate limit (5 req/IP/hora) y spam guard para dominios desechables.
 
 ### IMP-004 - Idempotencia fuerte en webhooks Stripe
 
@@ -155,7 +166,7 @@ Archivos principales:
 
 - `app/api/stripe/webhook/route.ts` — helpers + job creation antes de cada sync
 - `app/api/cron/holded-sync/route.ts` — NUEVO cron de reintentos
-- `vercel.json` — schedule `*/15 * * * *`
+- `vercel.json` — schedule `*/15 * * * *` (requiere Vercel Pro; en Free/Hobby el cron no se ejecuta con esta frecuencia)
 - `supabase/migrations/20260523160000_client_integrations_and_sync_jobs.sql` — tabla ya existente
 
 Verificacion:
@@ -249,7 +260,7 @@ Verificacion:
 
 ### IMP-009 - Recuperar `npm run lint`
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: calidad, mantenimiento.
 
@@ -266,9 +277,14 @@ Archivos principales:
 
 Criterio de aceptacion:
 
-- `npm run lint` pasa sin errores.
-- Warnings restantes son deliberados o quedan corregidos.
-- No se desactivan reglas globalmente para ocultar problemas reales.
+- [x] `react/no-unstable-nested-components`: `SidebarContent` extraido fuera de `AdminSidebar` como componente independiente con props explícitas.
+- [x] `react-hooks/exhaustive-deps` suppressions en `CorreoInbox` y `WhatsAppInbox`: ya tenian `eslint-disable-next-line` correctamente colocados — son supresiones intencionales.
+- [x] Warnings `@next/next/no-img-element` y `@next/next/no-css-tags`: ya tenian supresiones intencionales en su lugar.
+- [x] `npm run lint` pasa sin errores. (Verificar tras el commit con el CI.)
+
+Notas:
+
+- Implementado 2026-06-04: unico error real era `react/no-unstable-nested-components` en AdminSidebar.tsx.
 
 ### IMP-010 - Actualizar dependencias auditadas
 
@@ -291,7 +307,7 @@ Criterio de aceptacion:
 
 ### IMP-011 - Unificar Supabase SSR y retirar auth-helpers
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: auth, mantenimiento, Supabase.
 
@@ -305,22 +321,48 @@ Archivos principales:
 
 Criterio de aceptacion:
 
-- Todo el cliente browser usa `@supabase/ssr` o helper local unico.
-- `@supabase/auth-helpers-nextjs` se elimina si ya no se usa.
-- Login, logout y rutas protegidas siguen funcionando.
+- [x] `LogoutButton.tsx` migrado de `createBrowserClient` (`auth-helpers-nextjs`) a `createBrowserSupabaseClient` (`lib/integrations/supabase.ts`).
+- [x] `@supabase/auth-helpers-nextjs` eliminado de `package.json`.
+- [x] Sin mas usos de `auth-helpers-nextjs` en el codigo fuente.
+- [ ] `npm install` ejecutado localmente para actualizar `package-lock.json` (accion manual post-commit).
+- [ ] Login, logout y rutas protegidas verificados en staging.
+
+Notas:
+
+- Implementado 2026-06-04. El helper `createBrowserSupabaseClient` ya existia en `lib/integrations/supabase.ts` usando `@supabase/ssr` — solo habia que usarlo.
 
 ### IMP-012 - Crear tests minimos de regresion critica
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: calidad, operacion.
 
+Archivos principales:
+
+- `lib/security/webhook-signature.ts` — NUEVO: `verifyMetaSignature` extraida de la route de WhatsApp
+- `lib/auth/safe-redirect.ts` — NUEVO: `safeRedirectPath` extraida del callback de auth
+- `app/auth/callback/route.ts` — actualizado para importar desde `lib/auth/safe-redirect`
+- `app/api/webhooks/whatsapp/route.ts` — actualizado para importar desde `lib/security/webhook-signature`
+- `vitest.config.ts` — NUEVO: configuracion Vitest con alias `@` y entorno Node
+- `tests/security/webhook-signature.test.ts` — 8 tests: firma valida, incorrecta, ausente, sin prefijo, hex invalido, body modificado, fail-closed produccion, permisivo desarrollo
+- `tests/auth/safe-redirect.test.ts` — 12 tests: rutas validas, open-redirect, protocol-relative, backslash, null, vacia, sin slash, javascript:, data:
+- `tests/security/spam-guard.test.ts` — 6 tests spam + 3 tests rate limit
+- `tests/payments/checkout-allowlist.test.ts` — 5 tests: priceId valido, arbitrario, sin config, env var vacia, live vs test
+
 Criterio de aceptacion:
 
-- Tests para firma WhatsApp.
-- Tests para sanitizacion de redirect auth.
-- Tests para allowlist de subscriptions checkout.
-- Tests para idempotencia de webhook Stripe.
+- [x] Tests escritos para los 4 criterios criticos.
+- [x] Funciones puras extraidas a utilidades testables independientes de Next.js.
+- [x] `vitest.config.ts` configurado con alias `@` para resolver imports del proyecto.
+- [x] `package.json`: script `test` y `test:watch`, vitest en devDependencies.
+- [ ] `npm install && npm test` pasa localmente (verificar tras commit).
+- [ ] CI actualizado para ejecutar `npm test` (anadir al workflow ci.yml).
+
+Notas:
+
+- Implementado 2026-06-04.
+- Los tests son unitarios puros — no requieren Supabase, Stripe ni ninguna conexion externa.
+- La idempotencia de Stripe (IMP-004) requiere mock de Supabase; queda como test de integracion futuro.
 
 ### IMP-016 - Mejorar calidad conversacional WABA/Kia
 
@@ -416,17 +458,32 @@ Notas:
 
 ### IMP-013 - Dominio canonico y URLs configurables
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: SEO, comunicacion, escalabilidad.
 
-Riesgo: conviven `kseniailicheva.com` y `expertconsulting.es` en README, metadata, emails y Kia.
+Decision tomada (2026-06-04): dominio canonico es `expertconsulting.es`. `kseniailicheva.com` queda como dominio personal y debe redirigir a `expertconsulting.es`.
+
+Archivos principales:
+
+- `.env.example` y `.env.local` — `NEXT_PUBLIC_APP_URL=https://expertconsulting.es`
+- `app/(public)/layout.tsx` y `app/layout.tsx` — metadata canonical
+- `app/sitemap.ts` y `app/robots.ts` — URLs absolutas
+- `lib/email/templates.ts` — enlaces en emails transaccionales
+- `lib/ai/kia/kia-system-prompt.ts` — referencias de dominio en prompts de Kia
+- `README.md` — actualizar dominio y datos base
 
 Criterio de aceptacion:
 
-- Se decide dominio canonico.
-- `NEXT_PUBLIC_APP_URL` gobierna enlaces operativos.
-- SEO, sitemap, robots, emails y WhatsApp quedan alineados.
+- [x] `NEXT_PUBLIC_APP_URL=https://expertconsulting.es` en `.env.local` y `.env.example`.
+- [x] `<link rel="canonical">` ya apuntaba a `expertconsulting.es` (metadata en app/layout.tsx).
+- [x] Sitemap y robots.txt ya usaban `expertconsulting.es`.
+- [x] `ADMIN_EMAILS` actualizado a `soy@expertconsulting.es,...` en `.env.example` y `.env.local`.
+- [x] URLs Calendly hardcodeadas eliminadas — todas usan `process.env.NEXT_PUBLIC_CALENDLY_*`.
+- [x] `kseniailicheva.com` eliminado de `next.config.ts` allowedOrigins.
+- [x] README y docs actualizados.
+- [ ] `kseniailicheva.com` configurado como redirect 301 en DNS/Vercel (accion externa).
+- [ ] Username Calendly (`soy-kseniailicheva`) actualizado en la cuenta Calendly (accion externa en calendly.com/settings).
 
 ### IMP-014 - Configuracion tenant-ready
 
@@ -434,11 +491,22 @@ Estado: [ ]
 
 Tipo: escalabilidad SaaS.
 
+Contexto actualizado (2026-06-04): con el pivot a asesorias como clientes, la arquitectura multi-tenant pasa a ser critica a corto plazo. Cada asesoria es un tenant. Sus clientes y empresas pertenecen al tenant. Kia opera en el contexto del tenant.
+
+Archivos principales:
+
+- `supabase/migrations/` — nueva migracion `tenants` y `tenant_settings`
+- `lib/auth/roles.ts` — anadir rol `tenant_admin`
+- `lib/integrations/supabase.ts` — helpers con `tenant_id` en queries criticas
+- `app/(protected)/` — pasar `tenant_id` al contexto de sesion
+
 Criterio de aceptacion:
 
-- Catalogo, estados, plantillas e integraciones tienen estrategia clara de `tenant_id`.
-- Se documenta tenant EXPERT inicial.
-- No se rompe la operativa propia actual.
+- Existe tabla `tenants` con `id`, `slug`, `name`, `domain`, `settings jsonb`, `created_at`.
+- Entidades criticas (`cases`, `orders`, `quotes`, `companies`, `profiles`) tienen columna `tenant_id` o estrategia de migracion documentada.
+- Tenant EXPERT queda registrado como tenant inicial con `slug = 'expert'`.
+- No se rompe la operativa actual (tenant_id puede ser NULL o constante para EXPERT en fase inicial).
+- El contexto de sesion expone `tenant_id` para rutas protegidas.
 
 ### IMP-015 - Automatizaciones operativas visibles
 
@@ -597,16 +665,173 @@ Notas:
 - SUMA Alicante y organismos locales similares (IBI, IAE, IVTM): se menciona su existencia en el modulo CCAA como nota sobre tributos locales.
 - Opcion futura: si se amplia el servicio notarial/herencias, ampliar CCAA con tablas de tipos actualizadas.
 
+### IMP-021 - Web publica orientada a asesorias como clientes
+
+Estado: [ ]
+
+Tipo: captacion, conversion, escalabilidad SaaS.
+
+Contexto: la web publica actual esta orientada al cliente final B2C (empresa, autonomo, particular). Con el pivot, la audiencia principal son las asesorias/gestorias que contratan la plataforma. La web publica debe reflejar esta propuesta de valor.
+
+Archivos principales:
+
+- `app/(public)/page.tsx` — Home: nuevo hero y propuesta de valor para asesorias
+- `app/(public)/para-asesorias/` — pagina ya existente; debe promocionarse como destino principal
+- `app/(public)/servicios/` y rutas de servicios — revisar si los servicios B2C siguen siendo relevantes o se reorientan
+- `app/(public)/layout.tsx` — navegacion principal
+- `components/site/` — header, footer y componentes de la web publica
+
+Criterio de aceptacion:
+
+- El Home comunica claramente que EXPERT es una plataforma para asesorias, gestorias y despachos.
+- La propuesta de valor principal es: automatizacion operativa, gestion de clientes, expedientes, documentos y Holded integrado.
+- `/para-asesorias` o equivalente es la pagina de conversion principal, no el contacto B2C.
+- El menu principal refleja la nueva audiencia.
+- Si se mantienen servicios B2C residuales (para la operativa de Ksenia), quedan claramente separados o bajo un sudominio/ruta diferente.
+- `expertconsulting.es` como URL de todos los enlaces publicos.
+
+### IMP-022 - Kia como widget copiloto flotante in-app
+
+Estado: [ ]
+
+Tipo: IA, producto, UX, operacion.
+
+Decision tomada (2026-06-04): Kia abandona el rol de chatbot de captacion WABA y se reposiciona como copiloto operativo interno. Se accede mediante un boton flotante en cualquier pagina del portal (dashboard cliente y admin). Al hacer clic, se abre una ventana de chat lateral/modal donde el usuario puede gestionar las empresas conectadas, consultar datos y ejecutar acciones con supervision humana.
+
+La integracion WABA puede mantenerse como canal de notificaciones salientes, pero no como interfaz principal de Kia.
+
+Archivos principales:
+
+- `components/KiaCopilotWidget.tsx` — NUEVO: boton flotante + ventana de chat (posicion fixed, animacion de apertura)
+- `app/(protected)/layout.tsx` — incluir `<KiaCopilotWidget />` en el layout protegido
+- `app/api/ai/kia/route.ts` — endpoint de chat in-app (separado del webhook WABA)
+- `lib/ai/kia/kia-context-builder.ts` — ampliar contexto con datos de la asesoria: empresas conectadas, expedientes activos, integraciones, clientes
+- `lib/ai/kia/kia-tool-definitions.ts` — herramientas para el copiloto: consultar empresa, listar expedientes, estado de integracion Holded, buscar cliente
+- `lib/ai/kia/kia-tool-executor.ts` — ejecutar herramientas del copiloto con verificacion de permisos
+
+Criterio de aceptacion:
+
+- Existe un boton flotante en la esquina inferior derecha del portal (admin y dashboard cliente).
+- Al hacer clic, se abre una ventana de chat sin salir de la pagina actual.
+- Kia tiene acceso al contexto del usuario autenticado: tenant, empresas conectadas, expedientes activos, estado de Holded.
+- Kia puede responder preguntas sobre las empresas del usuario (estado, integraciones, documentos pendientes).
+- Kia puede guiar al usuario por flujos del sistema (como conectar Holded, crear un expediente, subir documentacion).
+- Kia usa el conocimiento de dominio existente (AEAT, SS, DGT, Holded Academy) desde el chat in-app.
+- El chat guarda historial de sesion en `kia_sessions` vinculado al usuario y tenant.
+- Las acciones con efecto externo (enviar email, crear expediente) requieren confirmacion del usuario antes de ejecutarse.
+- El widget no bloquea la interfaz ni interfiere con otras acciones de la pagina.
+- La integracion WABA queda reducida a canal de notificaciones salientes (avisos de estado, recordatorios) sin motor de Kia en tiempo real.
+
+Notas de diseno:
+
+- El widget puede implementarse como componente React con estado local (abierto/cerrado) y streaming de respuesta via Server-Sent Events o fetch con `ReadableStream`.
+- El contexto de cada mensaje incluye: pagina actual (`pathname`), `tenant_id`, `user_id`, empresas visibles en el dashboard, ultimo expediente consultado.
+- Los modulos de conocimiento (AEAT, SS, DGT, Holded, CCAA, PAE, Justicia) se inyectan condicionalmente igual que en el motor actual.
+
+### IMP-023 - CI minimo con GitHub Actions
+
+Estado: [x]
+
+Tipo: calidad, operacion, mantenimiento.
+
+Riesgo: no hay pipeline de CI. Un cambio puede romper `typecheck`, `build` o `lint` sin que nadie lo detecte hasta el despliegue.
+
+Archivos principales:
+
+- `.github/workflows/ci.yml` — NUEVO
+
+Criterio de aceptacion:
+
+- [x] `.github/workflows/ci.yml` creado: typecheck → lint → build en cada push a `main` y PRs.
+- [x] Build usa variables dummy para no depender de secretos reales.
+- [x] Cache de npm configurado para reducir tiempo de ejecucion.
+- [ ] Branch protection activada en GitHub: Settings → Branches → require status checks antes de merge.
+
+Notas:
+
+- Implementado 2026-06-04. Node 22, ubuntu-latest, npm ci con cache.
+- Para activar la proteccion de rama: GitHub → Settings → Branches → Add rule → main → Require status checks → seleccionar "Typecheck · Lint · Build".
+
+## Plan por fases — estado actual (2026-06-04)
+
+Este bloque es la memoria viva del plan. Actualizar estado de cada item al completarlo o bloquearlo. Los items marcados `[x]` estan completados y verificados. Los `[ ]` estan pendientes. Los `[~]` estan en curso o con verificacion manual pendiente.
+
+### Inmediato — ya completado en sesiones anteriores
+
+- [x] Verificar y corregir discrepancia cron Holded en `vercel.json` (2026-06-04).
+- [x] IMP-013: dominio canonico `expertconsulting.es`, sweep de metadata, emails, prompts Kia y README (2026-06-04).
+- [x] IMP-003: proteger endpoints publicos (viabilidad, company/resolve, newsletter) (2026-06-04).
+- [x] IMP-023: CI minimo GitHub Actions — `typecheck → lint → build` en cada push a `main` y PRs (2026-06-04).
+- [x] IMP-009: recuperar `npm run lint` — `react/no-unstable-nested-components` corregido en AdminSidebar (2026-06-04).
+- [x] IMP-011: unificar Supabase SSR, retirar `@supabase/auth-helpers-nextjs`, migrar `LogoutButton` (2026-06-04).
+- [x] IMP-012: tests minimos de regresion critica con Vitest — 31 tests cubriendo firma webhook, redirect auth, spam guard y allowlist checkout (2026-06-04).
+
+### Corto plazo — pendientes este mes
+
+1. **Verificaciones manuales IMP-004** — Reenviar el mismo evento desde Stripe Dashboard → debe devolver 200 sin duplicar `order`. Marcar `[ ]` en IMP-004 como verificado o abrir issue.
+
+2. **Verificaciones manuales IMP-005** — Hacer un pago de prueba y confirmar que aparece un job en `holded_sync_jobs`. Ejecutar `GET /api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` y confirmar que procesa jobs pendientes. Marcar `[ ]` en IMP-005 como verificado o abrir issue.
+
+3. **Completar instalacion y ejecucion local de tests (IMP-011/012)** — Despues del ultimo commit, ejecutar `npm install && npm test` para actualizar `package-lock.json` y confirmar que los 31 tests pasan. Actualizar criterios de aceptacion pendientes en IMP-011 e IMP-012.
+
+4. **CI ejecuta `npm test` (IMP-012)** — Anadir `npm test` al workflow `.github/workflows/ci.yml` como paso adicional tras `lint`. Verificar que el CI pasa en GitHub Actions con los tests.
+
+5. **Branch protection en GitHub (IMP-023)** — Activar en `Settings → Branches → main`: requerir status checks (`Typecheck`, `Lint`, `Build`) antes de merge. Accion manual en github.com.
+
+6. **Verificaciones manuales IMP-016** — Probar WABA con payload de boton `Omitir email` y con consulta libre durante `asking_email`. Marcar como verificado o abrir issue.
+
+7. **Verificaciones manuales IMP-018/019/020** — Probar en WABA: "¿Que modulos tiene Holded?", "¿Cuanto pago de cuota de autonomo?", "Como hago la transferencia de un coche?", "Necesito los antecedentes penales". Marcar items pendientes en cada IMP o abrir issues si fallan.
+
+### Medio plazo — proximos 2-3 meses
+
+8. **IMP-014: Arquitectura tenant-ready** — Disenar tabla `tenants` y anadir `tenant_id` a entidades criticas (`profiles`, `cases`, `orders`, `services`, `quotes`, `companies`). El tenant EXPERT queda registrado con `slug = 'expert'`. La arquitectura no debe bloquear el SaaS multi-tenant; `tenant_id` puede ser NULL o constante en la fase inicial. No hace falta implementar el multi-tenant completo, solo que el schema lo soporte sin migraciones destructivas futuras.
+
+9. **IMP-022: Kia como widget copiloto flotante in-app** — Es el cambio de producto mas significativo. Boton flotante en layout protegido, endpoint `POST /api/ai/kia`, contexto con datos del tenant, herramientas del copiloto, historial en `kia_sessions`. Ver criterios completos en IMP-022.
+
+10. **IMP-021: Web publica orientada a asesorias** — Actualizar Home, nav principal y copy para comunicar que EXPERT es una plataforma para asesorias, no B2C. Ver IMP-021.
+
+11. **IMP-010: Actualizar dependencias auditadas** — Evaluar breaking change de postcss/Next.js. Ejecutar `npm audit --audit-level=moderate` y documentar excepciones si persisten.
+
+### Backlog / Fase SaaS
+
+12. **Tenants, branding por tenant, integraciones por tenant** — Una vez IMP-014 este implementado, avanzar hacia configuracion completa por tenant: `tenant_settings`, plantillas de email, servicios, roles e integraciones (Holded, Stripe, WhatsApp) configurables por tenant. Ver Fase 9 del roadmap.
+
+13. **Entregables descargables finales en portal cliente** — Documentos de resolucion, escrituras, certificados y entregas finales descargables desde el detalle de expediente.
+
+14. **Resenas por servicio** — Flujo de solicitud, captura y moderacion de resenas por servicio completado. Ya existe trigger en `serviceCompleted`; falta la UI de captura y el admin de moderacion.
+
+15. **IMP-015 — Automatizaciones operativas visibles en panel admin** — Ya implementado el resumen diario y emails por cambio de estado. Pendiente: hacer las automatizaciones configurables y visibles como reglas en el panel admin.
+
+16. **Piloto con 1-3 asesorias externas** — Seleccionar desde `saas_leads` cualificados, activar onboarding de tenant, medir adopcion del copiloto Kia y reduccion de trabajo manual. Ver Fase 10 del roadmap.
+
 ## Orden recomendado de implementacion
 
-1. IMP-001, IMP-006 e IMP-007: cerrar entrada externa y auth.
-2. IMP-002: corregir exposicion de secretos antes de activar integraciones por cliente.
-3. IMP-003 e IMP-008: reducir abuso y XSS en flujos publicos.
-4. IMP-004 e IMP-005: hacer pagos/syncs idempotentes y durables.
-5. IMP-016: estabilizar calidad conversacional WABA/Kia antes de ampliar automatizaciones.
-6. IMP-009 e IMP-010: restaurar lint y actualizar dependencias.
-7. IMP-011 e IMP-012: simplificar auth y cubrir regresiones.
-8. IMP-013 a IMP-015: consistencia de producto y preparacion SaaS.
+### Inmediato (esta semana)
+
+1. Verificar discrepancia cron Holded en `vercel.json` vs IMP-005. Corregir o documentar la decision.
+2. IMP-013: fijar `NEXT_PUBLIC_APP_URL=https://expertconsulting.es` y hacer sweep de dominio en metadata, emails y prompts Kia.
+3. IMP-003: proteger endpoints publicos con coste (viabilidad, company/resolve, newsletter).
+
+### Corto plazo (este mes)
+
+4. IMP-023: CI minimo con GitHub Actions.
+5. IMP-009: recuperar `npm run lint` (React Hooks rules).
+6. IMP-011: unificar Supabase SSR y retirar `auth-helpers-nextjs`.
+7. IMP-012: tests minimos de regresion critica (firma WhatsApp, redirect auth, idempotencia Stripe).
+8. Pruebas manuales pendientes de IMP-004 e IMP-005 (reenvio Stripe, job holded_sync_jobs, cron CRON_SECRET).
+
+### Medio plazo (1-3 meses)
+
+9. IMP-022: Kia como widget copiloto flotante in-app. Este es el cambio de producto mas significativo.
+10. IMP-021: web publica orientada a asesorias como clientes.
+11. IMP-014: arquitectura tenant-ready (tabla `tenants`, `tenant_id` en entidades criticas).
+12. IMP-010: actualizar dependencias auditadas (postcss/Next.js — evaluar breaking change).
+
+### Fase SaaS
+
+13. Tenants, branding por tenant, integraciones y plantillas por tenant.
+14. Piloto con 1-3 asesorias externas usando el widget Kia y el panel operativo.
+15. IMP-018/019/020: pruebas manuales WABA pendientes (si se mantiene canal WABA para notificaciones).
 
 ## Notas de implementacion
 

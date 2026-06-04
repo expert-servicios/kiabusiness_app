@@ -5,8 +5,7 @@ import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const HOLDED_HELP_URL = `${getPublicAppUrl()}/holded/pack-starter`;
-const CALENDLY_FORMACION =
-  process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? 'https://calendly.com/soy-kseniailicheva/formacion-holded';
+const CALENDLY_FORMACION = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? '';
 
 const VALID_STATUSES = ['pending', 'demo_active', 'onboarding_done', 'training_done', 'converted', 'closed'] as const;
 type DemoStatus = typeof VALID_STATUSES[number];

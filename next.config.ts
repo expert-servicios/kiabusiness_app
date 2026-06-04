@@ -16,7 +16,7 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'expertconsulting.es', 'www.expertconsulting.es', 'kseniailicheva.com', 'www.kseniailicheva.com'],
+      allowedOrigins: ['localhost:3000', 'expertconsulting.es', 'www.expertconsulting.es'],
       bodySizeLimit: '10mb'
     }
   },

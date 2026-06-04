@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/holded-sync",
-      "schedule": "0 10 * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/daily-summary",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,8 +15,20 @@ export async function POST(request: NextRequest) {
     // Honeypot: bots fill this, humans don't
     if (hp) return NextResponse.json({ ok: true });
 
+    // Rate limit: max 5 requests per IP per hour
+    const clientIp = getClientIp(request.headers);
+    if (!checkRateLimit(`newsletter:${clientIp}`)) {
+      return NextResponse.json({ ok: true }); // silent — don't reveal limit to bots
+    }
+
     if (!email || !EMAIL_RE.test(email)) {
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
+    }
+
+    // Block disposable/temp email domains
+    const spam = checkSpam({ email });
+    if (spam.isSpam) {
+      return NextResponse.json({ ok: true }); // silent — don't reveal detection
     }
 
     const supabase = getSupabaseAdmin();

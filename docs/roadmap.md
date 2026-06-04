@@ -1,24 +1,30 @@
 # EXPERT - Roadmap maestro de implementacion
 
-Ultima actualizacion: 2026-05-10
+Ultima actualizacion: 2026-06-04
 
 ## Vision
 
-EXPERT se construye primero como asesoria digital propia para Ksenia Ilicheva y EXPERT ESTUDIOS PROFESIONALES, SLU, pero debe quedar preparada para evolucionar hacia un SaaS vertical para asesorias, gestorias y despachos profesionales.
+EXPERT es una plataforma operativa digital para asesorias, gestorias y despachos profesionales. Las asesorias son los clientes: contratan EXPERT para digitalizar y automatizar su operativa — gestion de expedientes, documentos, empresas de sus clientes, pagos, comunicaciones y cumplimiento fiscal.
+
+Dominio canonico: `expertconsulting.es`.
+
+EXPERT ESTUDIOS PROFESIONALES, SLU opera como tenant inicial y caso de uso de referencia.
 
 Regla principal:
 
-> Resolver la operativa propia hoy sin cerrar la puerta al multi-tenant manana.
+> Construir el sistema operativo que toda asesoria necesita, validarlo con la propia operativa de EXPERT y escalarlo como SaaS multi-tenant.
 
 ## Principios
 
-- Priorizar automatizacion y reduccion de trabajo manual.
-- Mantener la web publica enfocada en cliente final hasta que el SaaS este listo para pilotos.
-- Separar `tenants` de `companies`.
-- No hardcodear servicios, estados, plantillas, branding o integraciones si pueden ser configurables.
+- Las asesorias son los clientes (tenants). Sus clientes finales son los usuarios del portal.
+- Priorizar automatizacion y reduccion de trabajo manual para la asesoria.
+- La web publica de `expertconsulting.es` comunica la propuesta de valor a asesorias, no a clientes finales B2C.
+- Separar `tenants` (asesorias) de `companies` (empresas de sus clientes).
+- No hardcodear servicios, estados, plantillas, branding o integraciones si pueden ser configurables por tenant.
 - Stripe es fuente de verdad de cobros.
 - Holded sera fuente de verdad de contactos, facturas, contabilidad y reporting financiero.
-- WhatsApp debe llevar al cliente al panel seguro, no sustituirlo.
+- Kia es el copiloto operativo interno: widget flotante in-app para gestionar empresas conectadas, consultar datos y ejecutar acciones asistidas. No es un chatbot de captacion.
+- WhatsApp es canal de notificaciones salientes, no interfaz principal de Kia.
 - La IA debe ser supervisada, auditable y trazable.
 - Toda funcionalidad nueva debe clasificarse como captacion, conversion, operacion, comunicacion, automatizacion, retencion o escalabilidad SaaS.
 
@@ -83,50 +89,34 @@ Criterios de aceptacion:
 - [x] Arquitectura limpia y actualizada.
 - [ ] README actualizado.
 
-## Fase 2 - Web publica y validacion B2B discreta
+## Fase 2 - Web publica orientada a asesorias
 
-Estado: completada el 2026-05-07.
+Estado: en revision (pivot B2B aprobado 2026-06-04).
 
 Tipo: captacion, conversion, escalabilidad SaaS.
 
-Objetivo: consolidar captacion B2C y abrir validacion SaaS sin confundir al cliente final.
+Objetivo: que `expertconsulting.es` comunique con claridad que EXPERT es una plataforma para asesorias, gestorias y despachos. La captacion B2C residual (servicios de Ksenia) se mantiene como operativa interna pero no es el mensaje principal de la web.
 
-Tareas:
+Entregado (base):
 
-- Crear `/para-asesorias`.
-- Copy base: "Sistema digital para asesorias que quieren automatizar su operativa".
-- Formulario B2B:
-  - nombre,
-  - email,
-  - empresa o despacho,
-  - numero aproximado de clientes,
-  - herramientas actuales,
-  - principal problema operativo,
-  - interes en piloto,
-  - consentimiento.
-- Enlazar desde footer.
-- Enlazar desde bloque discreto al final de Home.
-- No incluir en el menu principal por ahora.
-- Ajustar menu publico:
-  - Servicios
-  - Planes
-  - Formacion
-  - Recursos
-  - Contacto
-  - Acceso cliente
-
-Criterios de aceptacion:
-
-- [x] `/para-asesorias` existe y no compite con la venta a cliente final.
-- [x] Footer y Home enlazan la pagina B2B de forma secundaria.
-- [x] Formulario B2B guarda leads en `saas_leads`.
+- [x] `/para-asesorias` existe con formulario B2B que guarda en `saas_leads`.
+- [x] Formulario B2B con nombre, email, empresa, clientes, herramientas, problema y consentimiento.
 - [x] API publica usa escritura server-side, no insercion anonima directa.
-- La navegacion principal mantiene foco B2C.
 
-Pendiente:
+Pendiente (ver IMP-021):
 
-- Ajustar menu publico completo al esquema recomendado.
-- Crear vista admin para revisar leads B2B cuando empiecen a llegar pilotos.
+- [ ] Actualizar Home para que el hero y propuesta de valor principal se dirijan a asesorias.
+- [ ] Promover `/para-asesorias` como pagina de conversion principal en navegacion.
+- [ ] Revisar y reorientar copy de servicios, planes y blog.
+- [ ] Ajustar menu publico a audiencia B2B:
+  - Para asesorias
+  - Funcionalidades
+  - Integraciones (Holded, Stripe)
+  - Precios
+  - Contacto
+  - Acceso
+- [ ] Alinear todas las URLs con `expertconsulting.es` (ver IMP-013).
+- [ ] Vista admin `/admin/saas-leads` para gestionar leads de pilotos.
 
 ## Fase 3 - Estandarizacion de catalogo
 
@@ -297,59 +287,76 @@ Tareas:
 - WhatsApp Business para avisos y enlaces al panel.
 - Crear `automation_rules` y preparar reglas por tenant.
 
-## Fase 8 - IA supervisada
+## Fase 8 - Kia: copiloto operativo in-app
 
-Estado: en curso.
+Estado: reorientado (decision 2026-06-04).
 
-Tipo: automatizacion, operacion, escalabilidad SaaS.
+Tipo: IA, producto, operacion, automatizacion, escalabilidad SaaS.
 
-Entregado:
+Decision estrategica: Kia se convierte en un widget copiloto flotante que aparece en cualquier pagina del portal. El usuario hace clic en el boton flotante y se abre una ventana de chat donde puede gestionar las empresas conectadas, consultar datos de expedientes, resolver dudas fiscales/legales y ejecutar acciones asistidas. El motor WABA queda como canal de notificaciones salientes, no como interfaz de Kia.
 
-- Kia con logica "preguntar primero, responder despues": preguntas de diagnostico antes de dar informacion especifica. Ver IMP-018.
-- Conocimiento Holded Academy integrado en Kia: modulos, tarifas, integraciones, FAQs curadas + busqueda viva en help.holded.com (Opcion A). Ver IMP-018.
-- Opcion B (RAG pgvector para cobertura completa de Holded Academy): reservada para cuando el volumen de preguntas tecnicas lo justifique.
+Entregado (base de conocimiento y motor):
 
-Tareas:
+- [x] Motor de decision estructurado con schema validado, `decisionSummary` y `rulesApplied`. Ver IMP-017.
+- [x] Health checks y canary runner con panel `/admin/kia-health`. Ver IMP-017.
+- [x] Kia Auditor con reglas criticas y panel `/admin/kia-auditor`. Ver IMP-017.
+- [x] Conocimiento Holded Academy (modulos, tarifas, integraciones, FAQs). Ver IMP-018.
+- [x] Conocimiento AEAT y Seguridad Social (IRPF, IVA, autonomos, RETA, modelos). Ver IMP-019.
+- [x] Mapa de fuentes oficiales: DGT, Justicia/Registros, PAE/CIRCE, tributos autonomicos. Ver IMP-020.
+- [x] Anti-repeticion, redaccion de datos sensibles, provider router con fallback. Ver IMP-016/017.
 
-- Agente de leads.
-- Agente documental.
-- Agente de comunicaciones.
-- Agente de expediente.
-- Agente fiscal/legal supervisado.
-- Agente de contenido.
-- Agente operativo diario.
-- Clasificacion obligatoria de cada salida IA:
+Tareas pendientes (ver IMP-022):
+
+- [ ] Widget flotante `<KiaCopilotWidget />` en layout protegido.
+- [ ] Endpoint de chat in-app `POST /api/ai/kia` (separado del webhook WABA).
+- [ ] Contexto enriquecido con datos del tenant: empresas conectadas, expedientes activos, integraciones.
+- [ ] Herramientas del copiloto: consultar empresa, listar expedientes, estado de Holded, buscar cliente.
+- [ ] Historial de sesion en `kia_sessions` vinculado a usuario y tenant.
+- [ ] Confirmacion humana antes de acciones con efecto externo.
+- [ ] Clasificacion obligatoria de cada salida IA:
   - automatica permitida,
   - borrador para revision,
   - requiere intervencion humana.
-- [Futuro] Opcion B Holded Academy: crawler periodico -> chunks -> embeddings -> Supabase pgvector -> busqueda semantica en tiempo real para preguntas tecnicas de configuracion Holded.
+- [Futuro] Agentes especializados por tarea: leads, documental, comunicaciones, expediente, fiscal/legal, contenido, operativo diario.
+- [Futuro] Opcion B Holded Academy: crawler periodico -> chunks -> embeddings -> Supabase pgvector -> busqueda semantica para preguntas tecnicas de configuracion Holded.
 
-## Fase 9 - Multi-tenant minimo
+## Fase 9 - Multi-tenant para asesorias
 
-Estado: pendiente.
+Estado: pendiente (ver IMP-014).
 
 Tipo: escalabilidad SaaS.
 
+Objetivo: que cada asesoria que contrate EXPERT opere con su propio tenant: sus clientes, empresas, expedientes, plantillas, integraciones y branding son propios y aislados del resto.
+
+Modelo de datos:
+
+- `tenant`: la asesoria/gestoria/despacho que usa EXPERT.
+- `company`: empresa, autonomo o entidad fiscal de un cliente de la asesoria.
+- `profile`: usuario del sistema (tanto el personal de la asesoria como, opcionalmente, sus clientes finales).
+
 Tareas:
 
-- Crear `tenants`.
-- Crear settings, branding, integraciones, plantillas y roles por tenant.
-- Definir estrategia de `tenant_id` para entidades criticas.
-- Migrar catalogo a configuracion tenant-aware.
-- Mantener tenant EXPERT como tenant inicial.
+- [ ] Crear tabla `tenants` con `id`, `slug`, `name`, `domain`, `settings jsonb`, `created_at`.
+- [ ] Crear tabla `tenant_settings` con configuracion por tenant: branding, servicios, plantillas, roles, integraciones activas.
+- [ ] Anadir `tenant_id` a entidades criticas: `cases`, `orders`, `quotes`, `companies`, `profiles`.
+- [ ] Rol `tenant_admin` para el administrador de cada asesoria.
+- [ ] Tenant EXPERT registrado como tenant inicial con `slug = 'expert'`.
+- [ ] Kia Copiloto opera en el contexto del tenant del usuario autenticado.
+- [ ] Integraciones (Holded, Stripe, WhatsApp) configurables por tenant.
+- [ ] Plantillas de email y automatizacion por tenant.
 
-## Fase 10 - Piloto SaaS
+## Fase 10 - Piloto SaaS con asesorias externas
 
 Estado: pendiente.
 
 Tipo: escalabilidad SaaS, captacion, retencion.
 
-Objetivo: validar con 1 a 3 asesorias externas.
+Objetivo: validar con 1-3 asesorias externas que el sistema reduce trabajo manual y es adoptable sin formacion intensiva. El widget Kia Copiloto es el diferenciador principal del piloto.
 
 Tareas:
 
-- Seleccionar pilotos.
-- Activar branding/configuracion por tenant.
-- Medir uso operativo.
-- Recoger feedback.
-- Priorizar mejoras por reduccion de trabajo manual.
+- [ ] Seleccionar pilotos desde `saas_leads` cualificados.
+- [ ] Activar onboarding de tenant: configuracion basica, integracion Holded, primer expediente.
+- [ ] Medir: tiempo de onboarding, expedientes gestionados, acciones del copiloto Kia, reduccion de correos manuales.
+- [ ] Recoger feedback estructurado.
+- [ ] Priorizar mejoras por reduccion de trabajo manual demostrada.

@@ -1,11 +1,13 @@
 # EXPERT Platform
 
-EXPERT es una plataforma operativa digital construida primero para la asesoria propia de Ksenia Ilicheva y EXPERT ESTUDIOS PROFESIONALES, SLU, con vision de evolucion hacia un SaaS vertical para asesorias, gestorias y despachos profesionales.
+EXPERT es una plataforma operativa digital para asesorias, gestorias y despachos profesionales. Las asesorias son los clientes: contratan EXPERT para digitalizar y automatizar su operativa — expedientes, documentos, empresas, pagos, comunicaciones y cumplimiento fiscal.
+
+Tenant inicial y caso de uso de referencia: EXPERT ESTUDIOS PROFESIONALES, SLU.
 
 ## Datos base
 
-- Dominio publico: `kseniailicheva.com`
-- Email principal: `soy@kseniailicheva.com`
+- Dominio canonico: `expertconsulting.es`
+- Email principal: `soy@expertconsulting.es`
 - WhatsApp Business: `+34 696 55 04 80`
 - Empresa: `EXPERT ESTUDIOS PROFESIONALES, SLU`
 - CIF: `B44991776`
@@ -19,15 +21,18 @@ EXPERT es una plataforma operativa digital construida primero para la asesoria p
 - Stripe: Checkout, pagos puntuales, suscripciones y webhooks
 - Resend: emails transaccionales
 - Holded: CRM, proyectos, contactos, presupuestos/facturacion controlada y reporting financiero
+- Kia Copiloto: widget flotante in-app con motor IA supervisado (Anthropic)
 - Google reCAPTCHA v3: proteccion anti-spam de formularios publicos
-- Preparacion para WhatsApp Business e IA supervisada
+- WhatsApp Business: notificaciones salientes
 
 ## Estructura
 
-- `app/(public)`: web publica, servicios, planes, blog y paginas legales.
-- `app/(protected)`: portal cliente y panel admin.
+- `app/(public)`: web publica orientada a asesorias como clientes.
+- `app/(protected)`: portal operativo (admin y dashboard cliente) con Kia Copiloto flotante.
 - `app/api`: endpoints de negocio, webhooks e integraciones.
-- `lib/integrations`: adaptadores de Supabase, Stripe, Resend, WhatsApp e IA.
+- `apps/holded-mcp`: conector MCP independiente para Holded.
+- `lib/ai/kia`: motor Kia, context builder, tools, health checks y auditor.
+- `lib/integrations`: adaptadores de Supabase, Stripe, Resend, Holded y WhatsApp.
 - `lib/schemas`: validaciones Zod.
 - `supabase/migrations`: schema SQL, RLS y buckets.
 - `docs/roadmap.md`: roadmap maestro.
@@ -37,13 +42,14 @@ EXPERT es una plataforma operativa digital construida primero para la asesoria p
 
 ## Flujo operativo core
 
-1. Cliente solicita presupuesto o compra online.
-2. Stripe confirma pago.
-3. Supabase crea `order` y expediente.
-4. EXPERT deja trazabilidad operativa y, cuando procede, sincroniza contacto, lead, proyecto o documento con Holded sin duplicar Stripe/banco.
-5. Resend o WhatsApp notifican.
-6. Cliente gestiona documentos desde el panel seguro.
-7. Admin revisa, comunica estado y entrega resultados.
+1. Asesoria contrata EXPERT y se configura su tenant.
+2. Admin crea o importa expediente para un cliente.
+3. Stripe confirma pago cuando aplica.
+4. Supabase crea `order` y `case`; Holded sincroniza contacto y factura.
+5. Resend notifica al cliente final por email; WhatsApp envia avisos salientes.
+6. Cliente gestiona documentos desde el portal seguro.
+7. Admin opera desde la bandeja operativa con NBA (Next Best Actions).
+8. Kia Copiloto asiste al operador en cualquier momento desde el widget flotante.
 
 ## Comandos
 
@@ -67,7 +73,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
-RESEND_FROM_EMAIL=soy@kseniailicheva.com
+RESEND_FROM_EMAIL=soy@expertconsulting.es
 
 HOLDED_API_KEY=
 HOLDED_SYNC_ENABLED=true
@@ -85,21 +91,21 @@ RECAPTCHA_MIN_SCORE=0.5
 CALENDLY_ONBOARDING_URL=
 CALENDLY_FORMACION_URL=
 
-NEXT_PUBLIC_APP_URL=https://kseniailicheva.com
-ADMIN_EMAILS=soy@kseniailicheva.com
+NEXT_PUBLIC_APP_URL=https://expertconsulting.es
+ADMIN_EMAILS=soy@expertconsulting.es
 ```
 
-## Panel admin actual
+## Panel admin
 
-- `/admin`: bandeja operativa con acciones que requieren atencion.
-- `/admin/usuarios`: usuarios, roles y limpieza segura de usuarios spam sin actividad operativa.
-- `/admin/presupuestos`: gestion de presupuestos y sincronizacion manual con Holded.
+- `/admin`: bandeja operativa con NBA (Next Best Actions).
+- `/admin/usuarios`: usuarios, roles y limpieza segura.
+- `/admin/presupuestos`: presupuestos y sincronizacion Holded.
 - `/admin/expedientes`: expedientes, checklist documental y sincronizacion de proyecto Holded.
-- `/admin/saas-leads`: leads B2B del piloto SaaS y sincronizacion con Holded CRM.
+- `/admin/saas-leads`: leads de asesorias interesadas en el piloto SaaS.
 - `/admin/integraciones`: estado de Holded y eventos de sincronizacion.
+- `/admin/kia-health`: health checks y canaries del copiloto Kia.
+- `/admin/kia-auditor`: revision de reglas criticas de Kia.
 
 ## Estado actual
 
-Fase 0 completada: el proyecto compila, las migraciones locales se validaron con Supabase local y el panel admin ya funciona como bandeja operativa.
-
-Bloque actual: ejecutar `docs/improvement-plan.md`, empezando por seguridad de webhooks/auth, secretos Supabase, anti-abuso en endpoints publicos y robustez Stripe/Holded.
+P0 de seguridad completado. Bloque actual: ejecutar `docs/improvement-plan.md` — IMP-013 (dominio canonico), IMP-003 (proteccion endpoints publicos), IMP-023 (CI), IMP-022 (Kia widget copiloto), IMP-021 (web publica para asesorias) e IMP-014 (tenant-ready).

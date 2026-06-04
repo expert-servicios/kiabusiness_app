@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 const CALENDLY_DEMO_URL =
-  'https://calendly.com/soy-kseniailicheva/30min' +
+  (process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? '') +
   '?hide_event_type_details=1' +
   '&hide_gdpr_banner=1' +
   '&background_color=f8f6f1' +

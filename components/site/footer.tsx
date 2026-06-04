@@ -4,7 +4,7 @@ import { Mail, MapPin, MessageCircle, Calendar } from 'lucide-react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 const CALENDLY_REUNION_URL =
-  'https://calendly.com/soy-kseniailicheva/reunion-informativa' +
+  (process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '') +
   '?hide_event_type_details=1' +
   '&hide_gdpr_banner=1' +
   '&background_color=f8f6f1' +

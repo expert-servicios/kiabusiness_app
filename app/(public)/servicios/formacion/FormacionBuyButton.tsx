@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 
 const PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? 'https://calendly.com/soy-kseniailicheva/reunion-informativa';
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '';
 
 export function FormacionBuyButton({ area }: { area: string }) {
   const [loading, setLoading] = useState(false);

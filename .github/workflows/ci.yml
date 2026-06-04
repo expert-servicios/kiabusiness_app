@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Typecheck · Lint · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values so Next.js build does not fail on missing env vars.
+          # Real secrets are never exposed in CI.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          STRIPE_SECRET_KEY: sk_test_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+          RESEND_API_KEY: re_placeholder
+          RESEND_FROM_EMAIL: ci@expertconsulting.es
+          NEXT_PUBLIC_APP_URL: https://expertconsulting.es
+          NEXT_PUBLIC_RECAPTCHA_SITE_KEY: placeholder
+          RECAPTCHA_SECRET_KEY: placeholder
+          ANTHROPIC_API_KEY: sk-ant-placeholder
+          OPENAI_API_KEY: sk-placeholder
+          CRON_SECRET: placeholder
+          INTERNAL_API_SECRET: placeholder
+          SECRET_ENCRYPTION_KEY: placeholder
+          ADMIN_EMAILS: ci@expertconsulting.es
+          NEXT_PUBLIC_CALENDLY_REUNION_URL: https://calendly.com/placeholder/reunion
+          NEXT_PUBLIC_CALENDLY_DEMO_URL: https://calendly.com/placeholder/demo
+          NEXT_PUBLIC_CALENDLY_FORMACION_URL: https://calendly.com/placeholder/formacion
+          NEXT_PUBLIC_CALENDLY_ONBOARDING_URL: https://calendly.com/placeholder/onboarding
