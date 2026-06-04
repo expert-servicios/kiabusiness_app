@@ -8,6 +8,7 @@ import type { KiaContext } from './kia-context-builder';
 import { redactJson, safeErrorMessage } from './kia-redaction';
 import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
+import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
 
 export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaContext): Promise<KiaToolResult> {
   try {
@@ -83,6 +84,15 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       case 'get_company_status_snapshot':
         return ok(toolCall.name, context.accounting);
+      case 'extract_invoice_ocr': {
+        const mediaUrl = String(args.mediaUrl ?? '');
+        const mediaType = String(args.mediaType ?? 'image/jpeg') as InvoiceMediaType;
+        if (!mediaUrl) return fail(toolCall.name, 'mediaUrl is required');
+        const openAiKey = process.env.OPENAI_API_KEY?.trim();
+        if (!openAiKey) return fail(toolCall.name, 'OpenAI not configured (OPENAI_API_KEY missing)');
+        const ocrResult = await extractInvoiceOcr({ mediaUrl, mediaType, openAiApiKey: openAiKey });
+        return ok(toolCall.name, ocrResult as unknown as Record<string, unknown>);
+      }
       case 'create_kia_decision_log':
         return ok(toolCall.name, { status: 'handled_by_backend' });
 

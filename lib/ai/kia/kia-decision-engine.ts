@@ -18,6 +18,7 @@ import { KIA_TOOL_DEFINITIONS, type KiaToolResult } from './kia-tool-definitions
 import { executeKiaToolCall } from './kia-tool-executor';
 import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
 import { classifyKiaIntent, type KiaIntentClassification } from './kia-intent-classifier';
+import { judgeKiaDecision, JUDGE_REQUIRED_ACTIONS } from './kia-judge-validator';
 import { saveKiaDecisionLog } from './kia-decision-log';
 import { redactJson, safeErrorMessage } from './kia-redaction';
 import {
@@ -49,6 +50,8 @@ export async function runKiaDecision(input: {
   allowTools?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
+  mediaUrl?: string;
+  mediaType?: string;
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
   const locale = input.locale ?? context.contact.language;
@@ -77,8 +80,8 @@ export async function runKiaDecision(input: {
   const allowedToolDefinitions = input.allowedToolNames?.length
     ? KIA_TOOL_DEFINITIONS.filter((tool) => input.allowedToolNames?.includes(tool.name))
     : KIA_TOOL_DEFINITIONS;
-  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext);
-  // F2: Intent pre-classifier (Haiku, <500ms) - runs only on inbound WABA messages.
+  const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
+  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext, mediaInfo);
 
   // F2: Intent pre-classifier (Haiku, <500ms) — runs only on inbound WABA messages
   let classification: KiaIntentClassification | null = null;
@@ -130,7 +133,7 @@ export async function runKiaDecision(input: {
   const toolResults: KiaToolResult[] = [];
 
   if (process.env.KIA_AI_EVAL_MODE?.toLowerCase() === 'true') {
-    decision = heuristicDecision(input.taskType, input.message, context);
+    decision = heuristicDecision(resolvedTaskType, input.message, context);
   } else {
     try {
       const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
@@ -178,7 +181,7 @@ export async function runKiaDecision(input: {
           });
           providerResult = loopProviderResult;
           decision = applyBackendPolicyGuards(
-            parseDecision(loopProviderResult, input.taskType, context, locale),
+            parseDecision(loopProviderResult, resolvedTaskType, context, locale),
             input,
             context,
           );
@@ -197,11 +200,44 @@ export async function runKiaDecision(input: {
         }
       }
 
+      // F3: Judge validator — second opinion for critical actions (GPT-4o, fail-open, 8s timeout)
+      if (JUDGE_REQUIRED_ACTIONS.has(decision.nextAction) && decision.confidence >= 0.5 && !usedFallback) {
+        const openAiKey = process.env.OPENAI_API_KEY?.trim();
+        if (openAiKey) {
+          const judgment = await judgeKiaDecision({
+            decision,
+            context,
+            originalMessage: input.message,
+            openAiApiKey: openAiKey,
+          }).catch(() => null);
+
+          if (judgment && !judgment.approved) {
+            const validOverride = judgment.suggestedNextAction &&
+              (KIA_NEXT_ACTIONS as readonly string[]).includes(judgment.suggestedNextAction);
+            decision = {
+              ...decision,
+              nextAction: validOverride
+                ? (judgment.suggestedNextAction as KiaDecision['nextAction'])
+                : 'needs_review',
+              requiresManualReview: !validOverride,
+              ...(judgment.suggestedUserMessage ? { userMessage: judgment.suggestedUserMessage } : {}),
+              warnings: [...decision.warnings, `judge_rejected:${judgment.riskLevel}:${judgment.reason.slice(0, 100)}`],
+              rulesApplied: [...decision.rulesApplied, 'judge_validator_applied'],
+            };
+          } else if (judgment?.approved) {
+            decision = {
+              ...decision,
+              rulesApplied: [...decision.rulesApplied, 'judge_validator_approved'],
+            };
+          }
+        }
+      }
+
       // Anti-repetition check on final response
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
-          taskType: input.taskType,
+          taskType: resolvedTaskType,
           systemPrompt,
           message: input.message,
           context,
@@ -410,17 +446,25 @@ function buildUserPayload(
   context: KiaContext,
   recentAssistantTexts: string[],
   officialSourceContext: string,
+  mediaInfo?: { url: string; type: string } | null,
 ): string {
-  return [
+  const parts: string[] = [
     '<input>',
-    JSON.stringify(redactJson({
-      message,
-      context,
-    }), null, 2),
+    JSON.stringify(redactJson({ message, context }), null, 2),
     '</input>',
-    officialSourceContext ? `<official_source_context>\n${officialSourceContext}\n</official_source_context>` : '',
-    buildNoRepeatInstruction(recentAssistantTexts),
-  ].join('\n');
+  ];
+  if (officialSourceContext) {
+    parts.push(`<official_source_context>\n${officialSourceContext}\n</official_source_context>`);
+  }
+  if (mediaInfo) {
+    parts.push(
+      `<media_hint type="${mediaInfo.type}" url="${mediaInfo.url}">`,
+      'El usuario ha adjuntado un archivo multimedia. Usa extract_invoice_ocr si parece una factura o ticket.',
+      '</media_hint>',
+    );
+  }
+  parts.push(buildNoRepeatInstruction(recentAssistantTexts));
+  return parts.join('\n');
 }
 
 function parseDecision(providerResult: KiaProviderResult, taskType: KiaTaskType, context: KiaContext, locale: 'es' | 'ru'): KiaDecision {
