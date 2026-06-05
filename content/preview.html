@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vista previa | Ksenia Ilicheva</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+      --card: #f9fafb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header,
+    footer {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 24px 32px;
+    }
+
+    header .top,
+    footer .top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      font-size: 14px;
+      color: #e2e8f0;
+    }
+
+    nav a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    section {
+      margin-bottom: 64px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 12px;
+    }
+
+    h1 {
+      font-size: 40px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0 0 12px;
+      color: var(--muted);
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+    }
+
+    .hero .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn.secondary {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    .grid-4 {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .badge {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .faq {
+      display: grid;
+      gap: 16px;
+    }
+
+    .cta-strip {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    footer {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <strong>Ksenia Ilicheva</strong>
+      <nav>
+        <a href="#inicio">Inicio</a>
+        <a href="#holded">Holded</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#mentorias">Mentorías</a>
+        <a href="#formacion">Formación</a>
+        <a href="#contacto">Contacto</a>
+        <a href="[URL_CV]">Descargar CV</a>
+      </nav>
+      <div class="badge">soy@kseniailicheva.com · +34 669 04 55 28</div>
+    </div>
+  </header>
+
+  <main>
+    <section id="inicio" class="hero">
+      <div>
+        <h1>Pon orden en tu empresa. Controla caja, impuestos y operaciones con Holded.</h1>
+        <p>Implementación y migración en Holded + asesoramiento integral (fiscal, contable, mercantil y laboral) + mentorías y formación para autogestión.</p>
+        <div class="actions">
+          <a class="btn primary" href="[URL_RESERVA]">Solicitar una llamada</a>
+          <a class="btn secondary" href="#holded">Ver Holded</a>
+        </div>
+        <p class="badge">Mentora en MentorDay | Especialista en Implementación y Migraciones Holded</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Lo que hago</h2>
+      <div class="grid-4">
+        <div class="card">Implementación Holded</div>
+        <div class="card">Migración a Holded</div>
+        <div class="card">Asesoramiento integral de empresas</div>
+        <div class="card">Mentorías + Formación para autogestión</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Por qué</h2>
+      <p>No se trata de delegar tu negocio. Se trata de entenderlo y gestionarlo con un sistema. Yo te monto la estructura y te enseño a llevarla.</p>
+    </section>
+
+    <section id="servicios">
+      <h2>Servicios</h2>
+      <div class="grid-4">
+        <div class="card">
+          <h3>Implementación Holded</h3>
+          <ul class="list">
+            <li>Facturación, contabilidad, bancos y reporting.</li>
+            <li>Conciliación y tesorería operativas.</li>
+          </ul>
+          <div class="actions"><a class="btn secondary" href="#holded">Ver Holded</a></div>
+        </div>
+        <div class="card">
+          <h3>Migración a Holded</h3>
+          <ul class="list">
+            <li>Datos desde Excel u otras herramientas.</li>
+            <li>Estructura limpia y lista.</li>
+          </ul>
+          <div class="actions"><a class="btn secondary" href="#holded">Ver Holded</a></div>
+        </div>
+        <div class="card">
+          <h3>Asesoramiento integral</h3>
+          <ul class="list">
+            <li>Fiscal, contable, mercantil y laboral/SS.</li>
+            <li>Calendario y control de riesgos.</li>
+          </ul>
+          <div class="actions"><a class="btn secondary" href="[URL_RESERVA]">Solicitar una llamada</a></div>
+        </div>
+        <div class="card">
+          <h3>Mentorías y formación</h3>
+          <ul class="list">
+            <li>Sesiones prácticas con plan de 30 días.</li>
+            <li>Autogestión real.</li>
+          </ul>
+          <div class="actions"><a class="btn secondary" href="#mentorias">Reservar mentoría</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Cómo trabajo</h2>
+      <div class="steps">
+        <div class="card">1) Diagnóstico (estado, riesgos, objetivos)</div>
+        <div class="card">2) Implementación / orden del sistema</div>
+        <div class="card">3) Formación para autogestión</div>
+        <div class="card">4) Seguimiento por hitos o mensual</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Para quién es</h2>
+      <ul class="list">
+        <li>Autónomos que abren nueva línea de negocio.</li>
+        <li>Startups y pymes que necesitan control y orden.</li>
+        <li>Negocios con crecimiento que quieren escalar con estructura.</li>
+        <li>Empresas que quieren pasar de Excel a sistema real (Holded).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>FAQ</h2>
+      <div class="faq">
+        <div class="card"><strong>¿Cuándo compensa pasar a SL?</strong><br />Depende de margen, riesgo y volumen. Lo analizamos con números reales.</div>
+        <div class="card"><strong>¿Qué incluye una migración a Holded?</strong><br />Auditoría, limpieza, importación y verificación con estructura lista para operar.</div>
+        <div class="card"><strong>¿Cuánto tarda una implementación?</strong><br />Entre 2 y 4 semanas, según volumen y complejidad.</div>
+        <div class="card"><strong>¿Puedo autogestionarme si no sé contabilidad?</strong><br />Sí. La formación se enfoca en entender lo necesario para controlar tu negocio.</div>
+        <div class="card"><strong>¿Qué pasa si ya tengo gestoría?</strong><br />Coordinamos la información y el flujo para que todo esté alineado.</div>
+        <div class="card"><strong>¿Trabajas con equipos y no solo con el fundador?</strong><br />Sí. Formo a responsables y equipo para que el sistema funcione.</div>
+      </div>
+    </section>
+
+    <section id="holded">
+      <h2>Holded: el sistema todo-en-uno</h2>
+      <p>Factura, controla cobros/pagos, contabilidad, bancos, equipo, inventario, CRM y proyectos en una sola plataforma.</p>
+      <div class="actions">
+        <a class="btn primary" href="[URL_RESERVA]">Quiero implementar Holded</a>
+        <a class="btn secondary" href="[URL_RESERVA]">Quiero migrar a Holded</a>
+      </div>
+      <div class="grid-4" style="margin-top: 16px;">
+        <div class="card">
+          <strong>Facturación</strong>
+          <ul class="list">
+            <li>Facturas y presupuestos</li>
+            <li>Control de cobros/pagos</li>
+            <li>Conciliación y gastos</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Contabilidad y bancos</strong>
+          <ul class="list">
+            <li>Asientos automáticos</li>
+            <li>Balance y PyG</li>
+            <li>Sincronización bancaria</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Equipo e inventario</strong>
+          <ul class="list">
+            <li>Control horario</li>
+            <li>Gestión de empleados</li>
+            <li>Stock y almacenes</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>CRM y proyectos</strong>
+          <ul class="list">
+            <li>Embudo de ventas</li>
+            <li>Clientes y actividades</li>
+            <li>Rentabilidad por proyecto</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cta-strip" style="margin-top: 24px;">
+        Si quieres dejar de “apagar fuegos” con Excel y empezar a gestionar con control, te lo dejo montado y te enseño a llevarlo.
+      </div>
+    </section>
+
+    <section id="mentorias">
+      <h2>Mentorías</h2>
+      <p>En cada sesión salimos con: decisión, riesgo principal identificado y plan de 30 días.</p>
+      <div class="actions">
+        <a class="btn primary" href="[URL_RESERVA]">Reservar mentoría</a>
+      </div>
+    </section>
+
+    <section id="formacion">
+      <h2>Formación</h2>
+      <p>Formación para autogestión: entender tus números y no delegar a ciegas.</p>
+      <div class="grid-4">
+        <div class="card"><strong>Inicio</strong><br />Bases + circuito</div>
+        <div class="card"><strong>Control</strong><br />Tesorería + conciliación + reporting</div>
+        <div class="card"><strong>Escalado</strong><br />Procesos + equipo + estructura</div>
+      </div>
+    </section>
+
+    <section id="contacto">
+      <h2>Contacto</h2>
+      <p>soy@kseniailicheva.com · +34 669 04 55 28</p>
+      <div class="actions">
+        <a class="btn primary" href="[URL_RESERVA]">Solicitar una llamada</a>
+        <a class="btn secondary" href="[URL_CV]">Descargar CV</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="top">
+      <div>
+        <strong>Ksenia Ilicheva</strong><br />Implementación y migración en Holded · Asesoramiento integral · Mentorías y formación
+      </div>
+      <div>soy@kseniailicheva.com · +34 669 04 55 28</div>
+      <div>kseniailicheva.com</div>
+    </div>
+  </footer>
+</body>
+</html>
