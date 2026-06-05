@@ -113,7 +113,7 @@ export function PresupuestosClient({ initialQuotes }: { initialQuotes: Quote[] }
             <FileText className="mx-auto mb-3 h-10 w-10 text-[#d8cbb5]" />
             <p className="font-semibold text-[#29384a]">Sin presupuestos</p>
             {filterStatus !== 'all' && (
-              <p className="mt-1 text-sm text-[#9ca3af]">No hay presupuestos con estado "{STATUS_LABELS[filterStatus]}".</p>
+              <p className="mt-1 text-sm text-[#9ca3af]">No hay presupuestos con estado &quot;{STATUS_LABELS[filterStatus]}&quot;.</p>
             )}
             <button
               type="button"

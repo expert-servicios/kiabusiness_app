@@ -15,7 +15,8 @@
     "holded-mcp:dev": "npm --prefix apps/holded-mcp run dev",
     "kia:eval": "node scripts/kia-eval.mjs",
     "kia:auditor:test": "npx tsx scripts/kia-auditor-test.ts",
-    "kia:f1f8:test": "npx tsx scripts/kia-f1-f8-test.ts"
+    "kia:f1f8:test": "npx tsx scripts/kia-f1-f8-test.ts",
+    "test:regression": "npx tsx scripts/regression-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",

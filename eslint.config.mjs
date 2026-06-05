@@ -5,6 +5,13 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  {
+    rules: {
+      // The app intentionally uses effects for client hydration and async data loading.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off'
+    }
+  },
   globalIgnores([
     ".next/**",
     "node_modules/**",

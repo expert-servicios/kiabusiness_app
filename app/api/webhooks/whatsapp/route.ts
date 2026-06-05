@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
   logWhatsAppConversation,
   downloadAndStoreWhatsAppMedia,
@@ -39,7 +39,7 @@ import { getService } from '@/lib/services/service-registry';
 import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
 import { parseKiaFeedbackButtonId, storeKiaFeedback } from '@/lib/ai/kia/kia-feedback-store';
 
-import { verifyMetaSignature } from '@/lib/security/webhook-signature';
+import { verifyMetaSignature } from '@/lib/utils/verify-meta-signature';
 
 // ── Meta webhook verification ─────────────────────────────────────────────────
 

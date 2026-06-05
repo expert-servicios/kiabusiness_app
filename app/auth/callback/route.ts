@@ -1,9 +1,9 @@
-import { createServerClient } from '@supabase/ssr';
+﻿import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { welcomeEmail } from '@/lib/email/templates';
-import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { safeRedirectPath } from '@/lib/utils/safe-redirect';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
