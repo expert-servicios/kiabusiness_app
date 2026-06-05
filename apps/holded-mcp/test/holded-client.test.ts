@@ -182,7 +182,10 @@ test('soft errors (200 OK with status:0) are converted into HoldedApiError', asy
 
 test('getDocumentPdf returns a Buffer of bytes', async () => {
   const pdfBytes = Buffer.from('%PDF-1.4 hello world');
-  const recorder = withHoldedFetchRecorder({ responseBinary: pdfBytes });
+  // Holded devuelve JSON { status: 1, data: "<base64>" }, no raw binary.
+  const recorder = withHoldedFetchRecorder({
+    responseBody: { status: 1, data: pdfBytes.toString('base64') },
+  });
   const client = new HoldedClient(fakeApiKey);
 
   try {

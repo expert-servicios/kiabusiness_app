@@ -146,14 +146,13 @@ export function withHoldedFetchMock(valid: boolean) {
     // Cuando este mock se usa solo, devolvemos un éxito sintético para que
     // los tests preexistentes que no se ocupan de F1 sigan funcionando.
     if (
-      url.startsWith('https://expertconsulting.es/api/integrations/holded/upsert-from-key') ||
-      url.startsWith('https://app.verifactu.business/api/integrations/holded/upsert-from-key')
+      url.startsWith('https://expertconsulting.es/api/integrations/holded/upsert-from-key')
     ) {
       return new Response(
         JSON.stringify({
           ok: true,
-          userId: 'verifactu-user-123',
-          tenantId: 'verifactu-tenant-456',
+          userId: 'expert-user-123',
+          tenantId: 'expert-tenant-456',
           connectionId: 'connection-789',
           status: 'connected',
           legalAcceptedAt: '2026-05-06T12:00:00.000Z',
@@ -207,8 +206,7 @@ export function withVerifactuF1Mock(
     }
 
     if (
-      url.startsWith('https://expertconsulting.es/api/integrations/holded/upsert-from-key') ||
-      url.startsWith('https://app.verifactu.business/api/integrations/holded/upsert-from-key')
+      url.startsWith('https://expertconsulting.es/api/integrations/holded/upsert-from-key')
     ) {
       const headers: Record<string, string> = {};
       const initHeaders = init?.headers as Record<string, string> | undefined;
@@ -229,8 +227,8 @@ export function withVerifactuF1Mock(
         return new Response(
           JSON.stringify({
             ok: true,
-            userId: options.userId ?? 'verifactu-user-123',
-            tenantId: options.tenantId ?? 'verifactu-tenant-456',
+            userId: options.userId ?? 'expert-user-123',
+            tenantId: options.tenantId ?? 'expert-tenant-456',
             connectionId: 'connection-789',
             status: 'connected',
             legalAcceptedAt: '2026-05-06T12:00:00.000Z',
