@@ -1,78 +1,95 @@
-'use client';
+﻿"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
-  CreditCard, FolderOpen, LayoutDashboard,
-  Menu, Plug, UserPlus, Users, X, Zap, ShieldCheck,
-  Settings, User, Search,
-} from 'lucide-react';
-import { AdminUserDrawer } from './AdminUserDrawer';
+  CreditCard,
+  FolderOpen,
+  LayoutDashboard,
+  Menu,
+  Plug,
+  UserPlus,
+  Users,
+  X,
+  Zap,
+  ShieldCheck,
+  Settings,
+  User,
+  Search,
+} from "lucide-react";
+import { AdminUserDrawer } from "./AdminUserDrawer";
 
-interface NavItem { label: string; href: string; badge?: number }
-interface NavGroup { label: string; short: string; icon: React.ElementType; items: NavItem[] }
+interface NavItem {
+  label: string;
+  href: string;
+  badge?: number;
+}
+interface NavGroup {
+  label: string;
+  short: string;
+  icon: React.ElementType;
+  items: NavItem[];
+}
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Clientes',
-    short: 'Clientes',
+    label: "Clientes",
+    short: "Clientes",
     icon: Users,
     items: [
-      { label: 'Clientes', href: '/admin/clientes' },
-      { label: 'Usuarios', href: '/admin/usuarios' },
-      { label: 'Onboarding', href: '/admin/onboarding' },
-      { label: 'Calendario', href: '/admin/calendario-fiscal' },
+      { label: "Clientes", href: "/admin/clientes" },
+      { label: "Usuarios", href: "/admin/usuarios" },
+      { label: "Onboarding", href: "/admin/onboarding" },
+      { label: "Calendario", href: "/admin/calendario-fiscal" },
     ],
   },
   {
-    label: 'Operaciones',
-    short: 'Ops',
+    label: "Operaciones",
+    short: "Ops",
     icon: FolderOpen,
     items: [
-      { label: 'Expedientes', href: '/admin/expedientes' },
-      { label: 'Documentos', href: '/admin/documentos' },
-      { label: 'Citas', href: '/admin/citas' },
-      { label: 'Presupuestos', href: '/admin/presupuestos' },
+      { label: "Expedientes", href: "/admin/expedientes" },
+      { label: "Documentos", href: "/admin/documentos" },
+      { label: "Citas", href: "/admin/citas" },
+      { label: "Presupuestos", href: "/admin/presupuestos" },
     ],
   },
   {
-    label: 'Facturación',
-    short: 'Factura',
+    label: "Facturación",
+    short: "Factura",
     icon: CreditCard,
     items: [
-      { label: 'Suscripciones', href: '/admin/suscripciones' },
-      { label: 'Pagos Stripe', href: '/admin/pagos' },
-      { label: 'Emails', href: '/admin/emails' },
+      { label: "Suscripciones", href: "/admin/suscripciones" },
+      { label: "Pagos Stripe", href: "/admin/pagos" },
+      { label: "Emails", href: "/admin/emails" },
     ],
   },
   {
-    label: 'Marketing',
-    short: 'Mktg',
+    label: "Marketing",
+    short: "Mktg",
     icon: Zap,
     items: [
-      { label: 'Leads SaaS', href: '/admin/saas-leads' },
-      { label: 'Holded Demos', href: '/admin/holded-demos' },
+      { label: "Leads SaaS", href: "/admin/saas-leads" },
+      { label: "Holded Demos", href: "/admin/holded-demos" },
     ],
   },
   {
-    label: 'Equipo',
-    short: 'Equipo',
+    label: "Equipo",
+    short: "Equipo",
     icon: UserPlus,
-    items: [
-      { label: 'Equipo y accesos', href: '/admin/equipo' },
-    ],
+    items: [{ label: "Equipo y accesos", href: "/admin/equipo" }],
   },
   {
-    label: 'Sistema',
-    short: 'Sistema',
+    label: "Sistema",
+    short: "Sistema",
     icon: Plug,
     items: [
-      { label: 'Panel Gerente', href: '/admin/executive' },
-      { label: 'Rentabilidad', href: '/admin/rentabilidad' },
-      { label: 'Kia Health', href: '/admin/kia-health' },
-      { label: 'Kia Auditor', href: '/admin/kia-auditor' },
-      { label: 'Reportes', href: '/admin/reportes' },
+      { label: "Panel Gerente", href: "/admin/executive" },
+      { label: "Rentabilidad", href: "/admin/rentabilidad" },
+      { label: "Kia Health", href: "/admin/kia-health" },
+      { label: "Kia Auditor", href: "/admin/kia-auditor" },
+      { label: "Reportes", href: "/admin/reportes" },
     ],
   },
 ];
@@ -110,7 +127,9 @@ function SidebarContent({
           <ShieldCheck className="h-4 w-4 text-[#07111d]" />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">Expert</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">
+            Expert
+          </p>
           <p className="text-[10px] text-white/40">Panel de administración</p>
         </div>
         {isMobile && (
@@ -130,12 +149,22 @@ function SidebarContent({
           type="button"
           title="Búsqueda global (⌘K)"
           aria-label="Abrir búsqueda global"
-          onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+          onClick={() =>
+            document.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                key: "k",
+                metaKey: true,
+                bubbles: true,
+              }),
+            )
+          }
           className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-white/4 px-3 py-2 text-xs text-white/40 transition hover:bg-white/8 hover:text-white/70"
         >
           <Search className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1 text-left">Buscar…</span>
-          <kbd className="rounded border border-white/10 px-1 py-0.5 text-[10px]">⌘K</kbd>
+          <kbd className="rounded border border-white/10 px-1 py-0.5 text-[10px]">
+            ⌘K
+          </kbd>
         </button>
       </div>
 
@@ -145,9 +174,9 @@ function SidebarContent({
           href="/admin"
           onClick={onCloseMobile}
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-            isActive('/admin')
-              ? 'bg-[#D4A017]/15 text-[#D4A017]'
-              : 'text-white/70 hover:bg-white/6 hover:text-white'
+            isActive("/admin")
+              ? "bg-[#D4A017]/15 text-[#D4A017]"
+              : "text-white/70 hover:bg-white/6 hover:text-white"
           }`}
         >
           <LayoutDashboard className="h-4 w-4 shrink-0" />
@@ -174,10 +203,10 @@ function SidebarContent({
               onClick={() => saveTab(group.label)}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 transition ${
                 isSelected
-                  ? 'bg-[#D4A017]/20 text-[#D4A017]'
+                  ? "bg-[#D4A017]/20 text-[#D4A017]"
                   : hasActive
-                  ? 'text-[#D4A017]/70 hover:text-[#D4A017]'
-                  : 'text-white/35 hover:text-white/70'
+                    ? "text-[#D4A017]/70 hover:text-[#D4A017]"
+                    : "text-white/35 hover:text-white/70"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -202,8 +231,8 @@ function SidebarContent({
             onClick={onCloseMobile}
             className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
               isActive(item.href)
-                ? 'bg-[#D4A017]/12 font-semibold text-[#D4A017]'
-                : 'text-white/65 hover:bg-white/5 hover:text-white'
+                ? "bg-[#D4A017]/12 font-semibold text-[#D4A017]"
+                : "text-white/65 hover:bg-white/5 hover:text-white"
             }`}
           >
             {item.label}
@@ -227,7 +256,9 @@ function SidebarContent({
             <User className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-white/80">{displayName}</p>
+            <p className="truncate text-xs font-semibold text-white/80">
+              {displayName}
+            </p>
             <p className="truncate text-[10px] text-white/40">{userEmail}</p>
           </div>
           <Settings className="h-3.5 w-3.5 shrink-0 text-white/30" />
@@ -251,29 +282,34 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
 
   // Auto-select tab based on current route
   useEffect(() => {
-    const match = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+    const match = NAV_GROUPS.find((g) =>
+      g.items.some((i) => pathname.startsWith(i.href)),
+    );
     if (match) setActiveTab(match.label);
   }, [pathname]);
 
   // Persist tab selection
   useEffect(() => {
-    const saved = localStorage.getItem('adminSidebarTab');
+    const saved = localStorage.getItem("adminSidebarTab");
     if (saved && NAV_GROUPS.some((g) => g.label === saved)) {
-      const routeMatch = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+      const routeMatch = NAV_GROUPS.find((g) =>
+        g.items.some((i) => pathname.startsWith(i.href)),
+      );
       if (!routeMatch) setActiveTab(saved);
     }
   }, [pathname]);
 
   const saveTab = (label: string) => {
     setActiveTab(label);
-    localStorage.setItem('adminSidebarTab', label);
+    localStorage.setItem("adminSidebarTab", label);
   };
 
   const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
-  const displayName = userName ?? userEmail.split('@')[0];
-  const activeGroup = NAV_GROUPS.find((g) => g.label === activeTab) ?? NAV_GROUPS[0];
+  const displayName = userName ?? userEmail.split("@")[0];
+  const activeGroup =
+    NAV_GROUPS.find((g) => g.label === activeTab) ?? NAV_GROUPS[0];
 
   const sharedProps = {
     urgentCount,
@@ -284,7 +320,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
     isActive,
     saveTab,
     onCloseMobile: () => setMobileOpen(false),
-    onOpenDrawer:  () => setDrawerOpen(true),
+    onOpenDrawer: () => setDrawerOpen(true),
   };
 
   return (
@@ -293,7 +329,9 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/8 bg-[#07111d] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-[#D4A017]" />
-          <span className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Admin</span>
+          <span className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">
+            Admin
+          </span>
           {urgentCount > 0 && (
             <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
               {urgentCount}
@@ -313,7 +351,11 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
             onClick={() => setMobileOpen((o) => !o)}
             className="rounded-lg p-1.5 text-white/60 hover:bg-white/8 hover:text-white"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
@@ -327,7 +369,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
       )}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#07111d] transition-transform duration-300 lg:hidden ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <SidebarContent isMobile {...sharedProps} />
