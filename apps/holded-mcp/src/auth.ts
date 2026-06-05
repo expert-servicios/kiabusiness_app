@@ -27,7 +27,7 @@ export interface AuthorizationCodePayload {
   codeChallenge: string | null;
   codeChallengeMethod: 'S256' | null;
   // F3 (Holded Connectors Unified Architecture): cuando el consent screen
-  // pasó por el endpoint común F1, recibimos el `User.id` real de Verifactu y
+  // pasó por el endpoint común F1, recibimos el `User.id` real de EXPERT y
   // el `Tenant.id` asociados. Si vienen, los persistimos en lugar del legacy
   // sha256(apiKey). Para tokens emitidos antes del cambio (compatibilidad de
   // 30 días) mantenemos el fallback.
@@ -460,7 +460,7 @@ export async function createTokenPair(input: {
   clientId: string;
   scope: string;
   // F3.2: cuando el authorization code fue creado tras un upsert F1 exitoso,
-  // este `userId` es el `User.id` real de Verifactu. Si no llega (modo legacy)
+  // este `userId` es el `User.id` real de EXPERT. Si no llega (modo legacy)
   // mantenemos el sha256(apiKey) como fallback.
   userId?: string | null;
 }): Promise<TokenPair> {

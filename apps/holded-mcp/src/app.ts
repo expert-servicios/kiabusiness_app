@@ -109,12 +109,10 @@ export function createApp() {
   // la fecha de la última regeneración del asset para facilitar la depuración.
   const ICON_VERSION = 'holded-diamond-2026-05-19';
 
-  // ⚠️ Anthropic Connectors Directory fetchea el logo desde
-  // https://www.google.com/s2/favicons?domain=claude.verifactu.business&sz=64
-  // Si el server responde con no-cache, Google interpreta "no almacenar"
-  // y sirve un placeholder gris en su lugar — el directorio mostraría gris.
-  // Por eso cacheamos 1 día. ICON_VERSION sigue en el header para
-  // depuración (Cmd+F en DevTools al asset).
+  // ⚠️ Anthropic Connectors Directory puede hacer fetch al favicon del dominio
+  // (claude.expertconsulting.es). Si el server responde con no-cache, Google
+  // interpreta "no almacenar" y sirve un placeholder gris. Por eso cacheamos
+  // 1 día. ICON_VERSION sigue en el header para depuración.
   const ICON_CACHE = 'public, max-age=86400, immutable';
 
   const sendDiamondPng = (res: express.Response, contentType = 'image/png') => {
@@ -146,17 +144,9 @@ export function createApp() {
   app.get('/apple-touch-icon.png', (_req, res) => sendDiamondPng(res));
   app.get('/holded-diamond-logo.png', (_req, res) => sendDiamondPng(res));
 
-  // Legacy alias — la app se brandeaba como "Verifactu Business" antes de
-  // 2025-12-20 (commit 2ea8e783e). El icono entonces era un escudo azul
-  // con check, servido (entre otros) desde app.verifactu.business/icono_verifactu.business.png
-  // Anthropic/Claude scrapearon este icono en su momento y lo siguen
-  // mostrando como avatar del conector pese a que el fichero lleva
-  // 5+ meses 404 en todas nuestras URLs. Esta ruta sirve el rombo Holded
-  // bajo el path legacy: si Anthropic alguna vez re-scrapea, recibe el
-  // brand actual. No es solución principal (Anthropic puede no re-scrapear
-  // jamás para conectores no aprobados en el directorio); la solución
-  // garantizada es un subdominio nuevo holded-claude.verifactu.business
-  // que Anthropic indexa fresh. Esta ruta es red de seguridad de bajo coste.
+  // Legacy alias — ruta de compatibilidad con el nombre anterior del conector.
+  // Se mantiene como red de seguridad: si Anthropic re-scrapea el path viejo,
+  // recibe el branding Holded actual (rombo) en lugar de un 404.
   app.get('/icono_verifactu.business.png', (_req, res) => sendDiamondPng(res));
 
   app.get('/icon.svg', (_req, res) => {
@@ -189,8 +179,7 @@ export function createApp() {
 
   // Claude landing — landing local del servidor MCP. Las páginas legales
   // y de documentación NO viven aquí: existen únicamente en la app Next.js
-  // de holded.verifactu.business/conectores/claude/* para que haya una
-  // sola fuente de verdad por conector.
+  // de expertconsulting.es/holded/conectores/claude/* como única fuente de verdad.
   app.get('/', (_req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.send(renderLandingPage(config.BASE_URL, `${config.EXPERT_PUBLIC_URL.replace(/\/$/, '')}/holded/conectores/claude`));
