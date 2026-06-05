@@ -149,12 +149,31 @@ async function resolveHoldedJob(
   errorMsg?: string,
 ): Promise<void> {
   if (!jobId) return;
-  await supabaseAdmin.from('holded_sync_jobs').update({
-    status,
-    finished_at: new Date().toISOString(),
-    attempts: 1,
-    ...(errorMsg ? { error: errorMsg.slice(0, 500) } : {}),
-  }).eq('id', jobId);
+  await supabaseAdmin
+    .from('holded_sync_jobs')
+    .update({
+      status,
+      finished_at: new Date().toISOString(),
+      attempts: 1,
+      error: errorMsg ? errorMsg.slice(0, 500) : null,
+    })
+    .eq('id', jobId)
+    .then(() => null, () => null);
+}
+
+async function startHoldedJob(
+  supabaseAdmin: SupabaseAdmin,
+  jobId: string | null,
+): Promise<void> {
+  if (!jobId) return;
+  await supabaseAdmin
+    .from('holded_sync_jobs')
+    .update({
+      status: 'running',
+      started_at: new Date().toISOString(),
+    })
+    .eq('id', jobId)
+    .then(() => null, () => null);
 }
 
 // ── Order Holded trace helper ─────────────────────────────────────────────────
@@ -330,6 +349,7 @@ export async function POST(req: NextRequest) {
                 description: quote.title ?? 'Servicio EXPERT',
                 amountEur, orderId: newOrder?.id, localEntity: 'orders',
               });
+              await startHoldedJob(supabaseAdmin, quoteJobId);
               syncOrderToHolded({
                 clientName,
                 clientEmail,
@@ -338,7 +358,7 @@ export async function POST(req: NextRequest) {
                 orderId: newOrder?.id,
                 localEntity: 'orders'
               }).then((result) => {
-                void resolveHoldedJob(supabaseAdmin, quoteJobId, 'success');
+                void resolveHoldedJob(supabaseAdmin, quoteJobId, result.error ? 'failed' : 'success', result.error);
                 updateOrderHoldedResult(supabaseAdmin, newOrder?.id, result, orderMetadata).catch((err) => {
                   console.error('[webhook] holded trace update failed:', err);
                 });
@@ -457,6 +477,7 @@ export async function POST(req: NextRequest) {
           description: serviceName, amountEur,
           orderId: catalogOrderId ?? session.id, localEntity: 'orders',
         });
+        await startHoldedJob(supabaseAdmin, catalogJobId);
         syncOrderToHolded({
           clientName: customerName,
           clientEmail: customerEmail,
@@ -465,7 +486,7 @@ export async function POST(req: NextRequest) {
           orderId: catalogOrderId ?? session.id,
           localEntity: 'orders'
         }).then((result) => {
-          void resolveHoldedJob(supabaseAdmin, catalogJobId, 'success');
+          void resolveHoldedJob(supabaseAdmin, catalogJobId, result.error ? 'failed' : 'success', result.error);
           updateOrderHoldedResult(supabaseAdmin, catalogOrderId, result, catalogOrderMetadata).catch((err) => {
             console.error('[webhook] holded trace update (catalog) failed:', err);
           });
@@ -507,11 +528,11 @@ export async function POST(req: NextRequest) {
             description: packageName, amountEur: holdedAmountEur,
             orderId: session.id, localEntity: 'stripe_checkout_sessions',
           }).then((migJobId) => {
-            syncOrderToHolded({
+            startHoldedJob(supabaseAdmin, migJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: packageName, amountEur: holdedAmountEur,
               orderId: session.id, localEntity: 'stripe_checkout_sessions',
-            }).then(() => resolveHoldedJob(supabaseAdmin, migJobId, 'success'))
+            })).then((result) => resolveHoldedJob(supabaseAdmin, migJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (migration) failed:', err);
                 return resolveHoldedJob(supabaseAdmin, migJobId, 'failed', err instanceof Error ? err.message : String(err));
@@ -531,11 +552,11 @@ export async function POST(req: NextRequest) {
             description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
             orderId: session.id, localEntity: 'stripe_checkout_sessions',
           }).then((formJobId) => {
-            syncOrderToHolded({
+            startHoldedJob(supabaseAdmin, formJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
               orderId: session.id, localEntity: 'stripe_checkout_sessions',
-            }).then(() => resolveHoldedJob(supabaseAdmin, formJobId, 'success'))
+            })).then((result) => resolveHoldedJob(supabaseAdmin, formJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (formacion) failed:', err);
                 return resolveHoldedJob(supabaseAdmin, formJobId, 'failed', err instanceof Error ? err.message : String(err));
@@ -587,6 +608,7 @@ export async function POST(req: NextRequest) {
           planName: subscriptionRecord.planName, amountEur: monthlyAmount,
           subscriptionId: sub.id, localEntity: 'stripe_subscriptions',
         });
+        await startHoldedJob(supabaseAdmin, subJobId);
         syncSubscriptionToHolded({
           clientName: clientInfo.name,
           clientEmail: clientInfo.email,
@@ -595,7 +617,7 @@ export async function POST(req: NextRequest) {
           subscriptionId: sub.id,
           localEntity: 'stripe_subscriptions'
         }).then((result) => {
-          void resolveHoldedJob(supabaseAdmin, subJobId, 'success');
+          void resolveHoldedJob(supabaseAdmin, subJobId, result.error ? 'failed' : 'success', result.error);
           if (result.invoiceId) {
             supabaseAdmin.from('subscriptions').update({
               metadata: {
