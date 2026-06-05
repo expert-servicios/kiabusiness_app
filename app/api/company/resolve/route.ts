@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
@@ -6,6 +6,7 @@ import {
   validateSpanishTaxIdFormat,
   type CompanySuggestion,
 } from '@/lib/integrations/company-data-resolver';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limit';
 
 const bodySchema = z.object({
   name  : z.string().min(2).max(200).optional(),
@@ -14,6 +15,15 @@ const bodySchema = z.object({
 }).refine((d) => d.name || d.taxId, { message: 'name o taxId requerido' });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`company-resolve:${ip}`, 20, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiadas solicitudes. Por favor, espera unos minutos.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   // Auth required — prevents unauthenticated DoS / quota exhaustion of external APIs
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();

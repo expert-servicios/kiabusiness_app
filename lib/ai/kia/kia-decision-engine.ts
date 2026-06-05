@@ -1,4 +1,4 @@
-﻿import { buildKiaContext, type KiaContext, type KiaContextInput } from './kia-context-builder';
+import { buildKiaContext, type KiaContext, type KiaContextInput } from './kia-context-builder';
 import { buildKiaSystemPrompt } from './kia-system-prompt';
 import {
   buildFallbackDecision,
@@ -27,13 +27,13 @@ import {
   getRecentAssistantTextsFromContext,
 } from './kia-response-variation';
 import { normalizeKiaQuickReplies } from './kia-quick-replies';
+import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 import type { KiaProgressCallback } from './kia-progress';
 import { formatMemoriesForContext } from './kia-memory-retriever';
 import { storeKiaMemory, buildMemorySummary } from './kia-memory-store';
 import { getKiaFewShotExamples, formatFewShotExamples } from './kia-few-shot-provider';
 import { selectSubAgentProfile } from './kia-sub-agent-router';
 import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, type KiaCostEstimate } from './kia-cost-tracker';
-import { buildOfficialSourceContext } from '@/lib/integrations/official-sources';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
@@ -64,19 +64,30 @@ export async function runKiaDecision(input: {
   const locale = input.locale ?? context.contact.language;
   const msg  = input.message;
   const slug = input.contextInput.serviceSlug ?? '';
-  const promptContextFlags = {
+  const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
+
+  // F6: few-shot examples from positive feedback (fail-silent)
+  const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
+    .then(formatFewShotExamples)
+    .catch(() => '');
+
+  const systemPrompt = buildKiaSystemPrompt({
+    locale,
+    channel        : input.channel,
+    taskType       : input.taskType,
     currentPage    : input.contextInput.currentPage,
     currentTask    : input.contextInput.currentTask,
     pageData       : input.contextInput.pageData,
-    includeHolded  : /\bholded\b|pack starter|migraci[oó]n holded|control horario|холдед/i.test(msg)  || /holded/i.test(slug),
+    includeHolded  : /\bholded\b|pack starter|migraci[oó]n holded|control horario|холдед/i.test(msg) || /holded/i.test(slug),
     includeAeat    : /\b(irpf|renta|iva|hacienda|aeat|modelo\s*\d{2,3}|tributar|declaraci[oó]n.*renta|fiscal|036|037|130|303|390|720|151|no residente|irnr|renta web)\b/i.test(msg) || /irpf|iva|fiscal|no.residente|modelo.72|modelo.15|autonomo.gestion/i.test(slug),
     includeSs      : /\b(seguridad social|reta|cotizaci[oó]n|cuota.*aut[oó]nom|vida laboral|importass|cese de actividad|tarifa plana|baja.*laboral|alta.*aut[oó]nom|inss|tgss)\b/i.test(msg) || /alta.autonomo|autonomo|reta/i.test(slug),
     includeDgt     : /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|baja.*vehiculo|multa.*trafico|permiso de circulacion|capitania)\b/i.test(msg) || /trafico|capitania/i.test(slug),
     includeJusticia: /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas)\b/i.test(msg) || /constitucion.sl|arraigo|nacionalidad|notaria|herencia/i.test(slug),
     includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
-  };
-  const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
+    fewShotBlock,
+  });
+
   const officialSourceContext = await buildOfficialSourceContext(input.message).catch((err) => {
     console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
     return '';
@@ -86,16 +97,11 @@ export async function runKiaDecision(input: {
     : KIA_TOOL_DEFINITIONS;
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
-  // F6: few-shot examples from positive feedback (fail-silent)
-  const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
-    .then(formatFewShotExamples)
-    .catch(() => '');
-
   // F5: inject long-term memories into the user payload
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
-  // F2: Intent pre-classifier (Haiku, <500ms) - runs only on inbound WABA messages.
+  // F2: Intent pre-classifier (Haiku, <500ms) — runs only on inbound WABA messages
   let classification: KiaIntentClassification | null = null;
   if (input.channel === 'waba' && input.taskType === 'waba_reply') {
     input.onProgress?.({ type: 'classifying' });
@@ -144,19 +150,11 @@ export async function runKiaDecision(input: {
     taskType: resolvedTaskType,
     detectedIntent: classification?.detectedIntent,
   });
-  const systemPrompt = buildKiaSystemPrompt({
-    locale,
-    channel: input.channel,
-    taskType: resolvedTaskType,
-    ...promptContextFlags,
-    fewShotBlock,
-  });
   const finalSystemPrompt = subAgentProfile
     ? buildKiaSystemPrompt({
         locale,
         channel: input.channel,
         taskType: resolvedTaskType,
-        ...promptContextFlags,
         fewShotBlock,
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
@@ -169,10 +167,9 @@ export async function runKiaDecision(input: {
   let error: unknown;
   const toolResults: KiaToolResult[] = [];
   const costEstimates: KiaCostEstimate[] = [];
-  let toolLoopIterations = 0;
 
   if (process.env.KIA_AI_EVAL_MODE?.toLowerCase() === 'true') {
-    decision = heuristicDecision(resolvedTaskType, input.message, context);
+    decision = heuristicDecision(input.taskType, input.message, context);
   } else {
     try {
       const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
@@ -216,8 +213,8 @@ export async function runKiaDecision(input: {
               executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context),
             ),
           );
-          for (const result of iterResults) {
-            input.onProgress?.({ type: 'tool_result', tool: result.toolName, ok: result.ok });
+          for (const r of iterResults) {
+            input.onProgress?.({ type: 'tool_result', tool: r.toolName, ok: r.ok });
           }
           toolResults.push(...iterResults);
 
@@ -240,7 +237,6 @@ export async function runKiaDecision(input: {
             context,
           );
           loopIteration++;
-          toolLoopIterations = loopIteration;
         }
 
         if (decision.toolRequests.length > 0) {
@@ -255,7 +251,7 @@ export async function runKiaDecision(input: {
         }
       }
 
-      // F3: Judge validator - second opinion for critical actions (GPT-4o, fail-open, 8s timeout)
+      // F3: Judge validator for critical actions (GPT-4o, fail-open)
       if (JUDGE_REQUIRED_ACTIONS.has(decision.nextAction) && decision.confidence >= 0.5 && !usedFallback) {
         const openAiKey = process.env.OPENAI_API_KEY?.trim();
         if (openAiKey) {
@@ -293,7 +289,7 @@ export async function runKiaDecision(input: {
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
-          taskType: resolvedTaskType,
+          taskType: input.taskType,
           systemPrompt: finalSystemPrompt,
           message: input.message,
           context,
@@ -335,6 +331,7 @@ export async function runKiaDecision(input: {
   }
 
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
+
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
 
   await saveKiaDecisionLog({
@@ -349,7 +346,7 @@ export async function runKiaDecision(input: {
     tokensIn: totalCost?.tokensIn,
     tokensOut: totalCost?.tokensOut,
     estimatedCostUsd: totalCost?.estimatedCostUsd,
-    loopIterations: toolLoopIterations,
+    loopIterations: toolResults.length > 0 ? Math.ceil(toolResults.length / Math.max(1, decision.toolRequests.length || 1)) : 0,
   });
 
   // F5: store memory after successful waba_reply (fire-and-forget, fail-silent)
@@ -443,29 +440,17 @@ function repairUserMessageLanguage(message: string, locale: 'es' | 'ru', nextAct
 }
 
 function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
-  if (nextAction === 'ask_one_question') {
-    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Чтобы помочь точнее, уточните, пожалуйста, что вам нужно сейчас?';
-  }
-  if (nextAction === 'show_menu') {
-    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Выберите подходящий вариант, а если ничего не подходит, нажмите «Другое».';
-  }
-  if (nextAction === 'get_case_status') {
-    return 'Я Kia, виртуальная ассистентка EXPERT 😊 Проверю ваш вопрос по делу. Уточните, пожалуйста, о каком документе или этапе речь?';
-  }
-  return 'Я Kia, виртуальная ассистентка EXPERT 😊 Помогу вам с этим шагом. Напишите коротко, что нужно уточнить дальше.';
+  if (nextAction === 'ask_one_question') return 'Ya Kia, asistentka EXPERT. Utochnite pozhaluysta, chto vam nuzhno?';
+  if (nextAction === 'show_menu') return 'Ya Kia, asistentka EXPERT. Vyberite podkhodyashchiy variant.';
+  if (nextAction === 'get_case_status') return 'Ya Kia, asistentka EXPERT. Proveryu vash vopros po delu.';
+  return 'Ya Kia, asistentka EXPERT. Pomogayu s etim shagom.';
 }
 
 function spanishSafeMessage(nextAction: KiaDecision['nextAction']): string {
-  if (nextAction === 'ask_one_question') {
-    return 'Soy Kia, asistente virtual de EXPERT 😊 Para ayudarte mejor, dime que necesitas aclarar ahora.';
-  }
-  if (nextAction === 'show_menu') {
-    return 'Soy Kia, asistente virtual de EXPERT 😊 Elige la opcion que encaje mejor; si no aparece, pulsa "Otro".';
-  }
-  if (nextAction === 'get_case_status') {
-    return 'Soy Kia, asistente virtual de EXPERT 😊 Reviso tu consulta sobre el expediente. A que documento o fase te refieres?';
-  }
-  return 'Soy Kia, asistente virtual de EXPERT 😊 Te ayudo con el siguiente paso. Cuentame brevemente que necesitas aclarar.';
+  if (nextAction === 'ask_one_question') return 'Soy Kia, asistente de EXPERT. Para ayudarte mejor, dime que necesitas aclarar.';
+  if (nextAction === 'show_menu') return 'Soy Kia, asistente de EXPERT. Elige la opcion que encaje mejor.';
+  if (nextAction === 'get_case_status') return 'Soy Kia, asistente de EXPERT. Reviso tu consulta sobre el expediente.';
+  return 'Soy Kia, asistente de EXPERT. Te ayudo con el siguiente paso.';
 }
 
 function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAction']): { repaired: boolean; message: string } {
@@ -475,15 +460,9 @@ function enforceSingleQuestion(message: string, nextAction: KiaDecision['nextAct
   const chars = [...message].map((char) => {
     if (char === '?') {
       questionMarks += 1;
-      if (questionMarks > 1) {
-        repaired = true;
-        return '.';
-      }
+      if (questionMarks > 1) { repaired = true; return '.'; }
     }
-    if (char === '¿' && questionMarks >= 1) {
-      repaired = true;
-      return '';
-    }
+    if (char === '¿' && questionMarks >= 1) { repaired = true; return ''; }
     return char;
   });
   return { repaired, message: chars.join('').replace(/\s+\./g, '.').replace(/\.{2,}/g, '.').trim() };
@@ -541,10 +520,7 @@ function buildUserPayload(
 ): string {
   const parts: string[] = [
     '<input>',
-    JSON.stringify(redactJson({
-      message,
-      context,
-    }), null, 2),
+    JSON.stringify(redactJson({ message, context }), null, 2),
     '</input>',
   ];
   if (officialSourceContext) {
@@ -634,7 +610,7 @@ function applyBackendPolicyGuards(
       ...decision,
       intent: 'connect_holded',
       nextAction: 'send_holded_connect_link',
-      userMessage: 'Por seguridad, no me envies claves API por este chat. Usa el Panel Cliente seguro para conectar Holded; si no sabes sacarla, te puedo guiar paso a paso.',
+      userMessage: 'Por seguridad, no me envies claves API por este chat. Usa el Panel Cliente seguro para conectar Holded.',
       requiresManualReview: false,
       confidence: Math.max(decision.confidence, 0.9),
       rulesApplied: Array.from(rules),
@@ -650,7 +626,7 @@ function applyBackendPolicyGuards(
       ...decision,
       intent: 'checkout',
       nextAction: 'send_login_link',
-      userMessage: 'Para pagar necesitamos que entres en el portal seguro. Asi protegemos tus datos, validamos perfil y facturacion, y evitamos crear un checkout incompleto.',
+      userMessage: 'Para pagar necesitamos que entres en el portal seguro.',
       requiresManualReview: false,
       confidence: Math.max(decision.confidence, 0.9),
       rulesApplied: Array.from(rules),
@@ -668,7 +644,7 @@ function applyBackendPolicyGuards(
       ...decision,
       intent: 'connect_holded',
       nextAction: 'send_holded_connect_link',
-      userMessage: 'Para el plan mensual necesitamos primero conectar o preparar Holded desde el Panel Cliente. Asi validamos que la contabilidad puede gestionarse bien antes de pagar.',
+      userMessage: 'Para el plan mensual necesitamos primero conectar o preparar Holded desde el Panel Cliente.',
       requiresManualReview: false,
       requiresMeeting: false,
       confidence: Math.max(decision.confidence, 0.9),
@@ -678,7 +654,7 @@ function applyBackendPolicyGuards(
     };
   }
 
-  const holdedOrReadiness = context.service?.requiresHolded || context.service?.flowType === 'readiness' || /holded|migrar|migracion|migración/.test(lower);
+  const holdedOrReadiness = context.service?.requiresHolded || context.service?.flowType === 'readiness' || /holded|migrar|migracion/.test(lower);
   if (holdedOrReadiness && (decision.nextAction === 'run_viability' || input.taskType === 'readiness_reasoning')) {
     rules.add('holded_uses_readiness_not_viability');
     rules.add('readiness_before_checkout');
@@ -717,9 +693,9 @@ function applyBackendPolicyGuards(
       ...decision,
       intent: 'accounting_summary',
       nextAction: decision.nextAction === 'create_next_best_action' ? 'create_next_best_action' : 'reply_only',
-      userMessage: decision.userMessage.includes('Resumen estimado pendiente de revision profesional')
+      userMessage: decision.userMessage.includes('Resumen estimado')
         ? decision.userMessage
-        : `Resumen estimado pendiente de revision profesional. ${decision.userMessage || 'Puedo orientarte con los datos disponibles, pero la presentacion requiere revision profesional.'}`,
+        : `Resumen estimado pendiente de revision profesional. ${decision.userMessage || 'Puedo orientarte con los datos disponibles.'}`,
       requiresManualReview: false,
       confidence: Math.max(decision.confidence, 0.85),
       rulesApplied: Array.from(rules),
@@ -835,8 +811,7 @@ async function retryAvoidingRepetition(input: {
         role: 'user',
         content: [
           'La respuesta candidata era demasiado parecida a una respuesta previa.',
-          'Genera una nueva KiaDecision JSON valida, manteniendo la misma decision operativa si procede, pero con userMessage claramente distinto.',
-          'No repitas apertura, cierre, CTA ni estructura. Reconoce continuidad si aplica.',
+          'Genera una nueva KiaDecision JSON valida con userMessage claramente distinto.',
           '<current_user_message>',
           input.message,
           '</current_user_message>',
@@ -863,7 +838,7 @@ function heuristicDecision(taskType: KiaTaskType, message: string, context: KiaC
   const lower = message.toLowerCase();
   const isHolded = lower.includes('holded') || context.service?.requiresHolded;
   const wantsCheckout = /\b(contratar|pagar|checkout|precio|comprar)\b/i.test(message);
-  const wantsCall = /\b(cita|llamada|reunion|reunión|hablar)\b/i.test(message);
+  const wantsCall = /\b(cita|llamada|reunion|hablar)\b/i.test(message);
   const nextAction = wantsCall ? 'book_call' : wantsCheckout ? 'send_login_link' : isHolded ? 'run_readiness' : 'reply_only';
   return {
     version: '1.0',
@@ -871,10 +846,10 @@ function heuristicDecision(taskType: KiaTaskType, message: string, context: KiaC
     contactStatus: context.contact.status,
     intent: wantsCheckout ? 'checkout' : wantsCall ? 'book_call' : isHolded ? 'readiness' : 'unknown',
     userMessage: wantsCall
-      ? 'Puedes reservar una llamada de 15 minutos desde el portal seguro. EXPERT'
+      ? 'Puedes reservar una llamada de 15 minutos desde el portal seguro.'
       : wantsCheckout
-        ? 'Para avanzar sin errores, entra en el portal seguro y completa tus datos antes de contratar. EXPERT'
-        : 'Te oriento con la informacion disponible. EXPERT',
+        ? 'Para avanzar sin errores, entra en el portal seguro y completa tus datos antes de contratar.'
+        : 'Te oriento con la informacion disponible.',
     nextAction,
     quickReplies: [],
     toolRequests: [],

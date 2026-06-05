@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -22,6 +22,7 @@ function getPlanName(priceId: string, fallback?: string | null): string {
     [process.env.STRIPE_PLAN_MONTHLY_49 ?? '']: 'Plan Supervisión',
     [process.env.STRIPE_PLAN_MONTHLY_99 ?? '']: 'Plan Avanzado',
     [process.env.STRIPE_PLAN_MONTHLY_199 ?? '']: 'Plan Colaborativo',
+    [process.env.STRIPE_PLAN_MONTHLY_349 ?? '']: 'Plan Presupuesto Personalizado',
   };
   return map[priceId] ?? 'Suscripción';
 }
