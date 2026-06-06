@@ -20,7 +20,6 @@ import { createCkanClient }                     from './ckan-client';
 import {
   normalizeCkanCompanyRecord,
   scoreCkanSuggestion,
-  detectTaxIdFields,
 }                                               from './ckan-company-normalizer';
 
 // ── Constants ────────────────────────────────────────────────────────────────

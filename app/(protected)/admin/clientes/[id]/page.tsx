@@ -178,7 +178,7 @@ export default function ClientePage() {
 
   useEffect(() => {
     if (activeTab === 'timeline' && timeline.length === 0 && !timelineLoading) loadTimeline(); // eslint-disable-line react-hooks/set-state-in-effect
-    if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments(); // eslint-disable-line react-hooks/set-state-in-effect
+    if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments();
   }, [activeTab, timeline.length, documents.length, timelineLoading, documentsLoading, loadTimeline, loadDocuments]);
 
   const load = useCallback(async () => {

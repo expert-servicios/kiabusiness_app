@@ -238,7 +238,7 @@ export function serviceCompleted(name: string, service: string) {
 }
 
 // ── 8. Review request ─────────────────────────────────────────────────────────
-export function reviewRequest(name: string, service: string) {
+export function reviewRequest(name: string, service: string, token: string) {
   return {
     subject: '¿Cómo fue tu experiencia con EXPERT?',
     html: base('Solicitud de reseña', `
@@ -246,7 +246,7 @@ export function reviewRequest(name: string, service: string) {
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha finalizado. Nos gustaría conocer tu opinión sobre el servicio recibido — tu valoración nos ayuda a mejorar y a llegar a más personas.`)}
       ${para('Solo te tomará 2 minutos.')}
-      ${btn('Dejar mi valoración', `${BRAND.appUrl}/gracias/opinion`)}
+      ${btn('Dejar mi valoración', `${BRAND.appUrl}/gracias/opinion?token=${encodeURIComponent(token)}`)}
       ${para('<small style="color:#8899aa;">Si no deseas dejar una valoración, ignora este correo.</small>')}
     `)
   };

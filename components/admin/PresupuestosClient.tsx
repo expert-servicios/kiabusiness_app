@@ -25,17 +25,10 @@ const STATUS_LABELS: Record<string, string> = {
   paid: 'Pagado',
   expired: 'Expirado',
 };
-const STATUS_COLORS: Record<string, string> = {
-  draft:    'bg-gray-100 text-gray-600',
-  sent:     'bg-blue-100 text-blue-700',
-  accepted: 'bg-amber-100 text-amber-700',
-  paid:     'bg-green-100 text-green-700',
-  expired:  'bg-red-100 text-red-600',
-};
 
 export function PresupuestosClient({ initialQuotes }: { initialQuotes: Quote[] }) {
   const router = useRouter();
-  const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
+  const [quotes] = useState<Quote[]>(initialQuotes);
   const [showModal, setShowModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 

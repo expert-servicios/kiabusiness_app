@@ -105,7 +105,7 @@ export function WhatsAppChatWidget() {
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setGreeting(getGreeting());
+    setGreeting(getGreeting()); // eslint-disable-line react-hooks/set-state-in-effect
     setFiscalChip(getFiscalChip());
 
     if (sessionStorage.getItem(SESSION_KEY)) {

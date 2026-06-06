@@ -282,7 +282,7 @@ export function PagosDashboard({
   }, [payments, search, filterStatus, filterOrigin]);
 
   const toggleRow = (id: string) =>
-    setExpanded((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    setExpanded((prev) => { const next = new Set(prev); if (next.has(id)) { next.delete(id); } else { next.add(id); } return next; });
 
   const handleLinked = (paymentId: string, caseId: string|null, caseService?: string|null) => {
     setPayments((prev) => prev.map((p) => p.id === paymentId

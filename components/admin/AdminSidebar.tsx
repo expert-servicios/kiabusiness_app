@@ -72,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Leads SaaS", href: "/admin/saas-leads" },
       { label: "Holded Demos", href: "/admin/holded-demos" },
+      { label: "Reseñas", href: "/admin/resenas" },
     ],
   },
   {
@@ -285,7 +286,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
     const match = NAV_GROUPS.find((g) =>
       g.items.some((i) => pathname.startsWith(i.href)),
     );
-    if (match) setActiveTab(match.label);
+    if (match) setActiveTab(match.label); // eslint-disable-line react-hooks/set-state-in-effect
   }, [pathname]);
 
   // Persist tab selection
@@ -295,7 +296,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
       const routeMatch = NAV_GROUPS.find((g) =>
         g.items.some((i) => pathname.startsWith(i.href)),
       );
-      if (!routeMatch) setActiveTab(saved);
+      if (!routeMatch) setActiveTab(saved); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [pathname]);
 

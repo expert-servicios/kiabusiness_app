@@ -259,7 +259,7 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   const base   = auth.baseUrl;
 
   // ── Fetch Holded data in parallel (full pagination) ──────────────────────
-  const [rawSales, rawPurchases, rawBank, rawContacts] = await Promise.all([
+  const [rawSales, rawPurchases, rawBank] = await Promise.all([
     fetchAllHoldedDocs(base, 'invoice', hdrs),
     fetchAllHoldedDocs(base, 'purchase', hdrs),
     safeFetch(`${base}/treasury`, hdrs)        as Promise<RawDoc[]>,

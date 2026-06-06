@@ -3,13 +3,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  CreditCard, CheckCircle2, AlertCircle, XCircle, RefreshCw,
+  CheckCircle2, AlertCircle, XCircle, RefreshCw,
   Mail, MessageCircle, ExternalLink, ArrowLeft, Loader2,
   User, Repeat2, Clock, Activity,
 } from 'lucide-react';
 import type { Subscription } from '@/app/(protected)/admin/suscripciones/page';
 import { WaTemplateModal } from './WaTemplateModal';
-import { NuevaCotizacionModal } from './NuevaCotizacionModal';
+
 
 type FilterStatus = 'all' | 'active' | 'problem' | 'canceled';
 

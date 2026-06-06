@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, Download, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
+import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
@@ -22,6 +23,7 @@ interface Document {
   original_name: string;
   state: string;
   created_at: string;
+  uploaded_by_role?: string;
 }
 
 interface Message {
@@ -201,7 +203,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const caseItem = (casesData?.cases as CaseDetail[] | undefined)?.find((c) => c.id === id);
   if (!caseItem) notFound();
 
-  const documents: Document[] = docsData?.documents ?? [];
+  const allDocuments: Document[] = docsData?.documents ?? [];
+  const documents = allDocuments.filter((d) => d.uploaded_by_role !== 'admin');
+  const deliverables = allDocuments.filter((d) => d.uploaded_by_role === 'admin');
   const messages: Message[] = messagesData?.messages ?? [];
   const waAttachments: WaAttachment[] = waData?.attachments ?? [];
 
@@ -328,6 +332,29 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" />
           </div>
         </div>
+
+        {/* Deliverables from advisory team */}
+        {deliverables.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#d7a33a]/50 bg-amber-50/30 p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Download className="h-4 w-4 text-[#c88b25]" />
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">
+                Entregables de tu asesoría
+              </p>
+              <span className="ml-auto rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-semibold text-[#c88b25]">
+                {deliverables.length} archivo{deliverables.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <p className="mb-4 text-sm text-[#29384a]">
+              Tu equipo de asesoría ha preparado estos documentos como resultado de tu trámite.
+            </p>
+            <div className="space-y-2">
+              {deliverables.map((doc) => (
+                <DeliverableRow key={doc.id} doc={doc} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* WhatsApp attachments */}
         {waAttachments.length > 0 && (

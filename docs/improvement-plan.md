@@ -681,7 +681,7 @@ Notas:
 
 ### IMP-021 - Web publica orientada a asesorias como clientes
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: captacion, conversion, escalabilidad SaaS.
 

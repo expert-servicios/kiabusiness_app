@@ -43,7 +43,7 @@ function HoldedClaudeBridgeContent() {
   useEffect(() => {
     if (!next) {
       setStatus('error'); // eslint-disable-line react-hooks/set-state-in-effect
-      setError('Parámetro `next` faltante. Vuelve a iniciar el proceso desde Claude.'); // eslint-disable-line react-hooks/set-state-in-effect
+      setError('Parámetro `next` faltante. Vuelve a iniciar el proceso desde Claude.');
       return;
     }
 

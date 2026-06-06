@@ -123,7 +123,7 @@ export function CorreoInbox({
 
   // Reload mails when switching provider
   useEffect(() => {
-    if (!activeConnected) { setMails([]); return; }
+    if (!activeConnected) { setMails([]); return; } // eslint-disable-line react-hooks/set-state-in-effect
     setSelected(null);
     setThreadMessages([]);
     loadMails(provider);

@@ -20,7 +20,7 @@ export function PushSubscribeButton() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setState('unsupported');
+      setState('unsupported'); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     if (Notification.permission === 'denied') { setState('denied'); return; }

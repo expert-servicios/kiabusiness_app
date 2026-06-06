@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Search, User, FileText, Euro, Calendar, Plus, Check, Loader2 } from 'lucide-react';
+import { X, Search, FileText, Euro, Calendar, Plus, Check, Loader2 } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -59,7 +59,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
 
   useEffect(() => {
     // Load all clients on mount
-    fetchClients('');
+    fetchClients(''); // eslint-disable-line react-hooks/set-state-in-effect
   }, [fetchClients]);
 
   useEffect(() => {
