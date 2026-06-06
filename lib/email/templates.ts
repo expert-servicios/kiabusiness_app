@@ -1049,6 +1049,33 @@ export function citaRequestAdmin(params: {
   };
 }
 
+// ── Cita: recordatorio 24h antes (cliente) ────────────────────────────────────
+export function citaReminder(
+  name: string,
+  service: string,
+  confirmedDate: string,
+  confirmedTime: string,
+  meetingUrl?: string | null
+) {
+  return {
+    subject: `Recordatorio: tu cita mañana — ${confirmedDate}`,
+    html: base('Recordatorio de cita', `
+      ${heading('Tu cita es mañana')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Te recordamos que tienes una cita mañana para <strong>${escapeHtml(service)}</strong>. Aquí tienes los detalles:`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Fecha', escapeHtml(confirmedDate)),
+        detail('Hora', escapeHtml(confirmedTime)),
+        ...(meetingUrl ? [detail('Enlace de reunión', `<a href="${meetingUrl}" style="color:#c88b25;">${meetingUrl}</a>`)] : [])
+      )}
+      ${meetingUrl ? btn('Unirse a la reunión', meetingUrl) : ''}
+      ${para('Si necesitas cancelar o reagendar, responde a este correo con la mayor antelación posible.')}
+      ${para('<small style="color:#8899aa;">EXPERT Consulting · expertconsulting.es</small>')}
+    `)
+  };
+}
+
 // ── Daily admin summary ───────────────────────────────────────────────────────
 
 export interface DailySummaryData {
