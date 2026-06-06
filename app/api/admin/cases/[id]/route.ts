@@ -18,52 +18,67 @@ import {
 
 // ── Status → client email mapping ──────────────────────────────────────────
 // Sends the appropriate template when admin transitions the case status.
-// fire-and-forget: email failure never blocks the status update.
+// Respects automation_settings toggles — fire-and-forget, never blocks the status update.
 async function sendCaseStatusEmail(params: {
-  newStatus: CaseStatus;
-  clientEmail: string;
-  clientName: string;
-  clientId: string;
-  service: string;
-  adminNote: string | null;
-  caseId: string;
+  newStatus          : CaseStatus;
+  clientEmail        : string;
+  clientName         : string;
+  clientId           : string;
+  service            : string;
+  adminNote          : string | null;
+  caseId             : string;
+  enabledAutomations : Set<string>;
 }): Promise<void> {
-  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId } = params;
-  const funFact = ''; // placeholder — no fun fact for status emails
+  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations } = params;
+  const funFact = '';
 
   let tpl: { subject: string; html: string } | null = null;
 
   switch (newStatus) {
     case 'pendiente_cliente':
+      if (!enabledAutomations.has('case.pendiente_cliente')) return;
       tpl = caseDocsRequired(clientName, service, [], adminNote, funFact);
       break;
     case 'en_revision':
+      if (!enabledAutomations.has('case.en_revision')) return;
       tpl = caseDocsReceived(clientName, service, adminNote, funFact);
       break;
     case 'listo_para_presentar':
+      if (!enabledAutomations.has('case.listo_para_presentar')) return;
       tpl = caseInProgress(clientName, service, adminNote, funFact);
       break;
     case 'presentado':
+      if (!enabledAutomations.has('case.presentado')) return;
       tpl = casePendingExternal(clientName, service, null, adminNote, funFact);
       break;
     case 'finalizado': {
-      const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
-      // Generate a review token (30-day expiry) — best-effort, never blocks email sending
+      const sendDelivered = enabledAutomations.has('case.finalizado');
+      const sendReview    = enabledAutomations.has('case.review_request');
+      if (!sendDelivered && !sendReview) return;
+
+      // Generate review token only when the review email is enabled
       let reviewToken = '';
-      try {
-        reviewToken = randomBytes(32).toString('hex');
-        const admin = getSupabaseAdmin();
-        await admin.from('review_requests').insert({
-          case_id: caseId,
-          client_id: clientId,
-          token: reviewToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-      } catch { reviewToken = ''; }
-      const reviewTpl = reviewRequest(clientName, service, reviewToken);
-      // Send delivered + review request (fire-and-forget each)
-      void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
-      void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+      if (sendReview) {
+        try {
+          reviewToken = randomBytes(32).toString('hex');
+          const db = getSupabaseAdmin();
+          await db.from('review_requests').insert({
+            case_id   : caseId,
+            client_id : clientId,
+            token     : reviewToken,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+        } catch { reviewToken = ''; }
+      }
+
+      if (sendDelivered) {
+        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
+        void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
+      }
+      if (sendReview && reviewToken) {
+        const reviewTpl = reviewRequest(clientName, service, reviewToken);
+        void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+      }
       return;
     }
     default:
@@ -210,16 +225,32 @@ export async function PATCH(
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
+        // Read automation toggles for the relevant keys — default to enabled if row missing
+        const automationKeys = body.status === 'finalizado'
+          ? ['case.finalizado', 'case.review_request']
+          : [`case.${body.status}`];
+        const { data: automationRows } = await admin
+          .from('automation_settings')
+          .select('key, enabled')
+          .in('key', automationKeys);
+        const enabledAutomations = new Set<string>(
+          (automationRows ?? []).filter((r) => r.enabled).map((r) => r.key as string)
+        );
+        for (const k of automationKeys) {
+          if (!(automationRows ?? []).find((r) => r.key === k)) enabledAutomations.add(k);
+        }
+
         const clientInfo = await getClientInfo(admin, current.client_id);
         if (clientInfo) {
           void sendCaseStatusEmail({
-            newStatus: body.status,
-            clientEmail: clientInfo.email,
-            clientName: clientInfo.name,
-            clientId: current.client_id,
-            service: current.service ?? 'Trámite EXPERT',
-            adminNote: body.admin_note ?? null,
-            caseId: id,
+            newStatus         : body.status,
+            clientEmail       : clientInfo.email,
+            clientName        : clientInfo.name,
+            clientId          : current.client_id,
+            service           : current.service ?? 'Trámite EXPERT',
+            adminNote         : body.admin_note ?? null,
+            caseId            : id,
+            enabledAutomations,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
         }
       }
