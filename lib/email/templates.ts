@@ -1157,6 +1157,21 @@ export function dailyAdminSummary(data: DailySummaryData) {
   };
 }
 
+// ── Document rejected — notify client to re-upload ──────────────────────────
+export function documentRejected(name: string, documentName: string, service: string, caseId: string) {
+  return {
+    subject: `Documento rechazado — necesitamos que lo vuelvas a subir`,
+    html: base('Documento rechazado', `
+      ${heading('Necesitamos un nuevo documento')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos revisado el documento <strong>${escapeHtml(documentName)}</strong> de tu expediente de <strong>${escapeHtml(service)}</strong> y no podemos procesarlo en su estado actual.`)}
+      ${para('Por favor, accede a tu expediente y sube de nuevo el documento correcto. Si tienes dudas sobre qué necesitamos exactamente, responde a este correo o escríbenos.')}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes/${caseId}`)}
+      ${para('<small style="color:#8899aa;">Disculpa las molestias. Estamos aquí para ayudarte en cada paso del proceso.</small>')}
+    `)
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',
