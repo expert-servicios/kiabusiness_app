@@ -16,6 +16,23 @@ import {
   reviewRequest,
 } from '@/lib/email/templates';
 
+// ── Automation settings helper ──────────────────────────────────────────────
+// Returns set of enabled automation keys. Defaults to all enabled on error.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getEnabledAutomations(admin: any): Promise<Set<string> | null> {
+  try {
+    const { data } = await admin.from('automation_settings').select('key, enabled');
+    if (!data) return null;
+    const enabled = new Set<string>();
+    for (const row of data as { key: string; enabled: boolean }[]) {
+      if (row.enabled) enabled.add(row.key);
+    }
+    return enabled;
+  } catch {
+    return null; // table not yet migrated — treat all as enabled
+  }
+}
+
 // ── Status → client email mapping ──────────────────────────────────────────
 // Sends the appropriate template when admin transitions the case status.
 // fire-and-forget: email failure never blocks the status update.
@@ -27,28 +44,33 @@ async function sendCaseStatusEmail(params: {
   service: string;
   adminNote: string | null;
   caseId: string;
+  enabledAutomations: Set<string> | null;
 }): Promise<void> {
-  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId } = params;
-  const funFact = ''; // placeholder — no fun fact for status emails
+  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations } = params;
+  const isEnabled = (key: string) => !enabledAutomations || enabledAutomations.has(key);
+  const funFact = '';
 
   let tpl: { subject: string; html: string } | null = null;
 
   switch (newStatus) {
     case 'pendiente_cliente':
+      if (!isEnabled('case.pendiente_cliente')) return;
       tpl = caseDocsRequired(clientName, service, [], adminNote, funFact);
       break;
     case 'en_revision':
+      if (!isEnabled('case.en_revision')) return;
       tpl = caseDocsReceived(clientName, service, adminNote, funFact);
       break;
     case 'listo_para_presentar':
+      if (!isEnabled('case.listo_para_presentar')) return;
       tpl = caseInProgress(clientName, service, adminNote, funFact);
       break;
     case 'presentado':
+      if (!isEnabled('case.presentado')) return;
       tpl = casePendingExternal(clientName, service, null, adminNote, funFact);
       break;
     case 'finalizado': {
-      const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
-      // Generate a review token (30-day expiry) — best-effort, never blocks email sending
+      // Generate review token (30-day expiry) — best-effort
       let reviewToken = '';
       try {
         reviewToken = randomBytes(32).toString('hex');
@@ -60,14 +82,19 @@ async function sendCaseStatusEmail(params: {
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         });
       } catch { reviewToken = ''; }
-      const reviewTpl = reviewRequest(clientName, service, reviewToken);
-      // Send delivered + review request (fire-and-forget each)
-      void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
-      void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+
+      if (isEnabled('case.finalizado')) {
+        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
+        void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
+      }
+      if (isEnabled('case.review_request') && reviewToken) {
+        const reviewTpl = reviewRequest(clientName, service, reviewToken);
+        void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+      }
       return;
     }
     default:
-      return; // nuevo, bloqueado — no client email
+      return;
   }
 
   if (tpl) {
@@ -210,7 +237,10 @@ export async function PATCH(
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
-        const clientInfo = await getClientInfo(admin, current.client_id);
+        const [clientInfo, enabledAutomations] = await Promise.all([
+          getClientInfo(admin, current.client_id),
+          getEnabledAutomations(admin),
+        ]);
         if (clientInfo) {
           void sendCaseStatusEmail({
             newStatus: body.status,
@@ -220,6 +250,7 @@ export async function PATCH(
             service: current.service ?? 'Trámite EXPERT',
             adminNote: body.admin_note ?? null,
             caseId: id,
+            enabledAutomations,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
         }
       }

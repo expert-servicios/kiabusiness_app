@@ -805,7 +805,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 3. **Completar instalacion y ejecucion local de tests (IMP-011/012)** — Despues del ultimo commit, ejecutar `npm install && npm test` para actualizar `package-lock.json` y confirmar que los 31 tests pasan. Actualizar criterios de aceptacion pendientes en IMP-011 e IMP-012.
 
-4. **CI ejecuta `npm test` (IMP-012)** — Anadir `npm test` al workflow `.github/workflows/ci.yml` como paso adicional tras `lint`. Verificar que el CI pasa en GitHub Actions con los tests.
+4. **CI ejecuta `npm test` (IMP-012)** — Ya incluido en `.github/workflows/ci.yml` (paso "Tests" antes de Build). Verificar que el CI pasa en GitHub Actions con los tests una vez llegue la primera PR.
 
 5. **Branch protection en GitHub (IMP-023)** — Activar en `Settings → Branches → main`: requerir status checks (`Typecheck`, `Lint`, `Build`) antes de merge. Accion manual en github.com.
 
@@ -831,7 +831,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 14. **Resenas por servicio** — Flujo de solicitud, captura y moderacion de resenas por servicio completado. Ya existe trigger en `serviceCompleted`; falta la UI de captura y el admin de moderacion.
 
-15. **IMP-015 — Automatizaciones operativas visibles en panel admin** — Ya implementado el resumen diario y emails por cambio de estado. Pendiente: hacer las automatizaciones configurables y visibles como reglas en el panel admin.
+15. **IMP-015 — Automatizaciones configurables en panel admin** — [x] Completado (2026-06-06): tabla `automation_settings` con 7 reglas, panel `/admin/automatizaciones` con toggle por regla, enforcement en `sendCaseStatusEmail`. Requiere aplicar migración `20260606000003_automation_settings.sql` en Supabase SQL Editor.
 
 16. **Piloto con 1-3 asesorias externas** — Seleccionar desde `saas_leads` cualificados, activar onboarding de tenant, medir adopcion del copiloto Kia y reduccion de trabajo manual. Ver Fase 10 del roadmap.
 

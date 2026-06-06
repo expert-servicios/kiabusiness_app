@@ -88,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Panel Gerente", href: "/admin/executive" },
       { label: "Rentabilidad", href: "/admin/rentabilidad" },
+      { label: "Automatizaciones", href: "/admin/automatizaciones" },
       { label: "Kia Health", href: "/admin/kia-health" },
       { label: "Kia Auditor", href: "/admin/kia-auditor" },
       { label: "Reportes", href: "/admin/reportes" },
