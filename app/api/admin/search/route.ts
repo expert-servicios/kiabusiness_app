@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 
 interface SearchResult {
   id: string;
-  type: 'client' | 'case' | 'appointment' | 'quote';
+  type: 'client' | 'case' | 'appointment' | 'quote' | 'document';
   title: string;
   subtitle: string;
   href: string;
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const results: SearchResult[] = [];
 
   // Run all searches in parallel
-  const [profilesRes, authUsersRes, casesRes, appointmentsRes, quotesRes] = await Promise.all([
+  const [profilesRes, authUsersRes, casesRes, appointmentsRes, quotesRes, documentsRes] = await Promise.all([
     admin
       .from('profiles')
       .select('id, full_name, email, phone')
@@ -58,6 +58,12 @@ export async function GET(request: NextRequest) {
       .select('id, title, amount_eur, status, client_id')
       .ilike('title', `%${q}%`)
       .limit(4),
+
+    admin
+      .from('documents')
+      .select('id, original_name, state, case_id, client_id')
+      .ilike('original_name', `%${q}%`)
+      .limit(5),
   ]);
 
   // Build email map for profiles without email column
@@ -132,5 +138,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ results: results.slice(0, 15) });
+  // Documents
+  for (const d of documentsRes.data ?? []) {
+    results.push({
+      id: d.id,
+      type: 'document',
+      title: d.original_name,
+      subtitle: `Documento · ${d.state}${d.case_id ? ' · ver expediente' : ''}`,
+      href: d.case_id ? `/admin/expedientes/${d.case_id}` : (d.client_id ? `/admin/clientes/${d.client_id}` : '/admin/documentos'),
+    });
+  }
+
+  return NextResponse.json({ results: results.slice(0, 18) });
 }

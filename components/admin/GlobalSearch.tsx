@@ -6,7 +6,7 @@ import { Search, X, User, FolderOpen, Calendar, FileText, Loader2 } from 'lucide
 
 interface SearchResult {
   id: string;
-  type: 'client' | 'case' | 'appointment' | 'quote';
+  type: 'client' | 'case' | 'appointment' | 'quote' | 'document';
   title: string;
   subtitle: string;
   href: string;
@@ -17,6 +17,7 @@ const TYPE_CONFIG = {
   case:        { icon: FolderOpen, label: 'Expediente',  color: 'text-amber-600 bg-amber-50' },
   appointment: { icon: Calendar,   label: 'Cita',        color: 'text-green-600 bg-green-50' },
   quote:       { icon: FileText,   label: 'Presupuesto', color: 'text-purple-600 bg-purple-50' },
+  document:    { icon: FileText,   label: 'Documento',   color: 'text-teal-600 bg-teal-50' },
 } as const;
 
 async function runSearch(q: string): Promise<SearchResult[]> {
@@ -110,7 +111,7 @@ export function GlobalSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, expedientes, citas, presupuestos…"
+            placeholder="Buscar clientes, expedientes, documentos, citas…"
             className="flex-1 bg-transparent text-sm text-[#07111d] placeholder:text-[#9ca3af] outline-none"
           />
           {loading

@@ -91,6 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Kia Health", href: "/admin/kia-health" },
       { label: "Kia Auditor", href: "/admin/kia-auditor" },
       { label: "Reportes", href: "/admin/reportes" },
+      { label: "Configuración", href: "/admin/configuracion" },
     ],
   },
 ];
@@ -136,6 +137,7 @@ function SidebarContent({
         {isMobile && (
           <button
             type="button"
+            title="Cerrar menú"
             onClick={onCloseMobile}
             className="ml-auto rounded-lg p-1 text-white/40 hover:bg-white/8 hover:text-white"
           >
@@ -342,6 +344,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            title="Ajustes de cuenta"
             onClick={() => setDrawerOpen(true)}
             className="rounded-lg p-1.5 text-white/60 hover:bg-white/8 hover:text-white"
           >
