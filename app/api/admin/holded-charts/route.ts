@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile } = await getSupabaseAdmin()
       .from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== 'admin' && profile?.role !== 'owner') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 

@@ -19,7 +19,7 @@ async function getAdminContext(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 403 }) };
   }
 

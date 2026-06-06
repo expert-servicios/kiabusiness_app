@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const token         = process.env.META_WHATSAPP_ACCESS_TOKEN?.replace(/^﻿/, '').trim();
   const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
