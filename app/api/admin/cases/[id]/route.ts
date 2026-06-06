@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
@@ -22,11 +23,12 @@ async function sendCaseStatusEmail(params: {
   newStatus: CaseStatus;
   clientEmail: string;
   clientName: string;
+  clientId: string;
   service: string;
   adminNote: string | null;
   caseId: string;
 }): Promise<void> {
-  const { newStatus, clientEmail, clientName, service, adminNote, caseId } = params;
+  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId } = params;
   const funFact = ''; // placeholder — no fun fact for status emails
 
   let tpl: { subject: string; html: string } | null = null;
@@ -46,7 +48,19 @@ async function sendCaseStatusEmail(params: {
       break;
     case 'finalizado': {
       const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
-      const reviewTpl    = reviewRequest(clientName, service);
+      // Generate a review token (30-day expiry) — best-effort, never blocks email sending
+      let reviewToken = '';
+      try {
+        reviewToken = randomBytes(32).toString('hex');
+        const admin = getSupabaseAdmin();
+        await admin.from('review_requests').insert({
+          case_id: caseId,
+          client_id: clientId,
+          token: reviewToken,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      } catch { reviewToken = ''; }
+      const reviewTpl = reviewRequest(clientName, service, reviewToken);
       // Send delivered + review request (fire-and-forget each)
       void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
       void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
@@ -202,6 +216,7 @@ export async function PATCH(
             newStatus: body.status,
             clientEmail: clientInfo.email,
             clientName: clientInfo.name,
+            clientId: current.client_id,
             service: current.service ?? 'Trámite EXPERT',
             adminNote: body.admin_note ?? null,
             caseId: id,

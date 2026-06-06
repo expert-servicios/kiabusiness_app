@@ -20,6 +20,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
+import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { HoldedDemoForm } from '@/components/site/HoldedDemoForm';
 import { articles } from '@/lib/utils/blog';
@@ -229,6 +230,7 @@ export default async function HomePage({
       <HoldedMigration />
       <Operations />
       <BlogPreview />
+      <ReviewsPreview />
       <FinalCta />
     </main>
     </>

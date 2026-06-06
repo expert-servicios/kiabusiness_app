@@ -96,7 +96,7 @@ async function sendStageEmail(
     finalizado: async () => {
       const completedTpl = serviceCompleted(clientName, service);
       await sendEmail({ to: clientEmail, eventType: 'service.completed', ...completedTpl });
-      const reviewTpl = reviewRequest(clientName, service);
+      const reviewTpl = reviewRequest(clientName, service, '');
       await sendEmail({ to: clientEmail, eventType: 'review.request', ...reviewTpl });
     }
   };
