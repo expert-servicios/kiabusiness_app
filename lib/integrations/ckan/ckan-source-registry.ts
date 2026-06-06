@@ -2,8 +2,8 @@
  * CKAN source registry.
  *
  * Defines known Spanish open-data CKAN portals.
- * ALL sources are DISABLED by default — set CKAN_SOURCES_ENABLED=true
- * in env to enable them.
+ * Sources are ENABLED by default. Set CKAN_SOURCES_ENABLED=false to disable.
+ * Individual sources can also be toggled via their `enabled` flag.
  *
  * Custom portal: CKAN_CUSTOM_BASE_URL + CKAN_CUSTOM_SOURCE_NAME
  */
@@ -52,7 +52,7 @@ const KNOWN_SOURCES: CkanOpenDataSource[] = [
     id             : 'datos_gob_es',
     name           : 'datos.gob.es (Portal Datos Abiertos del Gobierno de España)',
     baseUrl        : 'https://datos.gob.es',
-    enabled        : false, // enable via CKAN_SOURCES_ENABLED=true
+    enabled        : true,
     attributionUrl : 'https://datos.gob.es',
     description    : 'Portal nacional de datos abiertos. Contiene datasets del Registro Mercantil Central y otros organismos.',
     fieldMapping   : {
@@ -71,7 +71,7 @@ const KNOWN_SOURCES: CkanOpenDataSource[] = [
     id             : 'place_contratos',
     name           : 'PLACE — Plataforma de Contratación del Sector Público',
     baseUrl        : 'https://contrataciondelestado.es',
-    enabled        : false,
+    enabled        : true,
     attributionUrl : 'https://contrataciondelestado.es',
     description    : 'Contiene empresas licitadoras en contratos públicos. Útil para verificar existencia y actividad comercial.',
     fieldMapping   : {
@@ -128,8 +128,9 @@ const KNOWN_SOURCES: CkanOpenDataSource[] = [
 
 // ── Feature flag ──────────────────────────────────────────────────────────────
 
+/** CKAN sources enabled by default. Set CKAN_SOURCES_ENABLED=false to disable. */
 export function isCkanEnabled(): boolean {
-  return process.env.CKAN_SOURCES_ENABLED === 'true';
+  return process.env.CKAN_SOURCES_ENABLED !== 'false';
 }
 
 // ── Custom portal injection ───────────────────────────────────────────────────

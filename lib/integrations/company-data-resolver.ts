@@ -140,8 +140,8 @@ export function validateSpanishTaxIdFormat(taxId: string): TaxIdValidationResult
 
 // ── Source builders ───────────────────────────────────────────────────────────
 
-async function fromBorme(name: string): Promise<CompanySuggestion[]> {
-  const results = await searchBormeByCompanyName(name, { maxDays: 60, maxResults: 3 });
+async function fromBorme(name: string, opts: { deepSearch?: boolean } = {}): Promise<CompanySuggestion[]> {
+  const results = await searchBormeByCompanyName(name, { maxResults: 3, deepSearch: opts.deepSearch });
   return results.map(({ acts, bormeId }) => ({
     name              : acts.name,
     taxId             : acts.taxId,
@@ -241,9 +241,12 @@ function mergeSuggestions(suggestions: CompanySuggestion[]): CompanySuggestion[]
  * Searches for companies by name across all enabled sources.
  * Always returns "suggested" data — never auto-saves.
  */
-export async function searchCompanyByName(name: string): Promise<CompanySuggestion[]> {
+export async function searchCompanyByName(
+  name: string,
+  opts: { deepSearch?: boolean } = {},
+): Promise<CompanySuggestion[]> {
   const [bormeResults, ocResults, ckanResults] = await Promise.all([
-    fromBorme(name),
+    fromBorme(name, opts),
     fromOpenCorporates(name),
     isCkanEnabled() ? searchCkanCompaniesByName(name) : Promise.resolve<CompanySuggestion[]>([]),
   ]);
@@ -281,14 +284,16 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
  * requiresUserConfirmation is always true — callers must not auto-save.
  */
 export async function resolveCompanyData(input: {
-  name   ?: string;
-  taxId  ?: string;
-  country?: string;
+  name      ?: string;
+  taxId     ?: string;
+  country   ?: string;
+  deepSearch?: boolean;
 }): Promise<{
   suggestions           : CompanySuggestion[];
   bestSuggestion       ?: CompanySuggestion;
   requiresUserConfirmation: true;
 }> {
+  const opts = { deepSearch: input.deepSearch };
   const allSuggestions: CompanySuggestion[] = [];
 
   if (input.taxId) {
@@ -297,11 +302,11 @@ export async function resolveCompanyData(input: {
   }
 
   if (input.name && allSuggestions.length < 3) {
-    const byName = await searchCompanyByName(input.name);
+    const byName = await searchCompanyByName(input.name, opts);
     allSuggestions.push(...byName);
   }
 
-  const suggestions   = mergeSuggestions(allSuggestions).slice(0, 5);
+  const suggestions    = mergeSuggestions(allSuggestions).slice(0, 5);
   const bestSuggestion = suggestions[0];
 
   return { suggestions, bestSuggestion, requiresUserConfirmation: true };

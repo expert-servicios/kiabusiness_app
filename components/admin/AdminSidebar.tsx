@@ -40,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Clientes", href: "/admin/clientes" },
       { label: "Usuarios", href: "/admin/usuarios" },
+      { label: "Empresas", href: "/admin/empresas" },
       { label: "Onboarding", href: "/admin/onboarding" },
       { label: "Calendario", href: "/admin/calendario-fiscal" },
     ],

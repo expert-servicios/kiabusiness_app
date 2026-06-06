@@ -233,36 +233,53 @@ export interface BormeSearchResult {
 
 /**
  * Searches BORME publications across a date range for a company name.
- * Checks up to `maxDays` working days going backwards from `toDate` (default today).
- * Returns up to `maxResults` matching entries.
+ * Uses parallel batch fetching — processes `batchSize` days concurrently.
+ * Stops early once `maxResults` matches are found.
+ *
+ * Default window: 180 working days (~9 months).
+ * Pass deepSearch:true or maxDays:365 for a full-year sweep.
  *
  * NOTE: This searches only published acts — companies not recently active in
  * the Registry will not appear. For older data, use OpenCorporates as fallback.
  */
 export async function searchBormeByCompanyName(
   name      : string,
-  options   : { fromDate?: string; toDate?: string; maxDays?: number; maxResults?: number } = {},
+  options   : {
+    fromDate  ?: string;
+    toDate    ?: string;
+    maxDays   ?: number;
+    maxResults?: number;
+    deepSearch?: boolean;
+    batchSize ?: number;
+  } = {},
 ): Promise<BormeSearchResult[]> {
-  const { maxDays = 60, maxResults = 5 } = options;
-  const needle = name.toUpperCase().replace(/\s+/g, ' ').trim();
-  const days   = lastWorkingDays(maxDays);
-  const results: BormeSearchResult[] = [];
+  const {
+    maxDays    = options.deepSearch ? 365 : 180,
+    maxResults = 5,
+    batchSize  = 20,
+  } = options;
 
-  for (const day of days) {
+  const needle  = name.toUpperCase().replace(/\s+/g, ' ').trim();
+  const days    = lastWorkingDays(maxDays);
+  const results : BormeSearchResult[] = [];
+
+  // Parallel batch fetching — batchSize days fetched concurrently per round
+  for (let i = 0; i < days.length; i += batchSize) {
     if (results.length >= maxResults) break;
-    const summary = await fetchBormeSummary(day);
-    if (!summary) continue;
 
-    for (const item of summary.items) {
-      if (!item.actos.toUpperCase().includes(needle.slice(0, 20))) continue;
-      const acts = parseBormeCompanyActs(item.actos, item.id, summary.fecha, item.provincia);
-      if (!acts.name?.toUpperCase().includes(needle.slice(0, 10))) continue;
-      results.push({ acts, provincia: item.provincia, bormeId: item.id, fecha: summary.fecha });
-      if (results.length >= maxResults) break;
+    const batch     = days.slice(i, i + batchSize);
+    const summaries = await Promise.all(batch.map((day) => fetchBormeSummary(day)));
+
+    for (const summary of summaries) {
+      if (!summary || results.length >= maxResults) continue;
+      for (const item of summary.items) {
+        if (!item.actos.toUpperCase().includes(needle.slice(0, 20))) continue;
+        const acts = parseBormeCompanyActs(item.actos, item.id, summary.fecha, item.provincia);
+        if (!acts.name?.toUpperCase().includes(needle.slice(0, 10))) continue;
+        results.push({ acts, provincia: item.provincia, bormeId: item.id, fecha: summary.fecha });
+        if (results.length >= maxResults) break;
+      }
     }
-
-    // Small delay to respect BOE servers
-    await new Promise((r) => setTimeout(r, 150));
   }
 
   return results;
