@@ -29,6 +29,190 @@ Reglas de ejecucion:
 - Audiencia principal: asesorias, gestorias y despachos profesionales como clientes del SaaS. EXPERT no es una asesoria B2C sino una plataforma que las asesorias usan para operar.
 - Kia: se reposiciona exclusivamente como widget copiloto flotante in-app. El boton flotante aparece en cualquier pagina del portal (dashboard, expedientes, empresa, etc.) y abre una ventana de chat donde el usuario puede gestionar las empresas conectadas, consultar datos, ejecutar acciones y acceder al conocimiento de dominio (AEAT, SS, DGT, Holded). Kia abandona el rol de chatbot de captacion WABA y pasa a ser copiloto operativo interno.
 
+---
+
+## SPRINT LOG — Todo lo construido (2026-06-01 → 2026-06-06)
+
+### P0 — Seguridad y fiabilidad (completado)
+
+| IMP | Descripcion | Estado |
+|-----|-------------|--------|
+| IMP-001 | Firma HMAC-SHA256 en webhook WhatsApp (`META_APP_SECRET`). Falla cerrado en prod si falta el secret. | [x] |
+| IMP-002 | `client_integration_secrets` sin GRANT a `authenticated`. Solo `service_role`. AES-256-GCM. | [x] |
+| IMP-003 | Rate limit + spam guard en `viabilidad`, `company/resolve`, `newsletter`. | [x] |
+| IMP-004 | `stripe_processed_events` — idempotencia atomica en webhook Stripe. | [x] |
+| IMP-005 | `holded_sync_jobs` + `/api/cron/holded-sync` — cola durable con reintentos exponenciales. | [x] |
+| IMP-006 | `safeRedirectPath()` — sanitiza `?next=` en auth callback y login. | [x] |
+| IMP-007 | Fail-closed en `CRON_SECRET` y allowlist `STRIPE_PLAN_MONTHLY_*`. | [x] |
+| IMP-008 | `escapeHtml()` en todas las plantillas de email (formularios publicos + tier 2 post-auth). | [x] |
+
+### P1 — Calidad y mantenimiento (completado)
+
+| IMP | Descripcion | Estado |
+|-----|-------------|--------|
+| IMP-009 | `npm run lint` recuperado — `react/no-unstable-nested-components` corregido. | [x] |
+| IMP-010 | Next.js actualizado a 16.2.7. `npm audit --audit-level=high` limpio. | [x] |
+| IMP-011 | `@supabase/auth-helpers-nextjs` retirado. Todo migrado a `@supabase/ssr`. | [x] |
+| IMP-012 | Vitest + 31 tests de regresion: firma WhatsApp, redirect auth, spam guard, allowlist Stripe. | [x] |
+| IMP-023 | CI GitHub Actions: `typecheck → lint → test → build` en push a `main` y PRs. | [x] |
+
+### P2 — Producto y escalabilidad (completado)
+
+| IMP | Descripcion | Estado |
+|-----|-------------|--------|
+| IMP-013 | Dominio canonico `expertconsulting.es` en metadata, emails, prompts Kia, README. | [x] |
+| IMP-014 | Tabla `tenants`, `tenant_id` nullable en `profiles/cases/orders/quotes/companies`. Helper `getTenantForUser`. | [x] |
+| IMP-015 | `automation_settings` (7 reglas), panel `/admin/automatizaciones`, enforcement en emails de estado. | [x] |
+| IMP-016 | WABA: email opcional con omision, anti-repeticion, `kia_contact_disposition`. | [x] |
+| IMP-017 | Kia Health (canaries), Kia Auditor, panel `/admin/kia-health`, decision logs. | [x] |
+| IMP-018 | Holded Academy en Kia: modulos, tarifas, integraciones, FAQs. | [x] |
+| IMP-019 | AEAT + SS en Kia: IRPF, IVA trimestral, modelos autonomo, RETA, vida laboral. | [x] |
+| IMP-020 | DGT, Justicia/Registros, PAE/CIRCE, tributos CCAA en Kia. | [x] |
+| IMP-021 | Web publica orientada a asesorias: `/para-asesorias`, pivot B2B en home y nav. | [x] |
+| IMP-022 | Kia copiloto flotante: `KiaCopilotWidget`, `/api/ai/kia`, historial en `kia_sessions`. | [x] |
+
+### Sprint SaaS — Backlog (completado 2026-06-06)
+
+#### Multi-tenant
+
+| Item | Descripcion | Archivos clave |
+|------|-------------|----------------|
+| Panel admin tenants | `/admin/tenants` — lista, crear (wizard 3 pasos), editar | `app/(protected)/admin/tenants/` |
+| Wizard onboarding | 3 pasos: Identidad → Marca → Holded. Crea tenant + branding + integracion en un flujo. | `admin/tenants/new/page.tsx` |
+| TenantEditForm | nombre, dominio, plan, activo | `components/admin/TenantEditForm.tsx` |
+| TenantBrandingForm | color picker, logo URL, tagline, email soporte, preview en vivo | `components/admin/TenantBrandingForm.tsx` |
+| TenantUserSection | asignar por email, listar, quitar | `components/admin/TenantUserSection.tsx` |
+| TenantIntegrationsForm | Holded API key cifrada (AES-256-GCM), show/hide, estado badge | `components/admin/TenantIntegrationsForm.tsx` |
+| API tenants | GET list, POST crear, PATCH actualizar | `app/api/admin/tenants/` |
+| API integraciones | GET status, POST guardar cifrado, DELETE eliminar | `app/api/admin/tenants/[id]/integrations/` |
+| Secrets helper | `getTenantSecret(tenantId, integration)` para uso interno | mismo route.ts |
+
+#### Portal tenant_admin (`/tenant/*`)
+
+| Item | Descripcion | Archivos clave |
+|------|-------------|----------------|
+| Layout + sidebar | Verifica rol `tenant_admin`, branding por tenant, nav movil | `app/(protected)/tenant/layout.tsx`, `TenantSidebar.tsx` |
+| Dashboard | Stats: clientes, expedientes activos, finalizados hoy; lista reciente | `tenant/dashboard/page.tsx` |
+| Clientes | Lista clientes del tenant con email de auth | `tenant/clientes/page.tsx` |
+| Expedientes | Lista activos/finalizados con status badges y link a detalle | `tenant/expedientes/page.tsx` |
+| Detalle expediente | Read-only + **upload entregables** (con drag-and-drop, 20MB, router.refresh) | `tenant/expedientes/[id]/page.tsx`, `TenantDeliverableUpload.tsx` |
+| API upload tenant | POST /api/tenant/cases/[id]/documents — verifica pertenencia tenant, role=admin | `app/api/tenant/cases/[id]/documents/route.ts` |
+| Redireccion roles | `tenant_admin` → `/tenant/dashboard`; admin → `/admin`; client → `/dashboard` | layouts |
+
+#### Email branding y notificaciones
+
+| Item | Descripcion | Archivos clave |
+|------|-------------|----------------|
+| TenantBrand en emails | `base(title, body, brand?)` — emails white-label para tenants no-EXPERT | `lib/email/templates.ts` |
+| Notif. doc subido | `notifyTenantAdminDocUploaded` — aviso cuando cliente sube doc | `lib/email/notify-tenant-admins.ts` |
+| Notif. estado cambio | `notifyTenantAdminStatusChanged` — aviso cuando admin cambia estado expediente | mismo archivo |
+| Templates admin | `tenantAdminDocUploaded`, `tenantAdminStatusChanged` | `lib/email/templates.ts` |
+
+#### Reviews y reseñas
+
+| Item | Descripcion | Archivos clave |
+|------|-------------|----------------|
+| Captura publica | `/gracias/opinion?token=...` — estrellas, comentario, allow_publish | `app/(public)/gracias/opinion/` |
+| Panel moderacion | `/admin/resenas` — tabs pendiente/aprobada/rechazada, card con acciones | `app/(protected)/admin/resenas/` |
+| API reviews | GET list, PATCH aprobar/rechazar/destacar | `app/api/admin/resenas/` |
+
+#### Datos de empresas
+
+| Item | Descripcion | Archivos clave |
+|------|-------------|----------------|
+| CKAN opt-out | `datos.gob.es` + `PLACE` activos por defecto. `CKAN_SOURCES_ENABLED=false` para desactivar. | `ckan-source-registry.ts` |
+| BORME paralelo | Batches de 20 dias en paralelo. Default 180 dias (~9 meses). `deepSearch:true` = 365 dias. | `boe-borme.ts` |
+| Admin empresa UI | `/admin/empresas` — busqueda por nombre/NIF, fuentes con badges, campos extraidos, asociar | `app/(protected)/admin/empresas/page.tsx` |
+| Deep search | Header `X-Borme-Deep-Search: true` activa busqueda extendida. Checkbox en UI. | `resolve/route.ts`, `company-data-resolver.ts` |
+
+#### Migraciones
+
+| Archivo | Estado |
+|---------|--------|
+| `20260606000003_automation_settings.sql` | ✅ Aplicada |
+| `20260606000005_tenant_integration_secrets.sql` | ⚠️ PENDIENTE aplicar en Supabase SQL Editor |
+
+---
+
+## Estado actual de todas las areas (2026-06-06)
+
+```
+✅ Seguridad API           — webhook sig, secrets cifrados, escapeHtml, rate limit, fail-closed
+✅ Stripe / Pagos          — idempotencia, cola Holded, checkout allowlist
+✅ CI / Calidad            — lint, typecheck, build, 31 tests Vitest, GitHub Actions
+✅ Auth / SSR              — Supabase SSR unificado, redirect sanitizado
+✅ Multi-tenant            — schema, admin panel, portal tenant_admin, branding, integraciones
+✅ Automatizaciones        — 7 reglas configurables, enforcement en emails
+✅ Emails transaccionales  — 15+ templates, white-label por tenant, escapeHtml
+✅ Portal cliente           — expedientes, documentos, entregables, mensajes, Kia widget
+✅ Portal tenant_admin      — dashboard, clientes, expedientes, upload entregables
+✅ Kia copiloto            — widget flotante, /api/ai/kia, knowledge (AEAT/SS/DGT/Holded/PAE/CCAA)
+✅ Reviews / Reseñas       — captura publica, moderacion admin, featured
+✅ Datos empresas          — BORME paralelo, CKAN open data, VIES, UI admin busqueda
+✅ Web publica             — orientada a asesorias B2B, SEO, canonical, para-asesorias
+✅ Holded sync             — queue durable, reintentos, cron protegido
+⚠️ WABA                   — implementado; verificacion manual pendiente
+⚠️ Kia WABA               — mantener como notificaciones salientes; pruebas manuales pendientes
+```
+
+---
+
+## Pendiente manual (requiere accion del usuario)
+
+1. **Migración 000005** — Aplicar `supabase/migrations/20260606000005_tenant_integration_secrets.sql` en Supabase SQL Editor.
+2. **PR GitHub** — Crear PR `main ← claude/tender-darwin-aXkbO` en github.com/expertestudiospro/kiabusiness_app.
+3. **Branch protection** — GitHub → Settings → Branches → main → require status checks.
+4. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
+5. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
+6. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
+7. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → "¿Cuales son mis expedientes activos?".
+8. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
+9. **Calendly** — Actualizar username en calendly.com/settings.
+
+---
+
+## Proximo sprint de codigo (ideas priorizadas)
+
+### Alta prioridad — Piloto SaaS
+
+1. **RLS tenant-aware fase 2** — Activar politicas `auth_tenant_id()` en `cases`, `documents`, `profiles` para que los datos de un tenant no sean accesibles por otro tenant incluso con client directo.
+
+2. **Kia herramientas (tool calls)** — Permitir a Kia consultar datos reales del usuario: lista de expedientes, estado de empresas conectadas, documentos pendientes. Requiere `kia-tool-executor.ts` con verificacion de permisos.
+
+3. **Streaming SSE para Kia** — Las respuestas largas de Kia bloquean la UI. Implementar Server-Sent Events para streaming progresivo.
+
+4. **Scheduler externo para Holded sync** — Configurar cron externo (GitHub Actions scheduled, cron-job.org o Vercel Cron pro) que llame `/api/cron/holded-sync` con `CRON_SECRET` cada 15 minutos.
+
+### Media prioridad
+
+5. **Registro Mercantil via Infoempresa** — Integrar infoempresa.com como fuente adicional en el resolver de empresas (forma juridica, capital, objeto social, administradores actuales).
+
+6. **RLS tenant en companies** — Cuando un `tenant_admin` crea o ve empresas, deben estar scoped a su tenant.
+
+7. **Onboarding cliente guiado** — Wizard para que el propio cliente (no solo el admin) complete su perfil, conecte empresas y suba documentacion inicial.
+
+8. **Notificaciones push** — Web Push API o email digest semanal para tenant_admin con resumen de actividad.
+
+### Backlog / Fase SaaS avanzada
+
+9. **Piloto con 1-3 asesorias externas** — Crear tenants reales, asignar `tenant_admin`, activar branding y Holded. Medir adopcion del portal y del copiloto Kia.
+
+10. **RAG / pgvector para Holded Academy** — Crawl de help.holded.com → chunks → embeddings → busqueda semantica en tiempo real. Pendiente cuando el volumen de preguntas tecnicas lo justifique.
+
+11. **Stripe por tenant** — Cuenta Stripe independiente por asesoria para facturar a sus propios clientes desde la plataforma.
+
+12. **WhatsApp por tenant** — WABA number independiente por tenant para notificaciones salientes white-label.
+
+---
+
+## Notas de implementacion
+
+- Antes de tocar migraciones, comprobar estado local/remoto y evitar duplicar historial.
+- No aplicar cambios destructivos de Supabase sin verificacion previa.
+- Mantener `HOLDED_CREATE_INVOICES_FROM_STRIPE=false` por defecto.
+- Si un cambio queda parcial, actualizar este documento con el motivo y siguiente paso exacto.
+- La rama de desarrollo activa es `claude/tender-darwin-aXkbO`. Nunca pushear directamente a `main`.
+
 ## Estado base verificado
 
 - [x] `npm run typecheck` pasa.
