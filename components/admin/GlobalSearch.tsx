@@ -57,7 +57,7 @@ export function GlobalSearch() {
   // Focus input when opened
   useEffect(() => {
     if (open) {
-      setQuery('');
+      setQuery(''); // eslint-disable-line react-hooks/set-state-in-effect
       setResults([]);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -66,7 +66,7 @@ export function GlobalSearch() {
   // Debounced search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!query.trim()) { setResults([]); setLoading(false); return; }
+    if (!query.trim()) { setResults([]); setLoading(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
 
     setLoading(true);
     debounceRef.current = setTimeout(async () => {

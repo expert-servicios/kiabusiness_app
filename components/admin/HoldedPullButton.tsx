@@ -32,7 +32,7 @@ export function HoldedPullButton() {
         return;
       }
       setResult(data.result);
-    } catch (e) {
+    } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);

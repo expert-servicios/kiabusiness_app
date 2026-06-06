@@ -156,7 +156,7 @@ async function runAudit(input: AuditMessageInput & {
   skipLlm?:         boolean;
 }): Promise<KiaAuditorReview> {
   const deterministicResults = runDeterministicGrader(input);
-  const { score: detScore, hasCriticalFailure } = scoreFromRuleResults(deterministicResults);
+  const { hasCriticalFailure } = scoreFromRuleResults(deterministicResults);
 
   // Only call LLM judge if: no critical failure already found (avoid wasting tokens)
   // AND there are qualitative rules to evaluate

@@ -455,6 +455,7 @@ async function callOpenAiOfficialSearch(query: string, apiKey: string, toolType:
 function getFallbackSources(query: string): OfficialSource[] {
   const matches = FALLBACK_SOURCES.filter((source) => source.keywords.some((pattern) => pattern.test(query)));
   const selected = matches.length > 0 ? matches : FALLBACK_SOURCES.slice(0, 4);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return selected.slice(0, 5).map(({ keywords: _keywords, ...source }) => source);
 }
 

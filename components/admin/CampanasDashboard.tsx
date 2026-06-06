@@ -88,7 +88,7 @@ function CampaignEditor({
     } finally { setCountLoading(false); }
   }, []);
 
-  useEffect(() => { loadSegmentCount(segment); }, [segment, loadSegmentCount]);
+  useEffect(() => { loadSegmentCount(segment); }, [segment, loadSegmentCount]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleKiaDraft = async () => {
     if (!topic) { setError('Escribe el tema de la campaña primero.'); return; }
@@ -324,7 +324,7 @@ export function CampanasDashboard() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este borrador?')) return;

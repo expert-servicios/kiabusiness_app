@@ -2,7 +2,7 @@
 
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell
 } from 'recharts';
 import { Euro, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -77,9 +77,6 @@ export function HoldedCharts({ data }: { data: HoldedData }) {
       color: STATUS_COLORS[status] ?? '#9ca3af',
       amount: data.statusAmounts[status] ?? 0
     }));
-
-  const maxRevenue = Math.max(...data.revenueByMonth.map((r) => r.revenue), 1);
-  const maxClient = Math.max(...data.topClients.map((c) => c.amount), 1);
 
   return (
     <div className="space-y-6">

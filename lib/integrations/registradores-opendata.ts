@@ -48,7 +48,7 @@ export function isRegistradoresEnabled(): boolean {
  * Should search the Directorio de Sociedades by company name.
  */
 export async function searchByName(
-  _name: string
+  _name: string // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<RegistradoresCompany[]> {
   if (!isRegistradoresEnabled()) return [];
   // TODO: implement API call once endpoint is confirmed
@@ -61,7 +61,7 @@ export async function searchByName(
  * Should search by CIF/NIF.
  */
 export async function searchByTaxId(
-  _taxId: string
+  _taxId: string // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<RegistradoresCompany[]> {
   if (!isRegistradoresEnabled()) return [];
   // TODO: implement API call once endpoint is confirmed

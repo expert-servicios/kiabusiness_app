@@ -16,7 +16,7 @@
  */
 
 import { buildHoldedHeaders, resolveHoldedAuth } from './holded-auth';
-import { classifyHoldedError, holdedErrorMessage, HoldedIntegrationError } from './holded-errors';
+import { classifyHoldedError, holdedErrorMessage } from './holded-errors';
 
 // ── Holded response types (minimal, add fields as needed) ─────────────────────
 
