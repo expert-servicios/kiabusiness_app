@@ -17,6 +17,7 @@ import {
   type TenantBrand,
 } from '@/lib/email/templates';
 import { getTenantForUser } from '@/lib/auth/tenant';
+import { notifyTenantAdminStatusChanged } from '@/lib/email/notify-tenant-admins';
 
 // ── Automation settings helper ──────────────────────────────────────────────
 // Returns set of enabled automation keys. Defaults to all enabled on error.
@@ -262,6 +263,27 @@ export async function PATCH(
             enabledAutomations,
             brand,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
+
+          // Notify tenant_admin if client belongs to a non-EXPERT tenant
+          if (clientTenant && clientTenant.slug !== 'expert') {
+            const STATUS_LABELS: Record<string, string> = {
+              pendiente_cliente: 'Pendiente documentación',
+              en_revision: 'En revisión',
+              listo_para_presentar: 'Listo para presentar',
+              presentado: 'Presentado',
+              finalizado: 'Finalizado',
+              bloqueado: 'Bloqueado',
+            };
+            void notifyTenantAdminStatusChanged({
+              clientId: current.client_id,
+              clientName: clientInfo.name,
+              service: current.service ?? 'Trámite',
+              caseId: id,
+              newStatus: body.status,
+              statusLabel: STATUS_LABELS[body.status] ?? body.status,
+              brand: brand,
+            }).catch(() => {});
+          }
         }
       }
 

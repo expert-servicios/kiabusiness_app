@@ -3,7 +3,8 @@ import { notFound, redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Download, Package } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Package, Upload } from 'lucide-react';
+import { TenantDeliverableUpload } from '@/components/tenant/TenantDeliverableUpload';
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   nuevo:                { label: 'Nuevo',               cls: 'bg-slate-100 text-slate-600' },
@@ -127,19 +128,25 @@ export default async function TenantCaseDetailPage({
         )}
       </div>
 
-      {/* Deliverables */}
-      {deliverables.length > 0 && (
-        <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-[#07111d]">
-            <Package className="h-4 w-4 text-[#d7a33a]" /> Entregables ({deliverables.length})
-          </h2>
-          <ul className="space-y-2">
+      {/* Deliverables — with upload */}
+      <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-[#07111d]">
+          <Package className="h-4 w-4 text-[#d7a33a]" /> Entregables ({deliverables.length})
+        </h2>
+        {deliverables.length > 0 && (
+          <ul className="mb-4 space-y-2">
             {deliverables.map((doc) => (
               <DocRow key={doc.id} doc={doc} />
             ))}
           </ul>
-        </section>
-      )}
+        )}
+        <div className="border-t border-[#f0e8d5] pt-4">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#29384a]">
+            <Upload className="h-3.5 w-3.5" /> Subir entregable
+          </p>
+          <TenantDeliverableUpload caseId={c.id} />
+        </div>
+      </section>
 
       {/* Client documents */}
       {clientDocs.length > 0 && (
@@ -153,12 +160,6 @@ export default async function TenantCaseDetailPage({
             ))}
           </ul>
         </section>
-      )}
-
-      {clientDocs.length === 0 && deliverables.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#d8cbb5] bg-[#f8f4eb] p-8 text-center text-sm text-[#29384a]/60">
-          No hay documentos en este expediente todavía.
-        </div>
       )}
     </div>
   );

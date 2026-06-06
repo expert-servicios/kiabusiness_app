@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
+import { notifyTenantAdminDocUploaded } from '@/lib/email/notify-tenant-admins';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -132,6 +133,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         } catch (e) {
           console.error('[Drive sync]', e);
         }
+      })();
+    }
+
+    // Notify tenant_admin when a client uploads (non-blocking)
+    if (!isAdmin) {
+      const clientName = (() => { try { return String(clientId).slice(0, 8); } catch { return 'cliente'; } })();
+      void (async () => {
+        try {
+          const { data: profile } = await adminSupabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', clientId)
+            .maybeSingle();
+          await notifyTenantAdminDocUploaded({
+            clientId,
+            clientName: profile?.full_name ?? clientName,
+            service: (caseData as { service?: string }).service ?? 'Expediente',
+            docName: file.name,
+          });
+        } catch { /* non-blocking */ }
       })();
     }
 

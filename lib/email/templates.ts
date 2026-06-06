@@ -1180,6 +1180,60 @@ export function dailyAdminSummary(data: DailySummaryData) {
   };
 }
 
+// ── Tenant admin notifications ───────────────────────────────────────────────
+
+export function tenantAdminDocUploaded(
+  params: { adminName: string; clientName: string; service: string; docName: string; portalUrl: string },
+  brand?: TenantBrand
+): { subject: string; html: string } {
+  const { adminName, clientName, service, docName, portalUrl } = params;
+  const a = escapeHtml(adminName);
+  const c = escapeHtml(clientName);
+  const s = escapeHtml(service);
+  const d = escapeHtml(docName);
+  return {
+    subject: `Nuevo documento: ${c} — ${s}`,
+    html: base('Nuevo documento recibido', `
+      ${heading('Nuevo documento subido')}
+      ${para(`Hola <strong>${a}</strong>,`)}
+      ${para(`Tu cliente <strong>${c}</strong> ha subido un documento al expediente <strong>${s}</strong>:`)}
+      ${table(
+        detail('Cliente', c),
+        detail('Expediente', s),
+        detail('Documento', d)
+      )}
+      ${btn('Ver en el portal', portalUrl)}
+      ${para('<small style="color:#8899aa;">Accede al portal para revisar el documento y gestionar el expediente.</small>')}
+    `, brand),
+  };
+}
+
+export function tenantAdminStatusChanged(
+  params: { adminName: string; clientName: string; service: string; statusLabel: string; portalUrl: string },
+  brand?: TenantBrand
+): { subject: string; html: string } {
+  const { adminName, clientName, service, statusLabel, portalUrl } = params;
+  const a = escapeHtml(adminName);
+  const c = escapeHtml(clientName);
+  const s = escapeHtml(service);
+  const st = escapeHtml(statusLabel);
+  return {
+    subject: `Estado actualizado: ${c} — ${s}`,
+    html: base('Estado de expediente actualizado', `
+      ${heading('Expediente actualizado')}
+      ${para(`Hola <strong>${a}</strong>,`)}
+      ${para(`El estado del expediente de <strong>${c}</strong> ha cambiado:`)}
+      ${table(
+        detail('Cliente', c),
+        detail('Expediente', s),
+        detail('Nuevo estado', `<strong>${st}</strong>`)
+      )}
+      ${btn('Ver expediente', portalUrl)}
+      ${para('<small style="color:#8899aa;">Accede al portal para ver los detalles del expediente.</small>')}
+    `, brand),
+  };
+}
+
 export { BRAND };
 export const emailTemplates = {
   contactConfirmation: 'Confirmación contacto',
