@@ -6,6 +6,7 @@ import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
 import { sendEmail } from '@/lib/email/send';
+import { notifyClient } from '@/lib/integrations/push';
 import { upsertCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
 import {
   caseDocsRequired,
@@ -240,6 +241,14 @@ export async function PATCH(
           if (!(automationRows ?? []).find((r) => r.key === k)) enabledAutomations.add(k);
         }
 
+        const STATUS_PUSH_LABELS: Partial<Record<CaseStatus, string>> = {
+          pendiente_cliente:    'Necesitamos tu documentación para continuar',
+          en_revision:          'Estamos revisando tu documentación',
+          listo_para_presentar: 'Tu expediente está listo para presentar',
+          presentado:           'Tu trámite ha sido presentado ante el organismo',
+          finalizado:           'Tu expediente ha finalizado',
+        };
+
         const clientInfo = await getClientInfo(admin, current.client_id);
         if (clientInfo) {
           void sendCaseStatusEmail({
@@ -252,6 +261,17 @@ export async function PATCH(
             caseId            : id,
             enabledAutomations,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
+        }
+
+        // Push notification to client
+        const pushLabel = STATUS_PUSH_LABELS[body.status];
+        if (pushLabel) {
+          notifyClient(current.client_id, {
+            title: current.service ?? 'Actualización de expediente',
+            body:  pushLabel,
+            url:   `/dashboard/expedientes/${id}`,
+            tag:   `case-status-${id}`,
+          }).catch(() => {});
         }
       }
 

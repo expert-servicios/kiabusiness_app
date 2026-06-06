@@ -20,25 +20,15 @@ function ensureVapid(): boolean {
   return true;
 }
 
-// Send push to all admin users
-export async function notifyAdmins(payload: PushPayload): Promise<void> {
-  if (!ensureVapid()) return; // env vars not set — skip silently
-  const admin = getSupabaseAdmin();
-
-  // Get all admin user IDs
-  const { data: profiles } = await admin
-    .from('profiles')
-    .select('id')
-    .eq('role', 'admin');
-
-  if (!profiles?.length) return;
-
-  const adminIds = profiles.map((p) => p.id as string);
-
+async function sendToSubscriptions(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  userIds: string[],
+  payload: PushPayload,
+): Promise<void> {
   const { data: subs } = await admin
     .from('push_subscriptions')
     .select('endpoint,p256dh,auth,user_id')
-    .in('user_id', adminIds);
+    .in('user_id', userIds);
 
   if (!subs?.length) return;
 
@@ -58,8 +48,29 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
     })
   );
 
-  // Remove expired subscriptions
   if (dead.length) {
     await admin.from('push_subscriptions').delete().in('endpoint', dead);
   }
+}
+
+// Send push to all admin + owner users
+export async function notifyAdmins(payload: PushPayload): Promise<void> {
+  if (!ensureVapid()) return;
+  const admin = getSupabaseAdmin();
+
+  const { data: profiles } = await admin
+    .from('profiles')
+    .select('id')
+    .in('role', ['admin', 'owner']);
+
+  if (!profiles?.length) return;
+
+  await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
+}
+
+// Send push to a specific client user
+export async function notifyClient(clientId: string, payload: PushPayload): Promise<void> {
+  if (!ensureVapid()) return;
+  const admin = getSupabaseAdmin();
+  await sendToSubscriptions(admin, [clientId], payload);
 }
