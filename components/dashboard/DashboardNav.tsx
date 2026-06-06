@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import {
-  BarChart2, Calendar, ChevronLeft, ChevronRight, CreditCard, FileBarChart,
+  BarChart2, Calendar, CalendarClock, ChevronLeft, ChevronRight, CreditCard, FileBarChart,
   FolderOpen, Globe, LayoutDashboard, LogOut, ShieldCheck, ShoppingBag, User,
 } from 'lucide-react';
 import { CompanySwitcher } from './CompanySwitcher';
@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { href: '/dashboard/estado-empresa',   label: 'Estado empresa',    icon: BarChart2,       exact: false },
   { href: '/dashboard/informes',         label: 'Informes',          icon: FileBarChart,    exact: false },
   { href: '/dashboard/presupuestos',     label: 'Presupuestos',      icon: CreditCard,      exact: false },
+  { href: '/dashboard/citas',            label: 'Mis citas',         icon: CalendarClock,   exact: false },
   { href: '/dashboard/calendario-fiscal',label: 'Calendario Fiscal', icon: Calendar,        exact: false },
   { href: '/dashboard/suscripciones',    label: 'Suscripciones',     icon: CreditCard,      exact: false },
   { href: '/dashboard/perfil',           label: 'Mi perfil',         icon: User,            exact: false },
