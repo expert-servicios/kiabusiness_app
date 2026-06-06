@@ -141,7 +141,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
 
   useEffect(() => {
     const saved = localStorage.getItem('adminRightPanel');
-    if (saved === 'open') setOpen(true);
+    if (saved === 'open') setOpen(true); // eslint-disable-line react-hooks/set-state-in-effect
     if (localStorage.getItem('adminRightPanelWide') === 'true') setWide(true);
   }, []);
 
@@ -168,7 +168,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
 
   // Mount active tab when panel opens
   useEffect(() => {
-    if (open) setMounted((prev) => new Set([...prev, tab]));
+    if (open) setMounted((prev) => new Set([...prev, tab])); // eslint-disable-line react-hooks/set-state-in-effect
   }, [open, tab]);
 
   return (

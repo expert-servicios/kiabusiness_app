@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  HeadingLevel, AlignmentType, BorderStyle, ShadingType,
+  HeadingLevel, AlignmentType, ShadingType,
 } from 'docx';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { ReportData, InvoiceSummaryItem } from '@/lib/reports/report-generator';

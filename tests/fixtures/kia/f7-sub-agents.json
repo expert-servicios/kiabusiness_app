@@ -1,0 +1,13 @@
+{
+  "suite": "f7-sub-agents",
+  "channel": "waba",
+  "contactStatus": "client",
+  "description": "F7: sub-agent routing — fiscal, holded, and case-specific messages",
+  "cases": [
+    { "id": "SA1", "message": "Tengo que presentar el Modelo 720 este año", "expected": { "intent": "viability", "nextAction": "run_viability" } },
+    { "id": "SA2", "message": "¿Cómo configuro el plan de cuentas en Holded?", "expected": { "intent": "readiness" } },
+    { "id": "SA3", "message": "¿En qué estado está mi expediente de arraigo?", "expected": { "intent": "case_status" } },
+    { "id": "SA4", "message": "Me han enviado un requerimiento de Hacienda", "expected": { "intent": "viability", "nextAction": "run_viability" } },
+    { "id": "SA5", "message": "¿Cuántos módulos de formación Holded he contratado?", "expected": { "intent": "readiness" } }
+  ]
+}

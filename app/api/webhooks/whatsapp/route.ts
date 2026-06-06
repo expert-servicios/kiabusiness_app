@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
   logWhatsAppConversation,
   downloadAndStoreWhatsAppMedia,
@@ -37,6 +37,7 @@ import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
+import { parseKiaFeedbackButtonId, storeKiaFeedback } from '@/lib/ai/kia/kia-feedback-store';
 
 import { verifyMetaSignature } from '@/lib/security/webhook-signature';
 
@@ -1283,6 +1284,26 @@ export async function POST(request: NextRequest) {
       const mappedClientId       = mapWhatsAppMessageToClient(from, profiles ?? []) ?? undefined;
       const clientId             = contactCtx.clientId ?? mappedClientId;
       const senderName           = contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? from;
+
+      // F6: Feedback detection — handle 👍/👎 button presses before main flow
+      const feedbackButtonId = extractButtonId(msg as Record<string, unknown>);
+      if (feedbackButtonId) {
+        const feedback = parseKiaFeedbackButtonId(feedbackButtonId);
+        if (feedback) {
+          await storeKiaFeedback({
+            rating: feedback.rating,
+            decisionLogId: feedback.decisionLogId,
+            phone: from,
+            clientId: clientId ?? null,
+            leadId: contactCtx.leadId ?? null,
+            channel: 'waba',
+          }).catch(() => {});
+          // Send a simple acknowledgement and skip normal processing
+          const ack = feedback.rating === 'positive' ? '¡Gracias! Tu valoración me ayuda a mejorar. 😊' : 'Gracias por el feedback. Intentaré hacerlo mejor. 🙏';
+          await sendWhatsAppMessage({ to: from, body: ack });
+          continue;
+        }
+      }
 
       // ── Media: download, store, log, notify, and ACK ─────────────────
       if (isMedia) {

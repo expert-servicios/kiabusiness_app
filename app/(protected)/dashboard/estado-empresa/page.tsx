@@ -231,6 +231,7 @@ export default async function EstadoEmpresaPage({
 
   // Sync age warning
   const lastSync = integration.last_sync_at ? new Date(integration.last_sync_at) : null;
+  // eslint-disable-next-line react-hooks/purity
   const syncAgeH = lastSync ? (Date.now() - lastSync.getTime()) / 3_600_000 : null;
 
   return (

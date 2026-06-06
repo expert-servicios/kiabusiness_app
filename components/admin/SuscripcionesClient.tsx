@@ -126,7 +126,7 @@ export function SuscripcionesClient({ initialSubscriptions }: { initialSubscript
             <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
             <p className="text-sm text-amber-800">
               <strong>{counts.problem} suscripci{counts.problem === 1 ? 'ón tiene' : 'ones tienen'}</strong>{' '}
-              pago pendiente. Usa el botón "Reintentar cobro" para reintentarlo directamente desde Stripe.
+              pago pendiente. Usa el botón &quot;Reintentar cobro&quot; para reintentarlo directamente desde Stripe.
             </p>
             <button type="button" onClick={() => setFilter('problem')}
               className="ml-auto shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700">

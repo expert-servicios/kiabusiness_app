@@ -95,8 +95,6 @@ export async function POST(request: NextRequest) {
 
     // Background: sync new case as Holded project
     admin.auth.admin.getUserById(client_id).then(({ data: authUser }) => {
-      const { data: profileData, error: pErr } = { data: null as null, error: null as null };
-      void pErr;
       return admin.from('profiles').select('full_name,phone').eq('id', client_id).maybeSingle()
         .then(({ data: prof }) => {
           syncProjectToHolded({

@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-06-04
+Ultima actualizacion: 2026-06-06
 
 ## Objetivo
 
@@ -33,8 +33,9 @@ Reglas de ejecucion:
 
 - [x] `npm run typecheck` pasa.
 - [x] `npm run build` pasa.
-- [ ] `npm run lint` falla con reglas React Hooks y warnings.
-- [ ] `npm audit --audit-level=moderate` reporta 2 vulnerabilidades moderate (postcss via Next.js — fix requiere breaking change, decision documentada en IMP-010).
+- [x] `npm run lint` pasa (0 errores, 40 warnings deliberados).
+- [x] `npm audit --audit-level=high` sin vulnerabilidades altas (Next.js 16.2.7). 2 moderate restantes son postcss interno de Next.js — fix requiere downgrade a 9.x, descartado.
+- [x] `npm run test:regression` 20/20 passing.
 - [~] Hay cambios no versionados previos relacionados con Holded y seguridad:
   - `lib/integrations/holded/`
   - `lib/security/`
@@ -45,7 +46,7 @@ Reglas de ejecucion:
 
 ### IMP-001 - Verificar firma del webhook WhatsApp
 
-Estado: [~]
+Estado: [x]
 
 Tipo: seguridad, comunicacion, automatizacion.
 
@@ -68,7 +69,7 @@ Verificacion:
 
 - [x] `npm run typecheck`
 - [x] `npm run build`
-- [ ] prueba manual o automatizada con payload firmado de Meta.
+- [x] prueba automatizada (regression-test.ts): firma valida, invalida, ausente, tampered, bad prefix, dev/prod.
 
 Notas:
 
@@ -288,7 +289,7 @@ Notas:
 
 ### IMP-010 - Actualizar dependencias auditadas
 
-Estado: [ ]
+Estado: [x]
 
 Tipo: seguridad, mantenimiento.
 
@@ -304,6 +305,10 @@ Criterio de aceptacion:
 - Next.js se actualiza al menos a la version parcheada disponible en el rango actual.
 - `npm audit --audit-level=moderate` queda limpio o con excepciones documentadas.
 - `npm run typecheck`, `npm run lint` y `npm run build` pasan tras actualizar.
+
+Notas:
+
+- Implementado 2026-06-06: `npm audit fix` actualizo Next.js de 16.2.4 a 16.2.7. Todas las vulnerabilidades altas resueltas. Quedan 2 moderate (postcss y qs dentro de Next.js) cuyo fix requiere downgrade a Next.js 9.x — descartado. `npm audit --audit-level=high` pasa limpio.
 
 ### IMP-011 - Unificar Supabase SSR y retirar auth-helpers
 

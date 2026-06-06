@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createHmac } from 'crypto';
 import { verifyMetaSignature } from '@/lib/security/webhook-signature';
 
@@ -11,21 +11,14 @@ function makeSignature(body: string, secret: string): string {
 }
 
 describe('verifyMetaSignature', () => {
-  const originalEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     // Run tests as if in production so fail-closed behavior is active
-    process.env.NODE_ENV = 'production';
-    delete process.env.META_APP_SECRET;
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('META_APP_SECRET', '');
   });
 
   afterEach(() => {
-    if (originalEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalEnv;
-    }
-    delete process.env.META_APP_SECRET;
+    vi.unstubAllEnvs();
   });
 
   it('acepta firma valida', () => {
@@ -62,7 +55,7 @@ describe('verifyMetaSignature', () => {
   });
 
   it('permite en desarrollo si META_APP_SECRET no esta configurado', () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     expect(verifyMetaSignature(BODY, null)).toBe(true);
   });
 });

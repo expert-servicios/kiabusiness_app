@@ -284,7 +284,7 @@ function SendConfirmModal({
           <>
             <p className="font-semibold text-[#07111d]">¿Enviar campaña?</p>
             <p className="mt-1 text-sm text-[#29384a]">
-              <strong>"{campaign.title}"</strong> se enviará a{' '}
+              <strong>&quot;{campaign.title}&quot;</strong> se enviará a{' '}
               <strong>{campaign.recipient_count ?? '?'} destinatarios</strong> ({SEGMENT_LABELS[campaign.segment]}).
             </p>
             <p className="mt-2 text-xs text-[#9ca3af]">Esta acción no se puede deshacer.</p>

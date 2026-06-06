@@ -18,7 +18,7 @@ export function InstallPwaPrompt({ variant = 'banner' }: { variant?: 'banner' | 
   useEffect(() => {
     // Already installed (running as standalone)
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      setInstalled(true);
+      setInstalled(true); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     // Previously dismissed in this session

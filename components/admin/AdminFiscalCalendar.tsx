@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Calendar, CheckCircle2, Clock, AlertCircle, Minus, ChevronDown, ChevronUp, Loader2, CalendarPlus } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Minus, ChevronDown, ChevronUp, Loader2, CalendarPlus } from 'lucide-react';
 import type { ClientType } from '@/lib/utils/fiscal-calendar';
 import { urgencyLevel } from '@/lib/utils/fiscal-calendar';
 

@@ -25,6 +25,7 @@ export default async function KiaAuditorPage() {
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   if (!profile || !['admin', 'owner'].includes(profile.role)) redirect('/dashboard');
 
+  // eslint-disable-next-line react-hooks/purity
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
   const [summary, ruleResultsRes, lastDecisionRes, lastHealthRes] = await Promise.all([

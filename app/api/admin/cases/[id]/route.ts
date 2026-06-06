@@ -11,7 +11,6 @@ import {
   caseDocsReceived,
   caseInProgress,
   casePendingExternal,
-  caseResolutionReceived,
   caseDelivered,
   reviewRequest,
 } from '@/lib/email/templates';

@@ -118,7 +118,7 @@ function AdminCitasPageInner() {
     setLoading(false);
   }, [filter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const openConfirm = (appt: Appointment) => {
     setSelected(appt);

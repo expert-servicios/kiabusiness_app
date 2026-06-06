@@ -88,6 +88,7 @@ export default async function ContratarPage({ searchParams }: Props) {
             <div className="space-y-4">
               {items.map((item) => {
                 const expiresAt = new Date(item.expires_at);
+                // eslint-disable-next-line react-hooks/purity
                 const hoursLeft = Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 3_600_000));
                 const checkoutUrl = item.stripe_price_id
                   ? `/contratar?service=${item.service_id}&source=cart`

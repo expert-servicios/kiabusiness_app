@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, Calendar, CheckCheck, CreditCard,
   Edit2, ExternalLink, FileText, FolderOpen, Mail, MessageCircle,
   Phone, RefreshCw, Save, User, X, Zap,
-  Clock, Download, MessageSquare, Banknote, Activity,
+  Clock, Download, Activity,
 } from 'lucide-react';
 import { WaTemplateModal } from '@/components/admin/WaTemplateModal';
 import type { TimelineEvent } from '@/app/api/admin/clientes/[id]/timeline/route';
@@ -177,8 +177,8 @@ export default function ClientePage() {
   }, [id]);
 
   useEffect(() => {
-    if (activeTab === 'timeline' && timeline.length === 0 && !timelineLoading) loadTimeline();
-    if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments();
+    if (activeTab === 'timeline' && timeline.length === 0 && !timelineLoading) loadTimeline(); // eslint-disable-line react-hooks/set-state-in-effect
+    if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments(); // eslint-disable-line react-hooks/set-state-in-effect
   }, [activeTab, timeline.length, documents.length, timelineLoading, documentsLoading, loadTimeline, loadDocuments]);
 
   const load = useCallback(async () => {

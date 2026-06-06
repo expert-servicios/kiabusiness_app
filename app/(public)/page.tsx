@@ -25,23 +25,23 @@ import { HoldedDemoForm } from '@/components/site/HoldedDemoForm';
 import { articles } from '@/lib/utils/blog';
 
 export const metadata: Metadata = {
-  title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
+  title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
   description:
-    'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
+    'Plataforma operativa para asesorías, gestorías y despachos: clientes, expedientes, documentos, pagos y Holded integrado. También asesoría fiscal, legal y administrativa para empresas y autónomos.',
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es',
-    title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
+    title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
     description:
-      'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión. Contrata online.',
-    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+      'Plataforma operativa para asesorías, gestorías y despachos: clientes, expedientes, documentos, pagos y Holded integrado.',
+    siteName: 'EXPERT — Plataforma para Asesorías',
     locale: 'es_ES',
     images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'EXPERT | Asesoría fiscal, legal y administrativa en España',
-    description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares.',
+    title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
+    description: 'Plataforma para asesorías, gestorías y despachos. También asesoría fiscal y legal para empresas y autónomos.',
     images: ['/branding/expert%20servicios.png']
   },
   alternates: { canonical: 'https://expertconsulting.es' }
@@ -221,6 +221,7 @@ export default async function HomePage({
       <main className="bg-[#F8F6F1] text-[#0D1B2A]">
         <Hero />
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
+      <AdvisorSaasTeaser />
       <Services />
       <FeaturedServices />
       <HowItWorks />
@@ -228,7 +229,6 @@ export default async function HomePage({
       <HoldedMigration />
       <Operations />
       <BlogPreview />
-      <AdvisorSaasTeaser />
       <FinalCta />
     </main>
     </>
@@ -555,22 +555,19 @@ function BlogPreview() {
 
 function AdvisorSaasTeaser() {
   return (
-    <section className="border-t border-[#D8CBB5] bg-[#F8F6F1] px-6 py-12">
-      <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Para asesorias</p>
-          <h2 className="mt-3 font-serif text-2xl font-bold leading-tight text-[#0D1B2A] md:text-3xl">
-            Estamos validando una version SaaS de la operativa EXPERT.
+    <section className="border-b border-[#D8CBB5] bg-[#0D1B2A] px-6 py-10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Para asesorías y gestorías</p>
+          <h2 className="mt-2 font-serif text-xl font-semibold leading-snug text-[#F8F6F1] md:text-2xl">
+            Plataforma operativa para asesorías — clientes, expedientes, documentos y Holded integrado.
           </h2>
-          <p className="mt-3 text-sm leading-7 text-[#23364D]">
-            Un sistema digital para asesorias, gestorias y despachos que quieren centralizar clientes, expedientes, documentos, pagos y comunicaciones.
-          </p>
         </div>
         <Link
           href="/para-asesorias"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
+          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
         >
-          Conocer vision B2B
+          Ver la plataforma
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

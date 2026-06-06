@@ -1,8 +1,8 @@
-'use client';
+﻿"use client";
 
-import { createBrowserSupabaseClient } from '@/lib/integrations/supabase';
-import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { createBrowserSupabaseClient } from "@/lib/integrations/supabase";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -10,7 +10,7 @@ export function LogoutButton() {
   const handleLogout = async () => {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
-    router.push('/auth/login');
+    router.push("/auth/login");
   };
 
   return (

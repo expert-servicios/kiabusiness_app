@@ -102,6 +102,10 @@ export const kiaToolValidators = {
     period    : z.string().optional(),
     lang      : z.enum(['es', 'ru']).default('es'),
   }).strict(),
+  extract_invoice_ocr: z.object({
+    mediaUrl: z.string().url(),
+    mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']),
+  }).strict(),
   create_kia_decision_log: emptyObjectSchema,
 } satisfies Record<string, z.ZodTypeAny>;
 
@@ -131,6 +135,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
   generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
+  extract_invoice_ocr: 'Extract structured invoice data (vendor, amount, VAT, date, invoice number) from an image using GPT-4o vision. Use when user sends a photo of an invoice or receipt.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
 };
 
