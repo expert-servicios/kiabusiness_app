@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -101,6 +102,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (docError || !doc) {
       return NextResponse.json({ error: 'Error al registrar el documento' }, { status: 500 });
+    }
+
+    // Notify admins when a client uploads (not when admin uploads a deliverable)
+    if (!isAdmin) {
+      notifyAdmins({
+        title: '📄 Nuevo documento de cliente',
+        body : `${file.name} — ${caseData.service ?? 'Expediente'}`,
+        url  : `/admin/expedientes/${caseId}`,
+        tag  : `doc-upload-${caseId}`,
+      }).catch(() => {});
     }
 
     // Non-blocking Drive sync — fetch client name then upload
