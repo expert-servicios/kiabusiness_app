@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { summarizeCaseHistory, detectMissingDocuments } from '@/lib/integrations/ai';
+import { summarizeCaseHistory, detectMissingDocuments, draftClientMessage } from '@/lib/integrations/ai';
 
 const bodySchema = z.object({
-  action: z.enum(['summary', 'missing-docs'])
+  action: z.enum(['summary', 'missing-docs', 'draft']),
+  goal  : z.string().min(5).max(500).optional(),
 });
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
@@ -13,7 +14,7 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
   if (error || !user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? user.id : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? user.id : null;
 }
 
 export async function POST(
@@ -47,8 +48,15 @@ export async function POST(
       return NextResponse.json({ action, result });
     }
 
-    // action === 'missing-docs'
-    const result = await detectMissingDocuments(id, caseRow.service);
+    if (action === 'missing-docs') {
+      const result = await detectMissingDocuments(id, caseRow.service);
+      return NextResponse.json({ action, result });
+    }
+
+    // action === 'draft'
+    const { goal } = parsed.data;
+    if (!goal) return NextResponse.json({ error: 'Falta el campo "goal"' }, { status: 400 });
+    const result = await draftClientMessage(id, goal);
     return NextResponse.json({ action, result });
   } catch (err) {
     console.error('[admin/cases/[id]/ai] POST error:', err);

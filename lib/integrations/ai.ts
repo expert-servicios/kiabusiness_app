@@ -307,6 +307,86 @@ Reglas:
   }
 }
 
+export interface DraftMessageResult {
+  subject: string;
+  body: string;
+}
+
+export async function draftClientMessage(
+  caseId: string,
+  goal: string
+): Promise<DraftMessageResult> {
+  const client = getClient();
+  if (!client) return { subject: '', body: '' };
+
+  const supabase = getSupabaseAdmin();
+  const { data: caseRow } = await supabase
+    .from('cases')
+    .select('service, category, state, admin_note, client_id')
+    .eq('id', caseId)
+    .single();
+
+  if (!caseRow) return { subject: '', body: '' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', caseRow.client_id)
+    .single();
+
+  const clientName = profile?.full_name ?? 'Cliente';
+
+  const stateLabels: Record<string, string> = {
+    nuevo:                'nuevo',
+    pendiente_cliente:    'pendiente de documentación del cliente',
+    en_revision:          'en revisión por el equipo',
+    listo_para_presentar: 'listo para presentar ante el organismo',
+    presentado:           'presentado ante el organismo',
+    finalizado:           'finalizado',
+    bloqueado:            'bloqueado temporalmente',
+  };
+
+  const context = [
+    `Expediente: ${caseRow.service} (${caseRow.category})`,
+    `Estado actual: ${stateLabels[caseRow.state] ?? caseRow.state}`,
+    caseRow.admin_note ? `Nota interna: ${caseRow.admin_note}` : '',
+    `Cliente: ${clientName}`,
+  ].filter(Boolean).join('\n');
+
+  const t0 = Date.now();
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: `Eres Ksenia, asesora de EXPERT Consulting (asesoría de extranjería y trámites legales en España). Redacta un mensaje profesional en español para el cliente ${clientName} sobre su expediente.
+
+Contexto del expediente:
+${context}
+
+El administrador quiere comunicar: ${goal}
+
+Devuelve JSON con:
+- "subject": asunto conciso para email (ej: "Actualización de tu expediente")
+- "body": cuerpo del mensaje. Tono profesional y cercano. Directo al punto. Sin markdown. Incluye saludo y despedida breves.`
+      }]
+    });
+
+    const text = message.content[0].type === 'text' ? message.content[0].text : '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const result: DraftMessageResult = jsonMatch
+      ? (JSON.parse(jsonMatch[0]) as DraftMessageResult)
+      : { subject: '', body: '' };
+
+    await logAiEvent({ eventType: 'draftClientMessage', input: { caseId, goal }, output: result, latencyMs: Date.now() - t0 });
+    return result;
+  } catch (err) {
+    await logAiEvent({ eventType: 'draftClientMessage', input: { caseId, goal }, error: String(err), latencyMs: Date.now() - t0 });
+    return { subject: '', body: '' };
+  }
+}
+
 export async function detectMissingDocuments(
   caseId: string,
   serviceType: string
