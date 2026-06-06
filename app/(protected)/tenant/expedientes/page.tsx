@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import Link from 'next/link';
 import { FolderOpen } from 'lucide-react';
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -113,9 +114,10 @@ function CaseList({
       {cases.map((c) => {
         const badge = STATUS_BADGE[c.status] ?? { label: c.status, cls: 'bg-gray-100 text-gray-600' };
         return (
-          <div
+          <Link
             key={c.id}
-            className="flex items-center gap-4 rounded-2xl border border-[#d8cbb5] bg-white px-5 py-4"
+            href={`/tenant/expedientes/${c.id}`}
+            className="flex items-center gap-4 rounded-2xl border border-[#d8cbb5] bg-white px-5 py-4 transition hover:border-[#d7a33a]/50 hover:shadow-sm"
           >
             <FolderOpen className="h-4 w-4 shrink-0 text-[#d7a33a]" />
             <div className="flex-1 min-w-0">
@@ -135,7 +137,7 @@ function CaseList({
                 })}
               </p>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>

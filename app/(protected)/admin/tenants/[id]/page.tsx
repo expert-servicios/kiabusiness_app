@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { TenantEditForm } from '@/components/admin/TenantEditForm';
 import { TenantBrandingForm } from '@/components/admin/TenantBrandingForm';
 import { TenantUserSection } from '@/components/admin/TenantUserSection';
+import { TenantIntegrationsForm } from '@/components/admin/TenantIntegrationsForm';
 import { ArrowLeft, Building2 } from 'lucide-react';
 
 const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
@@ -85,6 +86,12 @@ export default async function TenantDetailPage({
       <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
         <h2 className="mb-5 font-semibold text-[#07111d]">Marca</h2>
         <TenantBrandingForm tenantId={tenant.id} settings={(tenant.settings as Record<string, unknown>) ?? {}} />
+      </section>
+
+      {/* Integrations */}
+      <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
+        <h2 className="mb-5 font-semibold text-[#07111d]">Integraciones</h2>
+        <TenantIntegrationsForm tenantId={tenant.id} />
       </section>
 
       {/* Users */}
