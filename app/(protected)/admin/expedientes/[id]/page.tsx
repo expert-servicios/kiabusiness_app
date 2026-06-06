@@ -7,6 +7,7 @@ import { CaseChecklistEditor } from '@/components/admin/CaseChecklistEditor';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
 import { AdminNoteEditor } from '@/components/admin/AdminNoteEditor';
 import { AiCaseActions } from '@/components/admin/AiCaseActions';
+import { AdminDeliverableUpload } from '@/components/admin/AdminDeliverableUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
@@ -17,6 +18,7 @@ interface Document {
   created_at: string;
   file_path: string;
   downloadUrl: string | null;
+  uploaded_by_role: 'client' | 'admin';
 }
 
 interface Message {
@@ -82,7 +84,9 @@ export default async function AdminCaseDetailPage({
 
   const { case: c, documents } = data;
   const messages = messagesData?.messages ?? [];
-  const pending = documents.filter((d) => d.state === 'pendiente').length;
+  const clientDocs = documents.filter((d) => d.uploaded_by_role !== 'admin');
+  const deliverables = documents.filter((d) => d.uploaded_by_role === 'admin');
+  const pending = clientDocs.filter((d) => d.state === 'pendiente').length;
   const unreadMessages = messages.filter((m) => m.sender_role === 'client').length;
 
   return (
@@ -165,28 +169,28 @@ export default async function AdminCaseDetailPage({
           />
         </div>
 
-        {/* Documents */}
+        {/* Client documents */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4 text-[#c88b25]" />
-              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Documentación</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Documentación del cliente</p>
             </div>
             <div className="flex gap-3 text-xs text-[#29384a]">
-              <span><strong className="text-[#07111d]">{documents.length}</strong> archivos</span>
+              <span><strong className="text-[#07111d]">{clientDocs.length}</strong> archivos</span>
               {pending > 0 && (
                 <span className="font-semibold text-[#c88b25]">{pending} pendiente{pending > 1 ? 's' : ''}</span>
               )}
             </div>
           </div>
 
-          {documents.length === 0 ? (
+          {clientDocs.length === 0 ? (
             <div className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-8 text-center text-sm text-[#29384a]">
               El cliente aún no ha subido documentos para este expediente.
             </div>
           ) : (
             <div className="space-y-2">
-              {documents.map((doc) => (
+              {clientDocs.map((doc) => (
                 <div
                   key={doc.id}
                   className="flex flex-col gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -218,6 +222,57 @@ export default async function AdminCaseDetailPage({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Deliverables (admin-uploaded) */}
+        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Download className="h-4 w-4 text-[#c88b25]" />
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Entregables para el cliente</p>
+            </div>
+            {deliverables.length > 0 && (
+              <span className="text-xs text-[#29384a]"><strong className="text-[#07111d]">{deliverables.length}</strong> archivo{deliverables.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+
+          {deliverables.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#d8cbb5] bg-[#f8f4eb] p-6 text-center text-sm text-[#29384a]">
+              Sube aquí los documentos resultado del trámite. Serán visibles para el cliente.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {deliverables.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex flex-col gap-3 rounded-xl border border-[#d7a33a]/40 bg-amber-50/40 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[#c88b25]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#07111d]">{doc.original_name}</p>
+                      <p className="text-xs text-[#29384a]">
+                        Subido el {new Date(doc.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                  {doc.downloadUrl && (
+                    <a
+                      href={doc.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs font-semibold text-[#29384a] transition hover:border-[#d7a33a] hover:text-[#07111d]"
+                    >
+                      <Download className="h-3 w-3" />
+                      Descargar
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <AdminDeliverableUpload caseId={id} />
         </div>
 
       </div>

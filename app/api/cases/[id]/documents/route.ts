@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data: documents, error } = await supabase
       .from('documents')
-      .select('id,original_name,state,created_at,file_path')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role')
       .eq('case_id', id)
       .order('created_at', { ascending: false });
 
@@ -93,9 +93,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         client_id: clientId,
         file_path: uploadData.path,
         original_name: file.name,
-        state: 'pendiente'
+        state: 'pendiente',
+        uploaded_by_role: isAdmin ? 'admin' : 'client'
       })
-      .select('id,original_name,state,created_at,file_path')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role')
       .single();
 
     if (docError || !doc) {
