@@ -783,86 +783,72 @@ Notas:
 - Implementado 2026-06-04. Node 22, ubuntu-latest, npm ci con cache.
 - Para activar la proteccion de rama: GitHub → Settings → Branches → Add rule → main → Require status checks → seleccionar "Typecheck · Lint · Build".
 
-## Plan por fases — estado actual (2026-06-04)
+## Plan por fases — estado actual (2026-06-06)
 
 Este bloque es la memoria viva del plan. Actualizar estado de cada item al completarlo o bloquearlo. Los items marcados `[x]` estan completados y verificados. Los `[ ]` estan pendientes. Los `[~]` estan en curso o con verificacion manual pendiente.
 
-### Inmediato — ya completado en sesiones anteriores
+### Completado en sesiones anteriores (2026-06-04)
 
-- [x] Verificar y corregir discrepancia cron Holded en `vercel.json` (2026-06-04): frecuencia alta movida a scheduler externo para no bloquear deploys Hobby.
-- [x] IMP-013: dominio canonico `expertconsulting.es`, sweep de metadata, emails, prompts Kia y README (2026-06-04).
-- [x] IMP-003: proteger endpoints publicos (viabilidad, company/resolve, newsletter) (2026-06-04).
-- [x] IMP-023: CI minimo GitHub Actions — `typecheck → lint → build` en cada push a `main` y PRs (2026-06-04).
-- [x] IMP-009: recuperar `npm run lint` — `react/no-unstable-nested-components` corregido en AdminSidebar (2026-06-04).
-- [x] IMP-011: unificar Supabase SSR, retirar `@supabase/auth-helpers-nextjs`, migrar `LogoutButton` (2026-06-04).
-- [x] IMP-012: tests minimos de regresion critica con Vitest — 31 tests cubriendo firma webhook, redirect auth, spam guard y allowlist checkout (2026-06-04).
+- [x] Verificar y corregir discrepancia cron Holded en `vercel.json`: frecuencia alta movida a scheduler externo.
+- [x] IMP-013: dominio canonico `expertconsulting.es`, sweep de metadata, emails, prompts Kia y README.
+- [x] IMP-003: proteger endpoints publicos (viabilidad, company/resolve, newsletter).
+- [x] IMP-023: CI minimo GitHub Actions — `typecheck → lint → build` en cada push a `main` y PRs.
+- [x] IMP-009: recuperar `npm run lint` — `react/no-unstable-nested-components` corregido en AdminSidebar.
+- [x] IMP-011: unificar Supabase SSR, retirar `@supabase/auth-helpers-nextjs`, migrar `LogoutButton`.
+- [x] IMP-012: tests minimos de regresion critica con Vitest — 31 tests (webhook, redirect, spam, checkout).
+- [x] IMP-014: arquitectura tenant-ready (tabla `tenants`, `tenant_id` en entidades criticas).
+- [x] IMP-015: automatizaciones configurables — tabla `automation_settings`, panel `/admin/automatizaciones`, enforcement en emails de estado.
+- [x] IMP-021: web publica orientada a asesorias — `/para-asesorias`, pivot a B2B en home y nav.
+- [x] IMP-022: Kia copiloto flotante in-app — widget, endpoint `/api/ai/kia`, historial en `kia_sessions`.
 
-### Corto plazo — pendientes este mes
+### Completado en esta sesion (2026-06-06)
 
-1. **Verificaciones manuales IMP-004** — Reenviar el mismo evento desde Stripe Dashboard → debe devolver 200 sin duplicar `order`. Marcar `[ ]` en IMP-004 como verificado o abrir issue.
+- [x] Panel admin multi-tenant `/admin/tenants` — lista, crear, editar (nombre/dominio/plan/activo), branding (color picker, logo, tagline), usuarios (asignar por email), integraciones.
+- [x] Portal tenant_admin `/tenant/*` — dashboard con stats, clientes, expedientes (lista + detalle read-only), sidebar con branding por tenant.
+- [x] Integraciones por tenant — `tenant_integration_secrets` (AES-256-GCM), `TenantIntegrationsForm`, `getTenantSecret()` helper, primera integración: Holded API key.
+- [x] Branding en emails por tenant — `base()` acepta `TenantBrand`; clientes de tenants no-EXPERT reciben emails white-label.
+- [x] Migraciones: `000003_automation_settings` (aplicada por usuario), `000004_tenant_integration_secrets` (PENDIENTE aplicar).
 
-2. **Verificaciones manuales IMP-005** — Hacer un pago de prueba y confirmar que aparece un job en `holded_sync_jobs`. Ejecutar `GET /api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` desde el scheduler externo y confirmar que procesa jobs pendientes. Marcar `[ ]` en IMP-005 como verificado o abrir issue.
+### Pendiente manual (usuario)
 
-3. **Completar instalacion y ejecucion local de tests (IMP-011/012)** — Despues del ultimo commit, ejecutar `npm install && npm test` para actualizar `package-lock.json` y confirmar que los 31 tests pasan. Actualizar criterios de aceptacion pendientes en IMP-011 e IMP-012.
-
-4. **CI ejecuta `npm test` (IMP-012)** — Ya incluido en `.github/workflows/ci.yml` (paso "Tests" antes de Build). Verificar que el CI pasa en GitHub Actions con los tests una vez llegue la primera PR.
-
-5. **Branch protection en GitHub (IMP-023)** — Activar en `Settings → Branches → main`: requerir status checks (`Typecheck`, `Lint`, `Build`) antes de merge. Accion manual en github.com.
-
-6. **Verificaciones manuales IMP-016** — Probar WABA con payload de boton `Omitir email` y con consulta libre durante `asking_email`. Marcar como verificado o abrir issue.
-
-7. **Verificaciones manuales IMP-018/019/020** — Probar en WABA: "¿Que modulos tiene Holded?", "¿Cuanto pago de cuota de autonomo?", "Como hago la transferencia de un coche?", "Necesito los antecedentes penales". Marcar items pendientes en cada IMP o abrir issues si fallan.
-
-### Medio plazo — proximos 2-3 meses
-
-8. **IMP-014: Arquitectura tenant-ready** — Disenar tabla `tenants` y anadir `tenant_id` a entidades criticas (`profiles`, `cases`, `orders`, `services`, `quotes`, `companies`). El tenant EXPERT queda registrado con `slug = 'expert'`. La arquitectura no debe bloquear el SaaS multi-tenant; `tenant_id` puede ser NULL o constante en la fase inicial. No hace falta implementar el multi-tenant completo, solo que el schema lo soporte sin migraciones destructivas futuras.
-
-9. **IMP-022: Kia como widget copiloto flotante in-app** — Es el cambio de producto mas significativo. Boton flotante en layout protegido, endpoint `POST /api/ai/kia`, contexto con datos del tenant, herramientas del copiloto, historial en `kia_sessions`. Ver criterios completos en IMP-022.
-
-10. **IMP-021: Web publica orientada a asesorias** — Actualizar Home, nav principal y copy para comunicar que EXPERT es una plataforma para asesorias, no B2C. Ver IMP-021.
-
-11. **IMP-010: Actualizar dependencias auditadas** — Evaluar breaking change de postcss/Next.js. Ejecutar `npm audit --audit-level=moderate` y documentar excepciones si persisten.
+1. **Migración 000004** — Aplicar `supabase/migrations/20260606000004_tenant_integration_secrets.sql` en Supabase SQL Editor.
+2. **Branch protection (IMP-023)** — GitHub → Settings → Branches → main → require status checks (`Typecheck`, `Lint`, `Build`).
+3. **Verificacion IMP-004** — Reenviar mismo evento Stripe Dashboard → 200 sin duplicar order.
+4. **Verificacion IMP-005** — Pago de prueba → confirmar job en `holded_sync_jobs`; ejecutar cron con `CRON_SECRET`.
+5. **Verificacion IMP-016** — WABA con `Omitir email` y consulta libre durante `asking_email`.
+6. **Verificacion IMP-018/019/020** — WABA: "¿Que modulos tiene Holded?", "¿Cuanto pago de cuota autonomo?", "Como hago transferencia de coche?".
+7. **Verificacion IMP-022** — Abrir /dashboard, clic en boton Kia, consultar expedientes activos.
+8. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
+9. **Calendly** — Actualizar username en calendly.com/settings.
 
 ### Backlog / Fase SaaS
 
-12. **Tenants, branding por tenant, integraciones por tenant** — Una vez IMP-014 este implementado, avanzar hacia configuracion completa por tenant: `tenant_settings`, plantillas de email, servicios, roles e integraciones (Holded, Stripe, WhatsApp) configurables por tenant. Ver Fase 9 del roadmap.
-
-13. **Entregables descargables finales en portal cliente** — Documentos de resolucion, escrituras, certificados y entregas finales descargables desde el detalle de expediente.
-
-14. **Resenas por servicio** — Flujo de solicitud, captura y moderacion de resenas por servicio completado. Ya existe trigger en `serviceCompleted`; falta la UI de captura y el admin de moderacion.
-
-15. **IMP-015 — Automatizaciones configurables en panel admin** — [x] Completado (2026-06-06): tabla `automation_settings` con 7 reglas, panel `/admin/automatizaciones` con toggle por regla, enforcement en `sendCaseStatusEmail`. Requiere aplicar migración `20260606000003_automation_settings.sql` en Supabase SQL Editor.
-
-16. **Piloto con 1-3 asesorias externas** — Seleccionar desde `saas_leads` cualificados, activar onboarding de tenant, medir adopcion del copiloto Kia y reduccion de trabajo manual. Ver Fase 10 del roadmap.
+- [x] Backlog #12: Tenants, branding por tenant, integraciones por tenant — COMPLETADO (2026-06-06).
+- [x] Backlog #13: Entregables descargables finales en portal cliente — `DeliverableRow` con signed URL, sección en `/dashboard/expedientes/[id]` y en `/tenant/expedientes/[id]`.
+- [x] Backlog #14: Resenas por servicio — `/gracias/opinion` (captura pública), `/admin/resenas` (moderacion), `ReviewModerationCard`, API routes.
+- [x] Backlog #15: Automatizaciones configurables — COMPLETADO (2026-06-06).
+- [ ] Backlog #16: Piloto con 1-3 asesorias externas — operacional, no requiere codigo.
 
 ## Orden recomendado de implementacion
 
-### Inmediato (esta semana)
+### Inmediato (pendiente manual)
 
-1. Verificar discrepancia cron Holded en `vercel.json` vs IMP-005. Corregir o documentar la decision.
-2. IMP-013: fijar `NEXT_PUBLIC_APP_URL=https://expertconsulting.es` y hacer sweep de dominio en metadata, emails y prompts Kia.
-3. IMP-003: proteger endpoints publicos con coste (viabilidad, company/resolve, newsletter).
+1. Aplicar migración 000004 en Supabase SQL Editor.
+2. Activar branch protection en GitHub.
+3. Realizar verificaciones manuales IMP-004, IMP-005, IMP-016, IMP-018/019/020, IMP-022.
 
-### Corto plazo (este mes)
+### Proximo sprint de codigo (si se quiere continuar)
 
-4. IMP-023: CI minimo con GitHub Actions.
-5. IMP-009: recuperar `npm run lint` (React Hooks rules).
-6. IMP-011: unificar Supabase SSR y retirar `auth-helpers-nextjs`.
-7. IMP-012: tests minimos de regresion critica (firma WhatsApp, redirect auth, idempotencia Stripe).
-8. Pruebas manuales pendientes de IMP-004 e IMP-005 (reenvio Stripe, job holded_sync_jobs, cron CRON_SECRET).
-
-### Medio plazo (1-3 meses)
-
-9. IMP-022: Kia como widget copiloto flotante in-app. Este es el cambio de producto mas significativo.
-10. IMP-021: web publica orientada a asesorias como clientes.
-11. IMP-014: arquitectura tenant-ready (tabla `tenants`, `tenant_id` en entidades criticas).
-12. IMP-010: actualizar dependencias auditadas (postcss/Next.js — evaluar breaking change).
+- **Documentos admin en portal tenant**: permitir a `tenant_admin` subir entregables a un expediente desde su portal (actualmente solo lectura).
+- **Notificaciones a tenant_admin**: cuando un cliente sube documentos o hay un cambio de estado, notificar al tenant_admin via email.
+- **Onboarding wizard tenant**: wizard de 3 pasos al crear un tenant nuevo (nombre → branding → primera integración) en lugar del formulario multi-sección.
+- **IMP-010**: actualizar dependencias auditadas (postcss/Next.js).
 
 ### Fase SaaS
 
-13. Tenants, branding por tenant, integraciones y plantillas por tenant.
-14. Piloto con 1-3 asesorias externas usando el widget Kia y el panel operativo.
-15. IMP-018/019/020: pruebas manuales WABA pendientes (si se mantiene canal WABA para notificaciones).
+- Piloto con 1-3 asesorias externas usando panel operativo y copiloto Kia.
+- Ampliar integraciones por tenant: Stripe por tenant, WhatsApp por tenant, plantillas de email por tenant.
+- IMP-018/019/020: pruebas manuales WABA pendientes.
 
 ## Notas de implementacion
 
