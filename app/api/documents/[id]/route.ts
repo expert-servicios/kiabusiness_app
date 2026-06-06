@@ -15,7 +15,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const admin = getSupabaseAdmin();
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     const { data: doc, error: docError } = await admin
       .from('documents')

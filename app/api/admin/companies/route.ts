@@ -10,7 +10,7 @@ async function requireAdmin(request: NextRequest) {
   if (error || !user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? { admin, userId: user.id } : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? { admin, userId: user.id } : null;
 }
 
 // GET /api/admin/companies — list all companies with member count

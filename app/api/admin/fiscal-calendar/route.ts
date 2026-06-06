@@ -8,7 +8,7 @@ async function requireAdmin(request: NextRequest) {
   if (error || !user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? admin : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
 }
 
 // GET /api/admin/fiscal-calendar?userId=...&year=2025

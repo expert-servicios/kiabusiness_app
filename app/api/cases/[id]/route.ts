@@ -119,7 +119,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data: profile, error: profileError } = await adminSupabase
       .from('profiles').select('role').eq('id', user.id).single();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || (profile?.role !== 'admin' && profile?.role !== 'owner')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 

@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', user.id).single();
-    const role = profile?.role === 'admin' ? 'admin' : 'client';
+    const role = (profile?.role === 'admin' || profile?.role === 'owner') ? 'admin' : 'client';
 
     const column = role === 'client' ? 'read_by_client' : 'read_by_admin';
 

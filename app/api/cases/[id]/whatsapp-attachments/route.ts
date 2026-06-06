@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   // Verify the user owns this case (or is admin)
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
   const { data: caseData } = await admin.from('cases').select('client_id').eq('id', caseId).single();
   if (!caseData) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
   if (!isAdmin && caseData.client_id !== user.id) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
