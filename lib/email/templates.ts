@@ -5,7 +5,22 @@ const BRAND = {
   appUrl: getPublicAppUrl()
 };
 
-function base(title: string, body: string): string {
+export interface TenantBrand {
+  name?: string;
+  tagline?: string;
+  primary_color?: string;
+  support_email?: string;
+}
+
+function base(title: string, body: string, brand?: TenantBrand): string {
+  const brandName     = escapeHtmlRaw(brand?.name    ?? 'EXPERT');
+  const brandTagline  = escapeHtmlRaw(brand?.tagline ?? 'Asesoría Legal · Fiscal · Administrativa');
+  const brandColor    = brand?.primary_color ?? '#d7a33a';
+  const supportEmail  = escapeHtmlRaw(brand?.support_email ?? 'info@expertconsulting.es');
+  const footerName    = brand?.name
+    ? escapeHtmlRaw(brand.name)
+    : 'EXPERT ESTUDIOS PROFESIONALES, SLU &nbsp;·&nbsp; C/ Pintor Agrassot, 19 &nbsp;·&nbsp; 03110 Mutxamel (Alicante)';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
@@ -14,20 +29,25 @@ function base(title: string, body: string): string {
 <tr><td>
 <table width="600" cellpadding="0" cellspacing="0" align="center" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #d8cbb5;">
   <tr><td style="background:#07111d;padding:32px 40px;text-align:center;">
-    <p style="margin:0;font-size:26px;font-weight:bold;color:#d7a33a;letter-spacing:5px;font-family:Georgia,serif;">EXPERT</p>
-    <p style="margin:6px 0 0;font-size:11px;color:#8899aa;letter-spacing:3px;text-transform:uppercase;">Asesoría Legal · Fiscal · Administrativa</p>
+    <p style="margin:0;font-size:26px;font-weight:bold;color:${brandColor};letter-spacing:5px;font-family:Georgia,serif;">${brandName}</p>
+    <p style="margin:6px 0 0;font-size:11px;color:#8899aa;letter-spacing:3px;text-transform:uppercase;">${brandTagline}</p>
   </td></tr>
   <tr><td style="padding:40px;">
     ${body}
   </td></tr>
   <tr><td style="background:#f8f4eb;padding:24px 40px;border-top:1px solid #d8cbb5;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#29384a;">EXPERT ESTUDIOS PROFESIONALES, SLU &nbsp;·&nbsp; C/ Pintor Agrassot, 19 &nbsp;·&nbsp; 03110 Mutxamel (Alicante)</p>
-    <p style="margin:6px 0 0;font-size:12px;"><a href="mailto:info@expertconsulting.es" style="color:#c88b25;text-decoration:none;">info@expertconsulting.es</a></p>
+    <p style="margin:0;font-size:12px;color:#29384a;">${footerName}</p>
+    <p style="margin:6px 0 0;font-size:12px;"><a href="mailto:${supportEmail}" style="color:#c88b25;text-decoration:none;">${supportEmail}</a></p>
   </td></tr>
 </table>
 </td></tr>
 </table>
 </body></html>`;
+}
+
+// Lightweight HTML escaper used before escapeHtml is defined (boot-time use in base())
+function escapeHtmlRaw(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function btn(label: string, url: string): string {
@@ -238,9 +258,10 @@ export function serviceCompleted(name: string, service: string) {
 }
 
 // ── 8. Review request ─────────────────────────────────────────────────────────
-export function reviewRequest(name: string, service: string, token: string) {
+export function reviewRequest(name: string, service: string, token: string, brand?: TenantBrand) {
+  const brandDisplay = brand?.name ?? 'EXPERT';
   return {
-    subject: '¿Cómo fue tu experiencia con EXPERT?',
+    subject: `¿Cómo fue tu experiencia con ${brandDisplay}?`,
     html: base('Solicitud de reseña', `
       ${heading('¿Cómo fue tu experiencia?')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -248,7 +269,7 @@ export function reviewRequest(name: string, service: string, token: string) {
       ${para('Solo te tomará 2 minutos.')}
       ${btn('Dejar mi valoración', `${BRAND.appUrl}/gracias/opinion?token=${encodeURIComponent(token)}`)}
       ${para('<small style="color:#8899aa;">Si no deseas dejar una valoración, ignora este correo.</small>')}
-    `)
+    `, brand)
   };
 }
 
@@ -643,7 +664,8 @@ export function caseDocsRequired(
   service: string,
   docs: string[],
   note: string | null,
-  funFact: string
+  funFact: string,
+  brand?: TenantBrand
 ) {
   const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${escapeHtml(d)}</li>`).join('');
   return {
@@ -663,12 +685,12 @@ export function caseDocsRequired(
       ${btn('Subir documentos ahora', `${BRAND.appUrl}/dashboard/expedientes`)}
       ${para('<small style="color:#8899aa;">Si tienes dudas sobre algún documento o no sabes dónde obtenerlo, responde a este email y te ayudamos.</small>')}
       ${funFactBlock(funFact)}
-    `)
+    `, brand)
   };
 }
 
 // Stage 3: docs_recibidos — documentación recibida
-export function caseDocsReceived(name: string, service: string, note: string | null, funFact: string) {
+export function caseDocsReceived(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
     subject: `Documentación recibida — comenzamos la revisión de tu expediente`,
     html: base('Documentación recibida', `
@@ -684,14 +706,14 @@ export function caseDocsReceived(name: string, service: string, note: string | n
       ])}
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
       ${funFactBlock(funFact)}
-    `)
+    `, brand)
   };
 }
 
 // Stage 4: en_tramitacion — tramitación activa
-export function caseInProgress(name: string, service: string, note: string | null, funFact: string) {
+export function caseInProgress(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
-    subject: `Tu expediente de ${service} está en tramitación — EXPERT`,
+    subject: `Tu expediente de ${service} está en tramitación`,
     html: base('Expediente en tramitación', `
       ${heading('Tu expediente está en tramitación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -706,7 +728,7 @@ export function caseInProgress(name: string, service: string, note: string | nul
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
       ${para('<small style="color:#8899aa;">Los plazos de tramitación dependen en parte de organismos externos (Hacienda, Registro, Extranjería...). Te mantendremos informado de cualquier novedad.</small>')}
       ${funFactBlock(funFact)}
-    `)
+    `, brand)
   };
 }
 
@@ -716,7 +738,8 @@ export function casePendingExternal(
   service: string,
   organism: string | null,
   note: string | null,
-  funFact: string
+  funFact: string,
+  brand?: TenantBrand
 ) {
   const org = organism ? escapeHtml(organism) : 'el organismo correspondiente';
   return {
@@ -735,7 +758,7 @@ export function casePendingExternal(
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
       ${para('<small style="color:#8899aa;">Los plazos administrativos pueden variar. Hacemos el seguimiento activo de tu expediente y te notificamos cualquier novedad.</small>')}
       ${funFactBlock(funFact)}
-    `)
+    `, brand)
   };
 }
 
@@ -761,7 +784,7 @@ export function caseResolutionReceived(name: string, service: string, note: stri
 }
 
 // Stage 7: entregado — servicio entregado al cliente
-export function caseDelivered(name: string, service: string, note: string | null, funFact: string) {
+export function caseDelivered(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
     subject: `Tu expediente de ${service} está completado — Documentación disponible`,
     html: base('Servicio entregado', `
@@ -776,9 +799,9 @@ export function caseDelivered(name: string, service: string, note: string | null
         'Si en el futuro necesitas renovar o gestionar algo relacionado, ya sabemos dónde estamos.'
       ])}
       ${btn('Descargar mi documentación', `${BRAND.appUrl}/dashboard/expedientes`)}
-      ${para('<small style="color:#8899aa;">En breve recibirás un email para que puedas compartir tu opinión sobre el servicio. Tu valoración nos ayuda mucho. ¡Gracias por confiar en EXPERT!</small>')}
+      ${para(`<small style="color:#8899aa;">En breve recibirás un email para que puedas compartir tu opinión sobre el servicio. Tu valoración nos ayuda mucho. ¡Gracias por confiar en ${escapeHtml(brand?.name ?? 'EXPERT')}!</small>`)}
       ${funFactBlock(funFact)}
-    `)
+    `, brand)
   };
 }
 

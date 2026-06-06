@@ -14,7 +14,9 @@ import {
   casePendingExternal,
   caseDelivered,
   reviewRequest,
+  type TenantBrand,
 } from '@/lib/email/templates';
+import { getTenantForUser } from '@/lib/auth/tenant';
 
 // ── Automation settings helper ──────────────────────────────────────────────
 // Returns set of enabled automation keys. Defaults to all enabled on error.
@@ -45,8 +47,9 @@ async function sendCaseStatusEmail(params: {
   adminNote: string | null;
   caseId: string;
   enabledAutomations: Set<string> | null;
+  brand?: TenantBrand;
 }): Promise<void> {
-  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations } = params;
+  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations, brand } = params;
   const isEnabled = (key: string) => !enabledAutomations || enabledAutomations.has(key);
   const funFact = '';
 
@@ -55,19 +58,19 @@ async function sendCaseStatusEmail(params: {
   switch (newStatus) {
     case 'pendiente_cliente':
       if (!isEnabled('case.pendiente_cliente')) return;
-      tpl = caseDocsRequired(clientName, service, [], adminNote, funFact);
+      tpl = caseDocsRequired(clientName, service, [], adminNote, funFact, brand);
       break;
     case 'en_revision':
       if (!isEnabled('case.en_revision')) return;
-      tpl = caseDocsReceived(clientName, service, adminNote, funFact);
+      tpl = caseDocsReceived(clientName, service, adminNote, funFact, brand);
       break;
     case 'listo_para_presentar':
       if (!isEnabled('case.listo_para_presentar')) return;
-      tpl = caseInProgress(clientName, service, adminNote, funFact);
+      tpl = caseInProgress(clientName, service, adminNote, funFact, brand);
       break;
     case 'presentado':
       if (!isEnabled('case.presentado')) return;
-      tpl = casePendingExternal(clientName, service, null, adminNote, funFact);
+      tpl = casePendingExternal(clientName, service, null, adminNote, funFact, brand);
       break;
     case 'finalizado': {
       // Generate review token (30-day expiry) — best-effort
@@ -84,11 +87,11 @@ async function sendCaseStatusEmail(params: {
       } catch { reviewToken = ''; }
 
       if (isEnabled('case.finalizado')) {
-        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
+        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
       }
       if (isEnabled('case.review_request') && reviewToken) {
-        const reviewTpl = reviewRequest(clientName, service, reviewToken);
+        const reviewTpl = reviewRequest(clientName, service, reviewToken, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
       }
       return;
@@ -237,10 +240,16 @@ export async function PATCH(
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
-        const [clientInfo, enabledAutomations] = await Promise.all([
+        const [clientInfo, enabledAutomations, clientTenant] = await Promise.all([
           getClientInfo(admin, current.client_id),
           getEnabledAutomations(admin),
+          getTenantForUser(current.client_id).catch(() => null),
         ]);
+        // Use tenant branding if the client belongs to a non-EXPERT tenant
+        const brand: TenantBrand | undefined =
+          clientTenant && clientTenant.slug !== 'expert'
+            ? (clientTenant.settings as TenantBrand)
+            : undefined;
         if (clientInfo) {
           void sendCaseStatusEmail({
             newStatus: body.status,
@@ -251,6 +260,7 @@ export async function PATCH(
             adminNote: body.admin_note ?? null,
             caseId: id,
             enabledAutomations,
+            brand,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
         }
       }
