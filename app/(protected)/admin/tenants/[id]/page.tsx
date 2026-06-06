@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { TenantEditForm } from '@/components/admin/TenantEditForm';
+import { TenantBrandingForm } from '@/components/admin/TenantBrandingForm';
 import { TenantUserSection } from '@/components/admin/TenantUserSection';
 import { ArrowLeft, Building2 } from 'lucide-react';
 
@@ -78,6 +79,12 @@ export default async function TenantDetailPage({
             active: tenant.active,
           }}
         />
+      </section>
+
+      {/* Branding */}
+      <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
+        <h2 className="mb-5 font-semibold text-[#07111d]">Marca</h2>
+        <TenantBrandingForm tenantId={tenant.id} settings={(tenant.settings as Record<string, unknown>) ?? {}} />
       </section>
 
       {/* Users */}
