@@ -37,6 +37,15 @@ export async function GET(request: NextRequest) {
 
   const admin  = getSupabaseAdmin();
   const now    = new Date();
+
+  // Auto-expire quotes that have passed their expires_at (idempotent cleanup)
+  await admin
+    .from('quotes')
+    .update({ status: 'expired' })
+    .in('status', ['sent', 'pending'])
+    .not('expires_at', 'is', null)
+    .lt('expires_at', now.toISOString())
+    .then(() => null, (e: unknown) => console.error('[daily-summary] quote expiry cleanup:', e));
   const today  = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const thresholdDate = new Date(now.getTime() - DAYS_PENDING_THRESHOLD * 24 * 60 * 60 * 1000).toISOString();
