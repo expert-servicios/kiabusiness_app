@@ -6,8 +6,8 @@
  */
 
 import { createHmac } from 'crypto';
-import { verifyMetaSignature } from '../lib/utils/verify-meta-signature';
-import { safeRedirectPath } from '../lib/utils/safe-redirect';
+import { verifyMetaSignature } from '../lib/security/webhook-signature';
+import { safeRedirectPath } from '../lib/auth/safe-redirect';
 
 const RESET = '\x1b[0m';
 const GREEN = '\x1b[32m';
