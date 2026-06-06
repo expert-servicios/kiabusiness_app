@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronDown,
+  ArrowLeft, ArrowRight, Check, CheckCircle2,
   Loader2, Mail, User, UserPlus
 } from 'lucide-react';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
@@ -188,7 +188,7 @@ export default function AdminOnboardingPage() {
     postalCode: '',
     mode: 'invite_email'
   });
-  const [createdUserId, setCreatedUserId] = useState('');
+  const [, setCreatedUserId] = useState('');
   const [userIsNew, setUserIsNew] = useState(false);
 
   // Step 2 state

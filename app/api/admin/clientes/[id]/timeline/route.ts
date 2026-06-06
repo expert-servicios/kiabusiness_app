@@ -220,7 +220,6 @@ export async function GET(
 
   // ── Appointments ────────────────────────────────────────────────────────────
   for (const a of appointmentsRes?.data ?? []) {
-    const date = a.confirmed_date ?? a.preferred_date ?? a.created_at;
     events.push({
       id: `appt-${a.id}`,
       date: a.created_at,

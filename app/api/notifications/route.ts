@@ -8,8 +8,6 @@ export async function GET(request: NextRequest) {
   if (error || !user) return NextResponse.json({ notifications: [], count: 0 });
 
   const admin = getSupabaseAdmin();
-  const today = new Date().toISOString().slice(0, 10);
-
   const { data: obligations } = await admin
     .from('fiscal_obligations')
     .select('id,modelo,description,deadline,period_label,status')

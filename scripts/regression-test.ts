@@ -45,8 +45,16 @@ function makeSignature(secret: string, body: string): string {
 const origSecret   = process.env.META_APP_SECRET;
 const origNodeEnv  = process.env.NODE_ENV;
 
+function setNodeEnv(value: string | undefined) {
+  if (value === undefined) {
+    Reflect.deleteProperty(process.env, 'NODE_ENV');
+  } else {
+    Reflect.set(process.env, 'NODE_ENV', value);
+  }
+}
+
 process.env.META_APP_SECRET = TEST_SECRET;
-process.env.NODE_ENV = 'production';
+setNodeEnv('production');
 
 assert(
   'valid signature accepted',
@@ -80,7 +88,7 @@ assert(
 
 // No secret in dev → should pass (graceful skip)
 process.env.META_APP_SECRET = '';
-process.env.NODE_ENV = 'development';
+setNodeEnv('development');
 assert(
   'missing secret in dev → allowed (graceful)',
   verifyMetaSignature(TEST_BODY, null),
@@ -88,7 +96,7 @@ assert(
 );
 
 // No secret in production → must reject
-process.env.NODE_ENV = 'production';
+setNodeEnv('production');
 assert(
   'missing secret in production → rejected',
   verifyMetaSignature(TEST_BODY, makeSignature(TEST_SECRET, TEST_BODY)),
@@ -97,7 +105,7 @@ assert(
 
 // Restore env
 process.env.META_APP_SECRET = origSecret;
-process.env.NODE_ENV = origNodeEnv;
+setNodeEnv(origNodeEnv);
 
 // ── Safe redirect path ────────────────────────────────────────────────────────
 

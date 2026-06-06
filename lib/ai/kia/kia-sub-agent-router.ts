@@ -92,6 +92,7 @@ const TASK_TYPE_TO_SUB_AGENT: Record<KiaTaskType, string | null> = {
   lead_client_decision:        null,
   waba_reply:                  null,
   admin_ai_compose:            null,
+  generate_report:             null,
 };
 
 export function selectSubAgentProfile(params: {

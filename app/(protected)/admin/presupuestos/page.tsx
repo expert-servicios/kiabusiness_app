@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
-import { AdminQuoteCard } from '@/components/quotes/AdminQuoteCard';
 import { PresupuestosClient } from '@/components/admin/PresupuestosClient';
 
 interface Quote {

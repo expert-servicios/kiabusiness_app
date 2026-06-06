@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, UserPlus, Shield, User, Briefcase, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Shield, User, Briefcase, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const ROLES = [
   { value: 'admin', label: 'Administrador', color: 'text-[#c88b25] bg-[#d7a33a]/10 border-[#d7a33a]/30' },
@@ -55,7 +55,7 @@ export default function AdminEquipoPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleRoleChange = async (userId: string, role: string) => {
     setUpdatingId(userId);

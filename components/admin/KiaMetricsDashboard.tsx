@@ -185,7 +185,20 @@ export function KiaMetricsDashboard({ initialData }: { initialData: KiaMetricsDa
           <h2 className="mb-4 text-sm font-semibold text-[#07111d]">Distribución por modelo</h2>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={data.models} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${MODEL_LABELS[name] ?? name} ${Math.round((percent ?? 0) * 100)}%`} labelLine={false} fontSize={10}>
+              <Pie
+                data={data.models}
+                dataKey="count"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={75}
+                label={({ name, percent }) => {
+                  const modelName = typeof name === 'string' ? name : 'unknown';
+                  return `${MODEL_LABELS[modelName] ?? modelName} ${Math.round((percent ?? 0) * 100)}%`;
+                }}
+                labelLine={false}
+                fontSize={10}
+              >
                 {data.models.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip formatter={(v, n) => [v, MODEL_LABELS[String(n)] ?? n]} />

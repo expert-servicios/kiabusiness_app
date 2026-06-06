@@ -480,7 +480,7 @@ function buildClarifyDecision(
     intent: classification.detectedIntent,
     userMessage: classification.clarifyQuestion || 'En que puedo ayudarte exactamente?',
     nextAction: 'ask_one_question',
-    quickReplies: classification.clarifyOptions,
+    quickReplies: classification.clarifyOptions.map((o) => ({ ...o, kind: 'secondary' as const })),
     toolRequests: [],
     dataToSave: {},
     confidence: classification.confidence,
