@@ -1,10 +1,23 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { Star, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Star, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function OpinionPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center bg-[#f8f4eb]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#d7a33a]" />
+      </main>
+    }>
+      <OpinionContent />
+    </Suspense>
+  );
+}
+
+function OpinionContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
