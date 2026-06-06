@@ -60,6 +60,17 @@ export function Hero() {
           </div>
 
           <p className="mt-6 text-sm text-[#F8F6F1]/70">Sin desplazamientos · Gestión completa · Resultados claros</p>
+
+          <div className="mt-8 border-t border-[#D4A017]/20 pt-6">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]/70">¿Eres asesoría o gestoría?</p>
+            <Link
+              href="/para-asesorias"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
+            >
+              Descubre la plataforma para asesorías
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </Link>
+          </div>
         </div>
       </div>
 

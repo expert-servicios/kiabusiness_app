@@ -9,6 +9,7 @@ import { categories } from '@/lib/utils/catalog';
 import { CartIcon } from '@/components/cart/CartIcon';
 
 const navLinks = [
+  { label: 'Para asesorías', href: '/para-asesorias', highlight: true },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Reservar cita', href: '/cita' }
@@ -236,9 +237,11 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={link.href === '/cita'
-                ? 'rounded-md border border-[#D4A017]/50 px-3 py-1.5 text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10'
-                : 'transition hover:text-[#D4A017]'}
+              className={'highlight' in link && link.highlight
+                ? 'rounded-md bg-[#D4A017]/12 px-3 py-1.5 text-[#D4A017] font-bold transition hover:bg-[#D4A017]/20'
+                : link.href === '/cita'
+                  ? 'rounded-md border border-[#D4A017]/50 px-3 py-1.5 text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10'
+                  : 'transition hover:text-[#D4A017]'}
             >
               {link.label}
             </Link>
@@ -399,7 +402,9 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={closeMobile}
-                className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                className={'highlight' in link && link.highlight
+                  ? 'block rounded-md bg-[#D4A017]/12 px-3 py-3 text-sm font-bold text-[#D4A017] transition hover:bg-[#D4A017]/20'
+                  : 'block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'}
               >
                 {link.label}
               </Link>
