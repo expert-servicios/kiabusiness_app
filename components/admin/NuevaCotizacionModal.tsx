@@ -1,13 +1,23 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Search, FileText, Euro, Calendar, Plus, Check, Loader2 } from 'lucide-react';
+import { X, Search, FileText, Euro, Calendar, Plus, Check, Loader2, BookMarked } from 'lucide-react';
 
 interface Client {
   id: string;
   name: string | null;
   email: string;
   phone: string | null;
+}
+
+interface QuoteTemplate {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  amount_eur: number | null;
+  expires_in_days: number;
+  docs_checklist: string[];
 }
 
 interface Props {
@@ -36,6 +46,14 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Template state
+  const [templates, setTemplates]         = useState<QuoteTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [deletingTemplate, setDeletingTemplate] = useState<string | null>(null);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName]   = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
   // Form state
   const [title, setTitle]           = useState('');
   const [description, setDescription] = useState('');
@@ -57,10 +75,21 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
     } finally { setLoadingClients(false); }
   }, []);
 
+  const fetchTemplates = useCallback(async () => {
+    setLoadingTemplates(true);
+    try {
+      const res = await fetch('/api/admin/quote-templates');
+      if (res.ok) { const d = await res.json(); setTemplates(d.templates ?? []); }
+    } finally { setLoadingTemplates(false); }
+  }, []);
+
   useEffect(() => {
-    // Load all clients on mount
     fetchClients(''); // eslint-disable-line react-hooks/set-state-in-effect
   }, [fetchClients]);
+
+  useEffect(() => {
+    void fetchTemplates(); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [fetchTemplates]);
 
   useEffect(() => {
     const t = setTimeout(() => fetchClients(query), 200);
@@ -101,6 +130,51 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
     const d = customDoc.trim();
     if (d && !docs.includes(d)) { setDocs((prev) => [...prev, d]); }
     setCustomDoc('');
+  };
+
+  const applyTemplate = (tpl: QuoteTemplate) => {
+    setTitle(tpl.title);
+    setDescription(tpl.description);
+    if (tpl.amount_eur != null) setAmount(String(tpl.amount_eur));
+    setExpiresInDays(String(tpl.expires_in_days));
+    setDocs(tpl.docs_checklist);
+  };
+
+  const deleteTemplate = async (id: string) => {
+    setDeletingTemplate(id);
+    try {
+      await fetch(`/api/admin/quote-templates/${id}`, { method: 'DELETE' });
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+    } finally {
+      setDeletingTemplate(null);
+    }
+  };
+
+  const saveAsTemplate = async () => {
+    if (!templateName.trim() || !title.trim() || !description.trim()) return;
+    setSavingTemplate(true);
+    try {
+      const res = await fetch('/api/admin/quote-templates', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          name           : templateName.trim(),
+          title          : title.trim(),
+          description    : description.trim(),
+          amount_eur     : amount ? parseFloat(amount) : null,
+          expires_in_days: parseInt(expiresInDays, 10),
+          docs_checklist : docs,
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setTemplates((prev) => [d.template, ...prev]);
+        setTemplateName('');
+        setShowSaveTemplate(false);
+      }
+    } finally {
+      setSavingTemplate(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -145,13 +219,56 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
             <FileText className="h-4 w-4 text-[#c88b25]" />
             <p className="font-semibold text-[#07111d]">Nueva cotización</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e9d8]">
+          <button type="button" onClick={onClose} title="Cerrar" className="rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e9d8]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+          {/* ── Templates ── */}
+          {(templates.length > 0 || loadingTemplates) && (
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#07111d]">
+                Plantillas
+              </label>
+              {loadingTemplates ? (
+                <div className="flex items-center gap-2 text-xs text-[#9ca3af]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando…
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {templates.map((tpl) => (
+                    <div
+                      key={tpl.id}
+                      className="flex items-center rounded-full border border-[#d8cbb5] bg-[#f8f4eb] text-xs"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => applyTemplate(tpl)}
+                        className="rounded-l-full py-1 pl-3 pr-2 font-semibold text-[#29384a] transition hover:text-[#c88b25]"
+                      >
+                        {tpl.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { void deleteTemplate(tpl.id); }}
+                        disabled={deletingTemplate === tpl.id}
+                        title={`Eliminar "${tpl.name}"`}
+                        className="rounded-r-full py-1 pl-1 pr-2.5 text-[#d8cbb5] transition hover:text-red-500 disabled:opacity-40"
+                      >
+                        {deletingTemplate === tpl.id
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <X className="h-3 w-3" />
+                        }
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Client selector ── */}
           <div>
@@ -167,7 +284,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
                   <p className="truncate text-sm font-semibold text-[#07111d]">{selectedClient.name ?? selectedClient.email}</p>
                   <p className="truncate text-xs text-[#29384a]/60">{selectedClient.email}</p>
                 </div>
-                <button type="button" onClick={handleClearClient} className="shrink-0 text-[#9ca3af] hover:text-[#29384a]">
+                <button type="button" onClick={handleClearClient} title="Quitar cliente seleccionado" className="shrink-0 text-[#9ca3af] hover:text-[#29384a]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -274,6 +391,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
                 <select
                   value={expiresInDays}
                   onChange={(e) => setExpiresInDays(e.target.value)}
+                  title="Días de validez del presupuesto"
                   className="w-full rounded-xl border border-[#d8cbb5] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#c88b25]"
                 >
                   {[7, 14, 21, 30, 45, 60, 90].map((d) => (
@@ -326,6 +444,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
                   <li key={d} className="flex items-center gap-2 text-xs text-[#07111d]">
                     <Check className="h-3 w-3 shrink-0 text-[#D4A017]" /> {d}
                     <button type="button" onClick={() => setDocs((prev) => prev.filter((x) => x !== d))}
+                      title={`Eliminar: ${d}`}
                       className="ml-auto text-[#9ca3af] hover:text-red-500">
                       <X className="h-3 w-3" />
                     </button>
@@ -334,6 +453,54 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
               </ul>
             )}
           </div>
+
+          {/* ── Save as template ── */}
+          {(title.trim().length > 0 || description.trim().length > 0) && (
+            <div>
+              {!showSaveTemplate ? (
+                <button
+                  type="button"
+                  onClick={() => setShowSaveTemplate(true)}
+                  className="flex items-center gap-1.5 text-xs text-[#9ca3af] transition hover:text-[#c88b25]"
+                >
+                  <BookMarked className="h-3.5 w-3.5" />
+                  Guardar como plantilla
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <BookMarked className="h-3.5 w-3.5 shrink-0 text-[#c88b25]" />
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); void saveAsTemplate(); }
+                      if (e.key === 'Escape') { setShowSaveTemplate(false); setTemplateName(''); }
+                    }}
+                    placeholder="Nombre de la plantilla…"
+                    autoFocus
+                    className="flex-1 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs outline-none focus:border-[#c88b25]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { void saveAsTemplate(); }}
+                    disabled={!templateName.trim() || savingTemplate}
+                    className="flex items-center gap-1 rounded-lg bg-[#07111d] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                  >
+                    {savingTemplate ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowSaveTemplate(false); setTemplateName(''); }}
+                    className="rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs text-[#29384a] hover:bg-[#f0e9d8]"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
         </div>
