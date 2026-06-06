@@ -9,8 +9,17 @@ CREATE TABLE IF NOT EXISTS public.automation_settings (
 
 ALTER TABLE public.automation_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "admin all automation_settings" ON public.automation_settings
-  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'automation_settings'
+      AND policyname = 'admin all automation_settings'
+  ) THEN
+    CREATE POLICY "admin all automation_settings" ON public.automation_settings
+      FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+  END IF;
+END $$;
 
 -- Seed default automations (idempotent)
 INSERT INTO public.automation_settings (key, enabled) VALUES
