@@ -8,7 +8,7 @@ async function requireAdmin(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
     .from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return null;
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') return null;
   return admin;
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
+import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
 import { caseNewMessageFromAdvisor, caseNewMessageFromClient } from '@/lib/email/templates';
 
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const adminSupabase = getSupabaseAdmin();
 
     const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', userId).single();
-    const senderRole = profile?.role === 'admin' ? 'admin' : 'client';
+    const senderRole = (profile?.role === 'admin' || profile?.role === 'owner') ? 'admin' : 'client';
 
     // Verify access
     const { data: caseData } = await adminSupabase
@@ -129,6 +130,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         console.error('[messages] email notification failed:', emailErr);
       }
     })();
+
+    // Push notification to admins when client sends a message
+    if (senderRole === 'client') {
+      const { data: caseInfo } = await adminSupabase
+        .from('cases').select('service').eq('id', caseId).single();
+      const { data: senderProfile } = await adminSupabase
+        .from('profiles').select('full_name').eq('id', userId).single();
+      const clientName = senderProfile?.full_name ?? 'Cliente';
+      notifyAdmins({
+        title: `💬 ${clientName} ha enviado un mensaje`,
+        body : caseInfo?.service ?? 'Expediente',
+        url  : `/admin/expedientes/${caseId}`,
+        tag  : `case-msg-${caseId}`,
+      }).catch(() => {});
+    }
 
     // Send via WhatsApp if requested (admin only, client must have phone)
     let whatsappResult: { sent: boolean; error?: string } = { sent: false };

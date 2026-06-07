@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || (profile?.role !== 'admin' && profile?.role !== 'owner')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 

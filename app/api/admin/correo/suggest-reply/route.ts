@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const body = await request.json() as {
     messages?: Array<{ from: string; fromEmail: string; body: string; bodyType: string; date: string }>;

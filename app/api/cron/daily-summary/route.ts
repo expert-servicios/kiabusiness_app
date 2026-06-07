@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
-import { dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates';
+import { citaReminder, dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
@@ -37,6 +37,45 @@ export async function GET(request: NextRequest) {
 
   const admin  = getSupabaseAdmin();
   const now    = new Date();
+
+  // Auto-expire quotes that have passed their expires_at (idempotent cleanup)
+  await admin
+    .from('quotes')
+    .update({ status: 'expired' })
+    .in('status', ['sent', 'pending'])
+    .not('expires_at', 'is', null)
+    .lt('expires_at', now.toISOString())
+    .then(() => null, (e: unknown) => console.error('[daily-summary] quote expiry cleanup:', e));
+  // ── Appointment reminders: send 24h-ahead email to each confirmed cita ──────
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  const { data: tomorrowAppts } = await admin
+    .from('appointments')
+    .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url')
+    .eq('status', 'confirmed')
+    .eq('confirmed_date', tomorrowStr);
+
+  for (const appt of tomorrowAppts ?? []) {
+    if (!appt.email || !appt.confirmed_date || !appt.confirmed_time) continue;
+    const dateLabel = new Date((appt.confirmed_date as string) + 'T12:00:00').toLocaleDateString('es-ES', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    sendEmail({
+      to: appt.email as string,
+      eventType: 'cita.reminder',
+      ...citaReminder(
+        appt.name as string,
+        appt.service as string,
+        dateLabel,
+        appt.confirmed_time as string,
+        appt.meeting_url as string | null,
+      ),
+      metadata: { appointment_id: appt.id },
+    }).catch((e: unknown) => console.error('[daily-summary] cita reminder:', e));
+  }
+
   const today  = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const thresholdDate = new Date(now.getTime() - DAYS_PENDING_THRESHOLD * 24 * 60 * 60 * 1000).toISOString();

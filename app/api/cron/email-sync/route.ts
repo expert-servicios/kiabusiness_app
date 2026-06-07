@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listGmailMailsSA, hasGmailSA, getGmailUnreadCountSA } from '@/lib/integrations/gmail';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 // Vercel Cron: runs every 5 minutes
 // Fetches recent Gmail inbox for info@expertconsulting.es (SA) and caches results
@@ -59,6 +60,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Update unread count via dedicated function (uses resultSizeEstimate for speed)
+    const { data: prevKv } = await admin
+      .from('system_kv')
+      .select('value')
+      .eq('key', 'email_unread_count')
+      .maybeSingle();
+    const prevUnread = Number(prevKv?.value ?? 0);
+
     const unreadCount = await getGmailUnreadCountSA();
     await admin
       .from('system_kv')
@@ -66,6 +74,17 @@ export async function GET(request: NextRequest) {
         { key: 'email_unread_count', value: unreadCount, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       );
+
+    // Push notification to admins when new unread emails arrive
+    if (unreadCount > prevUnread) {
+      const newCount = unreadCount - prevUnread;
+      notifyAdmins({
+        title: `📧 ${newCount} correo${newCount !== 1 ? 's' : ''} nuevo${newCount !== 1 ? 's' : ''}`,
+        body : 'Nuevos mensajes en la bandeja de entrada',
+        url  : '/admin/correo',
+        tag  : 'email-unread',
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
       ok: true,

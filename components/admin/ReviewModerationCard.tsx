@@ -76,7 +76,7 @@ export function ReviewModerationCard({ review }: { review: Review }) {
           )}
 
           {review.comment ? (
-            <p className="mt-2 text-sm leading-relaxed text-[#07111d]">"{review.comment}"</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#07111d]">&ldquo;{review.comment}&rdquo;</p>
           ) : (
             <p className="mt-2 text-sm italic text-[#29384a]/60">Sin comentario</p>
           )}

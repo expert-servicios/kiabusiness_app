@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendEmail } from '@/lib/email/send';
+import { documentRejected } from '@/lib/email/templates';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,7 +15,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const admin = getSupabaseAdmin();
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     const { data: doc, error: docError } = await admin
       .from('documents')
@@ -59,7 +61,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data: profile } = await adminSupabase
       .from('profiles').select('role').eq('id', user.id).single();
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== 'admin' && profile?.role !== 'owner') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
@@ -78,6 +80,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (updateError || !doc) {
       return NextResponse.json({ error: 'No se pudo actualizar el documento' }, { status: 500 });
+    }
+
+    // Notify client when their document is rejected so they can re-upload
+    if (parseResult.data.state === 'rechazado' && doc.case_id && doc.client_id) {
+      (async () => {
+        try {
+          const [caseRes, profileRes, authRes] = await Promise.all([
+            adminSupabase.from('cases').select('service').eq('id', doc.case_id!).single(),
+            adminSupabase.from('profiles').select('full_name').eq('id', doc.client_id!).single(),
+            adminSupabase.auth.admin.getUserById(doc.client_id!),
+          ]);
+          const clientEmail = authRes.data?.user?.email;
+          if (clientEmail) {
+            const clientName = profileRes.data?.full_name ?? clientEmail.split('@')[0];
+            const service = caseRes.data?.service ?? 'Trámite';
+            await sendEmail({
+              to: clientEmail,
+              eventType: 'case.document_rejected',
+              ...documentRejected(clientName, doc.original_name, service, doc.case_id!),
+              metadata: { docId: doc.id, caseId: doc.case_id },
+            });
+          }
+        } catch (e) {
+          console.error('[documents PATCH] rejection email:', e);
+        }
+      })();
     }
 
     return NextResponse.json({ document: doc });

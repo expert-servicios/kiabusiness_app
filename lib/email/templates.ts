@@ -1072,6 +1072,33 @@ export function citaRequestAdmin(params: {
   };
 }
 
+// ── Cita: recordatorio 24h antes (cliente) ────────────────────────────────────
+export function citaReminder(
+  name: string,
+  service: string,
+  confirmedDate: string,
+  confirmedTime: string,
+  meetingUrl?: string | null
+) {
+  return {
+    subject: `Recordatorio: tu cita mañana — ${confirmedDate}`,
+    html: base('Recordatorio de cita', `
+      ${heading('Tu cita es mañana')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Te recordamos que tienes una cita mañana para <strong>${escapeHtml(service)}</strong>. Aquí tienes los detalles:`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Fecha', escapeHtml(confirmedDate)),
+        detail('Hora', escapeHtml(confirmedTime)),
+        ...(meetingUrl ? [detail('Enlace de reunión', `<a href="${meetingUrl}" style="color:#c88b25;">${meetingUrl}</a>`)] : [])
+      )}
+      ${meetingUrl ? btn('Unirse a la reunión', meetingUrl) : ''}
+      ${para('Si necesitas cancelar o reagendar, responde a este correo con la mayor antelación posible.')}
+      ${para('<small style="color:#8899aa;">EXPERT Consulting · expertconsulting.es</small>')}
+    `)
+  };
+}
+
 // ── Daily admin summary ───────────────────────────────────────────────────────
 
 export interface DailySummaryData {
@@ -1231,6 +1258,21 @@ export function tenantAdminStatusChanged(
       ${btn('Ver expediente', portalUrl)}
       ${para('<small style="color:#8899aa;">Accede al portal para ver los detalles del expediente.</small>')}
     `, brand),
+  };
+}
+
+// ── Document rejected — notify client to re-upload ──────────────────────────
+export function documentRejected(name: string, documentName: string, service: string, caseId: string) {
+  return {
+    subject: `Documento rechazado — necesitamos que lo vuelvas a subir`,
+    html: base('Documento rechazado', `
+      ${heading('Necesitamos un nuevo documento')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos revisado el documento <strong>${escapeHtml(documentName)}</strong> de tu expediente de <strong>${escapeHtml(service)}</strong> y no podemos procesarlo en su estado actual.`)}
+      ${para('Por favor, accede a tu expediente y sube de nuevo el documento correcto. Si tienes dudas sobre qué necesitamos exactamente, responde a este correo o escríbenos.')}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes/${caseId}`)}
+      ${para('<small style="color:#8899aa;">Disculpa las molestias. Estamos aquí para ayudarte en cada paso del proceso.</small>')}
+    `)
   };
 }
 

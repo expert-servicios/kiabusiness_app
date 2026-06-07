@@ -6,6 +6,7 @@ import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
 import { sendEmail } from '@/lib/email/send';
+import { notifyClient } from '@/lib/integrations/push';
 import { upsertCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
 import {
   caseDocsRequired,
@@ -20,25 +21,32 @@ import { getTenantForUser } from '@/lib/auth/tenant';
 import { notifyTenantAdminStatusChanged } from '@/lib/email/notify-tenant-admins';
 
 // ── Automation settings helper ──────────────────────────────────────────────
-// Returns set of enabled automation keys. Defaults to all enabled on error.
+// Returns enabled automation keys. Missing rows default to enabled for backward compatibility.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getEnabledAutomations(admin: any): Promise<Set<string> | null> {
+async function getEnabledAutomations(admin: any, keys: string[]): Promise<Set<string>> {
   try {
-    const { data } = await admin.from('automation_settings').select('key, enabled');
-    if (!data) return null;
+    const { data } = await admin
+      .from('automation_settings')
+      .select('key, enabled')
+      .in('key', keys);
     const enabled = new Set<string>();
-    for (const row of data as { key: string; enabled: boolean }[]) {
+    const seen = new Set<string>();
+    for (const row of (data ?? []) as { key: string; enabled: boolean }[]) {
+      seen.add(row.key);
       if (row.enabled) enabled.add(row.key);
+    }
+    for (const key of keys) {
+      if (!seen.has(key)) enabled.add(key);
     }
     return enabled;
   } catch {
-    return null; // table not yet migrated — treat all as enabled
+    return new Set(keys); // table not yet migrated — treat requested automations as enabled
   }
 }
 
 // ── Status → client email mapping ──────────────────────────────────────────
 // Sends the appropriate template when admin transitions the case status.
-// fire-and-forget: email failure never blocks the status update.
+// Respects automation_settings toggles — fire-and-forget, never blocks the status update.
 async function sendCaseStatusEmail(params: {
   newStatus: CaseStatus;
   clientEmail: string;
@@ -47,11 +55,11 @@ async function sendCaseStatusEmail(params: {
   service: string;
   adminNote: string | null;
   caseId: string;
-  enabledAutomations: Set<string> | null;
+  enabledAutomations: Set<string>;
   brand?: TenantBrand;
 }): Promise<void> {
   const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations, brand } = params;
-  const isEnabled = (key: string) => !enabledAutomations || enabledAutomations.has(key);
+  const isEnabled = (key: string) => enabledAutomations.has(key);
   const funFact = '';
 
   let tpl: { subject: string; html: string } | null = null;
@@ -74,24 +82,30 @@ async function sendCaseStatusEmail(params: {
       tpl = casePendingExternal(clientName, service, null, adminNote, funFact, brand);
       break;
     case 'finalizado': {
-      // Generate review token (30-day expiry) — best-effort
-      let reviewToken = '';
-      try {
-        reviewToken = randomBytes(32).toString('hex');
-        const admin = getSupabaseAdmin();
-        await admin.from('review_requests').insert({
-          case_id: caseId,
-          client_id: clientId,
-          token: reviewToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-      } catch { reviewToken = ''; }
+      const sendDelivered = isEnabled('case.finalizado');
+      const sendReview = isEnabled('case.review_request');
+      if (!sendDelivered && !sendReview) return;
 
-      if (isEnabled('case.finalizado')) {
+      // Generate review token only when the review email is enabled.
+      let reviewToken = '';
+      if (sendReview) {
+        try {
+          reviewToken = randomBytes(32).toString('hex');
+          const admin = getSupabaseAdmin();
+          await admin.from('review_requests').insert({
+            case_id: caseId,
+            client_id: clientId,
+            token: reviewToken,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+        } catch { reviewToken = ''; }
+      }
+
+      if (sendDelivered) {
         const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
       }
-      if (isEnabled('case.review_request') && reviewToken) {
+      if (sendReview && reviewToken) {
         const reviewTpl = reviewRequest(clientName, service, reviewToken, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
       }
@@ -241,9 +255,14 @@ export async function PATCH(
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
+        // Read automation toggles for the relevant keys; missing rows default to enabled.
+        const automationKeys = body.status === 'finalizado'
+          ? ['case.finalizado', 'case.review_request']
+          : [`case.${body.status}`];
+
         const [clientInfo, enabledAutomations, clientTenant] = await Promise.all([
           getClientInfo(admin, current.client_id),
-          getEnabledAutomations(admin),
+          getEnabledAutomations(admin, automationKeys),
           getTenantForUser(current.client_id).catch(() => null),
         ]);
         // Use tenant branding if the client belongs to a non-EXPERT tenant
@@ -251,6 +270,15 @@ export async function PATCH(
           clientTenant && clientTenant.slug !== 'expert'
             ? (clientTenant.settings as TenantBrand)
             : undefined;
+
+        const STATUS_PUSH_LABELS: Partial<Record<CaseStatus, string>> = {
+          pendiente_cliente:    'Necesitamos tu documentación para continuar',
+          en_revision:          'Estamos revisando tu documentación',
+          listo_para_presentar: 'Tu expediente está listo para presentar',
+          presentado:           'Tu trámite ha sido presentado ante el organismo',
+          finalizado:           'Tu expediente ha finalizado',
+        };
+
         if (clientInfo) {
           void sendCaseStatusEmail({
             newStatus: body.status,
@@ -284,6 +312,17 @@ export async function PATCH(
               brand: brand,
             }).catch(() => {});
           }
+        }
+
+        // Push notification to client
+        const pushLabel = STATUS_PUSH_LABELS[body.status];
+        if (pushLabel) {
+          notifyClient(current.client_id, {
+            title: current.service ?? 'Actualización de expediente',
+            body:  pushLabel,
+            url:   `/dashboard/expedientes/${id}`,
+            tag:   `case-status-${id}`,
+          }).catch(() => {});
         }
       }
 

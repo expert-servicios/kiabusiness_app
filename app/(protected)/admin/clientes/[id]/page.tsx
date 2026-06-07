@@ -359,6 +359,13 @@ export default function ClientePage() {
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Ver portal
               </a>
+              <a
+                href={`/api/admin/clientes/${profile.id}/pdf`}
+                download
+                className="flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+              >
+                <Download className="h-3.5 w-3.5" /> PDF
+              </a>
             </div>
           </div>
         </div>

@@ -4,7 +4,10 @@
 -- Admin can manage all review_requests
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'review_requests' AND policyname = 'admin all review_requests'
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'review_requests'
+      AND policyname = 'admin all review_requests'
   ) THEN
     CREATE POLICY "admin all review_requests" ON public.review_requests
       FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());

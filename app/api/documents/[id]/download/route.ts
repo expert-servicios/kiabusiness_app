@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     if (!isAdmin && doc.client_id !== user.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });

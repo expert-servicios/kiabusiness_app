@@ -2,6 +2,7 @@
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import {
@@ -342,6 +343,13 @@ export async function POST(req: NextRequest) {
                 metadata: { quote_id: quoteId, session_id: session.id }
               });
 
+              notifyAdmins({
+                title: `💰 Pago recibido — ${clientName}`,
+                body:  `${(quote.title ?? 'Presupuesto').slice(0, 60)} · €${amountEur.toFixed(0)}`,
+                url:   `/admin/presupuestos`,
+                tag:   `payment-${quoteId}`,
+              }).catch(() => {});
+
               // IMP-005: enqueue job BEFORE the async call so it survives
               // if the serverless function is killed before .then() runs.
               const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
@@ -599,6 +607,13 @@ export async function POST(req: NextRequest) {
           ...tpl,
           metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName }
         });
+
+        notifyAdmins({
+          title: `⚡ Nueva suscripción — ${clientInfo.name}`,
+          body:  subscriptionRecord.planName,
+          url:   `/admin/suscripciones`,
+          tag:   `sub-${sub.id}`,
+        }).catch(() => {});
 
         const monthlyAmount = sub.items.data[0]?.price.unit_amount
           ? sub.items.data[0].price.unit_amount / 100
