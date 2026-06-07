@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/holded-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "15 6 * * *"
     },
     {
       "path": "/api/cron/email-sync",
