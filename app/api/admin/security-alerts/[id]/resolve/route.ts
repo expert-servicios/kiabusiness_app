@@ -11,7 +11,7 @@ export async function POST(
 
   const { data: profile } = await getSupabaseAdmin()
     .from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!['admin', 'owner'].includes(profile?.role ?? '')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { id } = await params;
   const { error } = await getSupabaseAdmin()

@@ -106,7 +106,7 @@ export default async function DashboardPage() {
   if (activePlan) {
     const mcpData   = await fetchWithCookies('/api/integrations/holded/mcp-status');
     const mcpStatus = (mcpData as McpStatus | null);
-    showClaudeBanner = !!mcpStatus && !mcpStatus.connected;
+    showClaudeBanner = !mcpStatus?.connected;
   }
 
   const primaryAction = getPrimaryAction(cases, quotes, hasCompany);
