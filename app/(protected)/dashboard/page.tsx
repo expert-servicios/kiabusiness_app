@@ -92,14 +92,13 @@ interface SubRecord    { status: string; post_purchase_onboarding_at: string | n
 interface McpStatus    { connected: boolean }
 
 export default async function DashboardPage() {
-  const [quotesData, casesData, subsData, companiesData, profileData, holdedData, mcpData] = await Promise.all([
+  const [quotesData, casesData, subsData, companiesData, profileData, holdedData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
     fetchWithCookies('/api/cases'),
     fetchWithCookies('/api/subscriptions'),
     fetchWithCookies('/api/companies'),
     fetchWithCookies('/api/profile'),
     fetchWithCookies('/api/integrations/holded/status'),
-    fetchWithCookies('/api/integrations/holded/mcp-status'),
   ]);
 
   const quotes: QuoteItem[] = quotesData?.quotes ?? [];
@@ -110,16 +109,21 @@ export default async function DashboardPage() {
   const profile    = profileData?.profile ?? null;
   const firstName  = profile?.full_name?.split(' ')[0] ?? null;
   const holded     = (holdedData as HoldedStatus | null);
-  const mcpStatus  = (mcpData as McpStatus | null);
 
   const activeCases = cases.filter((c) => c.state !== 'finalizado');
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0);
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
   const totalUnread = cases.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
 
-  // Show Claude banner: active subscriber who hasn't connected Claude MCP yet
+  // Only query MCP status when the user has an active subscription — avoids a DB round-trip
+  // to holded_mcp_connections for the majority of users who will never see the Claude banner.
   const activePlan = allSubRecords.find((s) => s.status === 'active' || s.status === 'trialing');
-  const showClaudeBanner = !!activePlan && !mcpStatus?.connected;
+  let showClaudeBanner = false;
+  if (activePlan) {
+    const mcpData   = await fetchWithCookies('/api/integrations/holded/mcp-status');
+    const mcpStatus = (mcpData as McpStatus | null);
+    showClaudeBanner = !!mcpStatus && !mcpStatus.connected;
+  }
 
   const primaryAction = getPrimaryAction(cases, quotes, hasCompany);
 

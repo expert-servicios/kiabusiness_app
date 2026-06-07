@@ -1,9 +1,13 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
-import PostCompraWizard from '@/components/dashboard/PostCompraWizard';
+import PostCompraWizard  from '@/components/dashboard/PostCompraWizard';
+import PostCompraWaiting from '@/components/dashboard/PostCompraWaiting';
 
-const MCP_LAUNCH_URL = process.env.NEXT_PUBLIC_MCP_LAUNCH_URL ?? 'https://claude.expertconsulting.es/launch';
+// Derive the MCP launch URL from the single shared base-URL env var.
+// NEXT_PUBLIC_HOLDED_MCP_BASE_URL is the canonical source of truth (in .env.example).
+const MCP_BASE = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL ?? 'https://claude.expertconsulting.es';
+const MCP_LAUNCH_URL = `${MCP_BASE}/launch`;
 
 interface SubscriptionRecord {
   id                         : string;
@@ -12,8 +16,7 @@ interface SubscriptionRecord {
   post_purchase_onboarding_at: string | null;
 }
 
-interface HoldedStatus { connected: boolean }
-interface McpStatus    { connected: boolean }
+interface McpStatus { connected: boolean }
 
 async function fetchWithCookies(path: string) {
   try {
@@ -31,9 +34,8 @@ async function fetchWithCookies(path: string) {
 }
 
 export default async function PostCompraPage() {
-  const [subsData, holdedData, mcpData] = await Promise.all([
+  const [subsData, mcpData] = await Promise.all([
     fetchWithCookies('/api/subscriptions'),
-    fetchWithCookies('/api/integrations/holded/status'),
     fetchWithCookies('/api/integrations/holded/mcp-status'),
   ]);
 
@@ -44,16 +46,29 @@ export default async function PostCompraPage() {
     (s) => (s.status === 'active' || s.status === 'trialing') && !s.post_purchase_onboarding_at
   );
 
-  // If no active subscription pending onboarding → go to dashboard
-  if (!pendingSub) redirect('/dashboard');
+  // No active subscription at all (not just pending onboarding) → redirect to plans page
+  const hasActiveSub = subscriptions.some(
+    (s) => s.status === 'active' || s.status === 'trialing'
+  );
+  if (hasActiveSub && !pendingSub) {
+    // Onboarding already completed — go to dashboard
+    redirect('/dashboard');
+  }
+  if (!hasActiveSub) {
+    // No subscription yet — could be a Stripe webhook race. Show a waiting screen
+    // that polls via router.refresh() every 3s for up to 30s.
+    return <PostCompraWaiting />;
+  }
 
-  const holdedConnected = !!(holdedData as HoldedStatus | null)?.connected;
-  const claudeConnected = !!(mcpData    as McpStatus    | null)?.connected;
+  // holdedConnected is structurally guaranteed true: the subscription checkout route
+  // returns 409 'holded_required' if no active Holded integration exists, so a
+  // subscription row can only be created after Holded is connected.
+  const claudeConnected = !!(mcpData as McpStatus | null)?.connected;
 
   return (
     <PostCompraWizard
-      planName={pendingSub.plan_name}
-      holdedConnected={holdedConnected}
+      planName={pendingSub!.plan_name}
+      holdedConnected={true}
       claudeConnected={claudeConnected}
       mcpLaunchUrl={MCP_LAUNCH_URL}
     />

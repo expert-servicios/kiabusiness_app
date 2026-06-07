@@ -11,8 +11,9 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail }        from '@/lib/email/send';
 
-const BATCH_SIZE   = 50;
-const RETRY_BASE_S = 120; // 2 min → 4 min → 8 min
+const BATCH_SIZE    = 20;  // ~10s max at 480ms/email — fits Vercel 60s maxDuration safely
+const RETRY_BASE_S  = 120; // 2 min → 4 min → 8 min
+const WALL_CLOCK_MS = 50_000; // stop claiming new jobs after 50s to leave Vercel buffer
 
 // ── Enqueue ───────────────────────────────────────────────────────────────────
 
@@ -43,11 +44,8 @@ export async function enqueueEmail(params: EnqueueEmailParams): Promise<void> {
   });
 
   if (error) {
-    // Fallback: attempt direct send so the email is not silently lost
-    console.error('[email-queue] insert failed, falling back to direct send:', error.message);
-    await sendEmail({ to: params.to, subject: params.subject, html: params.html, eventType: params.eventType }).catch(
-      (e: unknown) => console.error('[email-queue] fallback send also failed:', e),
-    );
+    // Throw so callers can log or alert — hiding queue failures makes monitoring blind.
+    throw new Error(`[email-queue] enqueue failed: ${error.message}`);
   }
 }
 
@@ -67,37 +65,60 @@ type QueueRow = {
 export async function processEmailQueue(
   batchSize = BATCH_SIZE,
 ): Promise<{ processed: number; failed: number; skipped: number }> {
-  const admin = getSupabaseAdmin();
-  const now   = new Date().toISOString();
+  const admin   = getSupabaseAdmin();
+  const now     = new Date().toISOString();
+  const startMs = Date.now();
 
-  const { data: jobs, error } = await admin
+  // Step 1: Fetch candidate IDs (pending, due, not exhausted)
+  const { data: candidates, error: selectError } = await admin
     .from('email_queue')
-    .select('id, to_email, subject, html, event_type, attempts, max_attempts, scheduled_at')
+    .select('id, attempts, max_attempts')
     .eq('status', 'pending')
     .lte('scheduled_at', now)
     .order('scheduled_at', { ascending: true })
     .limit(batchSize);
 
-  if (error) {
-    console.error('[email-queue] failed to fetch jobs:', error.message);
+  if (selectError) {
+    console.error('[email-queue] failed to fetch jobs:', selectError.message);
     return { processed: 0, failed: 0, skipped: 0 };
   }
-  if (!jobs?.length) return { processed: 0, failed: 0, skipped: 0 };
+  if (!candidates?.length) return { processed: 0, failed: 0, skipped: 0 };
 
+  // Separate exhausted jobs (shouldn't be pending, but defensive)
+  const exhaustedIds = candidates.filter((r) => r.attempts >= r.max_attempts).map((r) => r.id);
+  const eligibleIds  = candidates.filter((r) => r.attempts <  r.max_attempts).map((r) => r.id);
+
+  let skipped = 0;
+  if (exhaustedIds.length) {
+    await admin.from('email_queue')
+      .update({ status: 'failed', error: 'max_attempts_exceeded' })
+      .in('id', exhaustedIds);
+    skipped = exhaustedIds.length;
+  }
+  if (!eligibleIds.length) return { processed: 0, failed: 0, skipped };
+
+  // Step 2: Claim eligible jobs atomically — only rows still in 'pending' get claimed.
+  // Any row already grabbed by a concurrent invocation will be in 'processing' and skipped.
+  const { data: claimed } = await admin
+    .from('email_queue')
+    .update({ status: 'processing', updated_at: new Date().toISOString() } as Record<string, unknown>)
+    .in('id', eligibleIds)
+    .eq('status', 'pending')
+    .select('id, to_email, subject, html, event_type, attempts, max_attempts, scheduled_at');
+
+  if (!claimed?.length) return { processed: 0, failed: 0, skipped };
+
+  // Step 3: Process claimed jobs sequentially with wall-clock guard
+  const jobs = claimed as QueueRow[];
   let processed = 0;
   let failed    = 0;
-  let skipped   = 0;
+  let lastProcessedIdx = -1;
 
-  for (const job of (jobs as QueueRow[])) {
-    // Guard: skip if we've already hit max attempts (shouldn't happen but defensive)
-    if (job.attempts >= job.max_attempts) {
-      await admin
-        .from('email_queue')
-        .update({ status: 'failed', error: 'max_attempts_exceeded' })
-        .eq('id', job.id);
-      skipped++;
-      continue;
-    }
+  for (let i = 0; i < jobs.length; i++) {
+    if (Date.now() - startMs > WALL_CLOCK_MS) break;
+
+    const job = jobs[i]!;
+    lastProcessedIdx = i;
 
     try {
       await sendEmail({
@@ -116,9 +137,9 @@ export async function processEmailQueue(
 
       processed++;
     } catch (err) {
-      const nextAttempt = job.attempts + 1;
-      const isFinal     = nextAttempt >= job.max_attempts;
-      const retryDelaySec = RETRY_BASE_S * Math.pow(2, job.attempts); // 2m → 4m → 8m
+      const nextAttempt   = job.attempts + 1;
+      const isFinal       = nextAttempt >= job.max_attempts;
+      const retryDelaySec = RETRY_BASE_S * Math.pow(2, job.attempts);
       const nextScheduled = new Date(Date.now() + retryDelaySec * 1_000).toISOString();
 
       await admin.from('email_queue').update({
@@ -133,6 +154,15 @@ export async function processEmailQueue(
       }
       failed++;
     }
+  }
+
+  // Step 4: Release any claimed-but-unprocessed jobs (wall-clock guard hit mid-batch)
+  const unprocessed = jobs.slice(lastProcessedIdx + 1);
+  if (unprocessed.length) {
+    await admin
+      .from('email_queue')
+      .update({ status: 'pending' })
+      .in('id', unprocessed.map((j) => j.id));
   }
 
   return { processed, failed, skipped };
