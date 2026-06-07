@@ -103,6 +103,16 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       : Promise.resolve([] as KiaMemory[]),
   ]);
 
+  // For dashboard channel: load cases directly from DB when phone isn't available
+  const contactCases = (contact?.openCases ?? []).slice(0, 5).map((c) => ({
+    id: c.id,
+    serviceName: c.service,
+    status: c.state,
+    nextAction: null,
+  }));
+  const directCases = phone ? [] : await loadCasesForClient(admin, clientId);
+  const cases = contactCases.length > 0 ? contactCases : directCases;
+
   return {
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
@@ -126,12 +136,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     } : null,
     company,
     service,
-    cases: (contact?.openCases ?? []).slice(0, 5).map((c) => ({
-      id: c.id,
-      serviceName: c.service,
-      status: c.state,
-      nextAction: null,
-    })),
+    cases,
     documents,
     accounting,
     conversation: {
@@ -286,4 +291,25 @@ async function loadAccounting(admin: AdminClient, companyId: string | undefined)
   } catch {
     return { hasSnapshot: false, latestQuarter: null, anomalyCount: 0, criticalAnomalyCount: 0 };
   }
+}
+
+/** Direct DB case query used by dashboard channel when there is no phone-based contact. */
+async function loadCasesForClient(
+  admin: AdminClient,
+  clientId: string | null,
+): Promise<KiaContext['cases']> {
+  if (!clientId) return [];
+  const { data } = await admin
+    .from('cases')
+    .select('id, service, state, opened_at')
+    .eq('client_id', clientId)
+    .not('state', 'in', '("finalizado","cerrado","entregado")')
+    .order('opened_at', { ascending: false })
+    .limit(10);
+  return (data ?? []).map((c: { id: string; service: string; state: string; opened_at: string }) => ({
+    id: c.id,
+    serviceName: c.service,
+    status: c.state,
+    nextAction: null,
+  }));
 }
