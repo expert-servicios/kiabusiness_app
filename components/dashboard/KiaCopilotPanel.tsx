@@ -300,6 +300,17 @@ export function KiaCopilotPanel() {
             </div>
           )}
 
+          <div className="flex items-center justify-end px-4 py-1.5 border-t border-[#f0e8d8]">
+            <a
+              href="/dashboard/kia-ayuda"
+              className="text-[10px] text-[#c8b89a] hover:text-[#c88b25] transition"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Cómo usar Kia →
+            </a>
+          </div>
+
           <div className="flex items-end gap-2 border-t border-[#f0e8d8] px-3 py-2">
             <textarea
               ref={inputRef}
