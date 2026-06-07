@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { sendEmail } from '@/lib/email/send';
+import { enqueueEmail } from '@/lib/email/email-queue';
 import { tenantAdminDocUploaded, tenantAdminStatusChanged, type TenantBrand } from '@/lib/email/templates';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
@@ -50,12 +50,10 @@ export async function notifyTenantAdminDocUploaded({
     const recipients = await getTenantAdminEmails(clientProfile.tenant_id);
     const portalUrl = `${getPublicAppUrl()}/tenant/expedientes`;
 
-    await Promise.all(
-      recipients.map(({ email, name }) => {
-        const tpl = tenantAdminDocUploaded({ adminName: name, clientName, service, docName, portalUrl }, brand);
-        return sendEmail({ to: email, eventType: 'tenant.doc_uploaded', ...tpl });
-      })
-    );
+    for (const { email, name } of recipients) {
+      const tpl = tenantAdminDocUploaded({ adminName: name, clientName, service, docName, portalUrl }, brand);
+      await enqueueEmail({ to: email, eventType: 'tenant.doc_uploaded', subject: tpl.subject, html: tpl.html });
+    }
   } catch (err) {
     console.error('[notifyTenantAdminDocUploaded]', err);
   }
@@ -91,12 +89,10 @@ export async function notifyTenantAdminStatusChanged({
     const recipients = await getTenantAdminEmails(clientProfile.tenant_id);
     const portalUrl = `${getPublicAppUrl()}/tenant/expedientes/${caseId}`;
 
-    await Promise.all(
-      recipients.map(({ email, name }) => {
-        const tpl = tenantAdminStatusChanged({ adminName: name, clientName, service, statusLabel, portalUrl }, brand);
-        return sendEmail({ to: email, eventType: `tenant.case_status.${newStatus}`, ...tpl });
-      })
-    );
+    for (const { email, name } of recipients) {
+      const tpl = tenantAdminStatusChanged({ adminName: name, clientName, service, statusLabel, portalUrl }, brand);
+      await enqueueEmail({ to: email, eventType: `tenant.case_status.${newStatus}`, subject: tpl.subject, html: tpl.html });
+    }
   } catch (err) {
     console.error('[notifyTenantAdminStatusChanged]', err);
   }

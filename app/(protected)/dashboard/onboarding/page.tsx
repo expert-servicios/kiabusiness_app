@@ -395,7 +395,9 @@ export default function OnboardingPage() {
     setCurrentStep((s) => s + 1);
   }
 
-  function handleDone() {
+  async function handleDone() {
+    // Mark onboarding as completed (non-blocking — best effort)
+    fetch('/api/dashboard/onboarding/complete', { method: 'POST' }).catch(() => {});
     router.push('/dashboard');
   }
 

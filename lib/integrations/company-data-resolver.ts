@@ -210,6 +210,46 @@ async function fromVies(taxId: string): Promise<CompanySuggestion[]> {
   }];
 }
 
+// ── Resolver-level result cache (1 h TTL) ─────────────────────────────────────
+// Caches the fully merged result for a given (name|taxId, country) tuple so that
+// repeated UI queries don't trigger new BORME / VIES / OpenCorporates / CKAN calls.
+// deepSearch queries are NOT cached (user explicitly wants fresh data).
+
+const RESOLVER_TTL_MS  = 60 * 60 * 1_000; // 1 h
+const RESOLVER_CACHE_MAX = 200;
+
+interface ResolverCacheEntry {
+  suggestions: CompanySuggestion[];
+  expiresAt  : number;
+}
+
+const resolverCache = new Map<string, ResolverCacheEntry>();
+
+function makeResolverKey(input: { name?: string; taxId?: string; country?: string }): string {
+  return [
+    (input.name  ?? '').toLowerCase().replace(/\s+/g, ' ').trim(),
+    (input.taxId ?? '').toUpperCase(),
+    (input.country ?? 'ES'),
+  ].join('|');
+}
+
+function getFromResolverCache(key: string): CompanySuggestion[] | null {
+  const entry = resolverCache.get(key);
+  if (!entry || Date.now() > entry.expiresAt) {
+    resolverCache.delete(key);
+    return null;
+  }
+  return entry.suggestions;
+}
+
+function setInResolverCache(key: string, suggestions: CompanySuggestion[]): void {
+  if (resolverCache.size >= RESOLVER_CACHE_MAX) {
+    const oldest = resolverCache.keys().next().value;
+    if (oldest !== undefined) resolverCache.delete(oldest);
+  }
+  resolverCache.set(key, { suggestions, expiresAt: Date.now() + RESOLVER_TTL_MS });
+}
+
 // ── Ranking / deduplication ───────────────────────────────────────────────────
 
 function confidenceScore(s: CompanySuggestion): number {
@@ -295,7 +335,18 @@ export async function resolveCompanyData(input: {
   bestSuggestion       ?: CompanySuggestion;
   requiresUserConfirmation: true;
 }> {
-  const opts = { deepSearch: input.deepSearch };
+  const opts      = { deepSearch: input.deepSearch };
+  const cacheKey  = makeResolverKey(input);
+
+  // Skip cache for deepSearch — user explicitly requests fresh BORME history
+  if (!input.deepSearch) {
+    const cached = getFromResolverCache(cacheKey);
+    if (cached) {
+      const suggestions = cached.slice(0, 5);
+      return { suggestions, bestSuggestion: suggestions[0], requiresUserConfirmation: true };
+    }
+  }
+
   const allSuggestions: CompanySuggestion[] = [];
 
   if (input.taxId) {
@@ -309,6 +360,7 @@ export async function resolveCompanyData(input: {
   }
 
   const suggestions    = mergeSuggestions(allSuggestions).slice(0, 5);
+  if (!input.deepSearch) setInResolverCache(cacheKey, suggestions);
   const bestSuggestion = suggestions[0];
 
   return { suggestions, bestSuggestion, requiresUserConfirmation: true };

@@ -261,14 +261,26 @@ export async function searchBormeByCompanyName(
 
   const needle  = name.toUpperCase().replace(/\s+/g, ' ').trim();
   const days    = lastWorkingDays(maxDays);
+
+  // Exponential backoff: consecutive all-null batches → (500, 1000, 2000, 4000, 8000 ms)
+  let consecutiveAllNull = 0;
   const results : BormeSearchResult[] = [];
 
   // Parallel batch fetching — batchSize days fetched concurrently per round
   for (let i = 0; i < days.length; i += batchSize) {
     if (results.length >= maxResults) break;
 
+    // Back off if the BOE API is likely rate-limiting (all previous requests returned null)
+    if (consecutiveAllNull > 0) {
+      const delayMs = Math.min(500 * Math.pow(2, consecutiveAllNull - 1), 8_000);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+
     const batch     = days.slice(i, i + batchSize);
     const summaries = await Promise.all(batch.map((day) => fetchBormeSummary(day)));
+
+    const hasAnyData = summaries.some(Boolean);
+    consecutiveAllNull = hasAnyData ? 0 : consecutiveAllNull + 1;
 
     for (const summary of summaries) {
       if (!summary || results.length >= maxResults) continue;

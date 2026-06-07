@@ -139,7 +139,7 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
 
         {/* ── ONBOARDING BANNER ── */}
-        {profile && !profile.profile_completed && (
+        {profile && !profile.onboarding_completed_at && (
           <Link
             href="/dashboard/onboarding"
             className="flex items-center justify-between gap-4 rounded-2xl border border-[#d7a33a]/50 bg-[#d7a33a]/8 px-5 py-4 transition hover:border-[#d7a33a] hover:bg-[#d7a33a]/12"
