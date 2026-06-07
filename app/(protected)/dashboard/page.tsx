@@ -88,29 +88,38 @@ function getPrimaryAction(
 }
 
 interface HoldedStatus { connected: boolean; status: string; last4: string | null; lastSync: string | null }
+interface SubRecord    { status: string; post_purchase_onboarding_at: string | null; plan_name: string }
+interface McpStatus    { connected: boolean }
 
 export default async function DashboardPage() {
-  const [quotesData, casesData, subsData, companiesData, profileData, holdedData] = await Promise.all([
+  const [quotesData, casesData, subsData, companiesData, profileData, holdedData, mcpData] = await Promise.all([
     fetchWithCookies('/api/quotes'),
     fetchWithCookies('/api/cases'),
     fetchWithCookies('/api/subscriptions'),
     fetchWithCookies('/api/companies'),
     fetchWithCookies('/api/profile'),
     fetchWithCookies('/api/integrations/holded/status'),
+    fetchWithCookies('/api/integrations/holded/mcp-status'),
   ]);
 
   const quotes: QuoteItem[] = quotesData?.quotes ?? [];
   const cases: CaseItem[] = casesData?.cases ?? [];
   const subscriptions: SubItem[] = subsData?.subscriptions ?? [];
+  const allSubRecords: SubRecord[] = subsData?.subscriptions ?? [];
   const hasCompany = (companiesData?.companies?.length ?? 0) > 0;
   const profile    = profileData?.profile ?? null;
   const firstName  = profile?.full_name?.split(' ')[0] ?? null;
   const holded     = (holdedData as HoldedStatus | null);
+  const mcpStatus  = (mcpData as McpStatus | null);
 
   const activeCases = cases.filter((c) => c.state !== 'finalizado');
   const pendingQuotes = quotes.filter((q) => q.status === 'sent' && q.amount_eur > 0);
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
   const totalUnread = cases.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
+
+  // Show Claude banner: active subscriber who hasn't connected Claude MCP yet
+  const activePlan = allSubRecords.find((s) => s.status === 'active' || s.status === 'trialing');
+  const showClaudeBanner = !!activePlan && !mcpStatus?.connected;
 
   const primaryAction = getPrimaryAction(cases, quotes, hasCompany);
 
@@ -154,6 +163,27 @@ export default async function DashboardPage() {
               </div>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-[#d7a33a]" />
+          </Link>
+        )}
+
+        {/* ── CLAUDE BANNER (active subscribers without MCP) ── */}
+        {showClaudeBanner && (
+          <Link
+            href="/dashboard/post-compra"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-purple-200 bg-purple-50 px-5 py-4 transition hover:border-purple-300 hover:bg-purple-50/80"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100">
+                <Plug className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-purple-900">Conecta Holded a Claude</p>
+                <p className="text-xs text-purple-700/70">
+                  Automatiza facturas y análisis contable con IA — incluido en tu {activePlan?.plan_name ?? 'plan'}
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-purple-500" />
           </Link>
         )}
 
