@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { ArrowLeft, FolderOpen, User, Download, FileText, MessageSquare } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
@@ -9,7 +8,7 @@ import { AdminNoteEditor } from '@/components/admin/AdminNoteEditor';
 import { AiCaseActions } from '@/components/admin/AiCaseActions';
 import { AdminDeliverableUpload } from '@/components/admin/AdminDeliverableUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Document {
   id: string;
@@ -42,20 +41,6 @@ interface CaseDetail {
   client: { email: string; full_name: string | null; phone: string | null };
 }
 
-async function fetchWithCookies<T>(path: string): Promise<T | null> {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
 
 export default async function AdminCaseDetailPage({
   params

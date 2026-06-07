@@ -1,7 +1,6 @@
-import { cookies } from 'next/headers';
 import { Calendar } from 'lucide-react';
 import { ClientFiscalCalendar } from '@/components/dashboard/ClientFiscalCalendar';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface FiscalObligation {
   id: string;
@@ -16,21 +15,6 @@ interface FiscalObligation {
   status: 'pending' | 'submitted' | 'exempt' | 'skipped';
   google_event_id: string | null;
   notes: string | null;
-}
-
-async function fetchWithCookies(path: string) {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
 }
 
 export default async function ClientFiscalCalendarPage({

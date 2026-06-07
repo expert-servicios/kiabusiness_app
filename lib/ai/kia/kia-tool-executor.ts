@@ -84,6 +84,34 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       case 'get_company_status_snapshot':
         return ok(toolCall.name, context.accounting);
+
+      case 'get_accounting_snapshot': {
+        const companyId = typeof args.companyId === 'string' ? args.companyId : context.company?.id ?? null;
+        if (!companyId) return fail(toolCall.name, 'No hay empresa identificada. Proporciona companyId o asegúrate de que hay una empresa en contexto.');
+
+        const periods = Number(args.periods ?? 1);
+        const includeAnomalies = args.includeAnomalies !== false;
+
+        const [{ data: snapshots, error: snapshotErr }, { data: anomalyRows, error: anomalyErr }] = await Promise.all([
+          admin.from('accounting_period_snapshots').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(periods),
+          includeAnomalies
+            ? admin.from('accounting_anomalies').select('id, anomaly_type, severity, description, status, created_at').eq('company_id', companyId).in('status', ['open', 'pending']).order('severity', { ascending: false }).limit(20)
+            : Promise.resolve({ data: [] as Array<Record<string, unknown>>, error: null }),
+        ]);
+
+        if (snapshotErr) return fail(toolCall.name, 'Error consultando snapshots contables.');
+
+        const anomalies = (anomalyRows ?? []) as Array<Record<string, unknown>>;
+        const result: Record<string, unknown> = {
+          hasSnapshot: Boolean(snapshots?.length),
+          snapshots: snapshots ?? [],
+          anomalyCount: anomalies.length,
+          criticalAnomalyCount: anomalies.filter((a) => a.severity === 'critical').length,
+        };
+        if (includeAnomalies && !anomalyErr) result.anomalies = anomalies;
+        return ok(toolCall.name, result);
+      }
+
       case 'extract_invoice_ocr': {
         const mediaUrl = String(args.mediaUrl ?? '');
         const mediaType = String(args.mediaType ?? 'image/jpeg') as InvoiceMediaType;

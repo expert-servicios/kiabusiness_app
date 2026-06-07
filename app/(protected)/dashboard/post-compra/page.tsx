@@ -1,11 +1,8 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import PostCompraWizard  from '@/components/dashboard/PostCompraWizard';
 import PostCompraWaiting from '@/components/dashboard/PostCompraWaiting';
 
-// Derive the MCP launch URL from the single shared base-URL env var.
-// NEXT_PUBLIC_HOLDED_MCP_BASE_URL is the canonical source of truth (in .env.example).
 const MCP_BASE = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL ?? 'https://claude.expertconsulting.es';
 const MCP_LAUNCH_URL = `${MCP_BASE}/launch`;
 
@@ -17,21 +14,6 @@ interface SubscriptionRecord {
 }
 
 interface McpStatus { connected: boolean }
-
-async function fetchWithCookies(path: string) {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
 
 export default async function PostCompraPage() {
   const [subsData, mcpData] = await Promise.all([

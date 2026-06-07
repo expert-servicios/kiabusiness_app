@@ -1,25 +1,9 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import {
   AlertCircle, ArrowRight, Building2, CheckCircle2,
   ChevronRight, Clock, FileText, FolderOpen, MessageCircle, Plus, Plug, Zap
 } from 'lucide-react';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
-
-async function fetchWithCookies(path: string) {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 const STATE_LABELS: Record<string, string> = {
   pendiente_documentacion: 'Pendiente de documentación',

@@ -84,6 +84,11 @@ export const kiaToolValidators = {
   get_company_status_snapshot: z.object({
     companyId: z.string().uuid().optional(),
   }).strict(),
+  get_accounting_snapshot: z.object({
+    companyId: z.string().uuid().optional(),
+    includeAnomalies: z.boolean().default(true),
+    periods: z.number().int().min(1).max(4).default(1),
+  }).strict(),
   // ── Holded data tools (require active client integration) ─────────────────
   get_holded_invoices: z.object({
     docType  : z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
@@ -141,6 +146,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   generate_profile_link: 'Generate secure profile/login link.',
   generate_holded_connection_link: 'Generate secure Holded connection panel link.',
   get_company_status_snapshot: 'Return safe company/accounting snapshot summary if available.',
+  get_accounting_snapshot: 'Return full accounting period snapshots and open anomalies for a company. Use when the user asks about financial data, quarterly results, IVA, cash flow, or accounting anomalies. Requires companyId in context.',
   get_holded_invoices: 'List recent Holded invoices or purchases for the client. Requires active Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
