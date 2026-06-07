@@ -202,7 +202,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
         let query = admin.from('cases').select('id, service, category, state, opened_at').eq('client_id', clientId);
         if (statusFilter === 'activos') {
-          query = query.not('state', 'in', '("finalizado","cerrado","entregado")');
+          query = query.not('state', 'in', ['finalizado', 'cerrado', 'entregado']);
         } else if (statusFilter === 'finalizados') {
           query = query.in('state', ['finalizado', 'cerrado', 'entregado']);
         }

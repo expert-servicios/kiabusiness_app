@@ -18,11 +18,12 @@ comment on function public.is_tenant_admin() is
   'Devuelve true si el usuario autenticado es tenant_admin con tenant asignado.';
 
 -- ── cases ─────────────────────────────────────────────────────────────────────
--- tenant_admin puede SELECT/INSERT/UPDATE/DELETE sobre expedientes de su tenant.
+-- tenant_admin puede leer expedientes de su tenant (no crear/borrar — solo la API admin lo hace).
 
 drop policy if exists "tenant_admin all cases" on public.cases;
-create policy "tenant_admin all cases" on public.cases
-  for all using (
+drop policy if exists "tenant_admin select cases" on public.cases;
+create policy "tenant_admin select cases" on public.cases
+  for select using (
     is_tenant_admin() and tenant_id = auth_tenant_id()
   );
 
@@ -39,12 +40,13 @@ create policy "tenant_admin select profiles" on public.profiles
 -- No se añade UPDATE para evitar que pueda modificar perfiles de clientes.
 
 -- ── documents ─────────────────────────────────────────────────────────────────
--- tenant_admin puede ver y subir documentos de clientes de su tenant.
--- Subconsulta usa SECURITY DEFINER vía auth_tenant_id(), sin cost de join.
+-- tenant_admin puede leer documentos de clientes de su tenant.
+-- Las subidas van por la API con service_role; no se necesita INSERT via RLS authenticated.
 
 drop policy if exists "tenant_admin all documents" on public.documents;
-create policy "tenant_admin all documents" on public.documents
-  for all using (
+drop policy if exists "tenant_admin select documents" on public.documents;
+create policy "tenant_admin select documents" on public.documents
+  for select using (
     is_tenant_admin() and client_id in (
       select id from public.profiles
       where tenant_id = auth_tenant_id()

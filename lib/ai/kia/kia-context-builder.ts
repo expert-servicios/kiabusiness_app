@@ -303,7 +303,7 @@ async function loadCasesForClient(
     .from('cases')
     .select('id, service, state, opened_at')
     .eq('client_id', clientId)
-    .not('state', 'in', '("finalizado","cerrado","entregado")')
+    .not('state', 'in', ['finalizado', 'cerrado', 'entregado'])
     .order('opened_at', { ascending: false })
     .limit(10);
   return (data ?? []).map((c: { id: string; service: string; state: string; opened_at: string }) => ({

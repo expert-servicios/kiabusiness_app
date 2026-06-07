@@ -245,10 +245,11 @@ export async function searchCompanyByName(
   name: string,
   opts: { deepSearch?: boolean } = {},
 ): Promise<CompanySuggestion[]> {
+  const empty: CompanySuggestion[] = [];
   const [bormeResults, ocResults, ckanResults] = await Promise.all([
-    fromBorme(name, opts),
-    fromOpenCorporates(name),
-    isCkanEnabled() ? searchCkanCompaniesByName(name) : Promise.resolve<CompanySuggestion[]>([]),
+    fromBorme(name, opts).catch(() => empty),
+    fromOpenCorporates(name).catch(() => empty),
+    isCkanEnabled() ? searchCkanCompaniesByName(name).catch(() => empty) : Promise.resolve(empty),
   ]);
   return mergeSuggestions([...bormeResults, ...ocResults, ...ckanResults]);
 }
@@ -266,14 +267,15 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
     return []; // Only user-entered data allowed for natural persons
   }
 
+  const empty: CompanySuggestion[] = [];
   const [viesResults, ocResults, ckanResults] = await Promise.all([
-    fromVies(taxId),
+    fromVies(taxId).catch(() => empty),
     isOpenCorporatesEnabled()
-      ? fromOpenCorporates(validation.normalized ?? taxId)
-      : Promise.resolve<CompanySuggestion[]>([]),
+      ? fromOpenCorporates(validation.normalized ?? taxId).catch(() => empty)
+      : Promise.resolve(empty),
     isCkanEnabled()
-      ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId)
-      : Promise.resolve<CompanySuggestion[]>([]),
+      ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId).catch(() => empty)
+      : Promise.resolve(empty),
   ]);
 
   return mergeSuggestions([...viesResults, ...ocResults, ...ckanResults]);
