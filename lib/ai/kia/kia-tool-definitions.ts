@@ -107,6 +107,16 @@ export const kiaToolValidators = {
     mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']),
   }).strict(),
   create_kia_decision_log: emptyObjectSchema,
+  get_user_expedientes: z.object({
+    status: z.enum(['activos', 'finalizados', 'todos']).default('activos'),
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
+  get_user_companies: z.object({
+    limit: z.number().int().min(1).max(10).default(5),
+  }).strict(),
+  get_user_pending_docs: z.object({
+    caseId: z.string().uuid().optional(),
+  }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 type ToolName = keyof typeof kiaToolValidators;
@@ -137,6 +147,9 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
   extract_invoice_ocr: 'Extract structured invoice data (vendor, amount, VAT, date, invoice number) from an image using GPT-4o vision. Use when user sends a photo of an invoice or receipt.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
+  get_user_expedientes: 'List the authenticated user\'s own cases (expedientes). Use when the user asks "mis expedientes", "mis trámites", "qué tengo pendiente", or any question about their own cases. Returns status, service name, and ID.',
+  get_user_companies: 'List the authenticated user\'s own companies. Use when the user asks "mis empresas", "mis sociedades", or questions about their company data.',
+  get_user_pending_docs: 'List documents pending upload or review for the authenticated user. Use when the user asks "qué documentos me piden", "documentos pendientes", or similar.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({

@@ -138,6 +138,25 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
 
+        {/* ── ONBOARDING BANNER ── */}
+        {profile && !profile.profile_completed && (
+          <Link
+            href="/dashboard/onboarding"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-[#d7a33a]/50 bg-[#d7a33a]/8 px-5 py-4 transition hover:border-[#d7a33a] hover:bg-[#d7a33a]/12"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/20">
+                <Zap className="h-4 w-4 text-[#d7a33a]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#07111d]">Completa la configuración inicial</p>
+                <p className="text-xs text-[#29384a]/70">Solo 2 minutos — añade tus datos y conecta tu empresa</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-[#d7a33a]" />
+          </Link>
+        )}
+
         {/* ── PRÓXIMA ACCIÓN (dynamic) ── */}
         {primaryAction ? (
           <Link

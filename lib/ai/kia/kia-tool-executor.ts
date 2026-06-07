@@ -194,6 +194,79 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         }
       }
 
+      case 'get_user_expedientes': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const statusFilter = String(args.status ?? 'activos');
+        const limit = Number(args.limit ?? 10);
+
+        let query = admin.from('cases').select('id, service, category, state, opened_at').eq('client_id', clientId);
+        if (statusFilter === 'activos') {
+          query = query.not('state', 'in', '("finalizado","cerrado","entregado")');
+        } else if (statusFilter === 'finalizados') {
+          query = query.in('state', ['finalizado', 'cerrado', 'entregado']);
+        }
+        const { data, error } = await query.order('opened_at', { ascending: false }).limit(limit);
+        if (error) return fail(toolCall.name, 'Error consultando expedientes.');
+        const rows = (data ?? []) as Array<{ id: string; service: string; category: string | null; state: string; opened_at: string }>;
+        return ok(toolCall.name, {
+          count: rows.length,
+          expedientes: rows.map((c) => ({
+            id: c.id,
+            servicio: c.service,
+            categoria: c.category,
+            estado: c.state,
+            fecha_apertura: c.opened_at,
+            url: `/dashboard/expedientes/${c.id}`,
+          })),
+        });
+      }
+
+      case 'get_user_companies': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const limit = Number(args.limit ?? 5);
+        const { data, error } = await admin
+          .from('profile_companies')
+          .select('role, company:companies(id, razon_social, nombre_comercial, cif_nif, forma_juridica)')
+          .eq('profile_id', clientId)
+          .limit(limit);
+        if (error) return fail(toolCall.name, 'Error consultando empresas.');
+        const rows = (data ?? []) as unknown as Array<{ role: string; company: Record<string, unknown> | null }>;
+        return ok(toolCall.name, {
+          count: rows.length,
+          empresas: rows.map((r) => {
+            const c = Array.isArray(r.company) ? r.company[0] : r.company;
+            return {
+              id: (c as Record<string, unknown>)?.id,
+              nombre: (c as Record<string, unknown>)?.nombre_comercial ?? (c as Record<string, unknown>)?.razon_social,
+              cif_nif: (c as Record<string, unknown>)?.cif_nif,
+              forma_juridica: (c as Record<string, unknown>)?.forma_juridica,
+              rol: r.role,
+            };
+          }),
+        });
+      }
+
+      case 'get_user_pending_docs': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const caseId = typeof args.caseId === 'string' ? args.caseId : undefined;
+        let query = admin.from('documents').select('id, original_name, state, case_id, created_at').eq('client_id', clientId).eq('state', 'pendiente');
+        if (caseId) query = query.eq('case_id', caseId);
+        const { data, error } = await query.order('created_at', { ascending: false }).limit(10);
+        if (error) return fail(toolCall.name, 'Error consultando documentos.');
+        const rows = (data ?? []) as Array<{ id: string; original_name: string | null; state: string; case_id: string | null; created_at: string }>;
+        return ok(toolCall.name, {
+          pending_count: rows.length,
+          documentos: rows.map((d) => ({
+            id: d.id,
+            nombre: d.original_name,
+            expediente_id: d.case_id,
+          })),
+        });
+      }
+
       default:
         return fail(toolCall.name, `Tool not allowed: ${toolCall.name}`);
     }
