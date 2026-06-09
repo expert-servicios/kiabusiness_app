@@ -14,12 +14,13 @@ export async function POST(
   if (!['admin', 'owner'].includes(profile?.role ?? '')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { id } = await params;
-  const { error } = await getSupabaseAdmin()
+  const { data: updated, error } = await getSupabaseAdmin()
     .from('security_alerts')
     .update({ resolved: true, resolved_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('resolved', false);
+    .eq('resolved', false)
+    .select('id');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, alreadyResolved: !updated?.length });
 }

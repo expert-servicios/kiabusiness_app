@@ -15,6 +15,7 @@ export function SecurityAlertResolveButton({ alertId }: { alertId: string }) {
     try {
       const res = await fetch(`/api/admin/security-alerts/${alertId}/resolve`, { method: 'POST' });
       if (!res.ok) { setFailed(true); return; }
+      // alreadyResolved means another admin just resolved it — refresh shows updated state either way
       router.refresh();
     } catch {
       setFailed(true);
