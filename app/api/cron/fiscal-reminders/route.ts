@@ -2,20 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getResendClient } from '@/lib/integrations/resend';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs daily at 08:00 UTC
 // Protected by CRON_SECRET header (set in Vercel env vars)
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET?.trim();
-
-  if (!cronSecret) {
-    console.error('[cron/fiscal-reminders] CRON_SECRET not configured');
-    return NextResponse.json({ error: 'Cron not configured' }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cronAuth = verifyCronRequest(request.headers, 'cron/fiscal-reminders');
+  if (!cronAuth.ok) {
+    return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
   const admin = getSupabaseAdmin();

@@ -3,6 +3,11 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
 import { notifyTenantAdminDocUploaded } from '@/lib/email/notify-tenant-admins';
 import { notifyAdmins } from '@/lib/integrations/push';
+import {
+  buildClientDocumentStoragePath,
+  CLIENT_DOCUMENT_MAX_BYTES,
+  validateClientDocumentFile,
+} from '@/lib/security/uploads';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -44,7 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Verify the case belongs to this user (or user is admin)
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', userId).single();
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
     const { data: caseData, error: caseError } = await adminSupabase
       .from('cases')
@@ -63,24 +68,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
-    if (!file || file.size === 0) {
+    if (!file) {
       return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'El archivo no puede superar 10 MB' }, { status: 400 });
+    const validation = validateClientDocumentFile(file, CLIENT_DOCUMENT_MAX_BYTES);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
     }
 
-    const ext = file.name.split('.').pop() ?? 'bin';
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${caseId}/${Date.now()}_${safeName}`;
+    const storagePath = buildClientDocumentStoragePath(caseId, validation.safeName);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     const { data: uploadData, error: uploadError } = await adminSupabase.storage
       .from('client-documents')
-      .upload(storagePath, buffer, { contentType: file.type || `application/${ext}`, upsert: false });
+      .upload(storagePath, buffer, { contentType: validation.contentType, upsert: false });
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
@@ -129,8 +133,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
           const driveResult = await syncDocumentToDrive({
             fileBuffer: buffer,
-            fileName: file.name,
-            mimeType: file.type || `application/${ext}`,
+            fileName: validation.safeName,
+            mimeType: validation.contentType,
             clientName,
             serviceName,
           });

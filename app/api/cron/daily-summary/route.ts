@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { citaReminder, dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates';
+import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
@@ -24,15 +25,9 @@ const DAYS_PENDING_THRESHOLD = 3;
 const QUOTE_OPEN_DAYS = 5;
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET?.trim();
-
-  if (!cronSecret) {
-    console.error('[cron/daily-summary] CRON_SECRET not configured');
-    return NextResponse.json({ error: 'Cron not configured' }, { status: 500 });
-  }
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cronAuth = verifyCronRequest(request.headers, 'cron/daily-summary');
+  if (!cronAuth.ok) {
+    return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
   const admin  = getSupabaseAdmin();

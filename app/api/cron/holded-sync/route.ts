@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
+import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs every 15 minutes
 // Protected by CRON_SECRET header (same as other crons)
@@ -74,15 +75,9 @@ async function executeJob(job: SyncJobRow): Promise<{ ok: boolean; error?: strin
 }
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET?.trim();
-
-  if (!cronSecret) {
-    console.error('[cron/holded-sync] CRON_SECRET not configured');
-    return NextResponse.json({ error: 'Cron not configured' }, { status: 500 });
-  }
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cronAuth = verifyCronRequest(request.headers, 'cron/holded-sync');
+  if (!cronAuth.ok) {
+    return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
   const admin = getSupabaseAdmin();

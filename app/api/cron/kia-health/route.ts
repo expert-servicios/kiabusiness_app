@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runKiaHealthChecks } from '@/lib/ai/kia/health/kia-health-runner';
+import { verifyCronRequest } from '@/lib/security/cron';
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET?.trim();
-
-  if (!cronSecret) {
-    console.error('[cron/kia-health] CRON_SECRET not configured');
-    return NextResponse.json({ error: 'Cron not configured' }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cronAuth = verifyCronRequest(request.headers, 'cron/kia-health');
+  if (!cronAuth.ok) {
+    return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
   if (process.env.KIA_HEALTH_CANARY_ENABLED?.toLowerCase() === 'false') {

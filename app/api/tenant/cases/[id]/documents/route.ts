@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  buildClientDocumentStoragePath,
+  TENANT_DOCUMENT_MAX_BYTES,
+  validateClientDocumentFile,
+} from '@/lib/security/uploads';
 
 export async function POST(
   request: NextRequest,
@@ -44,19 +49,21 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
-    if (!file || file.size === 0) return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
-    if (file.size > 20 * 1024 * 1024) return NextResponse.json({ error: 'El archivo no puede superar 20 MB' }, { status: 400 });
+    if (!file) return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
 
-    const ext = file.name.split('.').pop() ?? 'bin';
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${caseId}/${Date.now()}_${safeName}`;
+    const validation = validateClientDocumentFile(file, TENANT_DOCUMENT_MAX_BYTES);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
+    }
+
+    const storagePath = buildClientDocumentStoragePath(caseId, validation.safeName);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     const { data: uploadData, error: uploadError } = await admin.storage
       .from('client-documents')
-      .upload(storagePath, buffer, { contentType: file.type || `application/${ext}`, upsert: false });
+      .upload(storagePath, buffer, { contentType: validation.contentType, upsert: false });
 
     if (uploadError) {
       console.error('[tenant docs upload]', uploadError);

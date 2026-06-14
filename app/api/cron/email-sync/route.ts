@@ -2,21 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listGmailMailsSA, hasGmailSA, getGmailUnreadCountSA } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs every 5 minutes
 // Fetches recent Gmail inbox for info@expertconsulting.es (SA) and caches results
 // Also updates system_kv.email_unread_count for sidebar badge
 
-function cronGuard(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // local dev
-  const auth = request.headers.get('authorization');
-  return auth === `Bearer ${secret}`;
-}
-
 export async function GET(request: NextRequest) {
-  if (!cronGuard(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cronAuth = verifyCronRequest(request.headers, 'cron/email-sync');
+  if (!cronAuth.ok) {
+    return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
   if (!hasGmailSA()) {

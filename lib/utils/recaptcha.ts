@@ -30,10 +30,14 @@ export async function verifyRecaptchaToken({
   action,
   minScore: inputMinScore
 }: RecaptchaVerifyParams): Promise<RecaptchaVerifyResult> {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  // Skip verification if either key is missing — partial config blocks real users
-  if (!secret || !siteKey) return { ok: true, skipped: true, reason: 'not_configured' };
+  const secret = process.env.RECAPTCHA_SECRET_KEY?.trim();
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[recaptcha] RECAPTCHA_SECRET_KEY not configured');
+      return { ok: false, reason: 'not_configured' };
+    }
+    return { ok: true, skipped: true, reason: 'not_configured' };
+  }
   if (!token) return { ok: false, reason: 'missing_token' };
 
   try {
