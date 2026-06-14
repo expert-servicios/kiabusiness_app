@@ -40,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Clientes", href: "/admin/clientes" },
       { label: "Usuarios", href: "/admin/usuarios" },
+      { label: "Empresas", href: "/admin/empresas" },
       { label: "Onboarding", href: "/admin/onboarding" },
       { label: "Calendario", href: "/admin/calendario-fiscal" },
     ],
@@ -88,9 +89,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Panel Gerente", href: "/admin/executive" },
       { label: "Rentabilidad", href: "/admin/rentabilidad" },
+      { label: "Tenants", href: "/admin/tenants" },
+      { label: "Automatizaciones", href: "/admin/automatizaciones" },
       { label: "Kia Health", href: "/admin/kia-health" },
       { label: "Kia Auditor", href: "/admin/kia-auditor" },
       { label: "Reportes", href: "/admin/reportes" },
+      { label: "Seguridad MCP", href: "/admin/seguridad" },
       { label: "Configuración", href: "/admin/configuracion" },
     ],
   },

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const { data: subscriptions, error: fetchError } = await supabase
       .from('subscriptions')
-      .select('id,plan_name,status,stripe_price_id,current_period_start,current_period_end,canceled_at,created_at')
+      .select('id,plan_name,status,stripe_price_id,current_period_start,current_period_end,canceled_at,created_at,post_purchase_onboarding_at')
       .order('created_at', { ascending: false });
 
     if (fetchError) {

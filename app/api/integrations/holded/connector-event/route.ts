@@ -5,6 +5,7 @@
  * Auth: x-expert-shared-secret header (HOLDED_MCP_SHARED_SECRET env var).
  *
  * Event types:
+ *   user_connected        — OAuth completed, user successfully connected
  *   first_activity        — first tool used after connecting
  *   invoice_draft_created — draft invoice created via Claude
  *   auth_failures_burst   — repeated auth failures (security alert)
@@ -27,6 +28,9 @@ const baseSchema = z.object({
 });
 
 const eventSchema = z.discriminatedUnion('type', [
+  baseSchema.extend({
+    type: z.literal('user_connected'),
+  }),
   baseSchema.extend({
     type    : z.literal('first_activity'),
     toolUsed: z.string().nullable().optional(),
@@ -120,10 +124,15 @@ export async function POST(request: NextRequest) {
       .then(() => null, () => null);
   }
 
-  if (event.type === 'first_activity' && event.userId) {
+  // user_connected: OAuth just completed — mark in events (mcp-status reads this)
+  // first_activity: first tool use — update activity timestamp if row exists
+  if ((event.type === 'user_connected' || event.type === 'first_activity') && event.userId) {
     await admin
       .from('holded_mcp_connections')
-      .update({ last_activity_at: now, last_tool_used: event.toolUsed ?? null })
+      .update({
+        last_activity_at: now,
+        ...(event.type === 'first_activity' ? { last_tool_used: event.toolUsed ?? null } : {}),
+      })
       .eq('mcp_user_id', event.userId)
       .then(() => null, () => null);
   }

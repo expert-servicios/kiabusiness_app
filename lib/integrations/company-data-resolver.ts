@@ -140,8 +140,8 @@ export function validateSpanishTaxIdFormat(taxId: string): TaxIdValidationResult
 
 // ── Source builders ───────────────────────────────────────────────────────────
 
-async function fromBorme(name: string): Promise<CompanySuggestion[]> {
-  const results = await searchBormeByCompanyName(name, { maxDays: 60, maxResults: 3 });
+async function fromBorme(name: string, opts: { deepSearch?: boolean } = {}): Promise<CompanySuggestion[]> {
+  const results = await searchBormeByCompanyName(name, { maxResults: 3, deepSearch: opts.deepSearch });
   return results.map(({ acts, bormeId }) => ({
     name              : acts.name,
     taxId             : acts.taxId,
@@ -210,6 +210,46 @@ async function fromVies(taxId: string): Promise<CompanySuggestion[]> {
   }];
 }
 
+// ── Resolver-level result cache (1 h TTL) ─────────────────────────────────────
+// Caches the fully merged result for a given (name|taxId, country) tuple so that
+// repeated UI queries don't trigger new BORME / VIES / OpenCorporates / CKAN calls.
+// deepSearch queries are NOT cached (user explicitly wants fresh data).
+
+const RESOLVER_TTL_MS  = 60 * 60 * 1_000; // 1 h
+const RESOLVER_CACHE_MAX = 200;
+
+interface ResolverCacheEntry {
+  suggestions: CompanySuggestion[];
+  expiresAt  : number;
+}
+
+const resolverCache = new Map<string, ResolverCacheEntry>();
+
+function makeResolverKey(input: { name?: string; taxId?: string; country?: string }): string {
+  return [
+    (input.name  ?? '').toLowerCase().replace(/\s+/g, ' ').trim(),
+    (input.taxId ?? '').toUpperCase(),
+    (input.country ?? 'ES'),
+  ].join('|');
+}
+
+function getFromResolverCache(key: string): CompanySuggestion[] | null {
+  const entry = resolverCache.get(key);
+  if (!entry || Date.now() > entry.expiresAt) {
+    resolverCache.delete(key);
+    return null;
+  }
+  return entry.suggestions;
+}
+
+function setInResolverCache(key: string, suggestions: CompanySuggestion[]): void {
+  if (resolverCache.size >= RESOLVER_CACHE_MAX) {
+    const oldest = resolverCache.keys().next().value;
+    if (oldest !== undefined) resolverCache.delete(oldest);
+  }
+  resolverCache.set(key, { suggestions, expiresAt: Date.now() + RESOLVER_TTL_MS });
+}
+
 // ── Ranking / deduplication ───────────────────────────────────────────────────
 
 function confidenceScore(s: CompanySuggestion): number {
@@ -241,11 +281,15 @@ function mergeSuggestions(suggestions: CompanySuggestion[]): CompanySuggestion[]
  * Searches for companies by name across all enabled sources.
  * Always returns "suggested" data — never auto-saves.
  */
-export async function searchCompanyByName(name: string): Promise<CompanySuggestion[]> {
+export async function searchCompanyByName(
+  name: string,
+  opts: { deepSearch?: boolean } = {},
+): Promise<CompanySuggestion[]> {
+  const empty: CompanySuggestion[] = [];
   const [bormeResults, ocResults, ckanResults] = await Promise.all([
-    fromBorme(name),
-    fromOpenCorporates(name),
-    isCkanEnabled() ? searchCkanCompaniesByName(name) : Promise.resolve<CompanySuggestion[]>([]),
+    fromBorme(name, opts).catch(() => empty),
+    fromOpenCorporates(name).catch(() => empty),
+    isCkanEnabled() ? searchCkanCompaniesByName(name).catch(() => empty) : Promise.resolve(empty),
   ]);
   return mergeSuggestions([...bormeResults, ...ocResults, ...ckanResults]);
 }
@@ -263,14 +307,15 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
     return []; // Only user-entered data allowed for natural persons
   }
 
+  const empty: CompanySuggestion[] = [];
   const [viesResults, ocResults, ckanResults] = await Promise.all([
-    fromVies(taxId),
+    fromVies(taxId).catch(() => empty),
     isOpenCorporatesEnabled()
-      ? fromOpenCorporates(validation.normalized ?? taxId)
-      : Promise.resolve<CompanySuggestion[]>([]),
+      ? fromOpenCorporates(validation.normalized ?? taxId).catch(() => empty)
+      : Promise.resolve(empty),
     isCkanEnabled()
-      ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId)
-      : Promise.resolve<CompanySuggestion[]>([]),
+      ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId).catch(() => empty)
+      : Promise.resolve(empty),
   ]);
 
   return mergeSuggestions([...viesResults, ...ocResults, ...ckanResults]);
@@ -281,14 +326,27 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
  * requiresUserConfirmation is always true — callers must not auto-save.
  */
 export async function resolveCompanyData(input: {
-  name   ?: string;
-  taxId  ?: string;
-  country?: string;
+  name      ?: string;
+  taxId     ?: string;
+  country   ?: string;
+  deepSearch?: boolean;
 }): Promise<{
   suggestions           : CompanySuggestion[];
   bestSuggestion       ?: CompanySuggestion;
   requiresUserConfirmation: true;
 }> {
+  const opts      = { deepSearch: input.deepSearch };
+  const cacheKey  = makeResolverKey(input);
+
+  // Skip cache for deepSearch — user explicitly requests fresh BORME history
+  if (!input.deepSearch) {
+    const cached = getFromResolverCache(cacheKey);
+    if (cached) {
+      const suggestions = cached.slice(0, 5);
+      return { suggestions, bestSuggestion: suggestions[0], requiresUserConfirmation: true };
+    }
+  }
+
   const allSuggestions: CompanySuggestion[] = [];
 
   if (input.taxId) {
@@ -297,11 +355,12 @@ export async function resolveCompanyData(input: {
   }
 
   if (input.name && allSuggestions.length < 3) {
-    const byName = await searchCompanyByName(input.name);
+    const byName = await searchCompanyByName(input.name, opts);
     allSuggestions.push(...byName);
   }
 
-  const suggestions   = mergeSuggestions(allSuggestions).slice(0, 5);
+  const suggestions    = mergeSuggestions(allSuggestions).slice(0, 5);
+  if (!input.deepSearch) setInResolverCache(cacheKey, suggestions);
   const bestSuggestion = suggestions[0];
 
   return { suggestions, bestSuggestion, requiresUserConfirmation: true };

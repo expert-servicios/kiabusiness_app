@@ -72,10 +72,12 @@ export async function POST(request: NextRequest) {
   const startedAt = Date.now();
 
   // Run resolution
+  const deepSearch = request.headers.get('X-Borme-Deep-Search') === 'true';
+
   let result: Awaited<ReturnType<typeof resolveCompanyData>>;
   let resolveError: string | null = null;
   try {
-    result = await resolveCompanyData({ name, taxId: taxIdValidation?.normalized ?? taxId, country });
+    result = await resolveCompanyData({ name, taxId: taxIdValidation?.normalized ?? taxId, country, deepSearch });
   } catch (err) {
     // Store a generic message — never expose internal error details to client or logs
     resolveError = err instanceof Error ? err.message : 'Error desconocido';

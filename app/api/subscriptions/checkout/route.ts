@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
           },
         }
       ],
-      success_url: `${appUrl}/gracias/pago?type=subscription`,
+      success_url: `${appUrl}/dashboard/post-compra?origin=subscription`,
       cancel_url: `${appUrl}/dashboard/suscripciones`
     });
 

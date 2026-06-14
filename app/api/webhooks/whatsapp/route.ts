@@ -14,6 +14,7 @@ import {
   findSimilarRecentMessage,
   applyDeterministicVariation,
   isRepeatedKiaMessage,
+  messageSimilarity,
 } from '@/lib/ai/kia/kia-response-variation';
 import { normalizeKiaQuickReplies, quickRepliesToButtons } from '@/lib/ai/kia/kia-quick-replies';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -1137,7 +1138,7 @@ REGLAS:
 - Maximo 2 intercambios de clarificacion antes de cerrar con accion concreta. En cada turno de clarificacion haz UNA SOLA pregunta. Ofrece botones con la ultima opcion siendo "Otro". Si el usuario pulsa "Otro" o escribe "otro"/"другое", invitale a describir libremente sin crear expediente.
 - Si hay fuentes oficiales disponibles, cita 1-2 enlaces oficiales útiles
 - No digas que has comprobado información oficial si no aparece en FUENTES OFICIALES DISPONIBLES
-- Si la conversacion es solo entretenimiento, pruebas, flirteo, insultos o bromas sin relacion con EXPERT, responde una vez con tono amable, marca limite sutil y cierra sin empujar venta.
+- MENSAJES SOCIALES / OFF-TOPIC (MUY IMPORTANTE): si el usuario pregunta "¿cómo estás?", "¿eres feliz?", "¿eres humana?", hace bromas, saludos, flirteo, insultos o habla de temas sin relación con EXPERT: responde UNA SOLA VEZ de forma breve y amable, redirige sin empujar venta. NUNCA uses el contexto de servicios para responder a un mensaje social. Si el historial reciente muestra que ya respondiste lo mismo 2 o más veces, cambia COMPLETAMENTE el contenido y cierra la conversación con: "Parece que no estamos avanzando. Cuando necesites ayuda con un trámite, estaré aquí. ¡Hasta pronto! Kia · EXPERT 💼"
 - No crees friccion pidiendo correo o apellidos por WhatsApp; para formalizar usa https://expertconsulting.es/auth/login
 - WhatsApp puede orientar; para tramitar, contratar, compartir datos sensibles o hacer seguimiento de expediente, lleva al cliente a cita, presupuesto o panel seguro
 
@@ -1791,6 +1792,69 @@ export async function POST(request: NextRequest) {
           .limit(8);
 
         const conversationHistory = ((history ?? []).reverse()) as { direction: string; body: string; ai_responded?: boolean | null }[];
+
+        // ── Stuck-loop guard ────────────────────────────────────────────────────
+        // If the last 3 AI outbound messages are ≥0.78 Jaccard-similar, Kia is
+        // repeating herself. Close gracefully and flag for human review.
+        const recentAiOut = conversationHistory
+          .filter((h) => h.direction === 'outbound' && h.ai_responded === true)
+          .map((h) => h.body);
+        const [latest, prev1, prev2] = [recentAiOut.at(-1), recentAiOut.at(-2), recentAiOut.at(-3)];
+        const isStuck = Boolean(
+          latest && prev1 && prev2
+          && messageSimilarity(latest, prev1) >= 0.78
+          && messageSimilarity(latest, prev2) >= 0.78
+        );
+        if (isStuck) {
+          const closeBody = currentMessageLang === 'ru'
+            ? 'Я Kia, ассистентка EXPERT 😊 Кажется, разговор зашёл по кругу. Когда вам понадобится помощь с налогами, бухгалтерией или оформлением — напишите, я здесь. *До скорой встречи! Kia · EXPERT 💼*'
+            : 'Soy Kia, asistente de EXPERT 😊 Parece que no estamos avanzando — sin problema. Cuando necesites ayuda con un trámite, gestión fiscal o cualquier servicio, escríbeme y te atiendo encantada. *¡Hasta pronto! Kia · EXPERT 💼*';
+          await sendKiaReply({ type: 'text', body: closeBody }, from, clientId, admin, {
+            aiResponded: true, currentUserMessage: msgBody, lang: currentMessageLang,
+          });
+          await admin.from('whatsapp_conversations')
+            .update({ needs_review: true })
+            .eq('phone_number', from)
+            .eq('direction', 'inbound')
+            .is('read_at', null);
+          await persistSessionUpdates(admin, from, {
+            ...updatesWithLanguage,
+            data: {
+              ...updatedSession.data,
+              kia_contact_disposition: 'low_intent',
+              kia_low_intent_reason: 'stuck_repetition',
+              kia_low_intent_count: String(Math.max(1, (Number(updatedSession.data?.kia_low_intent_count) || 0) + 1)),
+            },
+          });
+          continue;
+        }
+
+        // ── Social / off-topic shortcut ─────────────────────────────────────────
+        // Greetings, well-being questions and unrelated chit-chat get a warm one-liner
+        // without pulling in full session context, preventing parrot loops.
+        const SOCIAL_RE = /^(cómo\s+est[aá]s?|como\s+estas?|qué\s+tal|todo\s+bien|eres\s+feliz|tienes\s+sentimientos|eres\s+human[ao]|eres\s+real|hola\s*[.!?]?|buenos?\s+días?|buenas\s+tardes?|buenas\s+noches?|gracias\s*[.!?]?|adiós?|hasta\s+luego|bye|estás\s+bien|bien\s*\?)[?!.\s]*$/i;
+        const isSocialMsg = !buttonId && SOCIAL_RE.test(msgBody.trim());
+        if (isSocialMsg) {
+          const SOCIAL_POOL_ES = [
+            '¡Hola! 😊 Soy Kia, asistente de EXPERT. Estoy aquí para ayudarte con trámites, gestión fiscal o cualquier duda sobre nuestros servicios. ¿En qué puedo ayudarte?',
+            '¡Buenos días! 🌟 Soy Kia de EXPERT. Si tienes alguna consulta sobre impuestos, gestoría o trámites, estaré encantada de atenderte.',
+            '¡Hola! Gracias por escribir. Soy Kia, tu asistente en EXPERT 💼. Cuéntame, ¿en qué puedo ayudarte hoy?',
+          ];
+          const SOCIAL_POOL_RU = [
+            'Привет! 😊 Я Kia, ассистентка EXPERT. Помогу с вопросами по налогам, оформлению документов или услугам компании. Чем могу помочь?',
+            'Добрый день! 🌟 Я Kia из EXPERT. Если у вас есть вопросы по бухгалтерии или трактовке испанского законодательства — спрашивайте!',
+            'Привет! Я здесь 💼 Чем могу быть полезна сегодня?',
+          ];
+          const pool = currentMessageLang === 'ru' ? SOCIAL_POOL_RU : SOCIAL_POOL_ES;
+          const recentBodies = recentAiOut.join(' ');
+          const picked = pool.find((r) => messageSimilarity(r, recentBodies) < 0.5) ?? pool[recentAiOut.length % pool.length]!;
+          await sendKiaReply({ type: 'text', body: picked }, from, clientId, admin, {
+            aiResponded: true, currentUserMessage: msgBody, lang: currentMessageLang,
+          });
+          await persistSessionUpdates(admin, from, updatesWithLanguage);
+          continue;
+        }
+
         const aiResult = await generateKiaAiResponse({
           clientId, phone: from, msgBody,
           session: updatedSession,

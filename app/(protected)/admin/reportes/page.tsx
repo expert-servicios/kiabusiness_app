@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { BarChart3, Mail, CreditCard, FileText, FolderOpen } from 'lucide-react';
 import { CASE_STATE_LABELS } from '@/lib/utils/case-states';
 import { HoldedCharts } from '@/components/admin/HoldedCharts';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface ReportData {
   totalRevenue: number;
@@ -21,21 +20,6 @@ const QUOTE_STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador', sent: 'Enviado', accepted: 'Aceptado', rejected: 'Rechazado', paid: 'Pagado'
 };
 
-
-async function fetchWithCookies(path: string) {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
 
 async function getReports(): Promise<ReportData | null> {
   return fetchWithCookies('/api/admin/reports');

@@ -15,75 +15,104 @@ import {
   casePendingExternal,
   caseDelivered,
   reviewRequest,
+  type TenantBrand,
 } from '@/lib/email/templates';
+import { getTenantForUser } from '@/lib/auth/tenant';
+import { notifyTenantAdminStatusChanged } from '@/lib/email/notify-tenant-admins';
+
+// ── Automation settings helper ──────────────────────────────────────────────
+// Returns enabled automation keys. Missing rows default to enabled for backward compatibility.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getEnabledAutomations(admin: any, keys: string[]): Promise<Set<string>> {
+  try {
+    const { data } = await admin
+      .from('automation_settings')
+      .select('key, enabled')
+      .in('key', keys);
+    const enabled = new Set<string>();
+    const seen = new Set<string>();
+    for (const row of (data ?? []) as { key: string; enabled: boolean }[]) {
+      seen.add(row.key);
+      if (row.enabled) enabled.add(row.key);
+    }
+    for (const key of keys) {
+      if (!seen.has(key)) enabled.add(key);
+    }
+    return enabled;
+  } catch {
+    return new Set(keys); // table not yet migrated — treat requested automations as enabled
+  }
+}
 
 // ── Status → client email mapping ──────────────────────────────────────────
 // Sends the appropriate template when admin transitions the case status.
 // Respects automation_settings toggles — fire-and-forget, never blocks the status update.
 async function sendCaseStatusEmail(params: {
-  newStatus          : CaseStatus;
-  clientEmail        : string;
-  clientName         : string;
-  clientId           : string;
-  service            : string;
-  adminNote          : string | null;
-  caseId             : string;
-  enabledAutomations : Set<string>;
+  newStatus: CaseStatus;
+  clientEmail: string;
+  clientName: string;
+  clientId: string;
+  service: string;
+  adminNote: string | null;
+  caseId: string;
+  enabledAutomations: Set<string>;
+  brand?: TenantBrand;
 }): Promise<void> {
-  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations } = params;
+  const { newStatus, clientEmail, clientName, clientId, service, adminNote, caseId, enabledAutomations, brand } = params;
+  const isEnabled = (key: string) => enabledAutomations.has(key);
   const funFact = '';
 
   let tpl: { subject: string; html: string } | null = null;
 
   switch (newStatus) {
     case 'pendiente_cliente':
-      if (!enabledAutomations.has('case.pendiente_cliente')) return;
-      tpl = caseDocsRequired(clientName, service, [], adminNote, funFact);
+      if (!isEnabled('case.pendiente_cliente')) return;
+      tpl = caseDocsRequired(clientName, service, [], adminNote, funFact, brand);
       break;
     case 'en_revision':
-      if (!enabledAutomations.has('case.en_revision')) return;
-      tpl = caseDocsReceived(clientName, service, adminNote, funFact);
+      if (!isEnabled('case.en_revision')) return;
+      tpl = caseDocsReceived(clientName, service, adminNote, funFact, brand);
       break;
     case 'listo_para_presentar':
-      if (!enabledAutomations.has('case.listo_para_presentar')) return;
-      tpl = caseInProgress(clientName, service, adminNote, funFact);
+      if (!isEnabled('case.listo_para_presentar')) return;
+      tpl = caseInProgress(clientName, service, adminNote, funFact, brand);
       break;
     case 'presentado':
-      if (!enabledAutomations.has('case.presentado')) return;
-      tpl = casePendingExternal(clientName, service, null, adminNote, funFact);
+      if (!isEnabled('case.presentado')) return;
+      tpl = casePendingExternal(clientName, service, null, adminNote, funFact, brand);
       break;
     case 'finalizado': {
-      const sendDelivered = enabledAutomations.has('case.finalizado');
-      const sendReview    = enabledAutomations.has('case.review_request');
+      const sendDelivered = isEnabled('case.finalizado');
+      const sendReview = isEnabled('case.review_request');
       if (!sendDelivered && !sendReview) return;
 
-      // Generate review token only when the review email is enabled
+      // Generate review token only when the review email is enabled.
       let reviewToken = '';
       if (sendReview) {
         try {
           reviewToken = randomBytes(32).toString('hex');
-          const db = getSupabaseAdmin();
-          await db.from('review_requests').insert({
-            case_id   : caseId,
-            client_id : clientId,
-            token     : reviewToken,
+          const admin = getSupabaseAdmin();
+          await admin.from('review_requests').insert({
+            case_id: caseId,
+            client_id: clientId,
+            token: reviewToken,
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           });
         } catch { reviewToken = ''; }
       }
 
       if (sendDelivered) {
-        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact);
+        const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
       }
       if (sendReview && reviewToken) {
-        const reviewTpl = reviewRequest(clientName, service, reviewToken);
+        const reviewTpl = reviewRequest(clientName, service, reviewToken, brand);
         void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
       }
       return;
     }
     default:
-      return; // nuevo, bloqueado — no client email
+      return;
   }
 
   if (tpl) {
@@ -226,20 +255,21 @@ export async function PATCH(
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
-        // Read automation toggles for the relevant keys — default to enabled if row missing
+        // Read automation toggles for the relevant keys; missing rows default to enabled.
         const automationKeys = body.status === 'finalizado'
           ? ['case.finalizado', 'case.review_request']
           : [`case.${body.status}`];
-        const { data: automationRows } = await admin
-          .from('automation_settings')
-          .select('key, enabled')
-          .in('key', automationKeys);
-        const enabledAutomations = new Set<string>(
-          (automationRows ?? []).filter((r) => r.enabled).map((r) => r.key as string)
-        );
-        for (const k of automationKeys) {
-          if (!(automationRows ?? []).find((r) => r.key === k)) enabledAutomations.add(k);
-        }
+
+        const [clientInfo, enabledAutomations, clientTenant] = await Promise.all([
+          getClientInfo(admin, current.client_id),
+          getEnabledAutomations(admin, automationKeys),
+          getTenantForUser(current.client_id).catch(() => null),
+        ]);
+        // Use tenant branding if the client belongs to a non-EXPERT tenant
+        const brand: TenantBrand | undefined =
+          clientTenant && clientTenant.slug !== 'expert'
+            ? (clientTenant.settings as TenantBrand)
+            : undefined;
 
         const STATUS_PUSH_LABELS: Partial<Record<CaseStatus, string>> = {
           pendiente_cliente:    'Necesitamos tu documentación para continuar',
@@ -249,18 +279,39 @@ export async function PATCH(
           finalizado:           'Tu expediente ha finalizado',
         };
 
-        const clientInfo = await getClientInfo(admin, current.client_id);
         if (clientInfo) {
           void sendCaseStatusEmail({
-            newStatus         : body.status,
-            clientEmail       : clientInfo.email,
-            clientName        : clientInfo.name,
-            clientId          : current.client_id,
-            service           : current.service ?? 'Trámite EXPERT',
-            adminNote         : body.admin_note ?? null,
-            caseId            : id,
+            newStatus: body.status,
+            clientEmail: clientInfo.email,
+            clientName: clientInfo.name,
+            clientId: current.client_id,
+            service: current.service ?? 'Trámite EXPERT',
+            adminNote: body.admin_note ?? null,
+            caseId: id,
             enabledAutomations,
+            brand,
           }).catch((err) => console.error('[cases PATCH] email error:', err));
+
+          // Notify tenant_admin if client belongs to a non-EXPERT tenant
+          if (clientTenant && clientTenant.slug !== 'expert') {
+            const STATUS_LABELS: Record<string, string> = {
+              pendiente_cliente: 'Pendiente documentación',
+              en_revision: 'En revisión',
+              listo_para_presentar: 'Listo para presentar',
+              presentado: 'Presentado',
+              finalizado: 'Finalizado',
+              bloqueado: 'Bloqueado',
+            };
+            void notifyTenantAdminStatusChanged({
+              clientId: current.client_id,
+              clientName: clientInfo.name,
+              service: current.service ?? 'Trámite',
+              caseId: id,
+              newStatus: body.status,
+              statusLabel: STATUS_LABELS[body.status] ?? body.status,
+              brand: brand,
+            }).catch(() => {});
+          }
         }
 
         // Push notification to client

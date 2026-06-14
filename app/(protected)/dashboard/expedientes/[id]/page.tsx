@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, Download, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
 import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface CaseDetail {
   id: string;
@@ -179,16 +178,6 @@ const STEP_LABELS: Record<string, string> = {
   finalizado: 'Finalizado'
 };
 
-async function fetchWithCookies(path: string) {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(absoluteAppUrl(path), {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return null;
-  return response.json();
-}
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -84,6 +84,11 @@ export const kiaToolValidators = {
   get_company_status_snapshot: z.object({
     companyId: z.string().uuid().optional(),
   }).strict(),
+  get_accounting_snapshot: z.object({
+    companyId: z.string().uuid().optional(),
+    includeAnomalies: z.boolean().default(true),
+    periods: z.number().int().min(1).max(4).default(1),
+  }).strict(),
   // ── Holded data tools (require active client integration) ─────────────────
   get_holded_invoices: z.object({
     docType  : z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
@@ -107,6 +112,16 @@ export const kiaToolValidators = {
     mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']),
   }).strict(),
   create_kia_decision_log: emptyObjectSchema,
+  get_user_expedientes: z.object({
+    status: z.enum(['activos', 'finalizados', 'todos']).default('activos'),
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
+  get_user_companies: z.object({
+    limit: z.number().int().min(1).max(10).default(5),
+  }).strict(),
+  get_user_pending_docs: z.object({
+    caseId: z.string().uuid().optional(),
+  }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 type ToolName = keyof typeof kiaToolValidators;
@@ -131,12 +146,16 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   generate_profile_link: 'Generate secure profile/login link.',
   generate_holded_connection_link: 'Generate secure Holded connection panel link.',
   get_company_status_snapshot: 'Return safe company/accounting snapshot summary if available.',
+  get_accounting_snapshot: 'Return full accounting period snapshots and open anomalies for a company. Use when the user asks about financial data, quarterly results, IVA, cash flow, or accounting anomalies. Requires companyId in context.',
   get_holded_invoices: 'List recent Holded invoices or purchases for the client. Requires active Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
   generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
   extract_invoice_ocr: 'Extract structured invoice data (vendor, amount, VAT, date, invoice number) from an image using GPT-4o vision. Use when user sends a photo of an invoice or receipt.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
+  get_user_expedientes: 'List the authenticated user\'s own cases (expedientes). Use when the user asks "mis expedientes", "mis trámites", "qué tengo pendiente", or any question about their own cases. Returns status, service name, and ID.',
+  get_user_companies: 'List the authenticated user\'s own companies. Use when the user asks "mis empresas", "mis sociedades", or questions about their company data.',
+  get_user_pending_docs: 'List documents pending upload or review for the authenticated user. Use when the user asks "qué documentos me piden", "documentos pendientes", or similar.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({

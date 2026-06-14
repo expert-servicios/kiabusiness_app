@@ -51,6 +51,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect('/auth/login?error=inactive');
   }
 
+  if (profile?.role === 'tenant_admin') {
+    redirect('/tenant/dashboard');
+  }
+
   if (profile?.role !== 'admin' && profile?.role !== 'owner') {
     redirect('/dashboard');
   }

@@ -1,4 +1,4 @@
--- Toggle table for automation rules (email notifications, reminders, etc.)
+-- automation_settings: per-automation on/off flags managed from /admin/automatizaciones.
 -- Each row is a named automation switch; admin panel reads/writes via RLS.
 
 CREATE TABLE IF NOT EXISTS public.automation_settings (
@@ -21,7 +21,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Seed default automations (idempotent)
+-- Seed default automations (idempotent).
 INSERT INTO public.automation_settings (key, enabled) VALUES
   ('case.pendiente_cliente',      true),
   ('case.en_revision',            true),

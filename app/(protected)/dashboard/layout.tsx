@@ -51,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const companies = companiesData?.companies ?? [];
   if (profileRow?.status === 'inactive') redirect('/auth/login?error=inactive');
+  if (profileRow?.role === 'tenant_admin') redirect('/tenant/dashboard');
 
   return (
     <div className="flex min-h-screen">
