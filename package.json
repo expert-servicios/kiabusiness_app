@@ -33,9 +33,9 @@
     "jose": "^6.2.3",
     "jszip": "^3.10.1",
     "lucide-react": "^1.14.0",
-    "next": "^16.2.4",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-hook-form": "^7.53.0",
     "recharts": "^3.8.1",
     "resend": "^6.12.2",
@@ -45,7 +45,6 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
-    "vitest": "^2.0.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
@@ -56,6 +55,7 @@
     "eslint-config-next": "^16.2.5",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   }
 }

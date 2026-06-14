@@ -601,9 +601,12 @@ export function CorreoInbox({
                     <span className="shrink-0 text-[10px] text-[#29384a]/50">{fmtDate(msg.date)}</span>
                   </div>
                   {msg.bodyType === 'html' ? (
-                    <div
-                      className="max-w-none overflow-auto text-xs leading-relaxed text-[#07111d]"
-                      dangerouslySetInnerHTML={{ __html: msg.body }}
+                    <iframe
+                      title={`Correo HTML: ${msg.subject}`}
+                      srcDoc={msg.body}
+                      sandbox="allow-popups"
+                      referrerPolicy="no-referrer"
+                      className="h-96 w-full rounded-lg border border-[#f0e9d8] bg-white"
                     />
                   ) : (
                     <p className="whitespace-pre-wrap text-xs leading-relaxed text-[#07111d]">{msg.body}</p>

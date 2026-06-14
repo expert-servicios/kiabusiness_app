@@ -281,9 +281,18 @@ function Section({ heading, content }: { heading: string; content: string }) {
 }
 
 function renderInline(text: string): string {
-  return text
+  return escapeInlineHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>');
+}
+
+function escapeInlineHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function slugify(text: string) {

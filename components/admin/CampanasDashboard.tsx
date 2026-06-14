@@ -211,8 +211,13 @@ function CampaignEditor({
             {showPreview && bodyHtml && (
               <div className="mt-2 overflow-hidden rounded-xl border border-[#d8cbb5] bg-white">
                 <div className="border-b border-[#f0e9d8] px-4 py-2 text-xs text-[#29384a]">Preview</div>
-                <div className="max-h-64 overflow-y-auto p-4 text-sm"
-                  dangerouslySetInnerHTML={{ __html: bodyHtml }}/>
+                <iframe
+                  title="Preview HTML de campana"
+                  srcDoc={bodyHtml}
+                  sandbox="allow-popups"
+                  referrerPolicy="no-referrer"
+                  className="h-64 w-full bg-white"
+                />
               </div>
             )}
           </div>

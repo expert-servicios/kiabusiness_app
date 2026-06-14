@@ -10,7 +10,12 @@ const SECURITY_HEADERS = [
   // Force HTTPS for 2 years (only effective in production over HTTPS)
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   // Disable browser features not used by this app
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' }
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+  // Extra browser hardening with low compatibility risk for OAuth, Stripe and Calendly flows
+  { key: 'X-DNS-Prefetch-Control', value: 'off' },
+  { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+  { key: 'Origin-Agent-Cluster', value: '?1' }
 ];
 
 const nextConfig: NextConfig = {
