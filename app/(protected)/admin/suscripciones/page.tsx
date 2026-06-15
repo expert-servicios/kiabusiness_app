@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { CreditCard, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
-interface Subscription {
+export interface Subscription {
   id: string;
   plan_name: string;
   status: string;
@@ -12,6 +12,12 @@ interface Subscription {
   canceled_at: string | null;
   created_at: string;
   client_id: string;
+  client: {
+    name: string | null;
+    email: string;
+    phone: string | null;
+    whatsapp_number: string | null;
+  } | null;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
