@@ -140,45 +140,49 @@ Reglas de ejecucion:
 
 ---
 
-## Estado actual de todas las areas (2026-06-06)
+## Estado actual de todas las areas (2026-06-15)
 
 ```
 ✅ Seguridad API           — webhook sig, secrets cifrados, escapeHtml, rate limit, fail-closed
+✅ Seguridad browser       — headers extra (COOP, X-DNS, Origin-Agent-Cluster), iframe sandboxed preview
+✅ Cron auth               — verifyCronRequest() centralizado; todos los crons migrados
+✅ Upload validation       — validateClientDocumentFile(): extensión, MIME, tamaño (10MB/20MB)
+✅ Security tests          — cron-guard, recaptcha, uploads (Vitest)
 ✅ Stripe / Pagos          — idempotencia, cola Holded, checkout allowlist
-✅ CI / Calidad            — lint, typecheck, build, 31 tests Vitest, GitHub Actions
+✅ CI / Calidad            — lint, typecheck, build, 31+ tests Vitest, GitHub Actions
 ✅ Auth / SSR              — Supabase SSR unificado, redirect sanitizado
 ✅ Multi-tenant            — schema, admin panel, portal tenant_admin, branding, integraciones
 ✅ RLS tenant fase 2       — is_tenant_admin(), políticas cases/profiles/docs/companies/orders/quotes
 ✅ Automatizaciones        — 7 reglas configurables, enforcement en emails
 ✅ Emails transaccionales  — 15+ templates, white-label por tenant, escapeHtml
-✅ Email queue             — tabla email_queue con status processing, updated_at, trigger, RLS
+✅ Email queue worker      — tabla + cron /api/cron/email-queue: batch 20, atomic claim, exponential backoff
 ✅ Portal cliente           — expedientes, documentos, entregables, mensajes, Kia widget
 ✅ Portal tenant_admin      — dashboard, clientes, expedientes, upload entregables
 ✅ Kia copiloto (WABA)     — anti-loro: stuck-loop guard + social shortcut + system prompt reforzado
-✅ Kia copiloto (in-app)   — widget flotante, /api/ai/kia, knowledge (AEAT/SS/DGT/Holded/PAE/CCAA)
+✅ Kia copiloto (in-app)   — SSE streaming real, user data tools (expedientes/empresas/docs), artifacts
 ✅ Kia buenas prácticas    — página /dashboard/kia-ayuda + enlace en widget
 ✅ Reviews / Reseñas       — captura publica, moderacion admin, featured
 ✅ Datos empresas          — BORME paralelo, CKAN open data, VIES, UI admin busqueda
 ✅ Web publica             — orientada a asesorias B2B, SEO, canonical, para-asesorias
+✅ Calendly                — getCalendlyUrl() util; todos los componentes usan env vars
 ✅ Holded sync             — queue durable, reintentos, cron protegido
-✅ Branch protection main  — PR requerido (1 approval), no force push, no delete (2026-06-07)
-✅ PR #7                   — claude/tender-darwin-aXkbO → main (abierto, pendiente merge)
+✅ Branch protection main  — PR requerido (1 approval), no force push, no delete
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
-⚠️ Email queue worker     — tabla creada; cron /api/cron/email-queue pendiente de implementar
+⚠️ Holded scheduler       — cron externo pendiente (cron-job.org / GitHub Actions cada 15 min)
 ```
 
 ---
 
 ## Pendiente manual (requiere accion del usuario)
 
-1. **Merge PR #7** — Revisar y hacer merge en github.com/expert-servicios/kiabusiness_app/pull/7
-2. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main (ya configurada la regla base).
-3. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
-4. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
-5. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
-6. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → consulta real.
+1. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main (Settings → Branches → main → Edit).
+2. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
+3. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
+4. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
+5. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → probar "mis expedientes", "mis empresas".
+6. **Holded scheduler externo** — Configurar cron-job.org o GitHub Actions scheduled que llame `GET https://expertconsulting.es/api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` cada 15 min.
 7. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
-8. **Calendly** — Actualizar username en calendly.com/settings.
+8. **Calendly** — Actualizar username en calendly.com/settings. Añadir `NEXT_PUBLIC_CALENDLY_URL` en Vercel env vars.
 
 ---
 
@@ -186,7 +190,7 @@ Reglas de ejecucion:
 
 ### Alta prioridad
 
-1. **Email queue worker** — Implementar `/api/cron/email-queue` que procese filas `pending`/`failed` de la tabla `email_queue`. Reintentos con backoff, max 3 intentos, status `processing` durante ejecucion. La tabla ya existe (migración 000005 aplicada).
+1. ~~**Email queue worker**~~ — ✅ COMPLETADO (2026-06-15): `lib/email/email-queue.ts` + `/api/cron/email-queue/route.ts`, cron en `vercel.json` cada hora.
 
 2. **Kia herramientas (tool calls)** — Permitir a Kia consultar datos reales del usuario: lista de expedientes, estado de empresas conectadas, documentos pendientes. Requiere `kia-tool-executor.ts` con verificacion de permisos.
 
@@ -1010,8 +1014,25 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 - [x] Migración RLS tenant fase 2 — `is_tenant_admin()`, políticas cases/profiles/docs/companies/orders/quotes.
 - [x] Migración `subscription_post_purchase_onboarding_at`.
 - [x] Migración `email_queue` — tabla completa con trigger updated_at, índice, RLS.
-- [x] PR #7 creado — `claude/tender-darwin-aXkbO → main`.
+- [x] PR #7 creado y mergeado — `claude/tender-darwin-aXkbO → main`.
 - [x] Branch protection en `main` — 1 approval requerido, no force push, no delete.
+
+### Completado en sesion 2026-06-15
+
+- [x] `lib/security/cron.ts` — `verifyCronRequest()` centralizado, fail-closed en produccion.
+- [x] `lib/security/uploads.ts` — `validateClientDocumentFile()`: extensión, MIME, tamaño.
+- [x] Todos los cron routes migrados a `verifyCronRequest()`.
+- [x] Document routes usan `validateClientDocumentFile()` antes de subir a Storage.
+- [x] `reCAPTCHA` util mejorado con logging.
+- [x] `CampanasDashboard` + `CorreoInbox`: `dangerouslySetInnerHTML` → `<iframe sandbox>` (fix XSS).
+- [x] `next.config.ts`: 4 headers de seguridad extra (COOP, X-DNS, X-Permitted-Cross-Domain, Origin-Agent-Cluster).
+- [x] Tests de seguridad: `cron-guard`, `recaptcha`, `uploads` (Vitest).
+- [x] Email queue worker — `lib/email/email-queue.ts` + `/api/cron/email-queue/route.ts`, batch 20, atomic claim, exponential backoff, cron cada hora en `vercel.json`.
+- [x] Kia copiloto SSE streaming — `streamAnthropicText()` en provider router; `/api/kia/copilot` con modo dual JSON/SSE; `KiaCopilotPanel` consume stream en tiempo real.
+- [x] Kia user data tools habilitadas — `get_user_expedientes`, `get_user_companies`, `get_user_pending_docs` en `DASHBOARD_SAFE_TOOLS`; artifact builders para tablas.
+- [x] `lib/utils/calendly.ts` — `getCalendlyUrl()` helper; todos los componentes Calendly usan env vars.
+- [x] Panel `/dashboard/informes/nuevo` + `GenerateReportPanel` — entrada para generar informes.
+- [x] `improvement-plan.md` actualizado (2026-06-15).
 
 ### Backlog / Fase SaaS
 
