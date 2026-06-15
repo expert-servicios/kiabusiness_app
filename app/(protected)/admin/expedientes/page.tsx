@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { FolderOpen } from 'lucide-react';
 import { CaseListWithFilters } from '@/components/admin/CaseListWithFilters';
@@ -59,9 +58,7 @@ export default async function AdminCasesPage() {
             </div>
           </div>
 
-          <Suspense fallback={<div className="py-8 text-center text-sm text-[#29384a]">Cargando…</div>}>
-            <CaseListWithFilters cases={cases} />
-          </Suspense>
+          <CaseListWithFilters cases={cases} />
         </div>
       </div>
     </main>

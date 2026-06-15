@@ -63,7 +63,7 @@ export default async function AdminHoldedDemosPage() {
           </Link>
           <div className="mt-3 flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-serif text-2xl font-bold text-[#07111d]">Prueba Holded 14 días</h1>
+              <h1 className="font-serif text-2xl font-bold text-[#07111d]">Plan Gratuito Holded</h1>
               <p className="mt-1 text-sm text-[#29384a]">
                 Solicitudes de demo gratuita de 14 días — onboarding y formación incluidos
               </p>
@@ -88,7 +88,7 @@ export default async function AdminHoldedDemosPage() {
             <Monitor className="mx-auto h-10 w-10 text-[#d8cbb5]" />
             <h2 className="mt-4 font-serif text-lg font-bold text-[#07111d]">Sin solicitudes todavía</h2>
             <p className="mt-2 text-sm text-[#29384a]">
-              Cuando alguien solicite la prueba Holded desde{' '}
+              Cuando alguien solicite el Plan Gratuito desde{' '}
               <Link href="/planes/gratuito" className="text-[#c88b25] underline underline-offset-4">
                 /planes/gratuito
               </Link>
@@ -174,7 +174,7 @@ export default async function AdminHoldedDemosPage() {
                   <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[#f0e8d8] pt-4">
                     <HoldedDemoStatusSelect demoId={demo.id} initialStatus={demo.status} />
                     <a
-                      href={`mailto:${demo.email}?subject=Tu prueba Holded 14 días — EXPERT`}
+                      href={`mailto:${demo.email}?subject=Tu Plan Gratuito Holded — EXPERT`}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#d7a33a] px-4 py-1.5 text-xs font-bold text-[#061321] transition hover:bg-[#f0bf54]"
                     >
                       <Mail className="h-3.5 w-3.5" />

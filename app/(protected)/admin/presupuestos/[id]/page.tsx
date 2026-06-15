@@ -1,10 +1,9 @@
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { ArrowLeft, FileText, User, CreditCard, CheckSquare, ExternalLink } from 'lucide-react';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { AdminQuoteCard } from '@/components/quotes/AdminQuoteCard';
 import { QuoteResendButton } from '@/components/admin/QuoteResendButton';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
@@ -32,19 +31,8 @@ interface QuoteDetail {
 }
 
 async function fetchQuoteDetail(id: string): Promise<QuoteDetail | null> {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(`/api/admin/quotes/${id}`), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.quote as QuoteDetail;
-  } catch {
-    return null;
-  }
+  const data = await fetchWithCookies<{ quote: QuoteDetail }>(`/api/admin/quotes/${id}`);
+  return data?.quote ?? null;
 }
 
 export default async function AdminQuoteDetailPage({

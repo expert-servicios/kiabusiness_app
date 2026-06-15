@@ -1,21 +1,9 @@
-import { cookies } from 'next/headers';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { WhatsAppInbox } from '@/components/admin/WhatsAppInbox';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 async function fetchConversations() {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl('/api/admin/whatsapp'), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store',
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.conversations ?? [];
-  } catch {
-    return [];
-  }
+  const data = await fetchWithCookies<{ conversations: unknown[] }>('/api/admin/whatsapp');
+  return data?.conversations ?? [];
 }
 
 export default async function AdminWhatsAppPage() {
