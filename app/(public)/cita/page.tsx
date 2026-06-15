@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CheckCircle2, Clock, Phone, Calendar } from 'lucide-react';
+import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
 
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
@@ -18,13 +20,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://expertconsulting.es/cita' },
 };
 
-const CALENDLY_URL =
-  (process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '') +
-  '?hide_event_type_details=1' +
-  '&hide_gdpr_banner=1' +
-  '&background_color=f8f6f1' +
-  '&text_color=0d1b2a' +
-  '&primary_color=f2c14e';
+const CALENDLY_URL = getCalendlyMeetingUrl();
 
 const PILLS = [
   { icon: CheckCircle2, label: 'Gratuita, sin compromiso' },
@@ -73,17 +69,34 @@ export default function CitaPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
 
           {/* ── Calendly inline embed (iframe) ── */}
-          <div className="overflow-hidden rounded-xl border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
-            <iframe
-              src={CALENDLY_URL}
-              width="100%"
-              height="700"
-              frameBorder="0"
-              title="Reservar cita con EXPERT"
-              loading="lazy"
-              className="block min-w-[320px]"
-            />
-          </div>
+          {CALENDLY_URL ? (
+            <div className="overflow-hidden rounded-xl border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
+              <iframe
+                src={CALENDLY_URL}
+                width="100%"
+                height="700"
+                frameBorder="0"
+                title="Reservar cita con EXPERT"
+                loading="lazy"
+                className="block min-w-[320px]"
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[#D4A017]/20 bg-white p-8 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
+              <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Agenda temporalmente no disponible</h2>
+              <p className="mt-3 text-sm leading-6 text-[#374151]">
+                Puedes pedir tu cita por email o teléfono y te responderemos con el primer hueco disponible.
+              </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <Link href="/contacto" className="inline-flex items-center justify-center rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">
+                  Contactar
+                </Link>
+                <a href="tel:+34696550480" className="inline-flex items-center justify-center rounded-xl border border-[#D4A017]/30 px-5 py-3 text-sm font-bold text-[#0D1B2A]">
+                  Llamar
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* ── Desktop sidebar ── */}
           <div className="hidden space-y-4 lg:block">

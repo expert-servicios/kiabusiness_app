@@ -20,7 +20,7 @@ const SETTINGS_LINKS = [
     icon: User,
     label: 'Mi perfil',
     description: 'Datos personales y contraseña',
-    href: '/admin/perfil',
+    href: '/dashboard/perfil',
   },
   {
     icon: Settings,
@@ -38,7 +38,7 @@ const SETTINGS_LINKS = [
     icon: Bell,
     label: 'Notificaciones',
     description: 'Alertas y avisos push',
-    href: '/admin/notificaciones',
+    href: '/admin/configuracion#notificaciones',
   },
 ];
 

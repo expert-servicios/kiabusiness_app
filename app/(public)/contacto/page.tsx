@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
 
 export const metadata: Metadata = {
   title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
@@ -19,6 +20,8 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
   alternates: { canonical: 'https://expertconsulting.es/contacto' }
 };
+
+const CALENDLY_REUNION_URL = getCalendlyMeetingUrl();
 
 const contactItems = [
   {
@@ -120,10 +123,7 @@ export default function ContactoPage() {
             </a>
 
             <CalendlyButton
-              url={
-                (process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '') +
-                '?hide_event_type_details=1&hide_gdpr_banner=1&background_color=f8f6f1&text_color=0d1b2a&primary_color=f2c14e'
-              }
+              url={CALENDLY_REUNION_URL}
               className="flex flex-col border border-[#D4A017] bg-white p-5 text-left transition hover:bg-[#D4A017]/5"
             >
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Gratis · 15 minutos</p>

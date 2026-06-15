@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
 
 const PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '';
+const CALENDLY_URL = getCalendlyMeetingUrl();
 
 export function FormacionBuyButton({ area }: { area: string }) {
   const [loading, setLoading] = useState(false);

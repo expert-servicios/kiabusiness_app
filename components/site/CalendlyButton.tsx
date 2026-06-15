@@ -9,18 +9,25 @@ declare global {
 }
 
 interface Props {
-  url       : string;
+  url       : string | null;
   title?    : string;
   subtitle? : string;
   className?: string;
+  fallbackHref?: string;
   children  : ReactNode;
 }
 
-export function CalendlyButton({ url, className, children }: Props) {
+export function CalendlyButton({ url, className, fallbackHref = '/cita', children }: Props) {
   return (
     <button
       type="button"
-      onClick={() => window.Calendly?.initPopupWidget({ url })}
+      onClick={() => {
+        if (url && window.Calendly) {
+          window.Calendly.initPopupWidget({ url });
+          return;
+        }
+        window.location.assign(fallbackHref);
+      }}
       className={className}
     >
       {children}

@@ -40,15 +40,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/blog`,                            changeFrequency: 'weekly',  priority: 0.8, lastModified: now },
     { url: `${BASE}/docs`,                            changeFrequency: 'weekly',  priority: 0.85, lastModified: now },
     { url: `${BASE}/contacto`,                        changeFrequency: 'yearly',  priority: 0.6, lastModified: now },
+    { url: `${BASE}/cita`,                            changeFrequency: 'yearly',  priority: 0.65, lastModified: now },
     { url: `${BASE}/solicitar-presupuesto`,           changeFrequency: 'yearly',  priority: 0.6, lastModified: now },
     { url: `${BASE}/para-asesorias`,                  changeFrequency: 'monthly', priority: 0.5, lastModified: now },
+    { url: `${BASE}/ayuda/kia`,                       changeFrequency: 'monthly', priority: 0.45, lastModified: now },
+    { url: `${BASE}/holded/pack-starter`,             changeFrequency: 'monthly', priority: 0.75, lastModified: now },
+    { url: `${BASE}/holded/migracion-sin-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/holded/migracion-con-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     // Planes
+    { url: `${BASE}/planes/gratuito`,                 changeFrequency: 'monthly', priority: 0.55, lastModified: now },
     { url: `${BASE}/planes/supervision`,              changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/planes/avanzado`,                 changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/planes/colaborativo`,             changeFrequency: 'monthly', priority: 0.6, lastModified: now },
     { url: `${BASE}/planes/presupuesto-personalizado`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
-    // Especiales
-    { url: `${BASE}/nacionalidad-espanola-menor-nacido-en-espana`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     // Legal
     { url: `${BASE}/aviso-legal`,   changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/privacidad`,    changeFrequency: 'yearly', priority: 0.2, lastModified: now },

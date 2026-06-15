@@ -353,7 +353,7 @@ export function HoldedConsentModal({
                   <>
                     He leído y acepto la{' '}
                     <a
-                      href="/legal/privacidad"
+                      href="/privacidad"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-[#c88b25] hover:text-[#b07820]"
@@ -372,7 +372,7 @@ export function HoldedConsentModal({
                   <>
                     Acepto los{' '}
                     <a
-                      href="/legal/terminos"
+                      href="/terminos"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-[#c88b25] hover:text-[#b07820]"

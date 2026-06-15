@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
+import { getCalendlyDemoUrl } from '@/lib/utils/calendly';
 
 const WA_NUMBER = '34696550480';
 const SESSION_KEY = 'kia_bubble_dismissed';
@@ -61,18 +62,12 @@ declare global {
   }
 }
 
-const CALENDLY_DEMO =
-  (process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? '') +
-  '?hide_event_type_details=1' +
-  '&hide_gdpr_banner=1' +
-  '&background_color=f8f6f1' +
-  '&text_color=0d1b2a' +
-  '&primary_color=f2c14e';
+const CALENDLY_DEMO = getCalendlyDemoUrl();
 
 type Action =
   | { kind: 'link';     href: string; label: string; icon: string; external?: true }
   | { kind: 'wa';       msg:  string; label: string; icon: string }
-  | { kind: 'calendly'; url:  string; label: string; icon: string };
+  | { kind: 'calendly'; url:  string | null; label: string; icon: string };
 
 const ANON_BASE: Action[] = [
   { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
@@ -234,7 +229,14 @@ export function WhatsAppChatWidget() {
                 <button
                   key={action.label}
                   type="button"
-                  onClick={() => { window.Calendly?.initPopupWidget({ url: action.url }); dismiss(); }}
+                  onClick={() => {
+                    if (action.url && window.Calendly) {
+                      window.Calendly.initPopupWidget({ url: action.url });
+                    } else {
+                      window.location.assign('/cita');
+                    }
+                    dismiss();
+                  }}
                   className={chipClass}
                 >
                   <span aria-hidden="true">{action.icon}</span>

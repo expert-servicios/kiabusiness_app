@@ -2,14 +2,9 @@
 
 import { type ReactNode } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { getCalendlyDemoUrl } from '@/lib/utils/calendly';
 
-const CALENDLY_DEMO_URL =
-  (process.env.NEXT_PUBLIC_CALENDLY_DEMO_URL ?? '') +
-  '?hide_event_type_details=1' +
-  '&hide_gdpr_banner=1' +
-  '&background_color=f8f6f1' +
-  '&text_color=0d1b2a' +
-  '&primary_color=f2c14e';
+const CALENDLY_DEMO_URL = getCalendlyDemoUrl();
 
 interface Props {
   className?: string;

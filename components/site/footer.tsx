@@ -2,14 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, MapPin, MessageCircle, Calendar } from 'lucide-react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
 
-const CALENDLY_REUNION_URL =
-  (process.env.NEXT_PUBLIC_CALENDLY_REUNION_URL ?? '') +
-  '?hide_event_type_details=1' +
-  '&hide_gdpr_banner=1' +
-  '&background_color=f8f6f1' +
-  '&text_color=0d1b2a' +
-  '&primary_color=f2c14e';
+const CALENDLY_REUNION_URL = getCalendlyMeetingUrl();
 
 const quickLinks = [
   { label: 'Inicio', href: '/' },
