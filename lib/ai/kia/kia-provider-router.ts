@@ -376,3 +376,69 @@ function extractApiError(data: unknown, status: number): string {
   }
   return `HTTP ${status}`;
 }
+
+/**
+ * Streams plain-text response from Anthropic (no structured JSON).
+ * Yields text chunks as they arrive; used by the copilot SSE endpoint.
+ */
+export async function* streamAnthropicText(
+  systemPrompt: string,
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  opts: { maxTokens?: number; temperature?: number } = {},
+): AsyncGenerator<string> {
+  const providers = getKiaProviderOrder();
+  const anthropic = providers.find((p) => p.provider === "anthropic");
+  if (!anthropic?.apiKey) return;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": anthropic.apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: anthropic.model ?? SONNET,
+      max_tokens: opts.maxTokens ?? 600,
+      temperature: opts.temperature ?? 0.3,
+      stream: true,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+
+  if (!response.ok || !response.body) return;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  type StreamEvent = { type?: string; delta?: { type?: string; text?: string } };
+
+  try {
+    outer: while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        let ev: StreamEvent;
+        try { ev = JSON.parse(raw) as StreamEvent; } catch { continue; }
+        if (ev.type === "message_stop") break outer;
+        if (
+          ev.type === "content_block_delta" &&
+          ev.delta?.type === "text_delta" &&
+          ev.delta.text
+        ) {
+          yield ev.delta.text;
+        }
+      }
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+}

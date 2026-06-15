@@ -185,30 +185,59 @@ export function KiaCopilotPanel() {
     try {
       const res = await fetch('/api/kia/copilot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: cleanText,
-          currentPage: pathname,
-          currentTask: pageCtx.task,
-          history,
-        }),
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify({ message: cleanText, currentPage: pathname, currentTask: pageCtx.task, history }),
       });
-      const data = await res.json() as {
-        message?: string;
-        quickReplies?: QuickReply[];
-        artifacts?: CopilotArtifact[];
-        error?: string;
-      };
 
-      setMessages((prev) => [
-        ...prev.slice(0, -1),
-        {
-          role: 'kia',
-          text: data.message ?? data.error ?? 'Lo siento, algo salio mal.',
-          artifacts: data.artifacts ?? [],
-        },
-      ]);
-      setQuickReplies(data.quickReplies ?? []);
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let streamedText = '';
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+
+          let ev: { type?: string; text?: string; artifacts?: CopilotArtifact[]; quickReplies?: QuickReply[]; error?: string };
+          try { ev = JSON.parse(raw) as typeof ev; } catch { continue; }
+
+          if (ev.type === 'chunk' && ev.text) {
+            streamedText += ev.text;
+            setMessages((prev) => [
+              ...prev.slice(0, -1),
+              { role: 'kia', text: streamedText, loading: false },
+            ]);
+          }
+
+          if (ev.type === 'done') {
+            setMessages((prev) => [
+              ...prev.slice(0, -1),
+              { role: 'kia', text: streamedText || '—', loading: false, artifacts: ev.artifacts ?? [] },
+            ]);
+            setQuickReplies(ev.quickReplies ?? []);
+            break outer;
+          }
+
+          if (ev.type === 'error') {
+            setMessages((prev) => [
+              ...prev.slice(0, -1),
+              { role: 'kia', text: ev.error ?? 'Error interno. Intentalo de nuevo.' },
+            ]);
+            break outer;
+          }
+        }
+      }
     } catch {
       setMessages((prev) => [
         ...prev.slice(0, -1),
