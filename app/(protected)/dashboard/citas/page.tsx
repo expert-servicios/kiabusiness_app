@@ -1,10 +1,9 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import {
   ArrowLeft, Calendar, CheckCircle2, Clock, ExternalLink,
   Video, XCircle, RefreshCw, AlertCircle
 } from 'lucide-react';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Appointment {
   id: string;
@@ -32,15 +31,8 @@ function fmtDate(d: string | null) {
 }
 
 async function getAppointments(): Promise<Appointment[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const res = await fetch(absoluteAppUrl('/api/dashboard/citas'), {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store',
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.appointments ?? []) as Appointment[];
+  const data = await fetchWithCookies<{ appointments: Appointment[] }>('/api/dashboard/citas');
+  return (data?.appointments ?? []) as Appointment[];
 }
 
 export default async function DashboardCitasPage() {

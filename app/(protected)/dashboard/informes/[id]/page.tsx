@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { CompanyStatusReport } from '@/components/dashboard/reports/CompanyStatusReport';
 import type { ReportData } from '@/lib/reports/report-generator';
 
@@ -16,20 +15,8 @@ interface ReportRow {
 }
 
 async function fetchReport(id: string): Promise<ReportRow | null> {
-  try {
-    const cookieStore  = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl(`/api/reports/${id}`), {
-      headers: { cookie: cookieHeader },
-      cache  : 'no-store',
-    });
-    if (res.status === 401) redirect('/auth/login');
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.report ?? null;
-  } catch {
-    return null;
-  }
+  const json = await fetchWithCookies<{ report: ReportRow }>(`/api/reports/${id}`);
+  return json?.report ?? null;
 }
 
 export default async function InformeDetailPage({ params }: { params: Promise<{ id: string }> }) {

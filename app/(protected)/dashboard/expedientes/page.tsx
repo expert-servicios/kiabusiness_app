@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { ArrowLeft, FolderOpen, ChevronRight, MessageCircle } from 'lucide-react';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Case {
   id: string;
@@ -30,15 +29,8 @@ const STATE_COLORS: Record<string, string> = {
 };
 
 async function getCases(): Promise<Case[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(absoluteAppUrl('/api/cases'), {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.cases as Case[];
+  const data = await fetchWithCookies<{ cases: Case[] }>('/api/cases');
+  return (data?.cases ?? []) as Case[];
 }
 
 export default async function ClientCasesPage() {

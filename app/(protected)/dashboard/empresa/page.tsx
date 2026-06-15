@@ -1,8 +1,7 @@
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check, Plus, Pencil } from 'lucide-react';
 import { CompanyEditForm } from './CompanyEditForm';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Company {
   id: string;
@@ -28,16 +27,10 @@ const FORMA_LABELS: Record<string, string> = {
 };
 
 async function getData() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-
-  const [profileRes, companiesRes] = await Promise.all([
-    fetch(absoluteAppUrl('/api/profile'), { headers: { cookie: cookieHeader }, cache: 'no-store' }),
-    fetch(absoluteAppUrl('/api/companies'), { headers: { cookie: cookieHeader }, cache: 'no-store' })
+  const [profileData, companiesData] = await Promise.all([
+    fetchWithCookies<{ profile: { active_company_id: string | null } }>('/api/profile'),
+    fetchWithCookies<{ companies: Company[] }>('/api/companies'),
   ]);
-
-  const profileData = profileRes.ok ? await profileRes.json() : null;
-  const companiesData = companiesRes.ok ? await companiesRes.json() : null;
 
   return {
     activeCompanyId: profileData?.profile?.active_company_id ?? null,

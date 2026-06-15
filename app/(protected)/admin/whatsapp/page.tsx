@@ -2,7 +2,7 @@ import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { WhatsAppInbox } from '@/components/admin/WhatsAppInbox';
 
 async function fetchConversations() {
-  const data = await fetchWithCookies<{ conversations: unknown[] }>('/api/admin/whatsapp');
+  const data = await fetchWithCookies('/api/admin/whatsapp');
   return data?.conversations ?? [];
 }
 
