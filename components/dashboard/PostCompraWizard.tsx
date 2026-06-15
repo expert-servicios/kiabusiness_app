@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   CheckCircle2, Loader2, Plug, ArrowRight, AlertTriangle, ExternalLink, Zap,
 } from 'lucide-react';
@@ -11,10 +13,10 @@ interface Props {
   holdedConnected: boolean;
   claudeConnected: boolean;
   mcpLaunchUrl   : string;
+  userEmail      : string;
 }
 
-// Poll for up to 5 minutes (60 × 5s), then stop and show a manual check option.
-const MAX_POLL_TICKS = 60;
+const REALTIME_TIMEOUT_MS = 5 * 60 * 1_000; // 5 minutes
 
 type PollState = 'idle' | 'polling' | 'connected' | 'timeout';
 
@@ -23,46 +25,91 @@ export default function PostCompraWizard({
   holdedConnected,
   claudeConnected: initialClaudeConnected,
   mcpLaunchUrl,
+  userEmail,
 }: Props) {
-  const router     = useRouter();
-  const pollTicks  = useRef(0);
+  const router   = useRouter();
+  const channelRef    = useRef<RealtimeChannel | null>(null);
+  const timeoutRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [pollState, setPollState] = useState<PollState>(
     initialClaudeConnected ? 'connected' : 'idle'
   );
-  const [completing, setCompleting] = useState(false);
+  const [completing,    setCompleting]    = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
 
-  // Derive claudeConnected from a single source: either the initial server-side value
-  // or the poll result — no separate boolean state that can fall out of sync.
   const claudeConnected = initialClaudeConnected || pollState === 'connected';
   const allDone = holdedConnected && claudeConnected;
 
-  const pollMcpStatus = useCallback(async () => {
-    pollTicks.current += 1;
-    if (pollTicks.current >= MAX_POLL_TICKS) {
-      setPollState('timeout');
-      return;
+  const stopRealtime = useCallback(() => {
+    if (channelRef.current) {
+      channelRef.current.unsubscribe();
+      channelRef.current = null;
     }
-    try {
-      const res = await fetch('/api/integrations/holded/mcp-status', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json() as { connected: boolean };
-      if (data.connected) setPollState('connected');
-    } catch { /* network hiccup — keep polling */ }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   }, []);
 
-  useEffect(() => {
-    if (pollState !== 'polling') return;
-    const id = setInterval(() => { void pollMcpStatus(); }, 5_000);
-    return () => clearInterval(id);
-  }, [pollState, pollMcpStatus]);
+  const startRealtime = useCallback(() => {
+    stopRealtime();
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    channelRef.current = supabase
+      .channel(`mcp-wizard-${userEmail}`)
+      .on(
+        'postgres_changes',
+        {
+          event : 'INSERT',
+          schema: 'public',
+          table : 'holded_mcp_events',
+          filter: `user_email=eq.${userEmail}`,
+        },
+        (payload) => {
+          const evt = payload.new as { event_type: string; channel?: string };
+          if (
+            evt.channel === 'claude' &&
+            (evt.event_type === 'user_connected' || evt.event_type === 'first_activity')
+          ) {
+            setPollState('connected');
+            stopRealtime();
+          }
+        },
+      )
+      .subscribe();
+
+    // Safety net: stop after REALTIME_TIMEOUT_MS and show manual check option
+    timeoutRef.current = setTimeout(() => {
+      setPollState((prev) => prev === 'polling' ? 'timeout' : prev);
+      stopRealtime();
+    }, REALTIME_TIMEOUT_MS);
+  }, [userEmail, stopRealtime]);
+
+  // Clean up on unmount
+  useEffect(() => () => { stopRealtime(); }, [stopRealtime]);
 
   function handleLaunchClaude() {
-    // Guard: don't open multiple tabs if already polling
     if (pollState === 'polling') return;
     setPollState('polling');
-    pollTicks.current = 0;
     window.open(mcpLaunchUrl, '_blank', 'noopener');
+    startRealtime();
+  }
+
+  async function handleRecheck() {
+    setPollState('polling');
+    // Do a one-shot HTTP check first in case the event arrived before we subscribed
+    try {
+      const res = await fetch('/api/integrations/holded/mcp-status', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json() as { connected: boolean };
+        if (data.connected) { setPollState('connected'); return; }
+      }
+    } catch { /* network hiccup — fall through to realtime */ }
+    startRealtime();
   }
 
   async function handleFinish(isSkip = false) {
@@ -152,7 +199,7 @@ export default function PostCompraWizard({
                     <div className="text-xs text-[#29384a]/60 space-y-2">
                       <p>No detectamos la conexión automáticamente. Si ya conectaste Claude, puedes continuar.</p>
                       <button
-                        onClick={() => { setPollState('polling'); pollTicks.current = 0; void pollMcpStatus(); }}
+                        onClick={handleRecheck}
                         className="text-[#d7a33a] underline underline-offset-2"
                       >
                         Volver a comprobar

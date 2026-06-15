@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import PostCompraWizard  from '@/components/dashboard/PostCompraWizard';
 import PostCompraWaiting from '@/components/dashboard/PostCompraWaiting';
@@ -16,6 +18,14 @@ interface SubscriptionRecord {
 interface McpStatus { connected: boolean }
 
 export default async function PostCompraPage() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+
   const [subsData, mcpData] = await Promise.all([
     fetchWithCookies('/api/subscriptions'),
     fetchWithCookies('/api/integrations/holded/mcp-status'),
@@ -53,6 +63,7 @@ export default async function PostCompraPage() {
       holdedConnected={true}
       claudeConnected={claudeConnected}
       mcpLaunchUrl={MCP_LAUNCH_URL}
+      userEmail={user?.email ?? ''}
     />
   );
 }
