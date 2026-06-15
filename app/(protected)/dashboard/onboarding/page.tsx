@@ -1,485 +1,440 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
-  ArrowRight, Building2, CheckCircle2, Plug, User,
-  Loader2, ChevronRight, ChevronLeft, Zap,
+  ArrowRight, Check, CheckCircle2, ChevronLeft,
+  FileText, Loader2, User, Zap,
 } from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+type ClientType = 'particular' | 'autonomo' | 'empresa';
 
-interface ProfileStep {
-  full_name: string;
-  phone: string;
+interface ProfileData {
+  full_name?: string | null;
+  phone?: string | null;
+  client_type?: ClientType | null;
+  tax_id?: string | null;
+  company?: string | null;
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+  province?: string | null;
+  onboarding_completed_at?: string | null;
 }
 
-interface CompanyStep {
-  skip: boolean;
-  razon_social: string;
-  cif_nif: string;
-  forma_juridica: 'autonomo' | 'sl' | 'sa' | 'otra';
-}
+const CLIENT_TYPE_OPTIONS: { value: ClientType; label: string; desc: string }[] = [
+  { value: 'particular', label: 'Particular', desc: 'Persona física sin actividad empresarial' },
+  { value: 'autonomo',   label: 'Autónomo',   desc: 'Trabajo por cuenta propia o freelance' },
+  { value: 'empresa',    label: 'Empresa',    desc: 'Sociedad limitada, anónima u otra forma' },
+];
 
-type Step = 'profile' | 'company' | 'holded' | 'done';
+const inputCls =
+  'w-full rounded-lg border border-[#d8cbb5] bg-[#faf7f2] px-3.5 py-2.5 text-sm text-[#07111d] placeholder-[#7a6e5f] outline-none transition focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20';
 
-const STEPS: Step[] = ['profile', 'company', 'holded', 'done'];
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [step, setStep]               = useState<1 | 2 | 3>(1);
+  const [saving, setSaving]           = useState(false);
+  const [completing, setCompleting]   = useState(false);
+  const [error, setError]             = useState('');
+  const [ready, setReady]             = useState(false);
 
-const STEP_LABELS: Record<Step, string> = {
-  profile: 'Tu perfil',
-  company: 'Tu empresa',
-  holded: 'Conectar Holded',
-  done: '¡Listo!',
-};
+  // Step 1
+  const [fullName, setFullName]       = useState('');
+  const [phone, setPhone]             = useState('');
+  const [clientType, setClientType]   = useState<ClientType>('particular');
 
-// ── Step indicators ────────────────────────────────────────────────────────────
+  // Step 2
+  const [taxId, setTaxId]             = useState('');
+  const [company, setCompany]         = useState('');
+  const [address, setAddress]         = useState('');
+  const [city, setCity]               = useState('');
+  const [postalCode, setPostalCode]   = useState('');
+  const [province, setProvince]       = useState('');
 
-function StepDot({ step, current, completed }: { step: number; current: number; completed: boolean }) {
-  const active = step === current;
-  return (
-    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition
-      ${completed ? 'bg-[#d7a33a] text-white' : active ? 'bg-[#07111d] text-white' : 'bg-[#f0e8d5] text-[#29384a]/50'}`}
-    >
-      {completed ? <CheckCircle2 className="h-4 w-4" /> : step + 1}
-    </div>
-  );
-}
+  useEffect(() => {
+    fetch('/api/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { profile?: ProfileData } | null) => {
+        const p = data?.profile ?? {};
+        if (p.onboarding_completed_at) { router.replace('/dashboard'); return; }
+        if (p.full_name)    setFullName(p.full_name);
+        if (p.phone)        setPhone(p.phone);
+        if (p.client_type)  setClientType(p.client_type);
+        if (p.tax_id)       setTaxId(p.tax_id);
+        if (p.company)      setCompany(p.company);
+        if (p.address)      setAddress(p.address);
+        if (p.city)         setCity(p.city);
+        if (p.postal_code)  setPostalCode(p.postal_code);
+        if (p.province)     setProvince(p.province);
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+  }, [router]);
 
-function StepBar({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="flex items-center gap-2 mb-8">
-      {STEPS.map((step, i) => (
-        <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-1">
-            <StepDot step={i} current={currentStep} completed={i < currentStep} />
-            <span className={`text-[10px] font-semibold hidden sm:block ${i === currentStep ? 'text-[#07111d]' : 'text-[#29384a]/40'}`}>
-              {STEP_LABELS[step]}
-            </span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div className={`flex-1 h-px mb-4 transition ${i < currentStep ? 'bg-[#d7a33a]' : 'bg-[#d8cbb5]'}`} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+  async function patchProfile(fields: Record<string, unknown>) {
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(d.error ?? 'Error al guardar');
+    }
+  }
 
-// ── Step 1: Profile ────────────────────────────────────────────────────────────
+  async function handleStep1() {
+    if (!fullName.trim()) { setError('Introduce tu nombre completo'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await patchProfile({
+        full_name:   fullName.trim(),
+        phone:       phone.trim() || undefined,
+        client_type: clientType,
+      });
+      setStep(2);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  }
 
-function ProfileStepForm({ value, onChange }: {
-  value: ProfileStep;
-  onChange: (v: ProfileStep) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
-          <User className="h-5 w-5 text-[#d7a33a]" />
-        </div>
-        <div>
-          <h2 className="font-serif text-lg font-bold text-[#07111d]">Completa tu perfil</h2>
-          <p className="text-xs text-[#29384a]/60">Necesitamos tus datos para preparar tu expediente</p>
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Nombre completo *</label>
-        <input
-          type="text"
-          value={value.full_name}
-          onChange={(e) => onChange({ ...value, full_name: e.target.value })}
-          placeholder="María García López"
-          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
-        />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono</label>
-        <input
-          type="tel"
-          value={value.phone}
-          onChange={(e) => onChange({ ...value, phone: e.target.value })}
-          placeholder="+34 600 000 000"
-          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
-        />
-      </div>
-    </div>
-  );
-}
+  async function handleStep2() {
+    setSaving(true);
+    setError('');
+    try {
+      const fields: Record<string, unknown> = {};
+      if (taxId.trim())      fields.tax_id      = taxId.trim();
+      if (company.trim())    fields.company     = company.trim();
+      else if (clientType === 'particular') fields.company = null;
+      if (address.trim())    fields.address     = address.trim();
+      if (city.trim())       fields.city        = city.trim();
+      if (postalCode.trim()) fields.postal_code = postalCode.trim();
+      if (province.trim())   fields.province    = province.trim();
+      if (Object.keys(fields).length > 0) await patchProfile(fields);
+      setStep(3);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  }
 
-// ── Step 2: Company ────────────────────────────────────────────────────────────
+  async function handleCompleteAndGo(to: string) {
+    setCompleting(true);
+    setError('');
+    try {
+      await fetch('/api/onboarding/complete', { method: 'POST' });
+      router.push(to);
+    } catch {
+      setError('Error al finalizar. Intenta de nuevo.');
+      setCompleting(false);
+    }
+  }
 
-function CompanyStepForm({ value, onChange }: {
-  value: CompanyStep;
-  onChange: (v: CompanyStep) => void;
-}) {
-  if (value.skip) {
+  if (!ready) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
-            <Building2 className="h-5 w-5 text-[#d7a33a]" />
-          </div>
-          <div>
-            <h2 className="font-serif text-lg font-bold text-[#07111d]">Añade tu empresa</h2>
-            <p className="text-xs text-[#29384a]/60">Puedes hacerlo más tarde desde el panel</p>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-dashed border-[#d8cbb5] bg-[#f8f4eb] p-8 text-center space-y-3">
-          <Building2 className="mx-auto h-8 w-8 text-[#d8cbb5]" />
-          <p className="text-sm text-[#29384a]/60">Omitido — podrás añadir tu empresa más tarde</p>
-          <button
-            type="button"
-            onClick={() => onChange({ ...value, skip: false })}
-            className="text-xs font-semibold text-[#d7a33a] underline underline-offset-2"
-          >
-            Añadir ahora
-          </button>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f4eb]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#d7a33a]" />
       </div>
     );
   }
 
+  const needsCompanyField = clientType === 'autonomo' || clientType === 'empresa';
+  const stepLabels = ['Tu perfil', 'Datos fiscales', 'Listo'];
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
-            <Building2 className="h-5 w-5 text-[#d7a33a]" />
+    <main className="min-h-screen bg-[#f8f4eb]">
+      {/* Header */}
+      <div className="border-b border-[#d8cbb5] bg-white">
+        <div className="mx-auto flex max-w-lg items-center gap-3 px-6 py-5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d7a33a]">
+            <Zap className="h-4 w-4 text-white" />
           </div>
-          <div>
-            <h2 className="font-serif text-lg font-bold text-[#07111d]">Tu empresa</h2>
-            <p className="text-xs text-[#29384a]/60">Datos básicos de tu sociedad o actividad</p>
-          </div>
+          <span className="font-serif text-lg font-bold text-[#07111d]">Configuración inicial</span>
         </div>
-        <button
-          type="button"
-          onClick={() => onChange({ ...value, skip: true })}
-          className="text-xs text-[#29384a]/50 hover:text-[#29384a] transition"
-        >
-          Omitir
-        </button>
       </div>
 
-      <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Forma jurídica *</label>
-        <div className="grid grid-cols-2 gap-2">
-          {([['autonomo', 'Autónomo'], ['sl', 'S.L.'], ['sa', 'S.A.'], ['otra', 'Otra']] as const).map(([v, l]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onChange({ ...value, forma_juridica: v })}
-              className={`rounded-xl border py-2.5 text-xs font-semibold transition ${
-                value.forma_juridica === v
-                  ? 'border-[#d7a33a] bg-[#d7a33a]/10 text-[#07111d]'
-                  : 'border-[#d8cbb5] bg-[#f8f4eb] text-[#29384a]/60 hover:border-[#d7a33a]/50'
-              }`}
-            >
-              {l}
-            </button>
+      <div className="mx-auto max-w-lg px-6 py-10">
+        {/* Step indicator */}
+        <div className="mb-8 flex items-start">
+          {([1, 2, 3] as const).map((s, i) => (
+            <div key={s} className="flex flex-1 items-start">
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                    step > s
+                      ? 'bg-[#d7a33a] text-white'
+                      : step === s
+                      ? 'bg-[#07111d] text-white'
+                      : 'bg-[#e8dfc8] text-[#7a6e5f]'
+                  }`}
+                >
+                  {step > s ? <Check className="h-3.5 w-3.5" /> : s}
+                </div>
+                <span className="whitespace-nowrap text-[10px] font-medium text-[#7a6e5f]">
+                  {stepLabels[s - 1]}
+                </span>
+              </div>
+              {i < 2 && (
+                <div
+                  className={`mt-4 h-px flex-1 mx-2 ${step > s ? 'bg-[#d7a33a]' : 'bg-[#d8cbb5]'}`}
+                />
+              )}
+            </div>
           ))}
         </div>
-      </div>
 
-      <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">
-          Razón social / Nombre *
-        </label>
-        <input
-          type="text"
-          value={value.razon_social}
-          onChange={(e) => onChange({ ...value, razon_social: e.target.value })}
-          placeholder={value.forma_juridica === 'autonomo' ? 'María García López' : 'Mi Empresa, S.L.'}
-          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">
-          NIF / CIF <span className="font-normal text-[#29384a]/50">(opcional)</span>
-        </label>
-        <input
-          type="text"
-          value={value.cif_nif}
-          onChange={(e) => onChange({ ...value, cif_nif: e.target.value.toUpperCase() })}
-          placeholder="B12345678 / 12345678Z"
-          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 font-mono text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Step 3: Holded ────────────────────────────────────────────────────────────
-
-function HoldedStep({ onSkip, onConnect }: { onSkip: () => void; onConnect: () => void }) {
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
-          <Plug className="h-5 w-5 text-purple-600" />
-        </div>
-        <div>
-          <h2 className="font-serif text-lg font-bold text-[#07111d]">Conectar Holded</h2>
-          <p className="text-xs text-[#29384a]/60">Sincroniza tu contabilidad y facturación</p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5 space-y-3">
-        <p className="text-sm font-semibold text-[#07111d]">¿Por qué conectar Holded?</p>
-        <ul className="space-y-1.5 text-xs text-[#29384a]">
-          {[
-            'Kia puede consultarte el estado de tu tesorería en tiempo real',
-            'Sincronizamos automáticamente facturas y contactos',
-            'Recibe alertas de anomalías contables antes de las revisiones',
-          ].map((b) => (
-            <li key={b} className="flex items-start gap-2">
-              <Zap className="h-3.5 w-3.5 shrink-0 text-purple-500 mt-0.5" />
-              {b}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="grid gap-2">
-        <button
-          type="button"
-          onClick={onConnect}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#07111d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#0d1f30]"
-        >
-          <Plug className="h-4 w-4" />
-          Conectar Holded ahora
-          <ArrowRight className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onSkip}
-          className="rounded-xl border border-[#d8cbb5] px-5 py-3 text-sm font-semibold text-[#29384a] transition hover:bg-[#f8f4eb]"
-        >
-          Omitir por ahora
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Step 4: Done ──────────────────────────────────────────────────────────────
-
-function DoneStep({ onGo }: { onGo: () => void }) {
-  return (
-    <div className="py-4 text-center space-y-5">
-      <div className="flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#d7a33a]/15">
-          <CheckCircle2 className="h-9 w-9 text-[#d7a33a]" />
-        </div>
-      </div>
-      <div>
-        <h2 className="font-serif text-2xl font-bold text-[#07111d]">¡Todo listo!</h2>
-        <p className="mt-2 text-sm text-[#29384a]/70">
-          Tu cuenta está configurada. Ahora puedes consultar el estado de tus trámites,
-          subir documentos y hablar con Kia, tu copiloto.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onGo}
-        className="mx-auto flex items-center gap-2 rounded-xl bg-[#d7a33a] px-6 py-3 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25]"
-      >
-        Ir a mi panel
-        <ArrowRight className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-// ── Main wizard ───────────────────────────────────────────────────────────────
-
-export default function OnboardingPage() {
-  const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [profileData, setProfileData] = useState<ProfileStep>({ full_name: '', phone: '' });
-  const [companyData, setCompanyData] = useState<CompanyStep>({
-    skip: false,
-    razon_social: '',
-    cif_nif: '',
-    forma_juridica: 'sl',
-  });
-
-  const step = STEPS[currentStep] ?? 'profile';
-
-  async function saveProfile(): Promise<boolean> {
-    if (!profileData.full_name.trim()) {
-      setError('El nombre completo es obligatorio.');
-      return false;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: profileData.full_name.trim(),
-          ...(profileData.phone.trim() ? { phone: profileData.phone.trim() } : {}),
-        }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        setError(d.error ?? 'Error guardando perfil.');
-        return false;
-      }
-      return true;
-    } catch {
-      setError('Error de conexión.');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function saveCompany(): Promise<boolean> {
-    if (companyData.skip) return true;
-    if (!companyData.razon_social.trim()) {
-      setError('La razón social es obligatoria.');
-      return false;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/companies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razon_social: companyData.razon_social.trim(),
-          cif_nif: companyData.cif_nif.trim() || undefined,
-          forma_juridica: companyData.forma_juridica,
-        }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        setError(d.error ?? 'Error creando empresa.');
-        return false;
-      }
-      return true;
-    } catch {
-      setError('Error de conexión.');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleNext() {
-    setError(null);
-    if (step === 'profile') {
-      const ok = await saveProfile();
-      if (ok) setCurrentStep((s) => s + 1);
-    } else if (step === 'company') {
-      const ok = await saveCompany();
-      if (ok) setCurrentStep((s) => s + 1);
-    }
-  }
-
-  function handleBack() {
-    setError(null);
-    setCurrentStep((s) => Math.max(0, s - 1));
-  }
-
-  function handleHoldedConnect() {
-    router.push('/dashboard/integraciones/holded');
-  }
-
-  function handleHoldedSkip() {
-    setCurrentStep((s) => s + 1);
-  }
-
-  async function handleDone() {
-    // Mark onboarding as completed (non-blocking — best effort)
-    fetch('/api/dashboard/onboarding/complete', { method: 'POST' }).catch(() => {});
-    router.push('/dashboard');
-  }
-
-  return (
-    <div className="flex min-h-screen items-start justify-center bg-[#f8f4eb] px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#d7a33a]">Bienvenido</p>
-          <h1 className="mt-1 font-serif text-2xl font-bold text-[#07111d]">Configura tu cuenta</h1>
-          <p className="mt-1 text-xs text-[#29384a]/60">Solo te llevará 2 minutos</p>
-        </div>
-
-        <StepBar currentStep={currentStep} />
-
+        {/* Wizard card */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-          {/* Error */}
-          {error && (
-            <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-700">
-              {error}
+
+          {/* ── STEP 1: Perfil ── */}
+          {step === 1 && (
+            <>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/15">
+                  <User className="h-4 w-4 text-[#d7a33a]" />
+                </div>
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-[#07111d]">¿Quién eres?</h2>
+                  <p className="text-xs text-[#29384a]/60">Paso 1 de 2</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                    Nombre completo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleStep1(); }}
+                    placeholder="Ej. María García López"
+                    className={inputCls}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                    Teléfono <span className="text-[#7a6e5f] font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleStep1(); }}
+                    placeholder="+34 600 000 000"
+                    className={inputCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[#07111d]">Tipo de cliente</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {CLIENT_TYPE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setClientType(opt.value)}
+                        className={`rounded-xl border p-3 text-left transition ${
+                          clientType === opt.value
+                            ? 'border-[#d7a33a] bg-[#d7a33a]/8 ring-1 ring-[#d7a33a]/30'
+                            : 'border-[#d8cbb5] bg-[#faf7f2] hover:border-[#d7a33a]/50'
+                        }`}
+                      >
+                        <p className="text-xs font-semibold text-[#07111d]">{opt.label}</p>
+                        <p className="mt-0.5 text-[10px] leading-tight text-[#7a6e5f]">{opt.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+              <button
+                type="button"
+                onClick={handleStep1}
+                disabled={saving}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d7a33a] py-3 text-sm font-bold text-[#061321] transition hover:bg-[#f0bf54] disabled:opacity-60"
+              >
+                {saving
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <><span>Continuar</span><ArrowRight className="h-4 w-4" /></>
+                }
+              </button>
+            </>
+          )}
+
+          {/* ── STEP 2: Fiscal ── */}
+          {step === 2 && (
+            <>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/15">
+                  <FileText className="h-4 w-4 text-[#d7a33a]" />
+                </div>
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-[#07111d]">Datos fiscales</h2>
+                  <p className="text-xs text-[#29384a]/60">Para facturación y trámites — todos opcionales</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className={`grid gap-3 ${needsCompanyField ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                      {clientType === 'empresa' ? 'CIF' : 'NIF / DNI'}
+                    </label>
+                    <input
+                      type="text"
+                      value={taxId}
+                      onChange={(e) => setTaxId(e.target.value.toUpperCase())}
+                      placeholder={clientType === 'empresa' ? 'B12345678' : '12345678A'}
+                      className={`${inputCls} font-mono uppercase`}
+                    />
+                  </div>
+                  {needsCompanyField && (
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                        {clientType === 'empresa' ? 'Razón social' : 'Nombre del negocio'}
+                      </label>
+                      <input
+                        type="text"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        placeholder={clientType === 'empresa' ? 'Mi Empresa S.L.' : 'Mi negocio'}
+                        className={inputCls}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                    Dirección fiscal
+                  </label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Calle, número, piso..."
+                    className={inputCls}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-[#07111d]">Localidad</label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Madrid"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#07111d]">C.P.</label>
+                    <input
+                      type="text"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value)}
+                      placeholder="28001"
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#07111d]">
+                    Provincia <span className="text-[#7a6e5f] font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    placeholder="Madrid"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+
+              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setError(''); setStep(1); }}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm font-medium text-[#29384a] transition hover:bg-[#f8f4eb]"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Atrás
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStep2}
+                  disabled={saving}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#d7a33a] py-3 text-sm font-bold text-[#061321] transition hover:bg-[#f0bf54] disabled:opacity-60"
+                >
+                  {saving
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <><span>Continuar</span><ArrowRight className="h-4 w-4" /></>
+                  }
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ── STEP 3: Done ── */}
+          {step === 3 && (
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle2 className="h-9 w-9 text-green-600" />
+              </div>
+              <h2 className="font-serif text-xl font-bold text-[#07111d]">¡Todo listo!</h2>
+              <p className="mt-2 text-sm text-[#29384a]/70">
+                Tu cuenta está configurada. Ya puedes gestionar tus trámites y usar Kia, tu asistente IA.
+              </p>
+
+              <div className="mt-6 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => handleCompleteAndGo('/dashboard')}
+                  disabled={completing}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d7a33a] py-3 text-sm font-bold text-[#061321] transition hover:bg-[#f0bf54] disabled:opacity-60"
+                >
+                  {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ir al panel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCompleteAndGo('/dashboard/expedientes')}
+                  disabled={completing}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#d8cbb5] py-3 text-sm font-medium text-[#29384a] transition hover:bg-[#f8f4eb] disabled:opacity-60"
+                >
+                  Ver mis expedientes
+                </button>
+              </div>
+
+              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
             </div>
           )}
-
-          {step === 'profile' && (
-            <>
-              <ProfileStepForm value={profileData} onChange={setProfileData} />
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex items-center gap-2 rounded-xl bg-[#d7a33a] px-5 py-2.5 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25] disabled:opacity-50"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Continuar
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </>
-          )}
-
-          {step === 'company' && (
-            <>
-              <CompanyStepForm value={companyData} onChange={setCompanyData} />
-              <div className="mt-6 flex items-center justify-between">
-                <button type="button" onClick={handleBack} className="flex items-center gap-1 text-sm text-[#29384a]/60 hover:text-[#29384a] transition">
-                  <ChevronLeft className="h-4 w-4" /> Atrás
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex items-center gap-2 rounded-xl bg-[#d7a33a] px-5 py-2.5 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25] disabled:opacity-50"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Continuar
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </>
-          )}
-
-          {step === 'holded' && (
-            <HoldedStep onSkip={handleHoldedSkip} onConnect={handleHoldedConnect} />
-          )}
-
-          {step === 'done' && <DoneStep onGo={handleDone} />}
         </div>
 
-        {/* Skip all */}
-        {step !== 'done' && (
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="text-xs text-[#29384a]/40 hover:text-[#29384a]/70 transition"
-            >
-              Completar más tarde →
-            </button>
-          </div>
-        )}
+        <p className="mt-4 text-center text-xs text-[#7a6e5f]">
+          Puedes actualizar estos datos en cualquier momento desde{' '}
+          <Link href="/dashboard/perfil" className="underline hover:text-[#d7a33a]">
+            tu perfil
+          </Link>
+          .
+        </p>
       </div>
-    </div>
+    </main>
   );
 }

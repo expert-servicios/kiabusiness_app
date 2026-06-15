@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile, error: fetchError } = await getSupabaseAdmin()
       .from('profiles')
-      .select('id,role,full_name,phone,whatsapp_number,whatsapp_consent,country,active_company_id,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed,billing_ready,habitual_address_ready,created_at')
+      .select('id,role,full_name,phone,whatsapp_number,whatsapp_consent,country,active_company_id,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed,billing_ready,habitual_address_ready,onboarding_completed_at,created_at')
       .eq('id', user.id)
       .single();
 
