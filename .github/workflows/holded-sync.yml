@@ -1,0 +1,31 @@
+name: Holded Sync
+
+on:
+  schedule:
+    # Every 15 minutes — triggers the holded-sync cron endpoint.
+    # GitHub Actions guarantees execution but may be delayed up to a few minutes.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allow manual trigger from the Actions tab
+
+jobs:
+  sync:
+    name: Holded Sync Job
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Call holded-sync endpoint
+        run: |
+          HTTP_CODE=$(curl --silent --output /tmp/response.txt --write-out "%{http_code}" \
+            --max-time 90 \
+            -X GET "https://expertconsulting.es/api/cron/holded-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+
+          BODY=$(cat /tmp/response.txt)
+          echo "HTTP $HTTP_CODE — $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Holded sync failed with HTTP $HTTP_CODE: $BODY"
+            exit 1
+          fi
