@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-06-07
+Ultima actualizacion: 2026-06-15
 
 ## Objetivo
 
@@ -137,21 +137,28 @@ Reglas de ejecucion:
 | `20260607000001_rls_tenant_aware_phase2.sql` | ✅ Aplicada (2026-06-07) |
 | `20260607000004_subscription_post_purchase_onboarding.sql` | ✅ Aplicada (2026-06-07) |
 | `20260607000005_email_queue.sql` | ✅ Aplicada (2026-06-07) |
+| `20260607000006_email_queue_processing_status.sql` | ⏳ Pendiente — renombrada de _000005_ para evitar conflicto |
+| `20260615000001_holded_mcp_events_user_read.sql` | ⏳ Pendiente — política SELECT para Realtime wizard MCP |
+| `20260615000002_cases_operational_columns.sql` | ⏳ Pendiente — status/priority/next_action/due_date/service_id en cases |
+| `20260615000003_rls_tenant_cases_fix.sql` | ⏳ Pendiente — política tenant_admin cases con client_id scope |
 
 ---
 
-## Estado actual de todas las areas (2026-06-06)
+## Estado actual de todas las areas (2026-06-15)
 
 ```
 ✅ Seguridad API           — webhook sig, secrets cifrados, escapeHtml, rate limit, fail-closed
 ✅ Stripe / Pagos          — idempotencia, cola Holded, checkout allowlist
 ✅ CI / Calidad            — lint, typecheck, build, 31 tests Vitest, GitHub Actions
 ✅ Auth / SSR              — Supabase SSR unificado, redirect sanitizado
+✅ fetchWithCookies        — helper compartido en todas las páginas server-side (19 archivos migrados)
 ✅ Multi-tenant            — schema, admin panel, portal tenant_admin, branding, integraciones
 ✅ RLS tenant fase 2       — is_tenant_admin(), políticas cases/profiles/docs/companies/orders/quotes
+✅ RLS tenant cases fix    — política reescrita con client_id scope (no cases.tenant_id nullable)
 ✅ Automatizaciones        — 7 reglas configurables, enforcement en emails
 ✅ Emails transaccionales  — 15+ templates, white-label por tenant, escapeHtml
-✅ Email queue             — tabla email_queue con status processing, updated_at, trigger, RLS
+✅ Email queue (tabla)     — status processing, updated_at, trigger, RLS
+✅ Email error propagation — sendEmail lanza error en fallo Resend; queue puede reintentar
 ✅ Portal cliente           — expedientes, documentos, entregables, mensajes, Kia widget
 ✅ Portal tenant_admin      — dashboard, clientes, expedientes, upload entregables
 ✅ Kia copiloto (WABA)     — anti-loro: stuck-loop guard + social shortcut + system prompt reforzado
@@ -161,56 +168,76 @@ Reglas de ejecucion:
 ✅ Datos empresas          — BORME paralelo, CKAN open data, VIES, UI admin busqueda
 ✅ Web publica             — orientada a asesorias B2B, SEO, canonical, para-asesorias
 ✅ Holded sync             — queue durable, reintentos, cron protegido
-✅ Branch protection main  — PR requerido (1 approval), no force push, no delete (2026-06-07)
-✅ PR #7                   — claude/tender-darwin-aXkbO → main (abierto, pendiente merge)
+✅ Branch protection main  — PR requerido (1 approval), no force push, no delete
+✅ Cases schema            — columnas status/priority/next_action/due_date/service_id añadidas
+✅ Wizard MCP post-compra  — Supabase Realtime sustituye polling; política SELECT en holded_mcp_events
+⚠️ Migraciones pendientes  — 4 migraciones en rama; aplicar en Supabase antes de deploy
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
-⚠️ Email queue worker     — tabla creada; cron /api/cron/email-queue pendiente de implementar
+⚠️ Email queue worker     — tabla y error propagation listos; cron /api/cron/email-queue pendiente review
+⚠️ Cases API consistency   — /api/cases (cliente) devuelve state; admin [id] GET devuelve state; actualizar para devolver también status
+⚠️ SuscripcionesClient TS  — error pre-existente: imports non-exported Subscription type (no bloqueante)
 ```
 
 ---
 
 ## Pendiente manual (requiere accion del usuario)
 
-1. **Merge PR #7** — Revisar y hacer merge en github.com/expert-servicios/kiabusiness_app/pull/7
-2. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main (ya configurada la regla base).
-3. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
-4. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
-5. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
-6. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → consulta real.
-7. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
-8. **Calendly** — Actualizar username en calendly.com/settings.
+1. **Aplicar 4 migraciones en Supabase** — En orden:
+   - `20260607000006_email_queue_processing_status.sql` (timestamp fix)
+   - `20260615000001_holded_mcp_events_user_read.sql` (Realtime wizard)
+   - `20260615000002_cases_operational_columns.sql` (cases schema)
+   - `20260615000003_rls_tenant_cases_fix.sql` (tenant RLS fix)
+2. **Crear PR** — El MCP de GitHub no tiene permisos suficientes; crear PR en github.com desde rama `claude/tender-darwin-aXkbO`.
+3. **Merge PR #7** — Revisar y hacer merge en github.com/expert-servicios/kiabusiness_app/pull/7
+4. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main.
+5. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
+6. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
+7. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
+8. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → consulta real.
+9. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
+10. **Calendly** — Actualizar username en calendly.com/settings.
 
 ---
 
 ## Proximo sprint de codigo (ideas priorizadas)
 
+### Inmediato — arreglos detectados en sesion 2026-06-15
+
+1. **Cases API consistency** — `/api/cases/route.ts` (cliente) y admin `[id]` GET devuelven `state` (enum), pero el resto del sistema ya usa `status` (text). Actualizar para devolver `status` además de `state` sin romper nada.
+
+2. **SuscripcionesClient TS** — `components/admin/SuscripcionesClient.tsx` importa `Subscription` que no es exported desde `admin/suscripciones/page`. Exportar el tipo o moverlo a un archivo compartido.
+
+3. **Sprint F — Contrato del evento MCP** — Documentar qué debe insertar el servidor MCP `claude.expertconsulting.es` en `holded_mcp_events` para que el wizard lo detecte: columnas obligatorias (`user_email`, `event_type`, `channel`), valores esperados (`user_connected`, `first_activity`), y quién llama al INSERT (service_role o JWT del usuario).
+
 ### Alta prioridad
 
-1. **Email queue worker** — Implementar `/api/cron/email-queue` que procese filas `pending`/`failed` de la tabla `email_queue`. Reintentos con backoff, max 3 intentos, status `processing` durante ejecucion. La tabla ya existe (migración 000005 aplicada).
+4. **Email queue worker review** — `/api/cron/email-queue` existe. Verificar que usa `status = 'processing'` atomicamente (claim-then-process), límite de 3 intentos, backoff. La tabla y `sendEmail` (que ahora lanza) están listos.
 
-2. **Kia herramientas (tool calls)** — Permitir a Kia consultar datos reales del usuario: lista de expedientes, estado de empresas conectadas, documentos pendientes. Requiere `kia-tool-executor.ts` con verificacion de permisos.
+5. **Sprint C2 — Tests de email queue** — Tests unitarios para: retry logic, wall-clock guard, concurrent claiming (no doble envío), y que `sendEmail` lanza correctamente en fallo Resend.
 
-3. **Streaming SSE para Kia** — Las respuestas largas de Kia bloquean la UI. Implementar Server-Sent Events para streaming progresivo en `/api/ai/kia`.
+6. **Kia herramientas (tool calls)** — Permitir a Kia consultar datos reales del usuario: lista de expedientes, estado de empresas conectadas, documentos pendientes. `kia-tool-executor.ts` existe; ampliar herramientas con `status` de cases.
 
-4. **Scheduler externo para Holded sync** — Configurar cron externo (GitHub Actions scheduled, cron-job.org o Vercel Cron pro) que llame `/api/cron/holded-sync` con `CRON_SECRET` cada 15 minutos.
+7. **Streaming SSE para Kia** — Las respuestas largas de Kia bloquean la UI. Implementar Server-Sent Events para streaming progresivo en `/api/ai/kia`.
 
 ### Media prioridad
 
-5. **Registro Mercantil via Infoempresa** — Integrar infoempresa.com como fuente adicional en el resolver de empresas (forma juridica, capital, objeto social, administradores actuales).
+8. **Scheduler externo para Holded sync** — Configurar cron externo (GitHub Actions scheduled o cron-job.org) que llame `/api/cron/holded-sync` con `CRON_SECRET` cada 15 minutos.
 
-6. **Onboarding cliente guiado** — Wizard para que el propio cliente (no solo el admin) complete su perfil, conecte empresas y suba documentacion inicial.
+9. **Registro Mercantil via Infoempresa** — Integrar infoempresa.com como fuente adicional en el resolver de empresas.
 
-7. **Notificaciones push tenant_admin** — Web Push o email digest semanal con resumen de actividad de su tenant.
+10. **Onboarding cliente guiado** — Wizard para que el propio cliente complete su perfil, conecte empresas y suba documentacion inicial.
+
+11. **Notificaciones push tenant_admin** — Web Push o email digest semanal con resumen de actividad de su tenant.
 
 ### Backlog / Fase SaaS avanzada
 
-8. **Piloto con 1-3 asesorias externas** — Crear tenants reales, asignar `tenant_admin`, activar branding y Holded. Medir adopcion del portal y del copiloto Kia.
+12. **Piloto con 1-3 asesorias externas** — Crear tenants reales, asignar `tenant_admin`, activar branding y Holded. Medir adopcion del portal y del copiloto Kia.
 
-9. **RAG / pgvector para Holded Academy** — Crawl de help.holded.com → chunks → embeddings → busqueda semantica en tiempo real. Pendiente cuando el volumen de preguntas tecnicas lo justifique.
+13. **RAG / pgvector para Holded Academy** — Crawl de help.holded.com → chunks → embeddings → busqueda semantica en tiempo real.
 
-10. **Stripe por tenant** — Cuenta Stripe independiente por asesoria para facturar a sus propios clientes desde la plataforma.
+14. **Stripe por tenant** — Cuenta Stripe independiente por asesoria para facturar a sus propios clientes desde la plataforma.
 
-11. **WhatsApp por tenant** — WABA number independiente por tenant para notificaciones salientes white-label.
+15. **WhatsApp por tenant** — WABA number independiente por tenant para notificaciones salientes white-label.
 
 ---
 
@@ -1013,6 +1040,40 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 - [x] PR #7 creado — `claude/tender-darwin-aXkbO → main`.
 - [x] Branch protection en `main` — 1 approval requerido, no force push, no delete.
 
+### Completado en sesion 2026-06-15
+
+#### Code review fixes (alta prioridad)
+
+- [x] `admin/security-alerts/route.ts` — rol `owner` añadido además de `admin`.
+- [x] `admin/security-alerts/[id]/resolve/route.ts` — `.select('id')` detecta no-op (ya resuelto) y devuelve `alreadyResolved` flag; evita carrera entre admins.
+- [x] `SecurityAlertResolveButton.tsx` — comprueba `response.ok`, muestra estado de error con retry.
+- [x] `kia-tool-executor.ts` — `get_accounting_snapshot` usa queries secuenciales con columnas explícitas; errores de anomalías propagan `fail()` no `ok()` con ceros.
+- [x] `dashboard/page.tsx` — banner Claude fail-open: muestra cuando `mcpStatus` es null/desconocido.
+
+#### Sprint A2 — fetchWithCookies migration + env vars
+
+- [x] 19 páginas server-side migradas al helper compartido `fetchWithCookies` (10 admin, 9 dashboard).
+- [x] 19 variables de entorno documentadas en `.env.example` (Google OAuth, Drive SA, Gmail SA, MS365, VAPID, CKAN, KIA feature flags).
+- [x] `dashboard/layout.tsx` y `suscripciones/page.tsx` restaurados manualmente tras corrupción por agente.
+
+#### Sprint B2 — Email error propagation
+
+- [x] `lib/email/send.ts` — elimina try/catch exterior; lanza error en fallo de Resend (persistiendo audit row `failed` primero). Return type cambiado a `Promise<string>`.
+- [x] El worker `email-queue` ahora puede entrar en su bloque `catch` y reintentar correctamente.
+
+#### Sprint D — Supabase Realtime para PostCompraWizard
+
+- [x] `PostCompraWizard.tsx` — reemplaza `setInterval` / `MAX_POLL_TICKS` por suscripción Realtime `postgres_changes` filtrada por `user_email`; timeout de 5 min como safety net; `handleRecheck` hace HTTP check puntual antes de re-suscribirse.
+- [x] `post-compra/page.tsx` — resuelve sesión Supabase server-side y pasa `userEmail` prop al wizard.
+- [x] Migración `20260615000001_holded_mcp_events_user_read.sql` — política SELECT para usuarios autenticados en `holded_mcp_events` (la política `mcp_events_deny_anon` bloqueaba todo el acceso Realtime).
+
+#### Sprint E — Cases schema + tenant RLS
+
+- [x] Descubierto: `cases` carecía de columnas `status`, `priority`, `next_action`, `due_date`, `service_id` que el admin cases PATCH route ya escribía. Las páginas tenant también usaban `status` (devolvía `undefined`).
+- [x] Migración `20260615000002_cases_operational_columns.sql` — añade las 5 columnas; backfills `status` desde `state` enum; check constraints + índices.
+- [x] Migración `20260615000003_rls_tenant_cases_fix.sql` — política `tenant_admin select cases` reescrita con scope `client_id` (más robusta que `cases.tenant_id` que es NULL en registros legacy).
+- [x] Renombrado `20260607000005_email_queue_processing_status.sql` → `_000006_` — resuelve conflicto de timestamp duplicado con `_000005_email_queue.sql`.
+
 ### Backlog / Fase SaaS
 
 - [x] Backlog #12: Tenants, branding por tenant, integraciones por tenant — COMPLETADO (2026-06-06).
@@ -1023,21 +1084,27 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 ## Orden recomendado de implementacion
 
-### Inmediato (pendiente manual)
+### Inmediato (pendiente manual — hoy)
 
-1. **Merge PR #7** — github.com/expert-servicios/kiabusiness_app/pull/7
-2. Realizar verificaciones manuales IMP-004 (Stripe reenvio), IMP-005 (Holded sync), IMP-016 (WABA omitir email), IMP-022 (widget Kia).
+1. **Aplicar 4 migraciones** en Supabase Dashboard en orden (ver sección "Pendiente manual").
+2. **Crear PR** en GitHub desde `claude/tender-darwin-aXkbO` (MCP sin permisos de escritura).
+3. **Merge PR #7** — github.com/expert-servicios/kiabusiness_app/pull/7
+4. Verificaciones manuales IMP-004, IMP-005, IMP-016, IMP-022.
 
-### Proximo sprint de codigo
+### Proximo sprint de codigo (en orden)
 
-1. **Email queue worker** — `/api/cron/email-queue` para procesar la cola (tabla ya creada).
-2. **Kia tool calls** — consultar expedientes/empresas reales desde el widget.
-3. **Streaming SSE Kia** — respuestas progresivas en el widget in-app.
+1. **Cases API consistency** — devolver `status` además de `state` en rutas cliente y admin GET.
+2. **SuscripcionesClient TS** — exportar tipo `Subscription` correctamente.
+3. **Sprint F — Contrato evento MCP** — documentar schema INSERT en `holded_mcp_events`.
+4. **Email queue worker review** — verificar claim atómico, 3 reintentos, backoff.
+5. **Sprint C2 — Tests email queue** — cobertura de retry, concurrent claim, sendEmail throw.
+6. **Kia tool calls** — ampliar `kia-tool-executor.ts` con status de cases.
+7. **Streaming SSE Kia** — respuestas progresivas en el widget in-app.
 
 ### Fase SaaS
 
 - Piloto con 1-3 asesorias externas usando panel operativo y copiloto Kia.
-- Ampliar integraciones por tenant: Stripe por tenant, WhatsApp por tenant, plantillas de email por tenant.
+- Ampliar integraciones por tenant: Stripe por tenant, WhatsApp por tenant.
 - IMP-018/019/020: pruebas manuales WABA pendientes.
 
 ## Notas de implementacion
