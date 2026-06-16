@@ -137,10 +137,10 @@ Reglas de ejecucion:
 | `20260607000001_rls_tenant_aware_phase2.sql` | ✅ Aplicada (2026-06-07) |
 | `20260607000004_subscription_post_purchase_onboarding.sql` | ✅ Aplicada (2026-06-07) |
 | `20260607000005_email_queue.sql` | ✅ Aplicada (2026-06-07) |
-| `20260607000006_email_queue_processing_status.sql` | ⏳ Pendiente — renombrada de _000005_ para evitar conflicto |
-| `20260615000001_holded_mcp_events_user_read.sql` | ⏳ Pendiente — política SELECT para Realtime wizard MCP |
-| `20260615000002_cases_operational_columns.sql` | ⏳ Pendiente — status/priority/next_action/due_date/service_id en cases |
-| `20260615000003_rls_tenant_cases_fix.sql` | ⏳ Pendiente — política tenant_admin cases con client_id scope |
+| `20260607000006_email_queue_processing_status.sql` | ✅ Aplicada (2026-06-16) |
+| `20260615000001_holded_mcp_events_user_read.sql` | ✅ Aplicada (2026-06-16) |
+| `20260615000002_cases_operational_columns.sql` | ✅ Aplicada (2026-06-16) |
+| `20260615000003_rls_tenant_cases_fix.sql` | ✅ Aplicada (2026-06-16) |
 
 ---
 
@@ -171,23 +171,18 @@ Reglas de ejecucion:
 ✅ Branch protection main  — PR requerido (1 approval), no force push, no delete
 ✅ Cases schema            — columnas status/priority/next_action/due_date/service_id añadidas
 ✅ Wizard MCP post-compra  — Supabase Realtime sustituye polling; política SELECT en holded_mcp_events
-⚠️ Migraciones pendientes  — 4 migraciones en rama; aplicar en Supabase antes de deploy
+✅ Migraciones aplicadas   — 4 migraciones aplicadas en Supabase (2026-06-16)
+✅ Email queue worker      — cron hourly en vercel.json, fail-closed, wall-clock guard, 11 tests Vitest
+✅ Cases API consistency   — /api/cases (cliente) devuelve state + status; admin endpoints igual
+✅ SuscripcionesClient TS  — Subscription exportada con campo client; tsc --noEmit = 0 errores
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
-⚠️ Email queue worker     — tabla y error propagation listos; cron /api/cron/email-queue pendiente review
-⚠️ Cases API consistency   — /api/cases (cliente) devuelve state; admin [id] GET devuelve state; actualizar para devolver también status
-⚠️ SuscripcionesClient TS  — error pre-existente: imports non-exported Subscription type (no bloqueante)
 ```
 
 ---
 
 ## Pendiente manual (requiere accion del usuario)
 
-1. **Aplicar 4 migraciones en Supabase** — En orden:
-   - `20260607000006_email_queue_processing_status.sql` (timestamp fix)
-   - `20260615000001_holded_mcp_events_user_read.sql` (Realtime wizard)
-   - `20260615000002_cases_operational_columns.sql` (cases schema)
-   - `20260615000003_rls_tenant_cases_fix.sql` (tenant RLS fix)
-2. **Crear PR** — El MCP de GitHub no tiene permisos suficientes; crear PR en github.com desde rama `claude/tender-darwin-aXkbO`.
+1. **Crear PR** — El MCP de GitHub no tiene permisos suficientes; crear PR en github.com desde rama `claude/tender-darwin-aXkbO`.
 3. **Merge PR #7** — Revisar y hacer merge en github.com/expert-servicios/kiabusiness_app/pull/7
 4. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main.
 5. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
