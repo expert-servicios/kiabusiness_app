@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
-import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 const PRICE_ID = 'price_1SyB8ULeYwwgvux4sZbYod1B';
-const CALENDLY_URL = getCalendlyMeetingUrl();
+const CAL_URL = getCalMeetingUrl();
 
 export function FormacionBuyButton({ area }: { area: string }) {
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export function FormacionBuyButton({ area }: { area: string }) {
   return (
     <div className="mt-4 flex flex-col gap-2">
       <CalendlyButton
-        url={CALENDLY_URL}
+        url={CAL_URL}
         title="Consulta gratuita"
         subtitle="15 minutos · Sin compromiso"
         className="inline-flex w-full items-center justify-center border border-[#D4A017] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"

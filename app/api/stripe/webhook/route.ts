@@ -448,7 +448,8 @@ export async function POST(req: NextRequest) {
         const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
         const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
         const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
-        const calendlyFormacion = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? '';
+        const calFormacionLink = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
+        const calendlyFormacion = calFormacionLink ? `https://cal.com/${calFormacionLink}` : '';
 
         if (isHoldedMigration) {
           const packageName = serviceName;
@@ -519,7 +520,8 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calendlyFormacion = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? '';
+        const calFormacionLink = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
+        const calendlyFormacion = calFormacionLink ? `https://cal.com/${calFormacionLink}` : '';
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';

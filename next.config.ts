@@ -11,7 +11,7 @@ const SECURITY_HEADERS = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   // Disable browser features not used by this app
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
-  // Extra browser hardening with low compatibility risk for OAuth, Stripe and Calendly flows
+  // Extra browser hardening with low compatibility risk for OAuth, Stripe and Cal.com flows
   { key: 'X-DNS-Prefetch-Control', value: 'off' },
   { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },

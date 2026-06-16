@@ -2,9 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, MapPin, MessageCircle, Calendar } from 'lucide-react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
-import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
-const CALENDLY_REUNION_URL = getCalendlyMeetingUrl();
+const CAL_REUNION_URL = getCalMeetingUrl();
 
 const quickLinks = [
   { label: 'Inicio', href: '/' },
@@ -174,7 +174,7 @@ export function Footer() {
           </div>
 
           <CalendlyButton
-            url={CALENDLY_REUNION_URL}
+            url={CAL_REUNION_URL}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-md border border-[#D4A017]/50 px-4 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
           >
             <Calendar className="h-4 w-4 shrink-0" />

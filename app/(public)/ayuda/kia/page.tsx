@@ -4,7 +4,7 @@ import {
   Shield, MessageCircle, FileText, CreditCard, Globe,
   AlertTriangle, CheckCircle2, HelpCircle, BookOpen, Phone,
 } from 'lucide-react';
-import { getCalendlyDemoUrl } from '@/lib/utils/calendly';
+import { getCalDemoUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
   title: 'Cómo usar Kia, la asistente virtual de EXPERT',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const WA_NUMBER   = '34696550480';
 const PORTAL_URL  = '/dashboard';
 const VIABILITY_URL = '/solicitar-presupuesto';
-const CALENDLY_URL = getCalendlyDemoUrl() ?? '/cita';
+const CAL_URL = getCalDemoUrl() ?? '/cita';
 
 export default function KiaGuiaPage() {
   return (
@@ -206,7 +206,7 @@ export default function KiaGuiaPage() {
               Acceder al Panel Cliente
             </Link>
             <a
-              href={CALENDLY_URL}
+              href={CAL_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-xl border border-[#D4A017] bg-[#D4A017]/10 px-4 py-3 text-sm font-semibold text-[#07111d] hover:bg-[#D4A017]/20 transition"

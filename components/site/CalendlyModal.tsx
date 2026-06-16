@@ -4,11 +4,11 @@ import { useEffect } from 'react';
 import { X, CalendarClock } from 'lucide-react';
 
 interface Props {
-  url: string;
-  title: string;
+  url      : string; // https://cal.com/username/event-type
+  title    : string;
   subtitle?: string;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen   : boolean;
+  onClose  : () => void;
 }
 
 export function CalendlyModal({ url, title, subtitle, isOpen, onClose }: Props) {
@@ -26,20 +26,16 @@ export function CalendlyModal({ url, title, subtitle, isOpen, onClose }: Props) 
 
   if (!isOpen) return null;
 
-  const embedUrl = `${url}${url.includes('?') ? '&' : '?'}background_color=f8f6f1&text_color=061321&primary_color=d4a017`;
+  const embedUrl = `${url}?embed=true&layout=month_view&theme=light`;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-[#07111d]/75 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
-
-      {/* Modal */}
       <div className="relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-3xl shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between bg-[#07111d] px-6 py-4">
           <div className="flex items-center gap-3">
             <CalendarClock className="h-5 w-5 text-[#D4A017]" />
@@ -57,8 +53,6 @@ export function CalendlyModal({ url, title, subtitle, isOpen, onClose }: Props) 
             <X className="h-5 w-5" />
           </button>
         </div>
-
-        {/* Calendly iframe */}
         <div className="bg-[#f8f6f1]">
           <iframe
             src={embedUrl}

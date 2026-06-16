@@ -2,9 +2,9 @@
 
 import { type ReactNode } from 'react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
-import { getCalendlyDemoUrl } from '@/lib/utils/calendly';
+import { getCalDemoUrl } from '@/lib/utils/cal';
 
-const CALENDLY_DEMO_URL = getCalendlyDemoUrl();
+const CAL_DEMO_URL = getCalDemoUrl();
 
 interface Props {
   className?: string;
@@ -14,7 +14,7 @@ interface Props {
 export function HoldedCalendlyButton({ className, children }: Props) {
   return (
     <CalendlyButton
-      url={CALENDLY_DEMO_URL}
+      url={CAL_DEMO_URL}
       className={className}
     >
       {children}

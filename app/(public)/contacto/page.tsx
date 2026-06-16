@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
-import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
   title: 'Contacto | EXPERT — Asesoría Fiscal y Legal',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://expertconsulting.es/contacto' }
 };
 
-const CALENDLY_REUNION_URL = getCalendlyMeetingUrl();
+const CAL_REUNION_URL = getCalMeetingUrl();
 
 const contactItems = [
   {
@@ -123,7 +123,7 @@ export default function ContactoPage() {
             </a>
 
             <CalendlyButton
-              url={CALENDLY_REUNION_URL}
+              url={CAL_REUNION_URL}
               className="flex flex-col border border-[#D4A017] bg-white p-5 text-left transition hover:bg-[#D4A017]/5"
             >
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Gratis · 15 minutos</p>

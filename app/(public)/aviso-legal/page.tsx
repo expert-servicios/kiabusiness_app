@@ -101,7 +101,7 @@ export default function AvisoLegalPage() {
 
           <Section title="5. Enlaces a terceros">
             <p>
-              El sitio web puede contener enlaces a páginas web de terceros (Calendly, Stripe, Holded, entre otros). Estos enlaces se facilitan únicamente a título informativo. EXPERT ESTUDIOS PROFESIONALES, SLU no tiene control sobre dichos sitios ni asume responsabilidad alguna por su contenido, exactitud, legalidad o disponibilidad.
+              El sitio web puede contener enlaces a páginas web de terceros (Cal.com, Stripe, Holded, entre otros). Estos enlaces se facilitan únicamente a título informativo. EXPERT ESTUDIOS PROFESIONALES, SLU no tiene control sobre dichos sitios ni asume responsabilidad alguna por su contenido, exactitud, legalidad o disponibilidad.
             </p>
           </Section>
 

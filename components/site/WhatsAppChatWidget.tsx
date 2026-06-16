@@ -61,11 +61,11 @@ const CAL_DEMO = getCalDemoUrl();
 type Action =
   | { kind: 'link';     href: string; label: string; icon: string; external?: true }
   | { kind: 'wa';       msg:  string; label: string; icon: string }
-  | { kind: 'calendly'; url:  string | null; label: string; icon: string };
+  | { kind: 'cal'; url:  string | null; label: string; icon: string };
 
 const ANON_BASE: Action[] = [
   { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
-  { kind: 'calendly', url: CAL_DEMO, label: 'Reservar demo Holded', icon: '📅' },
+  { kind: 'cal', url: CAL_DEMO, label: 'Reservar demo Holded', icon: '📅' },
   { kind: 'wa',       msg: 'Hola Kia, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
 ];
 
@@ -219,7 +219,7 @@ export function WhatsAppChatWidget() {
                   {action.label}
                 </Link>
               );
-              if (action.kind === 'calendly') return (
+              if (action.kind === 'cal') return (
                 <button
                   key={action.label}
                   type="button"
