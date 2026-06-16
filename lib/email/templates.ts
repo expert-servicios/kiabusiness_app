@@ -350,6 +350,7 @@ export function contactAutoReply(nombre: string, asunto: string) {
 
 // ── 13. Holded — migration package confirmed ──────────────────────────────────
 export function holdedMigrationConfirmed(name: string, packageName: string, calendlyUrl: string) {
+  const bookingUrl = calendlyUrl || `${BRAND.appUrl}/cita`;
   return {
     subject: '¡Tu migración a Holded ha comenzado! Reserva tu sesión de formación',
     html: base('Migración a Holded confirmada', `
@@ -357,7 +358,7 @@ export function holdedMigrationConfirmed(name: string, packageName: string, cale
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para(`Hemos recibido tu pago para el <strong>${escapeHtml(packageName)}</strong>. En las próximas 24 horas hábiles nos pondremos en contacto para coordinar el inicio de la migración.`)}
       ${para('Mientras tanto, reserva ya tu sesión de formación incluida (2 horas de onboarding) en el horario que mejor te venga:')}
-      ${btn('Reservar sesión de formación', calendlyUrl)}
+      ${btn('Reservar sesión de formación', bookingUrl)}
       ${para('<small style="color:#8899aa;">Si tienes alguna pregunta antes de la primera sesión, responde a este correo y te atendemos.</small>')}
     `)
   };
@@ -365,13 +366,14 @@ export function holdedMigrationConfirmed(name: string, packageName: string, cale
 
 // ── 14. Holded — formación session confirmed ──────────────────────────────────
 export function holdedFormacionConfirmed(name: string, calendlyUrl: string) {
+  const bookingUrl = calendlyUrl || `${BRAND.appUrl}/cita`;
   return {
     subject: '¡Sesión de formación Holded confirmada! Reserva tu horario',
     html: base('Formación Holded confirmada', `
       ${heading('¡Tu sesión de formación está lista!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu pago para la sesión de formación en Holded (2 horas). Ahora solo tienes que elegir el día y hora que mejor te conviene:')}
-      ${btn('Reservar mi sesión de formación', calendlyUrl)}
+      ${btn('Reservar mi sesión de formación', bookingUrl)}
       ${table(
         detail('Duración', '2 horas'),
         detail('Formato', 'Videollamada (Google Meet / Zoom)'),
@@ -469,6 +471,7 @@ export function holdedDemoActivated(name: string, helpUrl: string) {
 
 // ── 19. Holded demo — onboarding completado → reservar formación ──────────────
 export function holdedOnboardingDone(name: string, calendlyFormacionUrl: string) {
+  const bookingUrl = calendlyFormacionUrl || `${BRAND.appUrl}/cita`;
   return {
     subject: 'Formación Holded disponible — EXPERT',
     html: base('Formación Holded disponible', `
@@ -480,7 +483,7 @@ export function holdedOnboardingDone(name: string, calendlyFormacionUrl: string)
         detail('Formato', 'Videollamada — contenido adaptado a tu sector'),
         detail('Coste', 'Servicio EXPERT aparte de la prueba Holded')
       )}
-      ${btn('Reservar formación Holded', calendlyFormacionUrl)}
+      ${btn('Reservar formación Holded', bookingUrl)}
       ${para('<small style="color:#8899aa;">La formación está pensada para que puedas usar Holded con autonomía desde el primer mes. Aprovéchala.</small>')}
     `)
   };

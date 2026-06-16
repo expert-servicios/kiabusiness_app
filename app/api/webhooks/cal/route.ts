@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
-import { caseOpened } from '@/lib/email/templates';
+import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 
 // Cal.com sends X-Cal-Signature-256: sha256=<hmac> using CAL_WEBHOOK_SECRET
 function verifySignature(body: string, header: string | null): boolean {
@@ -25,6 +25,7 @@ interface CalPayload {
   endTime        : string;
   status         : string;
   attendees?     : CalAttendee[];
+  videoCallUrl?  : string | null;
   cancellationReason?: string | null;
   rescheduled?   : boolean;
   previousStartTime?: string | null;
@@ -124,15 +125,19 @@ export async function POST(request: NextRequest) {
     const attendee = payload.attendees?.[0];
     const slug     = payload.eventType?.slug ?? '';
 
+    const meetingUrl = payload.videoCallUrl ?? null;
+    const confirmedDate = payload.startTime.slice(0, 10);
+    const confirmedTime = payload.startTime.slice(11, 16);
+
     await admin.from('appointments').upsert({
       cal_uid       : payload.uid,
       name          : attendee?.name ?? '',
       email         : attendee?.email ?? '',
       service       : payload.eventType?.title ?? payload.title,
       status        : 'confirmed',
-      confirmed_date: payload.startTime.slice(0, 10),
-      confirmed_time: payload.startTime.slice(11, 16),
-      meeting_url   : null,
+      confirmed_date: confirmedDate,
+      confirmed_time: confirmedTime,
+      meeting_url   : meetingUrl,
       notes         : null,
       updated_at    : new Date().toISOString(),
     }, { onConflict: 'cal_uid' });
@@ -143,7 +148,21 @@ export async function POST(request: NextRequest) {
       await autoCreateCase(admin, attendee, payload);
     }
 
-    console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug }));
+    // Send branded confirmation email for reunion / demo bookings.
+    // Cal.com sends its own generic confirmation; ours adds brand and meeting link.
+    if ((slug === 'reunion' || slug === 'demo') && attendee?.email) {
+      const dateLabel = new Date(confirmedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      });
+      sendEmail({
+        to       : attendee.email,
+        eventType: 'cita.confirmed',
+        ...citaConfirmed(attendee.name, payload.eventType?.title ?? payload.title, dateLabel, confirmedTime, meetingUrl),
+        metadata : { cal_uid: payload.uid, slug },
+      }).catch((e: unknown) => console.error('[cal/webhook] citaConfirmed email:', e));
+    }
+
+    console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug, hasMeetingUrl: !!meetingUrl }));
   }
 
   if (triggerEvent === 'BOOKING_CANCELLED') {
@@ -162,6 +181,7 @@ export async function POST(request: NextRequest) {
         confirmed_date: payload.startTime.slice(0, 10),
         confirmed_time: payload.startTime.slice(11, 16),
         status        : 'confirmed',
+        meeting_url   : payload.videoCallUrl ?? null,
         updated_at    : new Date().toISOString(),
       })
       .eq('cal_uid', payload.uid);

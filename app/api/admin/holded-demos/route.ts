@@ -5,7 +5,8 @@ import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const HOLDED_HELP_URL = `${getPublicAppUrl()}/holded/pack-starter`;
-const CALENDLY_FORMACION = process.env.NEXT_PUBLIC_CALENDLY_FORMACION_URL ?? '';
+const CAL_FORMACION_LINK = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
+const CAL_FORMACION = CAL_FORMACION_LINK ? `https://cal.com/${CAL_FORMACION_LINK}` : `${getPublicAppUrl()}/cita`;
 
 const VALID_STATUSES = ['pending', 'demo_active', 'onboarding_done', 'training_done', 'converted', 'closed'] as const;
 type DemoStatus = typeof VALID_STATUSES[number];
@@ -95,7 +96,7 @@ export async function PATCH(request: NextRequest) {
       await sendEmail({
         to: demo.email,
         eventType: 'holded_demo.onboarding_done',
-        ...holdedOnboardingDone(demo.name, CALENDLY_FORMACION),
+        ...holdedOnboardingDone(demo.name, CAL_FORMACION),
         metadata: { demo_id: id }
       });
     }
