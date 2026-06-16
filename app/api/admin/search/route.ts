@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 interface SearchResult {
   id: string;
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(5),
 
-    admin.auth.admin.listUsers({ perPage: 1000 }), // for email fallback
+    listAllAuthUsers(), // for email fallback
 
     admin
       .from('cases')
@@ -67,9 +67,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   // Build email map for profiles without email column
-  const authEmailById = new Map(
-    (authUsersRes.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
-  );
+  const authEmailById = new Map(authUsersRes.map((u) => [u.id, u.email ?? '']));
 
   // Clients
   for (const p of profilesRes.data ?? []) {

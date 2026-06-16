@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -25,10 +25,8 @@ export async function GET(request: NextRequest) {
     if (profErr) return NextResponse.json({ error: profErr.message }, { status: 500 });
 
     const clientIds = (profiles ?? []).map((p) => p.id);
-    const authUsers = await admin.auth.admin.listUsers({ perPage: 1000 });
-    const emailById = new Map(
-      (authUsers.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
-    );
+    const authUsers = await listAllAuthUsers();
+    const emailById = new Map(authUsers.map((u) => [u.id, u.email ?? '']));
 
     // Parallel: cases count, subscriptions, last WA message, company links and integrations
     const [casesRes, subsRes, waRes, companyLinksRes, directIntegrationsRes] = await Promise.all([

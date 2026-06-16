@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { assignTenantToUser } from '@/lib/auth/tenant';
 
 async function assertAdmin(request: NextRequest) {
@@ -32,9 +32,7 @@ export async function POST(
     const admin = getSupabaseAdmin();
 
     // Find user by email in auth
-    const { data: { users }, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
-
+    const users = await listAllAuthUsers();
     const authUser = users.find((u) => u.email?.toLowerCase() === body.email.trim().toLowerCase());
     if (!authUser) {
       return NextResponse.json(

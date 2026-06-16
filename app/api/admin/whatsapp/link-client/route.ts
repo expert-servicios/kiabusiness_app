@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { clientInviteEmail, newClientAdminAlert } from '@/lib/email/templates';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       const normalized = phone.replace(/\D/g, '');
 
       // Check if user already exists in auth — generateLink fails for existing emails
-      const { data: listData } = await admin.auth.admin.listUsers({ perPage: 1000 });
-      const existingUser = listData?.users?.find((u) => u.email === email);
+      const listData = await listAllAuthUsers();
+      const existingUser = listData.find((u) => u.email === email);
 
       let userId: string;
       let isNew = false;

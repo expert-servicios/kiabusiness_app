@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { quoteWithPaymentLink } from '@/lib/email/templates';
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     const adminSupabase = getSupabaseAdmin();
 
     // Resolve clientId from email
-    const { data: listData } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
-    const authUser = listData?.users?.find((u) => u.email === clientEmail);
+    const listData = await listAllAuthUsers();
+    const authUser = listData.find((u) => u.email === clientEmail);
     if (!authUser) {
       return NextResponse.json({ error: 'No existe ningún usuario con ese email. Crea el usuario primero.' }, { status: 404 });
     }

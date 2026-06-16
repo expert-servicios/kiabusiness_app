@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { newUserRegisteredAdmin } from '@/lib/email/templates';
 
@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
     const adminSupabase = getSupabaseAdmin();
 
     // Check if user already exists in auth
-    const { data: listData } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
-    const existing = listData?.users?.find((u) => u.email === email);
+    const listData = await listAllAuthUsers();
+    const existing = listData.find((u) => u.email === email);
 
     let userId: string;
     let isNewUser = false;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 async function getAdminContext(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -61,15 +61,13 @@ export async function GET(request: NextRequest) {
 
     // Enrich with auth email + quote/case counts + companies in parallel
     const [authUsers, quotesResult, casesResult, membershipsResult] = await Promise.all([
-      adminSupabase.auth.admin.listUsers({ perPage: 1000 }),
+      listAllAuthUsers(),
       adminSupabase.from('quotes').select('client_id'),
       adminSupabase.from('cases').select('client_id,state'),
       adminSupabase.from('profile_companies').select('profile_id,role,company:companies(id,razon_social,cif_nif)')
     ]);
 
-    const emailMap = new Map(
-      (authUsers.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
-    );
+    const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? '']));
     const quoteCounts = new Map<string, number>();
     for (const q of quotesResult.data ?? []) {
       quoteCounts.set(q.client_id, (quoteCounts.get(q.client_id) ?? 0) + 1);

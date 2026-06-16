@@ -6,6 +6,7 @@ import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
+export const maxDuration = 60;
 
 // Supports comma-separated list: "a@x.com,b@y.com"
 // Also strips display-name format: "EXPERT <info@x.com>" → "info@x.com"

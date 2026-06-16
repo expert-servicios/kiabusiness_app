@@ -4,9 +4,10 @@ import { listGmailMailsSA, hasGmailSA, getGmailUnreadCountSA } from '@/lib/integ
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
 
-// Vercel Cron: runs every 5 minutes
+// Vercel Cron: runs daily at 07:00 UTC
 // Fetches recent Gmail inbox for info@expertconsulting.es (SA) and caches results
 // Also updates system_kv.email_unread_count for sidebar badge
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   const cronAuth = verifyCronRequest(request.headers, 'cron/email-sync');

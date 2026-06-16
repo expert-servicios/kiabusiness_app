@@ -17,7 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { validateMcpSharedSecret } from '@/lib/integrations/holded-mcp/mcp-auth';
 import { encryptSecret } from '@/lib/security/encryption';
 import { isEncryptionConfigured, createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
@@ -77,13 +77,11 @@ export async function POST(request: NextRequest) {
   const encryptedKey   = encryptSecret(holdedApiKey);
 
   // ── 2. Find existing Supabase user by email ──────────────────────────────
-  // Supabase admin API doesn't expose getUserByEmail — use listUsers + filter.
   // Users not yet registered on EXPERT get supabaseUserId=null; linked on first login.
   let supabaseUserId: string | null = null;
   try {
-    const { data: listData } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    const found = listData?.users?.find(u => u.email === personalEmail);
-    supabaseUserId = found?.id ?? null;
+    const allUsers = await listAllAuthUsers();
+    supabaseUserId = allUsers.find(u => u.email === personalEmail)?.id ?? null;
   } catch {
     // Non-fatal — connection still saved, user linked on first EXPERT login
   }

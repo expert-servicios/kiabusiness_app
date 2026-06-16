@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import {
   listHoldedContacts, listHoldedInvoices,
   getHoldedRuntimeConfig, HoldedContactFull, HoldedInvoiceSummary,
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Fetch all EXPERT profiles with emails
-      const { data: authUsers } = await admin.auth.admin.listUsers({ perPage: 1000 });
-      const expertEmails = (authUsers?.users ?? []).map((u) => ({
+      const authUsers = await listAllAuthUsers();
+      const expertEmails = authUsers.map((u) => ({
         id: u.id,
         email: u.email?.toLowerCase() ?? '',
       })).filter((u) => u.email);

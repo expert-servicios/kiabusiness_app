@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 // Lightweight client list for use in selectors/dropdowns.
 // Returns only id, name, email — much faster than /api/admin/clientes.
@@ -26,12 +26,10 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .order('full_name', { ascending: true })
       .limit(200),
-    admin.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(),
   ]);
 
-  const authEmailById = new Map(
-    (authRes.data?.users ?? []).map((u) => [u.id, u.email ?? ''])
-  );
+  const authEmailById = new Map(authRes.map((u) => [u.id, u.email ?? '']));
 
   const clients = (profilesRes.data ?? []).map((p) => ({
     id: p.id,

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { getResendClient } from '@/lib/integrations/resend';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs daily at 08:00 UTC
 // Protected by CRON_SECRET header (set in Vercel env vars)
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const cronAuth = verifyCronRequest(request.headers, 'cron/fiscal-reminders');
   if (!cronAuth.ok) {
@@ -39,8 +41,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Get auth users (emails)
-  const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const emailMap = new Map((authData?.users ?? []).map((u) => [u.id, u.email ?? '']));
+  const authData = await listAllAuthUsers();
+  const emailMap = new Map(authData.map((u) => [u.id, u.email ?? '']));
   const { data: profiles } = await admin.from('profiles').select('id,full_name');
   const nameMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
 

@@ -75,6 +75,27 @@ export async function getTenantContext(request: NextRequest): Promise<{
   };
 }
 
+/**
+ * Paginates auth.admin.listUsers until all users are fetched.
+ * Replaces listUsers({ perPage: 1000 }) which silently truncates at 1000.
+ */
+export async function listAllAuthUsers(): Promise<Array<{ id: string; email?: string; user_metadata?: Record<string, unknown> }>> {
+  const admin = getSupabaseAdmin();
+  const all: Array<{ id: string; email?: string; user_metadata?: Record<string, unknown> }> = [];
+  let page = 1;
+  const PER_PAGE = 1000;
+
+  for (;;) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PER_PAGE });
+    if (error || !data?.users?.length) break;
+    all.push(...(data.users as typeof all));
+    if (data.users.length < PER_PAGE) break;
+    page++;
+  }
+
+  return all;
+}
+
 export async function getFirstAdminProfileId() {
   const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin

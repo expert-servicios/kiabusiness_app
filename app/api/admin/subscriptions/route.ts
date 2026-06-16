@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     if (clientIds.length > 0) {
       const [profilesRes, authRes] = await Promise.all([
         adminSupabase.from('profiles').select('id, full_name, phone, whatsapp_number').in('id', clientIds),
-        adminSupabase.auth.admin.listUsers({ perPage: 1000 }),
+        listAllAuthUsers(),
       ]);
-      const authEmailById = new Map((authRes.data?.users ?? []).map((u) => [u.id, u.email ?? '']));
+      const authEmailById = new Map(authRes.map((u) => [u.id, u.email ?? '']));
       for (const p of profilesRes.data ?? []) {
         clientMap.set(p.id, {
           name: p.full_name ?? null,

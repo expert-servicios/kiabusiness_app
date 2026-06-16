@@ -3,9 +3,9 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { verifyCronRequest } from '@/lib/security/cron';
 
-// Vercel Cron: runs every 15 minutes
-// Protected by CRON_SECRET header (same as other crons)
+// Protected by CRON_SECRET header. Triggered by GitHub Actions every 15 min.
 // Retries holded_sync_jobs with status 'queued' or 'failed' (max 3 attempts)
+export const maxDuration = 60;
 
 const MAX_ATTEMPTS    = 3;
 const BATCH_SIZE      = 10;

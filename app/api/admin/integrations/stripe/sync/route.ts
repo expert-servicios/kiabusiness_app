@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { getStripeClient } from '@/lib/integrations/stripe';
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
@@ -82,13 +82,13 @@ export async function POST(request: NextRequest) {
   };
 
   // ── Cache auth users for email matching ──────────────────────────────────
-  const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const authData = await listAllAuthUsers();
   const emailToProfileId = new Map<string, string>();
-  if (authData?.users) {
-    const ids = authData.users.map((u) => u.id);
+  const ids = authData.map((u) => u.id);
+  if (ids.length > 0) {
     const { data: profiles } = await admin.from('profiles').select('id').in('id', ids);
     const profileIds = new Set((profiles ?? []).map((p) => p.id));
-    for (const u of authData.users) {
+    for (const u of authData) {
       if (u.email && profileIds.has(u.id)) {
         emailToProfileId.set(u.email.toLowerCase(), u.id);
       }
