@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { ArrowLeft, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { CustomerPortalButton } from '@/components/subscriptions/CustomerPortalButton';
 import { SubscriptionPlanCards } from '@/components/subscriptions/SubscriptionPlanCards';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface SubscriptionRecord {
   id: string;
@@ -24,15 +23,8 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; color
 };
 
 async function getSubscriptions(): Promise<SubscriptionRecord[]> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-  const response = await fetch(absoluteAppUrl('/api/subscriptions'), {
-    headers: { cookie: cookieHeader },
-    cache: 'no-store'
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.subscriptions as SubscriptionRecord[];
+  const data = await fetchWithCookies<{ subscriptions: SubscriptionRecord[] }>('/api/subscriptions');
+  return data?.subscriptions ?? [];
 }
 
 interface PageProps {

@@ -39,6 +39,7 @@ const DASHBOARD_SAFE_TOOLS = [
   'get_user_expedientes',
   'get_user_companies',
   'get_user_pending_docs',
+  'get_case_status',
   // Holded integration tools
   'get_holded_connection_status',
   'get_holded_invoices',

@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { ArrowLeft, Building2, Mail, MessageSquare, Phone, Users } from 'lucide-react';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { LeadStatusSelect } from '@/components/admin/LeadStatusSelect';
 import { HoldedSyncButton } from '@/components/admin/HoldedSyncButton';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface SaasLead {
   id: string;
@@ -28,19 +27,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 async function getLeads(): Promise<SaasLead[]> {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl('/api/admin/saas-leads'), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.leads ?? [];
-  } catch {
-    return [];
-  }
+  const data = await fetchWithCookies<{ leads: SaasLead[] }>('/api/admin/saas-leads');
+  return data?.leads ?? [];
 }
 
 export default async function AdminSaasLeadsPage() {

@@ -1,5 +1,8 @@
--- Fix RLS policy for tenant_admin on cases table.
--- Uses is_tenant_admin() + auth_tenant_id() helpers from tenant_ready migration.
+-- Fix tenant_admin SELECT policy on cases to scope by client_id rather than
+-- cases.tenant_id. The cases.tenant_id column is nullable (legacy records have NULL)
+-- so the previous policy silently excluded all legacy cases. Scoping via client_id
+-- matches how the tenant portal pages actually query cases and is consistent with
+-- the existing tenant_admin policy on documents.
 
 DROP POLICY IF EXISTS "tenant_admin select cases" ON public.cases;
 CREATE POLICY "tenant_admin select cases" ON public.cases

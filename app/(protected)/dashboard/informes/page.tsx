@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { ArrowLeft, FileBarChart, Plus } from 'lucide-react';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface ReportRow {
   id          : string;
@@ -14,19 +13,8 @@ interface ReportRow {
 }
 
 async function fetchReports(): Promise<ReportRow[]> {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const res = await fetch(absoluteAppUrl('/api/reports'), {
-      headers: { cookie: cookieHeader },
-      cache  : 'no-store',
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.reports ?? [];
-  } catch {
-    return [];
-  }
+  const data = await fetchWithCookies<{ reports: ReportRow[] }>('/api/reports');
+  return data?.reports ?? [];
 }
 
 export default async function InformesPage() {

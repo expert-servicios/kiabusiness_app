@@ -6,24 +6,10 @@ import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { MobileNav } from '@/components/dashboard/MobileNav';
 import { KiaCopilotPanel } from '@/components/dashboard/KiaCopilotPanel';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { absoluteAppUrl } from '@/lib/utils/app-url';
-
-async function fetchJson(path: string, cookieHeader: string) {
-  try {
-    const res = await fetch(absoluteAppUrl(path), {
-      headers: { cookie: cookieHeader },
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
+import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
 
   // Read session directly — avoids HTTP round-trip failures on cold starts
   const supabase = createServerClient(
@@ -46,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       .eq('id', user.id)
       .single()
       .then((r) => r.data),
-    fetchJson('/api/companies', cookieHeader)
+    fetchWithCookies('/api/companies')
   ]);
 
   const companies = companiesData?.companies ?? [];

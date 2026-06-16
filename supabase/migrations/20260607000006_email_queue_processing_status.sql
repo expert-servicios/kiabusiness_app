@@ -1,6 +1,6 @@
--- Add 'processing' status constraint and updated_at column to email_queue.
+-- Add 'processing' status and updated_at column to email_queue.
 -- 'processing' is set atomically before sending to prevent concurrent cron workers
--- from double-sending the same email.
+-- from double-sending the same emails.
 
 ALTER TABLE public.email_queue
   DROP CONSTRAINT IF EXISTS email_queue_status_check;
@@ -12,6 +12,7 @@ ALTER TABLE public.email_queue
 ALTER TABLE public.email_queue
   ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
+-- Update the pending index to exclude 'processing' rows
 DROP INDEX IF EXISTS email_queue_pending_idx;
 CREATE INDEX IF NOT EXISTS email_queue_pending_idx
   ON public.email_queue (scheduled_at)

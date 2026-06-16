@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('cases')
-      .select('id,category,service,state,opened_at,closed_at,client_id,admin_note,docs_checklist')
+      .select('id,category,service,state,status,opened_at,closed_at,client_id,admin_note,docs_checklist')
       .order('opened_at', { ascending: false });
 
     if (clientIdFilter) query = query.eq('client_id', clientIdFilter);
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
 
     const { data: newCase, error } = await admin
       .from('cases')
-      .insert({ client_id, service, category, state: 'pendiente', opened_at: new Date().toISOString() })
-      .select('id,service,state,category')
+      .insert({ client_id, service, category, status: 'nuevo', opened_at: new Date().toISOString() })
+      .select('id,service,state,status,category')
       .single();
 
     if (error) {

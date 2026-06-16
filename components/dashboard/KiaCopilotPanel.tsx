@@ -191,6 +191,8 @@ export function KiaCopilotPanel() {
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
+      setMessages((prev) => [...prev.slice(0, -1), { role: 'kia', text: '' }]);
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';

@@ -87,12 +87,13 @@ function makeContext(clientId: string | null = CLIENT_ID): KiaContext {
 /** Creates a fluent Supabase query-chain mock that resolves with the given data. */
 function queryChain(response: { data: unknown; error: unknown }) {
   const chain = {
-    select  : vi.fn().mockReturnThis(),
-    eq      : vi.fn().mockReturnThis(),
-    not     : vi.fn().mockReturnThis(),
-    in      : vi.fn().mockReturnThis(),
-    order   : vi.fn().mockReturnThis(),
-    limit   : vi.fn().mockResolvedValue(response),
+    select     : vi.fn().mockReturnThis(),
+    eq         : vi.fn().mockReturnThis(),
+    neq        : vi.fn().mockReturnThis(),
+    not        : vi.fn().mockReturnThis(),
+    in         : vi.fn().mockReturnThis(),
+    order      : vi.fn().mockReturnThis(),
+    limit      : vi.fn().mockResolvedValue(response),
     maybeSingle: vi.fn().mockResolvedValue(response),
   };
   return chain;
@@ -107,8 +108,8 @@ describe('get_user_expedientes', () => {
 
   it('devuelve expedientes del usuario autenticado', async () => {
     const rows = [
-      { id: 'case-1', service: 'Declaracion IRPF', category: null, state: 'en_revision', opened_at: '2026-01-15' },
-      { id: 'case-2', service: 'Alta autonomo', category: 'autonomos', state: 'pendiente_documentacion', opened_at: '2026-01-10' },
+      { id: 'case-1', service: 'Declaracion IRPF', category: null, status: 'en_revision', priority: 'media', due_date: null, opened_at: '2026-01-15' },
+      { id: 'case-2', service: 'Alta autonomo', category: 'autonomos', status: 'pendiente_cliente', priority: 'alta', due_date: null, opened_at: '2026-01-10' },
     ];
     mockFrom.mockReturnValue(queryChain({ data: rows, error: null }));
 
@@ -116,9 +117,12 @@ describe('get_user_expedientes', () => {
 
     expect(result.ok).toBe(true);
     expect(result.result?.count).toBe(2);
-    const expedientes = result.result?.expedientes as Array<{ id: string; servicio: string; url: string }>;
+    type Exp = { id: string; servicio: string; estado: string; estado_raw: string; url: string };
+    const expedientes = result.result?.expedientes as Exp[];
     expect(expedientes[0].id).toBe('case-1');
     expect(expedientes[0].servicio).toBe('Declaracion IRPF');
+    expect(expedientes[0].estado_raw).toBe('en_revision');
+    expect(expedientes[0].estado).toBe('En revisión');
     expect(expedientes[0].url).toMatch(/expedientes\/case-1/);
   });
 
@@ -129,7 +133,7 @@ describe('get_user_expedientes', () => {
     expect(result.error).toMatch(/usuario/i);
   });
 
-  it('aplica filtro .in() cuando status es finalizados', async () => {
+  it('aplica filtro .eq(status, finalizado) cuando status es finalizados', async () => {
     const chain = queryChain({ data: [], error: null });
     mockFrom.mockReturnValue(chain);
 
@@ -138,16 +142,16 @@ describe('get_user_expedientes', () => {
       makeContext(),
     );
 
-    expect(chain.in).toHaveBeenCalledWith('state', ['finalizado', 'cerrado', 'entregado']);
+    expect(chain.eq).toHaveBeenCalledWith('status', 'finalizado');
   });
 
-  it('aplica filtro .not() cuando status es activos', async () => {
+  it('aplica filtro .neq(status, finalizado) cuando status es activos', async () => {
     const chain = queryChain({ data: [], error: null });
     mockFrom.mockReturnValue(chain);
 
     await executeKiaToolCall(TOOL, makeContext());
 
-    expect(chain.not).toHaveBeenCalledWith('state', 'in', ['finalizado', 'cerrado', 'entregado']);
+    expect(chain.neq).toHaveBeenCalledWith('status', 'finalizado');
   });
 
   it('devuelve count=0 si la consulta retorna lista vacía', async () => {
