@@ -141,7 +141,7 @@ Reglas:
     }
 
     // Send WhatsApp notification to the user with portal link
-    const reportUrl = absoluteAppUrl(`/dashboard/informe/${report.id}`);
+    const reportUrl = absoluteAppUrl(`/dashboard/informes/${report.id}`);
     const viabilidadEmoji = { alta: '🟢', media: '🟡', baja: '🔴', no_viable: '⛔' }[viabilidad] ?? '📋';
     const notifyBody = lang === 'ru'
       ? `${viabilidadEmoji} Ваш отчёт о виabilidad *${svc.label.ru}* готов.\n\nПросмотреть отчёт:\n${reportUrl}\n\nEXPERT 💼`
