@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
@@ -219,13 +220,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const body = await request.json() as {
-      status?: CaseStatus;
-      priority?: string;
-      admin_note?: string;
-      next_action?: string;
-      due_date?: string;
-    };
+    const patchSchema = z.object({
+      status:     z.enum(['nuevo','pendiente_cliente','en_revision','listo_para_presentar','presentado','finalizado','bloqueado']).optional(),
+      priority:   z.enum(['baja','media','alta','critica']).optional(),
+      admin_note: z.string().max(5000).optional(),
+      next_action:z.string().max(500).optional(),
+      due_date:   z.string().datetime({ offset: true }).optional(),
+    });
+
+    let rawBody: unknown;
+    try { rawBody = await request.json(); } catch {
+      return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+    }
+    const parsedBody = patchSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'Datos inválidos', details: parsedBody.error.flatten() }, { status: 400 });
+    }
+    const body = parsedBody.data as { status?: CaseStatus; priority?: string; admin_note?: string; next_action?: string; due_date?: string };
 
     // Validate status transition if status is being updated
     if (body.status) {

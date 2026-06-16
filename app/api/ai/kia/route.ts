@@ -14,6 +14,8 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 
+export const maxDuration = 60; // Anthropic calls can exceed the 30s Vercel default
+
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
   sessionId   : z.string().uuid().optional(),

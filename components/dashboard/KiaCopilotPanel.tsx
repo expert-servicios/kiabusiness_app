@@ -149,6 +149,10 @@ export function KiaCopilotPanel() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel any in-flight SSE stream when the component unmounts
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -182,11 +186,16 @@ export function KiaCopilotPanel() {
         text: message.text,
       }));
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch('/api/kia/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
         body: JSON.stringify({ message: cleanText, currentPage: pathname, currentTask: pageCtx.task, history }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
@@ -240,7 +249,8 @@ export function KiaCopilotPanel() {
           }
         }
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       setMessages((prev) => [
         ...prev.slice(0, -1),
         { role: 'kia', text: 'No pude conectar con el servidor. Intentalo de nuevo.' },

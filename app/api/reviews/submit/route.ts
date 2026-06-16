@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+
+const bodySchema = z.object({
+  token:         z.string().min(1),
+  rating:        z.number().int().min(1).max(5),
+  comment:       z.string().max(2000).optional(),
+  allow_publish: z.boolean().optional().default(false),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as {
-      token?: string;
-      rating?: number;
-      comment?: string;
-      allow_publish?: boolean;
-    };
-
-    const { token, rating, comment, allow_publish } = body;
-
-    if (!token || typeof token !== 'string') {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 400 });
+    let rawBody: unknown;
+    try { rawBody = await request.json(); } catch {
+      return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
     }
-    if (!rating || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'Valoración entre 1 y 5 requerida' }, { status: 400 });
+
+    const parsed = bodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Datos inválidos', details: parsed.error.flatten() }, { status: 400 });
     }
+
+    const { token, rating, comment, allow_publish } = parsed.data;
 
     const admin = getSupabaseAdmin();
 
