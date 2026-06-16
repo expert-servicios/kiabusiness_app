@@ -1,0 +1,30 @@
+name: Email Queue
+
+on:
+  schedule:
+    # Every hour — Vercel Hobby plan only allows daily crons, so we drive this from GitHub Actions.
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  process:
+    name: Process Email Queue
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Call email-queue endpoint
+        run: |
+          HTTP_CODE=$(curl --silent --output /tmp/response.txt --write-out "%{http_code}" \
+            --max-time 90 \
+            -X GET "https://expertconsulting.es/api/cron/email-queue" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+
+          BODY=$(cat /tmp/response.txt)
+          echo "HTTP $HTTP_CODE — $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Email queue failed with HTTP $HTTP_CODE: $BODY"
+            exit 1
+          fi
