@@ -186,29 +186,54 @@ export function KiaCopilotPanel() {
       const res = await fetch('/api/kia/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: cleanText,
-          currentPage: pathname,
-          currentTask: pageCtx.task,
-          history,
-        }),
+        body: JSON.stringify({ message: cleanText, currentPage: pathname, currentTask: pageCtx.task, history }),
       });
-      const data = await res.json() as {
-        message?: string;
-        quickReplies?: QuickReply[];
-        artifacts?: CopilotArtifact[];
-        error?: string;
-      };
 
-      setMessages((prev) => [
-        ...prev.slice(0, -1),
-        {
-          role: 'kia',
-          text: data.message ?? data.error ?? 'Lo siento, algo salio mal.',
-          artifacts: data.artifacts ?? [],
-        },
-      ]);
-      setQuickReplies(data.quickReplies ?? []);
+      if (!res.ok || !res.body) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      // Switch loading bubble → empty text bubble immediately
+      setMessages((prev) => [...prev.slice(0, -1), { role: 'kia', text: '' }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const events = buf.split('\n\n');
+        buf = events.pop() ?? '';
+        for (const raw of events) {
+          if (!raw.startsWith('data: ')) continue;
+          let evt: Record<string, unknown>;
+          try { evt = JSON.parse(raw.slice(6)) as Record<string, unknown>; } catch { continue; }
+          if ('t' in evt) {
+            setMessages((prev) => {
+              const msgs = [...prev];
+              const last = msgs.at(-1);
+              if (last?.role === 'kia') msgs[msgs.length - 1] = { ...last, text: last.text + (evt.t as string) };
+              return msgs;
+            });
+          } else if (evt.done) {
+            setQuickReplies(
+              ((evt.quickReplies as Array<{ title: string }> | undefined) ?? [])
+                .map((r, i) => ({ id: String(i), title: r.title }))
+            );
+            if (evt.artifacts) {
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const last = msgs.at(-1);
+                if (last?.role === 'kia') msgs[msgs.length - 1] = { ...last, artifacts: evt.artifacts as CopilotArtifact[] };
+                return msgs;
+              });
+            }
+          }
+        }
+      }
     } catch {
       setMessages((prev) => [
         ...prev.slice(0, -1),

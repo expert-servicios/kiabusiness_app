@@ -107,18 +107,43 @@ export async function POST(request: NextRequest) {
       ? `${result.decision.userMessage}\n\nHe preparado un informe visual con los datos de Holded para que puedas verlo en el panel.`
       : result.decision.userMessage;
 
-    return NextResponse.json({
-      ok: true,
-      message: messageWithArtifacts,
-      nextAction: result.decision.nextAction,
-      quickReplies: result.decision.quickReplies,
-      toolResults: result.toolResults,
+    // Stream the text word by word, then send a done event with metadata
+    const encoder = new TextEncoder();
+    const textToStream = messageWithArtifacts;
+    const meta = {
       artifacts,
+      quickReplies: result.decision.quickReplies ?? [],
+      nextAction: result.decision.nextAction,
       warnings: result.decision.warnings,
+    };
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Split into chunks preserving spaces (alternate: word, space, word...)
+        const chunks = textToStream.split(/(\s+)/);
+        for (const chunk of chunks) {
+          if (!chunk) continue;
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ t: chunk })}\n\n`));
+          await new Promise<void>((r) => setTimeout(r, 18));
+        }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, ...meta })}\n\n`));
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'X-Accel-Buffering': 'no',
+      },
     });
   } catch (err) {
     console.error('[kia/copilot]', err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: 'Error interno del copiloto' }, { status: 500 });
+    return new Response(
+      `data: ${JSON.stringify({ done: true, error: 'Error interno del copiloto', artifacts: [], quickReplies: [] })}\n\n`,
+      { headers: { 'Content-Type': 'text/event-stream; charset=utf-8' } }
+    );
   }
 }
 
