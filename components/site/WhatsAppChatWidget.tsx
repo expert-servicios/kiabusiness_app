@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { getCalendlyDemoUrl } from '@/lib/utils/calendly';
+import { getCalDemoUrl } from '@/lib/utils/cal';
 
 const WA_NUMBER = '34696550480';
 const SESSION_KEY = 'kia_bubble_dismissed';
@@ -56,13 +56,7 @@ function buildWaUrl(msg: string) {
 
 // ── Quick-reply action types ──────────────────────────────────────────────────
 
-declare global {
-  interface Window {
-    Calendly?: { initPopupWidget: (opts: { url: string }) => void };
-  }
-}
-
-const CALENDLY_DEMO = getCalendlyDemoUrl();
+const CAL_DEMO = getCalDemoUrl();
 
 type Action =
   | { kind: 'link';     href: string; label: string; icon: string; external?: true }
@@ -71,7 +65,7 @@ type Action =
 
 const ANON_BASE: Action[] = [
   { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
-  { kind: 'calendly', url: CALENDLY_DEMO, label: 'Reservar demo Holded', icon: '📅' },
+  { kind: 'calendly', url: CAL_DEMO, label: 'Reservar demo Holded', icon: '📅' },
   { kind: 'wa',       msg: 'Hola Kia, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
 ];
 
@@ -230,8 +224,9 @@ export function WhatsAppChatWidget() {
                   key={action.label}
                   type="button"
                   onClick={() => {
-                    if (action.url && window.Calendly) {
-                      window.Calendly.initPopupWidget({ url: action.url });
+                    if (action.url && window.Cal) {
+                      const calLink = (() => { try { return new URL(action.url).pathname.slice(1); } catch { return action.url; } })();
+                      window.Cal('modal', { calLink, config: { layout: 'month_view' } });
                     } else {
                       window.location.assign('/cita');
                     }

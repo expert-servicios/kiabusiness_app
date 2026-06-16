@@ -18,3 +18,5 @@ apps/holded-mcp/.turbo/
 apps/holded-mcp/.vercel/
 apps/holded-mcp/public/screens_claude/
 apps/holded-mcp/*.log
+
+.vercel

@@ -2,9 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import { Calendar } from 'lucide-react';
-import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
-const CALENDLY_URL = getCalendlyMeetingUrl();
+const CAL_URL = getCalMeetingUrl();
+
+function toCalLink(url: string): string {
+  try { return new URL(url).pathname.slice(1); } catch { return url; }
+}
 
 export function CalendlyBadge() {
   const pathname = usePathname();
@@ -14,8 +18,8 @@ export function CalendlyBadge() {
     <button
       type="button"
       onClick={() => {
-        if (CALENDLY_URL && window.Calendly) {
-          window.Calendly.initPopupWidget({ url: CALENDLY_URL });
+        if (CAL_URL && window.Cal) {
+          window.Cal('modal', { calLink: toCalLink(CAL_URL), config: { layout: 'month_view' } });
           return;
         }
         window.location.assign('/cita');

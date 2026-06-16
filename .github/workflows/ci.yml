@@ -55,7 +55,7 @@ jobs:
           INTERNAL_API_SECRET: placeholder
           SECRET_ENCRYPTION_KEY: placeholder
           ADMIN_EMAILS: ci@expertconsulting.es
-          NEXT_PUBLIC_CALENDLY_REUNION_URL: https://calendly.com/placeholder/reunion
-          NEXT_PUBLIC_CALENDLY_DEMO_URL: https://calendly.com/placeholder/demo
-          NEXT_PUBLIC_CALENDLY_FORMACION_URL: https://calendly.com/placeholder/formacion
-          NEXT_PUBLIC_CALENDLY_ONBOARDING_URL: https://calendly.com/placeholder/onboarding
+          NEXT_PUBLIC_CAL_REUNION_LINK: placeholder/reunion
+          NEXT_PUBLIC_CAL_DEMO_LINK: placeholder/demo
+          NEXT_PUBLIC_CAL_FORMACION_LINK: placeholder/formacion
+          NEXT_PUBLIC_CAL_ONBOARDING_LINK: placeholder/onboarding

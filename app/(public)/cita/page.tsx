@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle2, Clock, Phone, Calendar } from 'lucide-react';
-import { getCalendlyMeetingUrl } from '@/lib/utils/calendly';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://expertconsulting.es/cita' },
 };
 
-const CALENDLY_URL = getCalendlyMeetingUrl();
+const CAL_URL = getCalMeetingUrl();
 
 const PILLS = [
   { icon: CheckCircle2, label: 'Gratuita, sin compromiso' },
@@ -68,11 +68,11 @@ export default function CitaPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
 
-          {/* ── Calendly inline embed (iframe) ── */}
-          {CALENDLY_URL ? (
+          {/* ── Cal.com inline embed ── */}
+          {CAL_URL ? (
             <div className="overflow-hidden rounded-xl border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
               <iframe
-                src={CALENDLY_URL}
+                src={`${CAL_URL}?embed=true&layout=month_view&theme=light`}
                 width="100%"
                 height="700"
                 frameBorder="0"
