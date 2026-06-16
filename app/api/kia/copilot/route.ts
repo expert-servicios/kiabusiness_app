@@ -37,6 +37,10 @@ const DASHBOARD_SAFE_TOOLS = [
   'get_company_status_snapshot',
   'generate_company_report',
   'generate_holded_connection_link',
+  'get_user_expedientes',
+  'get_user_companies',
+  'get_user_pending_docs',
+  'get_case_status',
 ] as const;
 
 type CopilotArtifact =
@@ -200,6 +204,20 @@ function buildArtifactsFromToolResults(toolResults: KiaToolResult[]): CopilotArt
           Contacto: safeText((doc as Record<string, unknown>).contact),
           Total: (doc as Record<string, unknown>).total ?? 0,
           Estado: safeText((doc as Record<string, unknown>).status),
+        })),
+      });
+    }
+
+    if (toolResult.toolName === 'get_user_expedientes' && Array.isArray(result.expedientes) && (result.expedientes as unknown[]).length > 0) {
+      artifacts.push({
+        type: 'table',
+        title: 'Mis expedientes',
+        columns: ['Servicio', 'Estado', 'Prioridad', 'Vencimiento'],
+        rows: (result.expedientes as Array<Record<string, unknown>>).map((exp) => ({
+          Servicio:    safeText(exp.servicio),
+          Estado:      safeText(exp.estado),
+          Prioridad:   safeText(exp.prioridad ?? 'media'),
+          Vencimiento: exp.vencimiento ? new Date(String(exp.vencimiento)).toLocaleDateString('es-ES') : '—',
         })),
       });
     }

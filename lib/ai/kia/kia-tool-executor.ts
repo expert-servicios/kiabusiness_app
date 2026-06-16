@@ -242,24 +242,41 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const statusFilter = String(args.status ?? 'activos');
         const limit = Number(args.limit ?? 10);
 
-        let query = admin.from('cases').select('id, service, category, state, opened_at').eq('client_id', clientId);
+        let query = admin
+          .from('cases')
+          .select('id, service, category, status, priority, due_date, opened_at')
+          .eq('client_id', clientId);
         if (statusFilter === 'activos') {
-          query = query.not('state', 'in', ['finalizado', 'cerrado', 'entregado']);
+          query = query.neq('status', 'finalizado');
         } else if (statusFilter === 'finalizados') {
-          query = query.in('state', ['finalizado', 'cerrado', 'entregado']);
+          query = query.eq('status', 'finalizado');
         }
         const { data, error } = await query.order('opened_at', { ascending: false }).limit(limit);
         if (error) return fail(toolCall.name, 'Error consultando expedientes.');
-        const rows = (data ?? []) as Array<{ id: string; service: string; category: string | null; state: string; opened_at: string }>;
+
+        type CaseRow = { id: string; service: string; category: string | null; status: string; priority: string; due_date: string | null; opened_at: string };
+        const STATUS_LABELS: Record<string, string> = {
+          nuevo:                'Nuevo',
+          pendiente_cliente:    'Pendiente tu documentación',
+          en_revision:          'En revisión',
+          listo_para_presentar: 'Listo para presentar',
+          presentado:           'Presentado',
+          finalizado:           'Finalizado',
+          bloqueado:            'Bloqueado',
+        };
+        const rows = (data ?? []) as CaseRow[];
         return ok(toolCall.name, {
           count: rows.length,
           expedientes: rows.map((c) => ({
-            id: c.id,
-            servicio: c.service,
-            categoria: c.category,
-            estado: c.state,
+            id:             c.id,
+            servicio:       c.service,
+            categoria:      c.category,
+            estado:         STATUS_LABELS[c.status] ?? c.status,
+            estado_raw:     c.status,
+            prioridad:      c.priority,
+            vencimiento:    c.due_date,
             fecha_apertura: c.opened_at,
-            url: `/dashboard/expedientes/${c.id}`,
+            url:            `/dashboard/expedientes/${c.id}`,
           })),
         });
       }
