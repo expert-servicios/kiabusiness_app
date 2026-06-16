@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
+  console.log(JSON.stringify({ cron: 'daily-summary', event: 'start', at: new Date().toISOString() }));
+
   const admin  = getSupabaseAdmin();
   const now    = new Date();
 

@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
+  console.log(JSON.stringify({ cron: 'kia-health', event: 'start', at: new Date().toISOString() }));
+
   if (process.env.KIA_HEALTH_CANARY_ENABLED?.toLowerCase() === 'false') {
     return NextResponse.json({ ok: true, skipped: true, reason: 'KIA_HEALTH_CANARY_ENABLED=false' });
   }

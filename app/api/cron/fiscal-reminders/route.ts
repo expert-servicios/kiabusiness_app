@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
+  console.log(JSON.stringify({ cron: 'fiscal-reminders', event: 'start', at: new Date().toISOString() }));
+
   const admin = getSupabaseAdmin();
   const resend = getResendClient();
   const today = new Date();

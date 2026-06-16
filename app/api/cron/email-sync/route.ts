@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
+  console.log(JSON.stringify({ cron: 'email-sync', event: 'start', at: new Date().toISOString() }));
+
   if (!hasGmailSA()) {
     return NextResponse.json({ skipped: true, reason: 'Gmail SA not configured' });
   }

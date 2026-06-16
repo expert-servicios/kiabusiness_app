@@ -12,9 +12,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
+  const startedAt = new Date().toISOString();
+  console.log(JSON.stringify({ cron: 'email-queue', event: 'start', at: startedAt }));
+
   try {
     const result = await processEmailQueue(20);
-    return NextResponse.json({ ok: true, ...result, processedAt: new Date().toISOString() });
+    console.log(JSON.stringify({ cron: 'email-queue', event: 'done', ...result, at: new Date().toISOString() }));
+    return NextResponse.json({ ok: true, ...result, processedAt: startedAt });
   } catch (err) {
     console.error('[cron/email-queue]', err);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });

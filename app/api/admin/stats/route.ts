@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
         .from('quotes')
         .select('id', { count: 'exact', head: true })
         .in('status', ['draft', 'sent', 'accepted']),
-      adminSupabase.from('orders').select('amount_eur').eq('status', 'paid'),
+      adminSupabase.from('orders').select('amount_eur').eq('status', 'paid'), // full scan — needed for accurate SUM; migrate to RPC when orders > 10k
       adminSupabase
         .from('cases')
-        .select('state')
+        .select('state') // full scan — needed for client-side isOperationallyActiveCase filter
     ]);
 
     const totalUsers = profilesResult.count ?? 0;

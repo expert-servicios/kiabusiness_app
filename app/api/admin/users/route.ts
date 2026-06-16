@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
     const { data: profiles, error } = await adminSupabase
       .from('profiles')
       .select('id,full_name,phone,role,status,whatsapp_number,whatsapp_consent,created_at')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1000);
 
     if (error) {
       return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });

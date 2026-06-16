@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
       leadsResult,
       newsletterResult
     ] = await Promise.all([
-      adminSupabase.from('orders').select('amount_eur,created_at').eq('status', 'paid').order('created_at'),
-      adminSupabase.from('cases').select('state,created_at'),
-      adminSupabase.from('quotes').select('status,created_at'),
+      adminSupabase.from('orders').select('amount_eur,created_at').eq('status', 'paid').order('created_at'), // full scan — needed for monthly revenue grouping
+      adminSupabase.from('cases').select('state,created_at'), // full scan — needed for state breakdown
+      adminSupabase.from('quotes').select('status,created_at'), // full scan — needed for funnel stats
       adminSupabase.from('email_events').select('status,event_type,created_at').order('created_at', { ascending: false }).limit(500),
       adminSupabase.from('subscriptions').select('status,plan_name,created_at'),
       adminSupabase.from('messages').select('case_id,sender_role,created_at').order('created_at', { ascending: false }).limit(1000),
