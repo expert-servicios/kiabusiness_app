@@ -1261,6 +1261,73 @@ export function tenantAdminStatusChanged(
   };
 }
 
+// ── Tenant weekly digest — resumen semanal para tenant_admin ────────────────
+export interface TenantWeeklyDigestData {
+  adminName    : string;
+  tenantName   : string;
+  weekLabel    : string; // e.g. "9–15 jun 2026"
+  portalUrl    : string;
+  newClients   : number;
+  activeCases  : number;
+  finishedThisWeek: number;
+  pendingDocs  : number;
+  topPending   : Array<{ service: string; client: string; daysPending: number }>;
+}
+
+export function tenantWeeklyDigest(data: TenantWeeklyDigestData, brand?: TenantBrand) {
+  const {
+    adminName, tenantName, weekLabel, portalUrl,
+    newClients, activeCases, finishedThisWeek, pendingDocs, topPending,
+  } = data;
+  const a = escapeHtml(adminName);
+  const tn = escapeHtml(tenantName);
+  const wl = escapeHtml(weekLabel);
+
+  const hasAlerts = pendingDocs > 0 || topPending.length > 0;
+  const subject = hasAlerts
+    ? `⚠️ Resumen semanal ${tn} — ${wl}: ${pendingDocs} doc${pendingDocs !== 1 ? 's' : ''} pendiente${pendingDocs !== 1 ? 's' : ''}`
+    : `✅ Resumen semanal ${tn} — ${wl}: todo al día`;
+
+  const kpiRow = (label: string, value: number, accent?: boolean) =>
+    `<td style="width:25%;text-align:center;padding:16px 8px;">
+      <p style="margin:0;font-size:28px;font-weight:bold;color:${accent ? '#c88b25' : '#07111d'};">${value}</p>
+      <p style="margin:4px 0 0;font-size:11px;color:#8899aa;text-transform:uppercase;letter-spacing:1px;">${label}</p>
+    </td>`;
+
+  const kpiBar = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border:1px solid #e8dfc8;border-radius:12px;overflow:hidden;">
+    <tr style="background:#faf8f2;">
+      ${kpiRow('Clientes nuevos', newClients)}
+      ${kpiRow('Exp. activos', activeCases)}
+      ${kpiRow('Finalizados', finishedThisWeek)}
+      ${kpiRow('Docs pendientes', pendingDocs, pendingDocs > 0)}
+    </tr>
+  </table>`;
+
+  const pendingRows = topPending.length
+    ? `<p style="margin:24px 0 8px;font-size:12px;font-weight:bold;color:#7a6e5f;text-transform:uppercase;letter-spacing:1px;">Esperando documentos</p>
+       <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8dfc8;border-radius:12px;overflow:hidden;">
+         ${topPending.map((r, i) => `
+           <tr style="background:${i % 2 === 0 ? '#ffffff' : '#faf8f2'};">
+             <td style="padding:10px 16px;font-size:13px;color:#07111d;">${escapeHtml(r.service)}</td>
+             <td style="padding:10px 16px;font-size:13px;color:#07111d;">${escapeHtml(r.client)}</td>
+             <td style="padding:10px 16px;font-size:12px;color:${r.daysPending > 5 ? '#c0392b' : '#8899aa'};text-align:right;white-space:nowrap;">${r.daysPending}d</td>
+           </tr>`).join('')}
+       </table>`
+    : '';
+
+  return {
+    subject,
+    html: base('Resumen semanal', `
+      ${heading(`Resumen de la semana — ${wl}`)}
+      ${para(`Hola <strong>${a}</strong>, aquí tienes el resumen de actividad de <strong>${tn}</strong>.`)}
+      ${kpiBar}
+      ${pendingRows}
+      ${btn('Ver portal', portalUrl)}
+      ${para('<small style="color:#8899aa;">Recibes este resumen cada lunes. Entra al portal para gestionar expedientes y documentos.</small>')}
+    `, brand),
+  };
+}
+
 // ── Document rejected — notify client to re-upload ──────────────────────────
 export function documentRejected(name: string, documentName: string, service: string, caseId: string) {
   return {
