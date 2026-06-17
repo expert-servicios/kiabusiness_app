@@ -175,6 +175,8 @@ Reglas de ejecucion:
 ✅ Audit P0/P1 resuelto    — maxDuration en 6 rutas, Zod en reviews y cases PATCH, SSE AbortController
 ✅ N+1 eliminado           — admin cases GET usa profiles.email (1 query vs N getUserById)
 ✅ Email durabilidad       — case status emails via enqueueEmail (cola durable con reintentos)
+✅ Error boundaries        — global-error.tsx + error.tsx en protected/admin/dashboard/tenant/public + loading.tsx
+✅ Paginacion emails       — admin/emails con paginacion servidor (50/pagina) en API y UI
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
 ⚠️ Holded scheduler       — cron externo pendiente (cron-job.org / GitHub Actions cada 15 min)
 ```
@@ -208,6 +210,14 @@ Reglas de ejecucion:
 | Fixes | Cases API cliente devuelve status; TS 0 errores; migraciones SQL documentadas | `app/api/cases/route.ts`, `app/(protected)/admin/suscripciones/page.tsx` |
 | Audit P0/P1 | maxDuration en 6 rutas (kia copilot, ai/kia, 4 crons); Zod en reviews/submit y admin cases PATCH; AbortController en KiaCopilotPanel SSE | 9 archivos |
 | Audit perf | N+1 getUserById eliminado en admin cases GET (usa profiles.email); sendEmail→enqueueEmail en case status emails | `app/api/admin/cases/route.ts`, `app/api/admin/cases/[id]/route.ts` |
+
+## Completado en sesion 2026-06-17
+
+| Sprint | Descripcion | Archivos clave |
+|--------|-------------|----------------|
+| P2 Error boundaries | global-error.tsx + error.tsx en 5 route groups + loading.tsx en 3 areas protegidas | `app/global-error.tsx`, `app/(protected)/*/error.tsx`, `app/(public)/error.tsx` |
+| P2 Paginacion | Admin emails: API con paginacion servidor (50/pagina), UI con controles prev/next | `app/api/admin/emails/route.ts`, `app/(protected)/admin/emails/page.tsx` |
+| Fix TS | Eliminados maxDuration duplicados en kia-health y kia/copilot routes | `app/api/cron/kia-health/route.ts`, `app/api/kia/copilot/route.ts` |
 
 ---
 

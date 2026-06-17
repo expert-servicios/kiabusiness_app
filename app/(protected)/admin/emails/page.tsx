@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { Mail, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 interface EmailEvent {
@@ -10,6 +10,13 @@ interface EmailEvent {
   subject: string;
   status: string;
   created_at: string;
+}
+
+interface EmailsResponse {
+  events: EmailEvent[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -32,24 +39,30 @@ const EVENT_LABELS: Record<string, string> = {
   'subscription.payment_failed': 'Pago suscripción fallido'
 };
 
-async function getEmailEvents(): Promise<EmailEvent[]> {
+async function getEmailEvents(page: number): Promise<EmailsResponse> {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-    const response = await fetch(absoluteAppUrl('/api/admin/emails'), {
+    const response = await fetch(absoluteAppUrl(`/api/admin/emails?page=${page}`), {
       headers: { cookie: cookieHeader },
       cache: 'no-store'
     });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.events as EmailEvent[];
+    if (!response.ok) return { events: [], total: 0, page: 1, pageSize: 50 };
+    return await response.json() as EmailsResponse;
   } catch {
-    return [];
+    return { events: [], total: 0, page: 1, pageSize: 50 };
   }
 }
 
-export default async function AdminEmailsPage() {
-  const events = await getEmailEvents();
+export default async function AdminEmailsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
+  const { events, total, pageSize } = await getEmailEvents(page);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
@@ -65,7 +78,7 @@ export default async function AdminEmailsPage() {
               <p className="text-sm uppercase tracking-[0.28em] text-[#c88b25]">Comunicaciones</p>
               <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">Registro de emails</h1>
             </div>
-            <p className="text-sm text-[#29384a]">{events.length} envíos registrados</p>
+            <p className="text-sm text-[#29384a]">{total} envíos registrados</p>
           </div>
 
           {events.length === 0 ? (
@@ -73,41 +86,77 @@ export default async function AdminEmailsPage() {
               No hay emails registrados todavía.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#d8cbb5] text-left text-xs font-semibold uppercase tracking-[0.15em] text-[#29384a]">
-                    <th className="pb-3 pr-4">Fecha</th>
-                    <th className="pb-3 pr-4">Evento</th>
-                    <th className="pb-3 pr-4">Destinatario</th>
-                    <th className="pb-3 pr-4">Asunto</th>
-                    <th className="pb-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((ev) => {
-                    const cfg = STATUS_CONFIG[ev.status] ?? STATUS_CONFIG.sent;
-                    return (
-                      <tr key={ev.id} className="border-b border-[#f8f4eb] hover:bg-[#f8f4eb]/60">
-                        <td className="py-3 pr-4 text-xs text-[#29384a]">
-                          {new Date(ev.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-3 pr-4 text-xs text-[#07111d]">
-                          {EVENT_LABELS[ev.event_type] ?? ev.event_type}
-                        </td>
-                        <td className="py-3 pr-4 text-xs text-[#29384a]">{ev.recipient_email}</td>
-                        <td className="py-3 pr-4 max-w-xs truncate text-xs text-[#07111d]">{ev.subject}</td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.color}`}>
-                            {cfg.icon} {cfg.label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#d8cbb5] text-left text-xs font-semibold uppercase tracking-[0.15em] text-[#29384a]">
+                      <th className="pb-3 pr-4">Fecha</th>
+                      <th className="pb-3 pr-4">Evento</th>
+                      <th className="pb-3 pr-4">Destinatario</th>
+                      <th className="pb-3 pr-4">Asunto</th>
+                      <th className="pb-3">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((ev) => {
+                      const cfg = STATUS_CONFIG[ev.status] ?? STATUS_CONFIG.sent;
+                      return (
+                        <tr key={ev.id} className="border-b border-[#f8f4eb] hover:bg-[#f8f4eb]/60">
+                          <td className="py-3 pr-4 text-xs text-[#29384a]">
+                            {new Date(ev.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="py-3 pr-4 text-xs text-[#07111d]">
+                            {EVENT_LABELS[ev.event_type] ?? ev.event_type}
+                          </td>
+                          <td className="py-3 pr-4 text-xs text-[#29384a]">{ev.recipient_email}</td>
+                          <td className="py-3 pr-4 max-w-xs truncate text-xs text-[#07111d]">{ev.subject}</td>
+                          <td className="py-3">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.color}`}>
+                              {cfg.icon} {cfg.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <p className="text-xs text-[#29384a]">
+                    Página {page} de {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    {page > 1 ? (
+                      <Link
+                        href={`/admin/emails?page=${page - 1}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs font-semibold text-[#29384a] hover:bg-[#f8f4eb] transition-colors"
+                      >
+                        <ChevronLeft className="h-3 w-3" /> Anterior
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-300 cursor-not-allowed">
+                        <ChevronLeft className="h-3 w-3" /> Anterior
+                      </span>
+                    )}
+                    {page < totalPages ? (
+                      <Link
+                        href={`/admin/emails?page=${page + 1}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs font-semibold text-[#29384a] hover:bg-[#f8f4eb] transition-colors"
+                      >
+                        Siguiente <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-300 cursor-not-allowed">
+                        Siguiente <ChevronRight className="h-3 w-3" />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

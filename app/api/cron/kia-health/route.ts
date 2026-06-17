@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runKiaHealthChecks } from '@/lib/ai/kia/health/kia-health-runner';
 import { verifyCronRequest } from '@/lib/security/cron';
 
-export const maxDuration = 60;
-
-export const maxDuration = 120; // runs multiple LLM canary checks
+export const maxDuration = 120;
 
 export async function GET(request: NextRequest) {
   const cronAuth = verifyCronRequest(request.headers, 'cron/kia-health');

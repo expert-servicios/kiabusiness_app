@@ -13,7 +13,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-export const maxDuration = 60; // SSE stream; WALL_CLOCK_MS guard stops at 50s
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { buildKiaContext, type KiaContext } from '@/lib/ai/kia/kia-context-builder';
