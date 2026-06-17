@@ -167,6 +167,14 @@ Reglas de ejecucion:
 ✅ Calendly                — getCalendlyUrl() util; todos los componentes usan env vars
 ✅ Holded sync             — queue durable, reintentos, cron protegido
 ✅ Branch protection main  — PR requerido (1 approval), no force push, no delete
+✅ Cases schema            — columnas status/priority/next_action/due_date/service_id añadidas y aplicadas
+✅ Wizard MCP post-compra  — Supabase Realtime sustituye polling; política SELECT en holded_mcp_events
+✅ Contrato MCP            — docs/mcp-event-contract.md documenta INSERT obligatorio para servidor MCP
+✅ Cases API consistency   — /api/cases (cliente) y admin devuelven state + status
+✅ SuscripcionesClient TS  — Subscription exportada con campo client; tsc --noEmit = 0 errores
+✅ Audit P0/P1 resuelto    — maxDuration en 6 rutas, Zod en reviews y cases PATCH, SSE AbortController
+✅ N+1 eliminado           — admin cases GET usa profiles.email (1 query vs N getUserById)
+✅ Email durabilidad       — case status emails via enqueueEmail (cola durable con reintentos)
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
 ⚠️ Holded scheduler       — cron externo pendiente (cron-job.org / GitHub Actions cada 15 min)
 ```
@@ -183,6 +191,23 @@ Reglas de ejecucion:
 6. **Holded scheduler externo** — Configurar cron-job.org o GitHub Actions scheduled que llame `GET https://expertconsulting.es/api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` cada 15 min.
 7. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
 8. **Calendly** — Actualizar username en calendly.com/settings. Añadir `NEXT_PUBLIC_CALENDLY_URL` en Vercel env vars.
+
+---
+
+## Completado en sesion 2026-06-16
+
+| Sprint | Descripcion | Archivos clave |
+|--------|-------------|----------------|
+| Sprint D | Wizard MCP post-compra usa Supabase Realtime en vez de polling | `components/dashboard/PostCompraWizard.tsx`, `app/(protected)/dashboard/post-compra/page.tsx` |
+| Sprint E | Columnas operacionales en cases (status, priority, next_action, due_date, service_id) + RLS fix tenant | `supabase/migrations/20260615000002_cases_operational_columns.sql`, `20260615000003_rls_tenant_cases_fix.sql` |
+| Sprint F | Contrato de evento MCP documentado para el servidor externo | `docs/mcp-event-contract.md` |
+| Sprint B2 | sendEmail lanza en error Resend; email queue puede reintentar | `lib/email/send.ts` |
+| Sprint C2 | 11 tests Vitest para processEmailQueue (atomic claim, retry, wall-clock) | `tests/email/email-queue.test.ts` |
+| Sprint Kia-SSE | Copilot streamea respuestas word-by-word via SSE | `app/api/kia/copilot/route.ts`, `components/dashboard/KiaCopilotPanel.tsx` |
+| Sprint H | Kia usa status real de expedientes; 4 tools nuevas en copilot dashboard; tabla artifact | `lib/ai/kia/kia-tool-executor.ts`, `app/api/kia/copilot/route.ts` |
+| Fixes | Cases API cliente devuelve status; TS 0 errores; migraciones SQL documentadas | `app/api/cases/route.ts`, `app/(protected)/admin/suscripciones/page.tsx` |
+| Audit P0/P1 | maxDuration en 6 rutas (kia copilot, ai/kia, 4 crons); Zod en reviews/submit y admin cases PATCH; AbortController en KiaCopilotPanel SSE | 9 archivos |
+| Audit perf | N+1 getUserById eliminado en admin cases GET (usa profiles.email); sendEmail→enqueueEmail en case status emails | `app/api/admin/cases/route.ts`, `app/api/admin/cases/[id]/route.ts` |
 
 ---
 

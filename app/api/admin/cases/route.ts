@@ -31,26 +31,22 @@ export async function GET(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: 'Error al obtener expedientes' }, { status: 500 });
 
-    // Fetch client profiles in bulk
+    // Fetch client profiles in bulk (profiles.email is a synced copy of auth.users.email)
     const clientIds = [...new Set((cases ?? []).map((c) => c.client_id).filter(Boolean))];
     const profileMap: Record<string, { full_name: string | null; email: string }> = {};
 
     if (clientIds.length > 0) {
       const { data: profiles } = await admin
         .from('profiles')
-        .select('id,full_name')
+        .select('id, full_name, email')
         .in('id', clientIds);
 
-      await Promise.all(
-        clientIds.map(async (id) => {
-          const { data: authUser } = await admin.auth.admin.getUserById(id);
-          const prof = profiles?.find((p) => p.id === id);
-          profileMap[id] = {
-            full_name: prof?.full_name ?? null,
-            email: authUser?.user?.email ?? ''
-          };
-        })
-      );
+      for (const prof of profiles ?? []) {
+        profileMap[prof.id] = {
+          full_name: prof.full_name ?? null,
+          email: prof.email ?? '',
+        };
+      }
     }
 
     const enriched = (cases ?? []).map((c) => ({

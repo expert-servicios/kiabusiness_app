@@ -6,7 +6,7 @@ import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
-import { sendEmail } from '@/lib/email/send';
+import { enqueueEmail } from '@/lib/email/email-queue';
 import { notifyClient } from '@/lib/integrations/push';
 import { upsertCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
 import {
@@ -104,11 +104,11 @@ async function sendCaseStatusEmail(params: {
 
       if (sendDelivered) {
         const deliveredTpl = caseDelivered(clientName, service, adminNote, funFact, brand);
-        void sendEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } });
+        void enqueueEmail({ to: clientEmail, eventType: 'case.delivered', ...deliveredTpl, metadata: { caseId } }).catch(() => {});
       }
       if (sendReview && reviewToken) {
         const reviewTpl = reviewRequest(clientName, service, reviewToken, brand);
-        void sendEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } });
+        void enqueueEmail({ to: clientEmail, eventType: 'case.review_request', ...reviewTpl, metadata: { caseId } }).catch(() => {});
       }
       return;
     }
@@ -117,7 +117,7 @@ async function sendCaseStatusEmail(params: {
   }
 
   if (tpl) {
-    void sendEmail({ to: clientEmail, eventType: `case.${newStatus}`, ...tpl, metadata: { caseId } });
+    void enqueueEmail({ to: clientEmail, eventType: `case.${newStatus}`, ...tpl, metadata: { caseId } }).catch(() => {});
   }
 }
 
