@@ -50,18 +50,15 @@ export async function GET(request: NextRequest) {
       // Get tenant_admin profiles + emails
       const { data: adminProfiles } = await admin
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, email')
         .eq('tenant_id', tenant.id)
         .eq('role', 'tenant_admin');
 
       if (!adminProfiles?.length) continue;
 
-      const recipients: Array<{ email: string; name: string }> = [];
-      for (const p of adminProfiles) {
-        const { data: authUser } = await admin.auth.admin.getUserById(p.id);
-        const email = authUser?.user?.email;
-        if (email) recipients.push({ email, name: p.full_name ?? email });
-      }
+      const recipients = adminProfiles
+        .filter((p) => p.email)
+        .map((p) => ({ email: p.email as string, name: p.full_name ?? p.email }));
       if (!recipients.length) continue;
 
       // ── KPIs scoped to this tenant ─────────────────────────────────────────

@@ -25,23 +25,17 @@ export async function GET(
 
     const [tenantResult, profilesResult] = await Promise.all([
       admin.from('tenants').select('*').eq('id', id).single(),
-      admin.from('profiles').select('id, full_name, role, created_at').eq('tenant_id', id).order('created_at'),
+      admin.from('profiles').select('id, full_name, email, role, created_at').eq('tenant_id', id).order('created_at'),
     ]);
 
     if (tenantResult.error || !tenantResult.data) {
       return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 404 });
     }
 
-    // Enrich profiles with auth email
-    const users = await Promise.all(
-      (profilesResult.data ?? []).map(async (profile) => {
-        const { data: authUser } = await admin.auth.admin.getUserById(profile.id);
-        return {
-          ...profile,
-          email: authUser?.user?.email ?? null,
-        };
-      })
-    );
+    const users = (profilesResult.data ?? []).map((profile) => ({
+      ...profile,
+      email: profile.email ?? null,
+    }));
 
     return NextResponse.json({ tenant: tenantResult.data, users });
   } catch (err) {

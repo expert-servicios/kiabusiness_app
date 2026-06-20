@@ -1,38 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { sendEmail } from '@/lib/email/send';
 import { contactAutoReply, contactMessage } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const contactSchema = z.object({
+  nombre:          z.string().min(1).max(200),
+  email:           z.string().email(),
+  telefono:        z.string().max(30).optional().default(''),
+  asunto:          z.string().max(300).optional().default(''),
+  mensaje:         z.string().min(1).max(5000),
+  recaptcha_token: z.string().optional().default(''),
+  hp_url:          z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let rawBody: unknown;
+    try { rawBody = await request.json(); } catch {
+      return NextResponse.json({ error: 'JSON inválido.' }, { status: 400 });
+    }
 
-    if (body.hp_url) return NextResponse.json({ ok: true });
+    const parsed = contactSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
+    }
+
+    const { nombre, email, telefono, asunto, mensaje, recaptcha_token: recaptchaToken, hp_url } = parsed.data;
+
+    if (hp_url) return NextResponse.json({ ok: true });
 
     const ip = getClientIp(request.headers);
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
     }
 
-    const nombre = String(body.nombre ?? '').trim();
-    const email = String(body.email ?? '').trim();
-    const telefono = String(body.telefono ?? '').trim();
-    const asunto = String(body.asunto ?? '').trim();
-    const mensaje = String(body.mensaje ?? '').trim();
-    const recaptchaToken = String(body.recaptcha_token ?? '');
-
-    if (!nombre || !email || !mensaje) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
-    }
-    if (!EMAIL_RE.test(email)) {
-      return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
-    }
-
-    const spam = checkSpam({ name: nombre, email, message: mensaje, subject: asunto });
+    const spam = checkSpam({ name: nombre, email, message: mensaje, subject: asunto || undefined });
     if (spam.isSpam) {
       return NextResponse.json({ ok: true });
     }

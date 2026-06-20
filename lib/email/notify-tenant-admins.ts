@@ -9,19 +9,15 @@ async function getTenantAdminEmails(
   const admin = getSupabaseAdmin();
   const { data: admins } = await admin
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, email')
     .eq('tenant_id', tenantId)
     .eq('role', 'tenant_admin');
 
   if (!admins?.length) return [];
 
-  const results: Array<{ email: string; name: string }> = [];
-  for (const a of admins) {
-    const { data: authUser } = await admin.auth.admin.getUserById(a.id);
-    const email = authUser?.user?.email;
-    if (email) results.push({ email, name: a.full_name ?? email });
-  }
-  return results;
+  return admins
+    .filter((a) => a.email)
+    .map((a) => ({ email: a.email as string, name: a.full_name ?? a.email }));
 }
 
 export async function notifyTenantAdminDocUploaded({

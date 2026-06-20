@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -5,6 +6,11 @@ import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getTenantForUser } from '@/lib/auth/tenant';
 import { TenantSidebar } from '@/components/tenant/TenantSidebar';
+
+export const metadata: Metadata = {
+  title: 'Portal asesoría — EXPERT',
+  robots: 'noindex, nofollow',
+};
 
 export default async function TenantLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();

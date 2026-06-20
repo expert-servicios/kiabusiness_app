@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('reviews')
-      .select('id,case_id,client_id,rating,comment,allow_publish,status,featured,created_at,service_name,profiles!reviews_client_id_fkey(full_name,email:id)')
+      .select('id,case_id,client_id,rating,comment,allow_publish,status,featured,created_at,service_name,profiles!reviews_client_id_fkey(full_name,email)')
       .order('created_at', { ascending: false });
 
     if (status !== 'all') {
@@ -27,17 +27,14 @@ export async function GET(request: NextRequest) {
     const { data: reviews, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Enrich with client email from auth
-    const enriched = await Promise.all(
-      (reviews ?? []).map(async (r) => {
-        const { data: authUser } = await admin.auth.admin.getUserById(r.client_id);
-        return {
-          ...r,
-          client_name: (r.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
-          client_email: authUser?.user?.email ?? null,
-        };
-      })
-    );
+    const enriched = (reviews ?? []).map((r) => {
+      const prof = r.profiles as unknown as { full_name: string | null; email: string | null } | null;
+      return {
+        ...r,
+        client_name: prof?.full_name ?? null,
+        client_email: prof?.email ?? null,
+      };
+    });
 
     return NextResponse.json({ reviews: enriched });
   } catch (err) {

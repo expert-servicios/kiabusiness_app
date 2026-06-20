@@ -88,12 +88,10 @@ export async function GET(request: NextRequest) {
     const clientMap = new Map<string, { name: string | null; email: string }>();
     if (clientIds.size > 0) {
       const ids = Array.from(clientIds);
-      const { data: profiles } = await admin.from('profiles').select('id,full_name').in('id', ids);
-      await Promise.all(ids.map(async (cid) => {
-        const { data: authUser } = await admin.auth.admin.getUserById(cid);
-        const prof = (profiles ?? []).find((p) => p.id === cid);
-        clientMap.set(cid, { name: prof?.full_name ?? null, email: authUser?.user?.email ?? '' });
-      }));
+      const { data: profiles } = await admin.from('profiles').select('id, full_name, email').in('id', ids);
+      for (const prof of profiles ?? []) {
+        clientMap.set(prof.id, { name: prof.full_name ?? null, email: prof.email ?? '' });
+      }
     }
 
     // ── 5. Also resolve cases linked via quote_id ─────────────────────────────

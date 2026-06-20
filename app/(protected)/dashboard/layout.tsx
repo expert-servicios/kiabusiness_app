@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { type ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -7,6 +8,11 @@ import { MobileNav } from '@/components/dashboard/MobileNav';
 import { KiaCopilotPanel } from '@/components/dashboard/KiaCopilotPanel';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
+
+export const metadata: Metadata = {
+  title: 'Mi panel — EXPERT',
+  robots: 'noindex, nofollow',
+};
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();

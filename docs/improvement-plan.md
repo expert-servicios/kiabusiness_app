@@ -177,8 +177,11 @@ Reglas de ejecucion:
 ✅ Email durabilidad       — case status emails via enqueueEmail (cola durable con reintentos)
 ✅ Error boundaries        — global-error.tsx + error.tsx en protected/admin/dashboard/tenant/public + loading.tsx
 ✅ Paginacion emails       — admin/emails con paginacion servidor (50/pagina) en API y UI
+✅ N+1 eliminados (global) — profiles.email en notify-tenant-admins, tenant-weekly-digest, pagos, resenas, tenants
+✅ Zod en /api/contact     — schema validado con tipos y limites
+✅ Metadata protegido      — noindex + titulos en layouts admin/dashboard/tenant
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
-⚠️ Holded scheduler       — cron externo pendiente (cron-job.org / GitHub Actions cada 15 min)
+✅ Holded scheduler       — GitHub Actions `holded-sync.yml` cada 15 min (requiere secret CRON_SECRET en repo)
 ```
 
 ---
@@ -218,6 +221,9 @@ Reglas de ejecucion:
 | P2 Error boundaries | global-error.tsx + error.tsx en 5 route groups + loading.tsx en 3 areas protegidas | `app/global-error.tsx`, `app/(protected)/*/error.tsx`, `app/(public)/error.tsx` |
 | P2 Paginacion | Admin emails: API con paginacion servidor (50/pagina), UI con controles prev/next | `app/api/admin/emails/route.ts`, `app/(protected)/admin/emails/page.tsx` |
 | Fix TS | Eliminados maxDuration duplicados en kia-health y kia/copilot routes | `app/api/cron/kia-health/route.ts`, `app/api/kia/copilot/route.ts` |
+| N+1 global | Eliminados 5 N+1 getUserById en: notify-tenant-admins, tenant-weekly-digest, pagos/unified, resenas, tenants/[id] | 5 archivos |
+| Zod contact | Validacion Zod completa en /api/contact (reemplaza regex manual parcial) | `app/api/contact/route.ts` |
+| Metadata | noindex/nofollow + titulos personalizados en layouts admin, dashboard, tenant | 3 layouts |
 
 ---
 
@@ -231,15 +237,13 @@ Reglas de ejecucion:
 
 3. **Streaming SSE para Kia** — Las respuestas largas de Kia bloquean la UI. Implementar Server-Sent Events para streaming progresivo en `/api/ai/kia`.
 
-4. **Scheduler externo para Holded sync** — Configurar cron externo (GitHub Actions scheduled, cron-job.org o Vercel Cron pro) que llame `/api/cron/holded-sync` con `CRON_SECRET` cada 15 minutos.
+4. ~~**Scheduler externo para Holded sync**~~ — ✅ COMPLETADO: `.github/workflows/holded-sync.yml` (cada 15 min). Requiere `CRON_SECRET` como secret en GitHub.
 
 ### Media prioridad
 
-5. **Registro Mercantil via Infoempresa** — Integrar infoempresa.com como fuente adicional en el resolver de empresas (forma juridica, capital, objeto social, administradores actuales).
+5. ~~**Onboarding cliente guiado**~~ — ✅ YA EXISTE: `/dashboard/onboarding` con wizard 4 pasos (perfil, empresa, Holded, done) + banner en dashboard.
 
-6. **Onboarding cliente guiado** — Wizard para que el propio cliente (no solo el admin) complete su perfil, conecte empresas y suba documentacion inicial.
-
-7. **Notificaciones push tenant_admin** — Web Push o email digest semanal con resumen de actividad de su tenant.
+6. ~~**Digest semanal tenant_admin**~~ — ✅ YA EXISTE: `/api/cron/tenant-weekly-digest` (lunes 07:00 UTC) + template `tenantWeeklyDigest()` en `vercel.json`.
 
 ### Backlog / Fase SaaS avanzada
 

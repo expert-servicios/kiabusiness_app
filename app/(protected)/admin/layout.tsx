@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -8,6 +9,11 @@ import { AdminRightPanel } from '@/components/admin/AdminRightPanel';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+
+export const metadata: Metadata = {
+  title: 'Panel de administración — EXPERT',
+  robots: 'noindex, nofollow',
+};
 
 async function fetchJson(path: string, cookieHeader: string) {
   try {
