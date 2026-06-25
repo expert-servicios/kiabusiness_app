@@ -401,9 +401,14 @@ export default async function AdminPage() {
                   : 'Ningún mensaje pendiente'}
               </p>
             </div>
-            <Link href="/admin/expedientes" className="flex items-center gap-1 text-xs font-semibold text-[#c88b25] hover:text-[#d7a33a]">
-              Ir a expedientes <ArrowRight className="h-3 w-3" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/admin/whatsapp" className="flex items-center gap-1 text-xs font-semibold text-[#25D366] hover:text-[#128C7E]">
+                Ir a WABA <ArrowRight className="h-3 w-3" />
+              </Link>
+              <Link href="/admin/expedientes" className="flex items-center gap-1 text-xs font-semibold text-[#c88b25] hover:text-[#d7a33a]">
+                Ver expedientes <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
 
           {/* Email delivery */}
@@ -468,9 +473,9 @@ export default async function AdminPage() {
           {[
             { href: '/admin/expedientes', icon: FolderOpen, label: 'Expedientes' },
             { href: '/admin/presupuestos', icon: FileText, label: 'Presupuestos' },
+            { href: '/admin/whatsapp', icon: MessageCircle, label: 'WABA' },
             { href: '/admin/suscripciones', icon: Zap, label: 'Suscripciones' },
             { href: '/admin/usuarios', icon: Users, label: 'Usuarios' },
-            { href: '/admin/correo', icon: Mail, label: 'Correo' },
             { href: '/admin/reportes', icon: TrendingUp, label: 'Reportes' }
           ].map(({ href, icon: Icon, label }) => (
             <Link
