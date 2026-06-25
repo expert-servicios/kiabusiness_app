@@ -8,6 +8,7 @@ import {
   FolderOpen,
   LayoutDashboard,
   Menu,
+  MessageCircle,
   Plug,
   UserPlus,
   Users,
@@ -57,13 +58,22 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Comunicación",
+    short: "Comms",
+    icon: MessageCircle,
+    items: [
+      { label: "WABA / WhatsApp", href: "/admin/whatsapp" },
+      { label: "Correo", href: "/admin/correo" },
+      { label: "Emails", href: "/admin/emails" },
+    ],
+  },
+  {
     label: "Facturación",
     short: "Factura",
     icon: CreditCard,
     items: [
       { label: "Suscripciones", href: "/admin/suscripciones" },
       { label: "Pagos Stripe", href: "/admin/pagos" },
-      { label: "Emails", href: "/admin/emails" },
     ],
   },
   {
@@ -92,6 +102,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Tenants", href: "/admin/tenants" },
       { label: "Automatizaciones", href: "/admin/automatizaciones" },
       { label: "Kia Health", href: "/admin/kia-health" },
+      { label: "Kia Métricas", href: "/admin/kia-metrics" },
       { label: "Kia Auditor", href: "/admin/kia-auditor" },
       { label: "Reportes", href: "/admin/reportes" },
       { label: "Seguridad MCP", href: "/admin/seguridad" },

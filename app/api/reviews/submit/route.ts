@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+
+const REVIEW_TOKEN_RE = /^[a-f0-9]{64}$/i;
+const MAX_COMMENT_LENGTH = 800;
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request.headers);
+    if (!checkRateLimit(`review-submit:${ip}`)) {
+      return NextResponse.json({ error: 'Demasiados intentos. Inténtalo más tarde.' }, { status: 429 });
+    }
+
     const body = await request.json() as {
       token?: string;
-      rating?: number;
-      comment?: string;
+      rating?: unknown;
+      comment?: unknown;
       allow_publish?: boolean;
     };
 
     const { token, rating, comment, allow_publish } = body;
 
-    if (!token || typeof token !== 'string') {
+    if (!token || typeof token !== 'string' || !REVIEW_TOKEN_RE.test(token)) {
       return NextResponse.json({ error: 'Token requerido' }, { status: 400 });
     }
-    if (!rating || rating < 1 || rating > 5) {
+    const parsedRating = Number(rating);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
       return NextResponse.json({ error: 'Valoración entre 1 y 5 requerida' }, { status: 400 });
     }
+    const cleanedComment = typeof comment === 'string'
+      ? comment.trim().slice(0, MAX_COMMENT_LENGTH)
+      : '';
 
     const admin = getSupabaseAdmin();
 
@@ -59,9 +72,9 @@ export async function POST(request: NextRequest) {
     const { error: insertErr } = await admin.from('reviews').insert({
       case_id: req.case_id,
       client_id: req.client_id,
-      rating,
-      comment: comment?.trim() || null,
-      allow_publish: allow_publish ?? false,
+      rating: parsedRating,
+      comment: cleanedComment || null,
+      allow_publish: allow_publish === true,
       service_name: caseData?.service ?? null,
       status: 'pending',
     });

@@ -5,8 +5,16 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/email-queue",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/fiscal-reminders",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/holded-sync",
+      "schedule": "15 7 * * *"
     },
     {
       "path": "/api/cron/kia-health",

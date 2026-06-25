@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, CreditCard, Users, Calendar } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CreditCard, Users, MessageCircle } from 'lucide-react';
 
 const TABS = [
   { href: '/admin', label: 'Inicio', icon: LayoutDashboard, exact: true },
   { href: '/admin/expedientes', label: 'Tramites', icon: FolderOpen, exact: false },
+  { href: '/admin/whatsapp', label: 'WABA', icon: MessageCircle, exact: false },
   { href: '/admin/clientes', label: 'Clientes', icon: Users, exact: false },
-  { href: '/admin/calendario-fiscal', label: 'Agenda', icon: Calendar, exact: false },
   { href: '/admin/pagos', label: 'Factura', icon: CreditCard, exact: false },
 ];
 

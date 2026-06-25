@@ -1,20 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { isOwner, isStaffRole, ROLES } from '@/lib/auth/roles';
 
-async function assertAdmin(request: NextRequest) {
+const TEAM_ROLE_VALUES = [ROLES.OWNER, ROLES.ADMIN, ROLES.TENANT_ADMIN, ROLES.CLIENT] as const;
+type TeamRole = (typeof TEAM_ROLE_VALUES)[number];
+
+function isTeamRole(role: unknown): role is TeamRole {
+  return typeof role === 'string' && (TEAM_ROLE_VALUES as readonly string[]).includes(role);
+}
+
+async function assertStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
+
   const { data: profile } = await getSupabaseAdmin()
-    .from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? user : null;
+    .from('profiles')
+    .select('role,status')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || profile.status === 'inactive' || !isStaffRole(profile.role)) return null;
+  return { user, role: profile.role };
 }
 
-// GET /api/admin/team — list all users with profiles
+function redirectForRole(role: TeamRole) {
+  if (role === ROLES.TENANT_ADMIN) return '/tenant/dashboard';
+  if (isStaffRole(role)) return '/admin';
+  return '/dashboard';
+}
+
 export async function GET(request: NextRequest) {
-  const admin = await assertAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const actor = await assertStaff(request);
+  if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { data: users, error } = await getSupabaseAdmin().auth.admin.listUsers();
   if (error) return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
@@ -40,14 +59,16 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ members });
 }
 
-// PATCH /api/admin/team — update role for a user
 export async function PATCH(request: NextRequest) {
-  const admin = await assertAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const actor = await assertStaff(request);
+  if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { userId, role } = await request.json();
-  if (!userId || !['admin', 'collaborator', 'client'].includes(role)) {
+  if (!userId || !isTeamRole(role)) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
+  }
+  if (role === ROLES.OWNER && !isOwner(actor.role)) {
+    return NextResponse.json({ error: 'Solo owner puede asignar owner' }, { status: 403 });
   }
 
   const { error } = await getSupabaseAdmin()
@@ -58,17 +79,20 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// POST /api/admin/team — invite a new user by email
 export async function POST(request: NextRequest) {
-  const admin = await assertAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const actor = await assertStaff(request);
+  if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { email, role } = await request.json();
   if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 });
-  const safeRole = ['admin', 'collaborator', 'client'].includes(role) ? role : 'collaborator';
+
+  const safeRole = isTeamRole(role) ? role : ROLES.CLIENT;
+  if (safeRole === ROLES.OWNER && !isOwner(actor.role)) {
+    return NextResponse.json({ error: 'Solo owner puede invitar owner' }, { status: 403 });
+  }
 
   const { data: invited, error } = await getSupabaseAdmin().auth.admin.inviteUserByEmail(email, {
-    redirectTo: absoluteAppUrl('/dashboard')
+    redirectTo: absoluteAppUrl(redirectForRole(safeRole))
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, FileText, ChevronRight } from 'lucide-react';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isStaffRole } from '@/lib/auth/roles';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -51,7 +52,7 @@ export default async function InformePage({ params }: Props) {
     .single();
 
   const isOwner = report.client_id === user.id || report.phone_number === profile?.phone;
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff';
+  const isAdmin = isStaffRole(profile?.role);
   if (!isOwner && !isAdmin) redirect('/dashboard');
 
   // Mark as viewed
@@ -135,7 +136,7 @@ export default async function InformePage({ params }: Props) {
           </Link>
         )}
         <Link
-          href="/auth/login?next=%2Fcita"
+          href="/cita"
           className="inline-flex items-center gap-2 rounded-xl border border-[#e8dfc8] bg-white px-5 py-2.5 text-sm font-medium text-[#3d3528] hover:border-[#c88b25]"
         >
           Reservar llamada gratuita

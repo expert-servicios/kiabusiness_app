@@ -790,6 +790,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
   const [showCatalog, setShowCatalog] = useState(false);
   const [replyTo, setReplyTo] = useState<WaMessage | null>(null);
   const [aiQuickReplies, setAiQuickReplies] = useState<WaQuickReply[]>([]);
+  const [wabaAction, setWabaAction] = useState<'test' | 'profile' | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1093,6 +1094,44 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
     setTimeout(() => setInboxToast(null), 3500);
   };
 
+  const handleWabaTest = async () => {
+    setWabaAction('test');
+    try {
+      const res = await fetch('/api/admin/whatsapp/test-connection', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        const missing = Array.isArray(data.missing) && data.missing.length > 0
+          ? `: faltan ${data.missing.join(', ')}`
+          : '';
+        showInboxToast(`WABA no está listo${missing}`, false);
+        return;
+      }
+      showInboxToast('WABA conectado correctamente', true);
+    } catch {
+      showInboxToast('No se pudo comprobar WABA', false);
+    } finally {
+      setWabaAction(null);
+    }
+  };
+
+  const handleWabaProfile = async () => {
+    if (!window.confirm('Actualizar la foto de perfil WABA con la imagen de Kia?')) return;
+    setWabaAction('profile');
+    try {
+      const res = await fetch('/api/admin/waba-profile', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showInboxToast(data.detail ?? data.error ?? 'No se pudo actualizar el perfil WABA', false);
+        return;
+      }
+      showInboxToast('Perfil WABA actualizado', true);
+    } catch {
+      showInboxToast('No se pudo actualizar el perfil WABA', false);
+    } finally {
+      setWabaAction(null);
+    }
+  };
+
   const handleClientLinked = (client: { id: string; full_name: string | null; email: string | null; role?: string | null }, isNew = false) => {
     if (!selected) return;
     setConversations((prev) => prev.map((c) =>
@@ -1170,7 +1209,7 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#d8cbb5] bg-[#075e54] px-4 py-3">
         <div>
-          <h1 className="font-serif text-base font-bold text-white">WhatsApp</h1>
+          <h1 className="font-serif text-base font-bold text-white">WABA / WhatsApp</h1>
           <p className="mt-0.5 text-[11px] text-white/70">
             {totalUnread > 0 && <span className="font-semibold text-[#d7e86d]">{totalUnread} sin leer · </span>}
             {totalReview > 0 && <span className="font-semibold text-red-300">{totalReview} rev. · </span>}
@@ -1178,6 +1217,14 @@ export function WhatsAppInbox({ initialConversations }: { initialConversations: 
           </p>
         </div>
         <div className="flex items-center gap-1.5">
+          <button type="button" onClick={handleWabaTest} disabled={Boolean(wabaAction)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 disabled:opacity-40" title="Probar conexión WABA">
+            {wabaAction === 'test' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+          </button>
+          <button type="button" onClick={handleWabaProfile} disabled={Boolean(wabaAction)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 disabled:opacity-40" title="Actualizar perfil WABA">
+            {wabaAction === 'profile' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+          </button>
           <button type="button" onClick={() => setShowNewModal(true)}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25" title="Nueva conversación">
             <Plus className="h-4 w-4" />
