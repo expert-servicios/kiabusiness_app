@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         await admin.from('email_queue').insert([
           { to_email: email,       subject: inviteTpl.subject, html: inviteTpl.html, event_type: 'client_invite_wa',       status: 'pending', metadata: { userId } },
           { to_email: adminEmail,  subject: adminTpl.subject,  html: adminTpl.html,  event_type: 'new_client_admin_alert', status: 'pending', metadata: { userId, name: full_name } },
-        ]).catch((err: Error) => console.warn('[WA create-contact] email queue insert failed:', err));
+        ]).then(null, (err: Error) => console.warn('[WA create-contact] email queue insert failed:', err));
       }
 
       // Link all conversations from this phone number to this user
