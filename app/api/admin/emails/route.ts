@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 });
 
   // Marcar el original como "retried"
-  await admin.from('email_events').update({ status: 'retried' }).eq('id', ev.id).catch(() => null);
+  await admin.from('email_events').update({ status: 'retried' }).eq('id', ev.id).then(null, () => null);
 
   return NextResponse.json({ ok: true, message: 'Email añadido a la cola de envío' });
 }
