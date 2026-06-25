@@ -57,9 +57,38 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
   if (!category) return notFound();
 
   const servicios = getServicesByCategory(categoria as CategorySlug);
+  const categoryUrl = `https://expertconsulting.es/servicios/${categoria}`;
+
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: category.name,
+    description: category.description,
+    url: categoryUrl,
+    inLanguage: 'es-ES',
+    provider: { '@type': 'Organization', name: 'EXPERT', url: 'https://expertconsulting.es' },
+    hasPart: servicios.map((s) => ({
+      '@type': 'Service',
+      name: s.name,
+      description: s.shortDescription,
+      url: `https://expertconsulting.es/servicios/${categoria}/${s.slug}`,
+    })),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio',    item: 'https://expertconsulting.es' },
+      { '@type': 'ListItem', position: 2, name: 'Servicios', item: 'https://expertconsulting.es/servicios' },
+      { '@type': 'ListItem', position: 3, name: category.name, item: categoryUrl },
+    ],
+  };
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       {/* Hero */}
       <div className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-5xl">

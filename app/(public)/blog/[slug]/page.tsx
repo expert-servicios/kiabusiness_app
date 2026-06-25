@@ -74,6 +74,38 @@ export default async function BlogArticlePage({
 
   const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
   const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
+  const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
+
+  // Parse "Mayo 2025" → "2025-05-01"
+  const MONTHS: Record<string, string> = {
+    'Enero':'01','Febrero':'02','Marzo':'03','Abril':'04','Mayo':'05','Junio':'06',
+    'Julio':'07','Agosto':'08','Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12',
+  };
+  const [monthName, year] = article.date.split(' ');
+  const datePublished = (MONTHS[monthName] && year) ? `${year}-${MONTHS[monthName]}-01` : article.date;
+
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: article.title,
+    description: article.excerpt,
+    datePublished,
+    keywords: article.tags.join(', '),
+    url: canonicalUrl,
+    inLanguage: 'es-ES',
+    author: {
+      '@type': 'Person',
+      name: 'Ksenia Ilicheva',
+      url: 'https://expertconsulting.es/sobre-mi',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'EXPERT — Asesoría Fiscal y Legal',
+      url: 'https://expertconsulting.es',
+      logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-app.png' },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+  };
 
   // Convert markdown-like body to simple HTML sections
   const sections = article.body
@@ -89,6 +121,7 @@ export default async function BlogArticlePage({
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }} />
       {/* Hero */}
       <div className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-3xl">

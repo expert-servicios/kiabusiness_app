@@ -128,9 +128,21 @@ export default async function ServicioDetallePage({
         : undefined
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio',      item: 'https://expertconsulting.es' },
+      { '@type': 'ListItem', position: 2, name: 'Servicios',   item: 'https://expertconsulting.es/servicios' },
+      { '@type': 'ListItem', position: 3, name: category?.name ?? categoria, item: `https://expertconsulting.es/servicios/${categoria}` },
+      { '@type': 'ListItem', position: 4, name: service.name,  item: canonicalUrl },
+    ],
+  };
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* ── Hero — sin imagen, fondo oscuro limpio ── */}
       <div className="bg-[#0D1B2A] px-6 pb-10 pt-12 text-[#F8F6F1] md:pb-12 md:pt-16">
