@@ -84,6 +84,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         {children}
         {/* Cal.com embed — enables modal and inline booking across the site */}
         <Script id="cal-embed" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `(function(C,A,L){let p=function(a,ar){a.q.push(ar)};let d=C.document;C.Cal=C.Cal||function(){let cal=C.Cal;let ar=arguments;if(!cal.loaded){cal.ns={};cal.q=cal.q||[];d.head.appendChild(d.createElement("script")).src=A;cal.loaded=true}if(ar[0]===L){const api=function(){p(api,arguments)};const namespace=ar[1];api.q=api.q||[];typeof namespace==="string"?(cal.ns[namespace]=api)&&p(api,ar):p(cal,ar);return}p(cal,ar)}})(window,"https://app.cal.com/embed/embed.js","init");Cal("init",{origin:"https://app.cal.com"});Cal("ui",{styles:{branding:{brandColor:"#f2c14e"}},hideEventTypeDetails:false,layout:"month_view"});` }} />
+        {/* Metricool — analytics y seguimiento de publicaciones */}
+        <Script
+          id="metricool-tracker"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `function loadScript(a){var b=document.getElementsByTagName("head")[0],c=document.createElement("script");c.type="text/javascript",c.src="https://tracker.metricool.com/resources/be.js",c.onreadystatechange=a,c.onload=a,b.appendChild(c)}loadScript(function(){beTracker.t({hash:"a5e06adb5ddd99592958d258ef71a513"})});`
+          }}
+        />
+        {/* Metricool pixel — fallback sin JS y verificación de dominio */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://tracker.metricool.com/c3po.jpg?hash=a5e06adb5ddd99592958d258ef71a513"
+          alt=""
+          aria-hidden="true"
+          className="hidden"
+        />
       </body>
     </html>
   );
