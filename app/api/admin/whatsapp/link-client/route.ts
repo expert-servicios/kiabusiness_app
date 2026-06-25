@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
-import { sendEmail } from '@/lib/email/send';
 import { clientInviteEmail, newClientAdminAlert } from '@/lib/email/templates';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { z } from 'zod';
@@ -82,14 +81,14 @@ export async function POST(request: NextRequest) {
           email,
         }).eq('id', userId);
 
-        // Send branded onboarding email (fire & forget)
+        // Encolar emails — la cola garantiza retry si Resend falla
         const adminEmail = process.env.ADMIN_EMAIL ?? 'info@expertconsulting.es';
         const inviteTpl = clientInviteEmail(full_name, inviteUrl);
         const adminTpl  = newClientAdminAlert({ name: full_name, email, phone: normalized || null, source: 'WhatsApp Inbox' });
-        void Promise.all([
-          sendEmail({ to: email, eventType: 'client_invite_wa', subject: inviteTpl.subject, html: inviteTpl.html }),
-          sendEmail({ to: adminEmail, eventType: 'new_client_admin_alert', subject: adminTpl.subject, html: adminTpl.html }),
-        ]);
+        await admin.from('email_queue').insert([
+          { to_email: email,       subject: inviteTpl.subject, html: inviteTpl.html, event_type: 'client_invite_wa',       status: 'pending', metadata: { userId } },
+          { to_email: adminEmail,  subject: adminTpl.subject,  html: adminTpl.html,  event_type: 'new_client_admin_alert', status: 'pending', metadata: { userId, name: full_name } },
+        ]).catch((err: Error) => console.warn('[WA create-contact] email queue insert failed:', err));
       }
 
       // Link all conversations from this phone number to this user

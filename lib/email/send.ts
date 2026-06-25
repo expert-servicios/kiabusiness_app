@@ -46,7 +46,7 @@ export async function sendEmail({
   });
 
   if (error) {
-    // Persist the failed attempt before throwing so the audit trail is intact
+    const errMsg = (error as { message?: string }).message ?? String(error);
     await Promise.all(
       recipients.map((email) =>
         supabase.from('email_events').insert({
@@ -55,11 +55,12 @@ export async function sendEmail({
           subject,
           resend_id: null,
           status: 'failed',
+          last_error: errMsg,
           metadata: metadata ?? null
         })
       )
-    ).catch(() => null); // best-effort — don't mask the original Resend error
-    throw new Error(`Resend rejected ${eventType}: ${(error as { message?: string }).message ?? String(error)}`);
+    ).catch(() => null);
+    throw new Error(`Resend rejected ${eventType}: ${errMsg}`);
   }
 
   const resendId = data!.id;
