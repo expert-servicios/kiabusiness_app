@@ -63,8 +63,6 @@ export async function GET(request: NextRequest) {
       hasToken:         !!token,
       hasPhoneId:       !!phoneNumberId,
       hasWabaId:        !!wabaId,
-      tokenPrefix:      token ? `${token.slice(0, 8)}…` : null,
-      phoneNumberId,
     },
   });
 }

@@ -175,7 +175,10 @@ contacts[0].name === 'Empresa A' && contacts[0].total === 7000
 
 section('3. Holded API connectivity (test key)');
 
-const HOLDED_TEST_KEY = process.argv[2] ?? process.env.HOLDED_TEST_API_KEY ?? '5455e6711fc492f9875e5835974eaa20';
+const HOLDED_TEST_KEY = process.argv[2] ?? process.env.HOLDED_TEST_API_KEY;
+if (!HOLDED_TEST_KEY) {
+  wr('HOLDED_TEST_API_KEY no configurada; se omiten pruebas de conectividad Holded');
+}
 const HOLDED_BASE     = 'https://api.holded.com/api/invoicing/v1';
 const HOLDED_HDRS     = { 'key': HOLDED_TEST_KEY, 'Content-Type': 'application/json' };
 
@@ -184,6 +187,7 @@ async function holdedGet(path) {
   return { status: res.status, ok: res.ok, body: res.ok ? await res.json() : null };
 }
 
+if (HOLDED_TEST_KEY) {
 try {
   // Contacts
   const contacts_r = await holdedGet('/contacts?limit=100');
@@ -253,6 +257,9 @@ try {
 
 } catch (err) {
   ko(`Holded API network error: ${err.message}`);
+}
+} else {
+  wr('Pruebas Holded saltadas por falta de clave de test');
 }
 
 // ── 4. Supabase table structure ───────────────────────────────────────────────

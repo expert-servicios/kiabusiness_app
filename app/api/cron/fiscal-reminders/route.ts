@@ -61,19 +61,20 @@ export async function GET(request: NextRequest) {
     const toRemind30: typeof obls = [];
     const toRemind7: typeof obls = [];
     const toRemind1: typeof obls = [];
+    const userUpdates: Array<{ id: string; field: string }> = [];
 
     for (const obl of obls) {
       const diff = Math.ceil((new Date(obl.deadline).getTime() - today.getTime()) / 86400000);
 
       if (diff <= 1 && diff >= 0 && !obl.reminded_1d_at) {
         toRemind1.push(obl);
-        updates.push({ id: obl.id, field: 'reminded_1d_at' });
+        userUpdates.push({ id: obl.id, field: 'reminded_1d_at' });
       } else if (diff <= 7 && diff > 1 && !obl.reminded_7d_at) {
         toRemind7.push(obl);
-        updates.push({ id: obl.id, field: 'reminded_7d_at' });
+        userUpdates.push({ id: obl.id, field: 'reminded_7d_at' });
       } else if (diff <= 30 && diff > 7 && !obl.reminded_30d_at) {
         toRemind30.push(obl);
-        updates.push({ id: obl.id, field: 'reminded_30d_at' });
+        userUpdates.push({ id: obl.id, field: 'reminded_30d_at' });
       }
     }
 
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
         html,
       });
       sent++;
+      updates.push(...userUpdates);
     } catch (err) {
       console.error(`Failed to send reminder to ${email}:`, err);
       skipped++;

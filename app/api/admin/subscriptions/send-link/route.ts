@@ -7,6 +7,7 @@ import { subscriptionInvite } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { isStaffRole } from '@/lib/auth/roles';
 
 const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
   STRIPE_PLAN_MONTHLY_49:  process.env.STRIPE_PLAN_MONTHLY_49,
@@ -28,8 +29,9 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
 
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
-    .from('profiles').select('role').eq('id', user.id).single();
-  return profile?.role === 'admin' ? user.id : null;
+    .from('profiles').select('role,status').eq('id', user.id).single();
+  if (profile?.status === 'inactive') return null;
+  return isStaffRole(profile?.role) ? user.id : null;
 }
 
 export async function POST(request: NextRequest) {

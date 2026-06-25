@@ -159,10 +159,10 @@ export default function KiaCopilotWidget() {
       {/* ── Panel de chat ──────────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 z-50 flex flex-col"
+          className="fixed bottom-[132px] right-4 z-[200] lg:bottom-20 flex flex-col"
           style={{
             width         : 'min(380px, calc(100vw - 32px))',
-            height        : 'min(560px, calc(100vh - 120px))',
+            height        : 'min(560px, calc(100vh - 148px))',
             background    : '#fff',
             borderRadius  : '16px',
             boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
@@ -290,7 +290,7 @@ export default function KiaCopilotWidget() {
       <button
         onClick={open ? handleClose : handleOpen}
         aria-label={open ? 'Cerrar Kia' : 'Abrir Kia copiloto'}
-        className="fixed bottom-4 right-4 z-50 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
         style={{
           width     : '52px',
           height    : '52px',

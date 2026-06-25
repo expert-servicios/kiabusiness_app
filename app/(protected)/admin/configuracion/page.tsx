@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell, Settings2, Zap } from 'lucide-react';
+import { Bell, MessageCircle, Settings2, Zap } from 'lucide-react';
 import { AutomationSettingsPanel } from '@/components/admin/AutomationSettingsPanel';
 import { PushSubscribeButton } from '@/components/admin/PushSubscribeButton';
 
@@ -35,6 +35,30 @@ export default function ConfiguracionPage() {
             <h2 className="font-serif text-lg font-bold text-[#07111d]">Automatizaciones</h2>
           </div>
           <AutomationSettingsPanel />
+        </section>
+
+        <section id="waba" className="mt-8 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-[#25D366]" />
+              <h2 className="font-serif text-lg font-bold text-[#07111d]">WhatsApp Business (WABA)</h2>
+            </div>
+            <Link
+              href="/admin/whatsapp"
+              className="rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1.5 text-xs font-semibold text-[#075e54] transition hover:bg-[#25D366]/20"
+            >
+              Abrir bandeja →
+            </Link>
+          </div>
+          <p className="mb-4 text-sm text-[#7a6e5f]">
+            Gestiona la conexión con Meta WhatsApp Business API. Desde la bandeja puedes probar la
+            conexión, actualizar el perfil de Kia y enviar mensajes.
+          </p>
+          <div className="grid gap-2 text-xs text-[#29384a]">
+            <p><span className="font-semibold">Phone ID:</span> {process.env.META_WHATSAPP_PHONE_NUMBER_ID ? '✓ configurado' : '✗ no configurado'}</p>
+            <p><span className="font-semibold">WABA ID:</span> {process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID ? '✓ configurado' : '✗ no configurado'}</p>
+            <p><span className="font-semibold">Token:</span> {process.env.META_WHATSAPP_ACCESS_TOKEN ? '✓ configurado' : '✗ no configurado'}</p>
+          </div>
         </section>
 
         <section id="notificaciones" className="mt-8 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">

@@ -1,17 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, UserPlus, Shield, User, Briefcase, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Shield, User, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const ROLES = [
+  { value: 'owner', label: 'Owner', color: 'text-purple-700 bg-purple-50 border-purple-200' },
   { value: 'admin', label: 'Administrador', color: 'text-[#c88b25] bg-[#d7a33a]/10 border-[#d7a33a]/30' },
-  { value: 'collaborator', label: 'Colaborador', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+  { value: 'tenant_admin', label: 'Admin asesoría', color: 'text-blue-700 bg-blue-50 border-blue-200' },
   { value: 'client', label: 'Cliente', color: 'text-[#29384a] bg-[#f8f4eb] border-[#d8cbb5]' }
 ];
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
+  owner: Shield,
   admin: Shield,
-  collaborator: Briefcase,
+  tenant_admin: Users,
   client: User
 };
 
@@ -25,7 +27,7 @@ interface Member {
 }
 
 function RoleBadge({ role }: { role: string | null }) {
-  const r = ROLES.find((x) => x.value === (role ?? 'client')) ?? ROLES[2];
+  const r = ROLES.find((x) => x.value === (role ?? 'client')) ?? ROLES.find((x) => x.value === 'client')!;
   const Icon = ROLE_ICONS[role ?? 'client'] ?? User;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${r.color}`}>
@@ -39,7 +41,7 @@ export default function AdminEquipoPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('collaborator');
+  const [inviteRole, setInviteRole] = useState('client');
   const [inviting, setInviting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export default function AdminEquipoPage() {
     }
   };
 
-  const adminsAndCollabs = members.filter((m) => m.role === 'admin' || m.role === 'collaborator');
+  const adminsAndCollabs = members.filter((m) => m.role === 'owner' || m.role === 'admin' || m.role === 'tenant_admin');
   const clients = members.filter((m) => !m.role || m.role === 'client');
 
   return (
@@ -104,7 +106,7 @@ export default function AdminEquipoPage() {
           <Users className="h-5 w-5 text-[#c88b25]" />
           <div>
             <h1 className="font-serif text-2xl font-bold text-[#07111d]">Equipo y accesos</h1>
-            <p className="text-sm text-[#29384a]">Gestiona usuarios, roles y colaboradores</p>
+            <p className="text-sm text-[#29384a]">Gestiona usuarios y roles de acceso</p>
           </div>
         </div>
 
@@ -152,17 +154,17 @@ export default function AdminEquipoPage() {
           </p>
         </div>
 
-        {/* Team (admins + collaborators) */}
+        {/* Team */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
           <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#c88b25]">
-            Equipo interno ({adminsAndCollabs.length})
+            Administradores ({adminsAndCollabs.length})
           </p>
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-[#29384a]">
               <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
             </div>
           ) : adminsAndCollabs.length === 0 ? (
-            <p className="text-sm text-[#29384a]">No hay administradores ni colaboradores.</p>
+            <p className="text-sm text-[#29384a]">No hay administradores.</p>
           ) : (
             <div className="space-y-2">
               {adminsAndCollabs.map((m) => (
