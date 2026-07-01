@@ -67,8 +67,8 @@ export async function PATCH(request: NextRequest) {
   if (!userId || !isTeamRole(role)) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
   }
-  if (role === ROLES.OWNER && !isOwner(actor.role)) {
-    return NextResponse.json({ error: 'Solo owner puede asignar owner' }, { status: 403 });
+  if ((role === ROLES.OWNER || role === ROLES.TENANT_ADMIN) && !isOwner(actor.role)) {
+    return NextResponse.json({ error: 'Solo owner puede asignar este rol' }, { status: 403 });
   }
 
   const { error } = await getSupabaseAdmin()
@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
   if (!email) return NextResponse.json({ error: 'Email requerido' }, { status: 400 });
 
   const safeRole = isTeamRole(role) ? role : ROLES.CLIENT;
-  if (safeRole === ROLES.OWNER && !isOwner(actor.role)) {
-    return NextResponse.json({ error: 'Solo owner puede invitar owner' }, { status: 403 });
+  if ((safeRole === ROLES.OWNER || safeRole === ROLES.TENANT_ADMIN) && !isOwner(actor.role)) {
+    return NextResponse.json({ error: 'Solo owner puede invitar con este rol' }, { status: 403 });
   }
 
   const { data: invited, error } = await getSupabaseAdmin().auth.admin.inviteUserByEmail(email, {

@@ -199,17 +199,25 @@ export async function GET(request: NextRequest) {
 
   const tpl = dailyAdminSummary(summaryData);
 
-  await sendEmail({
-    to: ADMIN_RECIPIENTS,
-    eventType: 'admin.daily_summary',
-    ...tpl,
-    metadata: {
-      date: today,
-      blockedCount: summaryData.casesBlocked.length,
-      awaitingDocsCount: summaryData.casesAwaitingDocs.length,
-    },
-  });
+  let emailSent = true;
+  let emailError: string | null = null;
+  try {
+    await sendEmail({
+      to: ADMIN_RECIPIENTS,
+      eventType: 'admin.daily_summary',
+      ...tpl,
+      metadata: {
+        date: today,
+        blockedCount: summaryData.casesBlocked.length,
+        awaitingDocsCount: summaryData.casesAwaitingDocs.length,
+      },
+    });
+    console.info('[cron/daily-summary] sent to', ADMIN_RECIPIENTS, summaryData);
+  } catch (err) {
+    emailSent = false;
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error('[cron/daily-summary] sendEmail failed:', emailError);
+  }
 
-  console.info('[cron/daily-summary] sent to', ADMIN_RECIPIENTS, summaryData);
-  return NextResponse.json({ ok: true, ...summaryData });
+  return NextResponse.json({ ok: true, emailSent, emailError, ...summaryData });
 }

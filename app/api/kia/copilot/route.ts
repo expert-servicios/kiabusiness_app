@@ -21,6 +21,7 @@ import type { KiaTaskType } from '@/lib/ai/kia/kia-output-schema';
 import type { KiaToolCall, KiaToolResult } from '@/lib/ai/kia/kia-tool-definitions';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 
 const bodySchema = z.object({
   message: z.string().min(1).max(2000),
@@ -64,6 +65,14 @@ export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+
+  if (!checkKiaMessageRateLimit(user.id)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
+  const costCap = await checkKiaDailyCostCap(user.id);
+  if (!costCap.ok) {
+    return NextResponse.json({ error: 'daily_cost_cap_reached' }, { status: 429 });
+  }
 
   let body: unknown;
   try {

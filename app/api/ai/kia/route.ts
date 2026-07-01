@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -29,6 +30,15 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  // ── Rate limit + cost cap ─────────────────────────────────────────────────
+  if (!checkKiaMessageRateLimit(user.id)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
+  const costCap = await checkKiaDailyCostCap(user.id);
+  if (!costCap.ok) {
+    return NextResponse.json({ error: 'daily_cost_cap_reached' }, { status: 429 });
   }
 
   // ── Parse body ────────────────────────────────────────────────────────────
