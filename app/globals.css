@@ -68,6 +68,11 @@ canvas {
   visibility: hidden;
 }
 
+/* Hide reCAPTCHA v3 badge — attribution kept in footer per Google ToS */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
 ::selection {
   background: #d4a017;
   color: #0d1b2a;
