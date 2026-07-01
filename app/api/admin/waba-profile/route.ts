@@ -1,33 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireAdminClient } from '@/lib/auth/require-admin';
 
 // Admin-only endpoint: update the WhatsApp Business profile picture
 // POST /api/admin/waba-profile — no body needed, reads kia_bot.png from public/branding/
 
 export async function POST(request: NextRequest) {
-  // Verify admin session
-  const admin = getSupabaseAdmin();
-  const authHeader = request.headers.get('authorization') ?? '';
-  const token = authHeader.replace(/^Bearer /, '');
-
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: { user }, error: authErr } = await admin.auth.getUser(token);
-  if (authErr || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+  if (!(await requireAdminClient(request))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

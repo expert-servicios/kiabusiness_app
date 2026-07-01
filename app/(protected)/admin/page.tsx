@@ -179,6 +179,17 @@ export default async function AdminPage() {
                 </Link>
               )}
               <Link
+                href="/admin/whatsapp"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 px-4 py-2 text-xs font-semibold text-[#075e54] transition hover:border-[#25D366]/60 hover:bg-[#25D366]/15"
+              >
+                <MessageCircle className="h-3.5 w-3.5" /> WABA
+                {clientMsgs > 0 && (
+                  <span className="ml-1 rounded-full bg-[#25D366] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {clientMsgs}
+                  </span>
+                )}
+              </Link>
+              <Link
                 href="/admin/expedientes"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-semibold text-[#07111d] transition hover:border-[#c88b25]"
               >
@@ -221,7 +232,7 @@ export default async function AdminPage() {
               ].filter((item) => item.count > 0).map((item) => (
                 <Link
                   key={item.label}
-                  href={item.href}
+                  href={item.count === clientMsgs && item.label.includes('mensaje') ? '/admin/whatsapp' : item.href}
                   className="flex items-center justify-between gap-4 border-b border-amber-100 px-6 py-4 last:border-b-0 transition hover:bg-amber-100 sm:border-r sm:last:border-r-0"
                 >
                   <div>

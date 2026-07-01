@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import {
   X, User, Settings, Plug, Bell, LayoutDashboard, LogOut, ChevronRight,
+  MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PushSubscribeButton } from './PushSubscribeButton';
@@ -33,6 +34,12 @@ const SETTINGS_LINKS = [
     label: 'Integraciones',
     description: 'Holded, Stripe, WhatsApp, correo',
     href: '/admin/integraciones',
+  },
+  {
+    icon: MessageCircle,
+    label: 'WABA / WhatsApp',
+    description: 'Bandeja, mensajes y respuesta de Kia',
+    href: '/admin/whatsapp',
   },
   {
     icon: Bell,

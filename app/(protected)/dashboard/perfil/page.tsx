@@ -7,9 +7,10 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 
 const ROLE_LABELS: Record<string, string> = {
-  admin        : 'Administrador',
-  collaborator : 'Colaborador',
-  client       : 'Cliente',
+  owner       : 'Owner',
+  admin       : 'Administrador',
+  tenant_admin: 'Admin asesoría',
+  client      : 'Cliente',
 };
 
 export default async function ProfilePage() {
@@ -63,8 +64,8 @@ export default async function ProfilePage() {
               </p>
               <p className="truncate text-sm text-[#29384a]">{user.email}</p>
               <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                role === 'admin'       ? 'bg-[#d7a33a]/15 text-[#c88b25]'
-                : role === 'collaborator' ? 'bg-blue-50 text-blue-700'
+                role === 'owner' || role === 'admin' ? 'bg-[#d7a33a]/15 text-[#c88b25]'
+                : role === 'tenant_admin' ? 'bg-blue-50 text-blue-700'
                 : 'bg-[#f8f4eb] text-[#29384a]'
               }`}>
                 {ROLE_LABELS[role] ?? role}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { newUserRegisteredAdmin } from '@/lib/email/templates';
+import { isStaffRole } from '@/lib/auth/roles';
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -23,9 +24,10 @@ async function requireAdmin(request: NextRequest) {
 
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
-    .from('profiles').select('role').eq('id', user.id).single();
+    .from('profiles').select('role,status').eq('id', user.id).single();
 
-  return profile?.role === 'admin' ? user.id : null;
+  if (profile?.status === 'inactive') return null;
+  return isStaffRole(profile?.role) ? user.id : null;
 }
 
 export async function POST(request: NextRequest) {

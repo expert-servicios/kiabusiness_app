@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
+import { isStaffRole } from '@/lib/auth/roles';
 
 const bodySchema = z.object({
   period     : z.string().max(20).optional(),
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (actorProfile?.role !== 'admin') {
+    if (!isStaffRole(actorProfile?.role)) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
   }

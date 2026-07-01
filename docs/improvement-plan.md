@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-06-07
+Ultima actualizacion: 2026-06-17
 
 ## Objetivo
 
@@ -181,7 +181,7 @@ Reglas de ejecucion:
 4. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
 5. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → probar "mis expedientes", "mis empresas".
 6. **Holded scheduler externo** — Configurar cron-job.org o GitHub Actions scheduled que llame `GET https://expertconsulting.es/api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` cada 15 min.
-7. **DNS** — `kseniailicheva.com` redirect 301 a `expertconsulting.es`.
+7. ~~**DNS**~~ — ✅ `kseniailicheva.com` redirect 301 a `expertconsulting.es` implementado.
 8. **Calendly** — Actualizar username en calendly.com/settings. Añadir `NEXT_PUBLIC_CALENDLY_URL` en Vercel env vars.
 
 ---
@@ -1034,6 +1034,17 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 - [x] Panel `/dashboard/informes/nuevo` + `GenerateReportPanel` — entrada para generar informes.
 - [x] `improvement-plan.md` actualizado (2026-06-15).
 
+### Completado en sesion 2026-06-17 (Sprint D/E/F/H + Audit)
+
+- [x] **Sprint D** — `PostCompraWizard` usa `postgres_changes` subscription (Supabase Realtime) en vez de polling. Migration `20260615000001`: SELECT policy en `holded_mcp_events` para Realtime.
+- [x] **Sprint E** — Migration `20260615000002`: columnas operacionales en `cases` (`status`, `priority`, `next_action`, `due_date`, `service_id`) con backfill. Migration `20260615000003`: política `tenant_admin` SELECT reescrita con `client_id` scope.
+- [x] **Sprint Kia-SSE** — `/api/kia/copilot` streamea word-by-word via SSE; `KiaCopilotPanel` consume stream con `getReader()` en tiempo real.
+- [x] **Sprint C2** — 11 tests Vitest para `processEmailQueue` (atomic claim, retry, wall-clock). Total: 61/61 passing.
+- [x] **Sprint H** — `get_user_expedientes` usa `status` real + 4 nuevas tools en copilot dashboard; tabla artifact "Mis expedientes" con estado/prioridad/vencimiento.
+- [x] **Audit P0** — `maxDuration` en 6 rutas (kia copilot, ai/kia, 4 crons); Zod en `reviews/submit` y `admin cases PATCH`; `AbortController` en `KiaCopilotPanel` (memory leak fix).
+- [x] **Audit P1** — N+1 eliminado en admin cases GET (profiles.email en 1 query); case status emails → `enqueueEmail` (cola durable con reintentos).
+- [x] Rama `claude/tender-darwin-aXkbO` mergeada y eliminada.
+
 ### Backlog / Fase SaaS
 
 - [x] Backlog #12: Tenants, branding por tenant, integraciones por tenant — COMPLETADO (2026-06-06).
@@ -1051,9 +1062,14 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 ### Proximo sprint de codigo
 
-1. **Email queue worker** — `/api/cron/email-queue` para procesar la cola (tabla ya creada).
-2. **Kia tool calls** — consultar expedientes/empresas reales desde el widget.
-3. **Streaming SSE Kia** — respuestas progresivas en el widget in-app.
+1. ~~**Email queue worker**~~ — ✅ COMPLETADO (2026-06-15).
+2. ~~**Kia tool calls**~~ — ✅ COMPLETADO (Sprint H, 2026-06-17).
+3. ~~**Streaming SSE Kia**~~ — ✅ COMPLETADO (Sprint Kia-SSE, 2026-06-17).
+
+**Siguiente sprint (media prioridad):**
+1. ~~**Digest semanal tenant_admin**~~ — ✅ COMPLETADO (Sprint H, 2026-06-17): `/api/cron/tenant-weekly-digest`, template `tenantWeeklyDigest`, vercel.json lunes 07:00 UTC.
+2. **Onboarding cliente guiado** — Wizard multi-paso para que el cliente complete perfil, conecte empresas y suba docs iniciales sin ayuda del admin. [EN CURSO 2026-06-17]
+3. ~~**Registro Mercantil via Infoempresa**~~ — Descartado: solo se usan fuentes gratuitas y abiertas (BORME, CKAN, VIES ya cubiertos).
 
 ### Fase SaaS
 
