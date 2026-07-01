@@ -162,16 +162,17 @@ export function WhatsAppChatWidget() {
   );
 
   return (
-    <div ref={bubbleRef} className="flex flex-col items-end gap-3">
+    <div ref={bubbleRef} className="relative flex flex-col items-end">
 
-      {/* ── Popup bubble ─────────────────────────────────────────────────── */}
+      {/* ── Popup bubble — absolute so it floats above the button without
+           pushing it down, and is invisible/inert when closed ─────────── */}
       <div
         className={[
-          'w-72 rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-[#D4A017]/20 overflow-hidden',
+          'absolute bottom-full right-0 mb-3 w-72 rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-[#D4A017]/20 overflow-hidden',
           'transition-all duration-300 origin-bottom-right',
           bubbleOpen && !dismissed
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
+            : 'opacity-0 scale-95 translate-y-2 pointer-events-none invisible',
         ].join(' ')}
         {...((!bubbleOpen || dismissed) ? { 'aria-hidden': 'true' } : {})}
       >

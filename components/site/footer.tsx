@@ -184,7 +184,15 @@ export function Footer() {
       </div>
 
       <div className="mx-auto mt-8 flex max-w-6xl flex-col justify-between gap-4 border-t border-[#D4A017]/30 px-6 pt-5 text-xs text-[#9CA3AF] md:flex-row">
-        <p>© 2026 EXPERT | Todos los derechos reservados</p>
+        <p>
+          © 2026 EXPERT | Todos los derechos reservados.{' '}
+          <span className="opacity-60">
+            Protegido por reCAPTCHA —{' '}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">Privacidad</a>
+            {' '}·{' '}
+            <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">Términos</a>
+          </span>
+        </p>
         <div className="flex flex-wrap gap-4">
           <Link href="/aviso-legal" className="transition hover:text-[#D4A017]">Aviso legal</Link>
           <Link href="/privacidad" className="transition hover:text-[#D4A017]">Privacidad</Link>
