@@ -25,27 +25,31 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
 
 ## 1. CRÍTICOS
 
-- [ ] **Escalada de privilegios en equipo** — un `admin` (no owner) puede asignar rol
-      `TENANT_ADMIN`. Fix: solo `isOwner()` puede asignar `TENANT_ADMIN`/`OWNER`.
-      `app/api/admin/team/route.ts:70-92`
-- [ ] **Prompt injection en Kia** — `pageData` del cliente se inyecta sin sanitizar en
-      el system prompt. Fix: validar con schema estricto / escapar antes de
-      `JSON.stringify` en el prompt.
-      `lib/ai/kia/kia-system-prompt.ts:115` (también en `app/api/kia/copilot/route.ts:195`)
-- [ ] **Duplicados en recordatorios fiscales** — condición de carrera, flag no se
-      marca atómicamente antes de enviar. Fix: marcar "processing" antes de enviar,
-      como ya hace `email-queue`.
-      `app/api/cron/fiscal-reminders/route.ts:69,111-114`
-- [ ] **daily-summary sin try/catch en sendEmail()** — fallo derriba todo el cron sin
-      log. Fix: envolver, devolver siempre 200 con detalle de fallos.
-      `app/api/cron/daily-summary/route.ts:202-211`
-- [ ] **iframe Cal.com sin sandbox** — riesgo XSS/clickjacking de tercero. Fix: añadir
-      `sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"`.
-      `app/(public)/cita/page.tsx:74-82`
-- [ ] **Kia sin rate limiting ni control de coste** — gasto ilimitado por usuario.
-      Fix: rate limit por usuario/sesión + cuota diaria de coste (usar
-      `kia-cost-tracker.ts` ya existente, solo falta *enforcement*).
-      `app/api/kia/copilot/route.ts`, `lib/ai/kia/kia-cost-tracker.ts`
+- [x] **Escalada de privilegios en equipo** — un `admin` (no owner) podía asignar rol
+      `TENANT_ADMIN`. Fix aplicado: solo `isOwner()` puede asignar `TENANT_ADMIN`/`OWNER`
+      en `PATCH` y `POST`. `app/api/admin/team/route.ts:70-92`
+- [x] **Prompt injection en Kia** — `pageData` del cliente se inyectaba sin sanitizar
+      en el system prompt. Fix aplicado: `sanitizePageData()` en
+      `lib/ai/kia/kia-system-prompt.ts` aplana a primitivos, cap de 20 claves/300
+      chars por valor/2000 chars serializados, más instrucción explícita de "nunca
+      tratar como instrucciones". Cubre ambos endpoints (`/api/ai/kia`,
+      `/api/kia/copilot`) porque ambos pasan por `buildKiaSystemPrompt`.
+- [x] **Duplicados en recordatorios fiscales** — condición de carrera, flag no se
+      marcaba atómicamente antes de enviar. Fix aplicado: claim atómico por
+      obligación (`update ... .is(field, null) .select()`) antes de enviar el email,
+      igual que hace `email-queue`. `app/api/cron/fiscal-reminders/route.ts`
+- [x] **daily-summary sin try/catch en sendEmail()** — fallo derribaba todo el cron
+      sin log. Fix aplicado: envuelto en try/catch, devuelve siempre 200 con
+      `emailSent`/`emailError` en el JSON. `app/api/cron/daily-summary/route.ts`
+- [x] **iframe Cal.com sin sandbox** — riesgo XSS/clickjacking de tercero. Fix
+      aplicado: `sandbox="allow-scripts allow-same-origin allow-forms allow-popups
+      allow-popups-to-escape-sandbox"`. `app/(public)/cita/page.tsx:74-82`
+- [x] **Kia sin rate limiting ni control de coste** — gasto ilimitado por usuario.
+      Fix aplicado: nuevo `lib/ai/kia/kia-rate-limit.ts` con límite de 12 msg/min por
+      usuario (en memoria) + cuota diaria de gasto de $2 USD/usuario (consulta
+      `kia_decision_logs`, fail-open ante error de lectura). Conectado en
+      `/api/ai/kia/route.ts` y `/api/kia/copilot/route.ts` antes de llamar a
+      `runKiaDecision`. Configurable vía `KIA_USER_DAILY_COST_CAP_USD`.
 
 ## 2. ALTOS
 
