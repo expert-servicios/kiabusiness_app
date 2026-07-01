@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
   let sent = 0;
   let skipped = 0;
-  const updates: Array<{ id: string; field: string }> = [];
+  let claimed = 0;
 
   for (const [userId, obls] of byUser) {
     const email = emailMap.get(userId);
@@ -61,36 +61,55 @@ export async function GET(request: NextRequest) {
     const toRemind30: typeof obls = [];
     const toRemind7: typeof obls = [];
     const toRemind1: typeof obls = [];
-    const userUpdates: Array<{ id: string; field: string }> = [];
 
     for (const obl of obls) {
       const diff = Math.ceil((new Date(obl.deadline).getTime() - today.getTime()) / 86400000);
 
       if (diff <= 1 && diff >= 0 && !obl.reminded_1d_at) {
         toRemind1.push(obl);
-        userUpdates.push({ id: obl.id, field: 'reminded_1d_at' });
       } else if (diff <= 7 && diff > 1 && !obl.reminded_7d_at) {
         toRemind7.push(obl);
-        userUpdates.push({ id: obl.id, field: 'reminded_7d_at' });
       } else if (diff <= 30 && diff > 7 && !obl.reminded_30d_at) {
         toRemind30.push(obl);
-        userUpdates.push({ id: obl.id, field: 'reminded_30d_at' });
       }
     }
 
-    const allToRemind = [...toRemind1, ...toRemind7, ...toRemind30];
+    // Atomically claim each obligation (update only if still un-reminded) before
+    // sending, so a second concurrent/overlapping cron run can't send duplicates.
+    const now = new Date().toISOString();
+    const claimTier = async (list: typeof obls, field: 'reminded_1d_at' | 'reminded_7d_at' | 'reminded_30d_at') => {
+      const claimedList: typeof obls = [];
+      for (const obl of list) {
+        const { data: claimedRow } = await admin
+          .from('fiscal_obligations')
+          .update({ [field]: now, updated_at: now })
+          .eq('id', obl.id)
+          .is(field, null)
+          .select('id')
+          .maybeSingle();
+        if (claimedRow) claimedList.push(obl);
+      }
+      return claimedList;
+    };
+
+    const claimed1 = await claimTier(toRemind1, 'reminded_1d_at');
+    const claimed7 = await claimTier(toRemind7, 'reminded_7d_at');
+    const claimed30 = await claimTier(toRemind30, 'reminded_30d_at');
+    claimed += claimed1.length + claimed7.length + claimed30.length;
+
+    const allToRemind = [...claimed1, ...claimed7, ...claimed30];
     if (allToRemind.length === 0) { skipped++; continue; }
 
     // Determine urgency label for subject
-    const hasUrgent = toRemind1.length > 0;
-    const hasSoon = toRemind7.length > 0;
+    const hasUrgent = claimed1.length > 0;
+    const hasSoon = claimed7.length > 0;
     const subject = hasUrgent
-      ? `⚠️ Plazo MAÑANA: ${toRemind1[0].description}`
+      ? `⚠️ Plazo MAÑANA: ${claimed1[0].description}`
       : hasSoon
-      ? `📅 Plazo en 7 días: ${toRemind7[0].description}${toRemind7.length > 1 ? ` y ${toRemind7.length - 1} más` : ''}`
-      : `📋 Recordatorio fiscal: ${toRemind30.length} obligación${toRemind30.length > 1 ? 'es' : ''} próxima${toRemind30.length > 1 ? 's' : ''}`;
+      ? `📅 Plazo en 7 días: ${claimed7[0].description}${claimed7.length > 1 ? ` y ${claimed7.length - 1} más` : ''}`
+      : `📋 Recordatorio fiscal: ${claimed30.length} obligación${claimed30.length > 1 ? 'es' : ''} próxima${claimed30.length > 1 ? 's' : ''}`;
 
-    const html = buildEmailHtml(firstName, toRemind1, toRemind7, toRemind30);
+    const html = buildEmailHtml(firstName, claimed1, claimed7, claimed30);
 
     try {
       await resend.emails.send({
@@ -100,20 +119,16 @@ export async function GET(request: NextRequest) {
         html,
       });
       sent++;
-      updates.push(...userUpdates);
     } catch (err) {
       console.error(`Failed to send reminder to ${email}:`, err);
       skipped++;
+      // Best-effort: the obligation is already claimed (reminded_*_at set) to
+      // prevent duplicate sends on retry; a real send failure here means the
+      // user misses this reminder tier until the next one triggers.
     }
   }
 
-  // Mark reminded timestamps
-  const now = new Date().toISOString();
-  for (const { id, field } of updates) {
-    await admin.from('fiscal_obligations').update({ [field]: now, updated_at: now }).eq('id', id);
-  }
-
-  return NextResponse.json({ ok: true, sent, skipped, reminders: updates.length });
+  return NextResponse.json({ ok: true, sent, skipped, claimed });
 }
 
 function formatDate(d: string) {

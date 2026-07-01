@@ -78,6 +78,7 @@ export default function CitaPage() {
                 frameBorder="0"
                 title="Reservar cita con EXPERT"
                 loading="lazy"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
                 className="block min-w-[320px]"
               />
             </div>
