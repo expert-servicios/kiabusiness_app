@@ -29,6 +29,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://expertconsulting.es'),
   manifest: '/manifest.json',
+  alternates: {
+    types: {
+      'application/rss+xml': [
+        { url: '/feed', title: 'EXPERT Blog RSS' },
+        { url: '/rss', title: 'EXPERT Blog RSS alternativo' },
+      ],
+    },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

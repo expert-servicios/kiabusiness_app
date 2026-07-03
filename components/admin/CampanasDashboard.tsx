@@ -4,8 +4,9 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   Plus, Send, Sparkles, RefreshCw, Trash2, Edit2,
   Users, CheckCircle2, XCircle, Clock, ChevronDown,
-  Eye, X, Loader2, Megaphone,
+  Eye, X, Loader2, Megaphone, Rss, ExternalLink, ShieldCheck, Copy,
 } from 'lucide-react';
+import { julyEmailCampaignDrafts, julyMetricoolLinks } from '@/lib/marketing/july-2026';
 
 type SegmentKey = 'all_active' | 'subscribers' | 'no_subscription' | 'leads' | 'all' | 'newsletter';
 type CampaignStatus = 'draft' | 'sending' | 'sent' | 'archived';
@@ -22,6 +23,22 @@ interface Campaign {
   failed_count: number;
   sent_at: string | null;
   created_at: string;
+}
+
+interface MetricoolStatus {
+  ok: boolean;
+  configured: boolean;
+  connected: boolean;
+  blogId?: string;
+  userId?: string;
+  usesLegacyTokenName?: boolean;
+  feedUrl: string;
+  rssUrl: string;
+  missing?: string[];
+  profiles?: unknown[];
+  error?: string;
+  detail?: string;
+  status?: number;
 }
 
 const SEGMENT_LABELS: Record<SegmentKey, string> = {
@@ -45,6 +62,224 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
   if (status === 'sending') return <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700"><Loader2 className="h-3 w-3 animate-spin"/>Enviando</span>;
   if (status === 'archived') return <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500"><XCircle className="h-3 w-3"/>Archivada</span>;
   return <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700"><Clock className="h-3 w-3"/>Borrador</span>;
+}
+
+function MetricoolConnectionCard() {
+  const [status, setStatus] = useState<MetricoolStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/metricool/status', { cache: 'no-store' });
+      const data = await res.json();
+      setStatus(data);
+    } catch {
+      setStatus({
+        ok: false,
+        configured: false,
+        connected: false,
+        feedUrl: 'https://expertconsulting.es/feed',
+        rssUrl: 'https://expertconsulting.es/rss',
+        error: 'No se pudo comprobar Metricool',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect
+
+  const feedUrl = status?.feedUrl ?? 'https://expertconsulting.es/feed';
+  const copyFeed = async () => {
+    await navigator.clipboard.writeText(feedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="rounded-2xl border border-[#d8cbb5] bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-3">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+            status?.connected ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+          }`}>
+            {status?.connected ? <ShieldCheck className="h-5 w-5" /> : <Rss className="h-5 w-5" />}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-[#07111d]">Metricool + Blog</h3>
+              {loading ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#f8f4eb] px-2 py-0.5 text-[10px] font-semibold text-[#29384a]">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Comprobando
+                </span>
+              ) : status?.connected ? (
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Conectado</span>
+              ) : status?.configured ? (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Revisar API</span>
+              ) : (
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">Sin configurar</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-[#29384a]">
+              RSS: <span className="font-mono">{feedUrl}</span>
+              {status?.blogId ? <span> · Blog ID {status.blogId}</span> : null}
+            </p>
+            {status?.usesLegacyTokenName && (
+              <p className="mt-1 text-[10px] text-amber-700">Usando fallback Metricol_API; recomendado METRICOOL_USER_TOKEN.</p>
+            )}
+            {status && !status.connected && (
+              <p className="mt-1 text-[10px] text-red-600">
+                {status.missing?.length ? `Faltan: ${status.missing.join(', ')}` : status.error ?? status.detail ?? 'No conectado'}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={feedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Feed
+          </a>
+          <button
+            type="button"
+            onClick={copyFeed}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {copied ? 'Copiado' : 'Copiar RSS'}
+          </button>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#d8cbb5] bg-white text-[#29384a] transition hover:border-[#c88b25] disabled:opacity-50"
+            title="Comprobar Metricool"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function JulyCampaignActions({
+  campaignTitles,
+  onCreated,
+}: {
+  campaignTitles: string[];
+  onCreated: () => void;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const existing = new Set(campaignTitles);
+  const missingDrafts = julyEmailCampaignDrafts.filter((draft) => !existing.has(draft.title));
+
+  const copyMetricoolLinks = async () => {
+    const text = Object.entries(julyMetricoolLinks)
+      .map(([key, url]) => `${key}: ${url}`)
+      .join('\n');
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  const createDrafts = async () => {
+    setCreating(true);
+    setMessage(null);
+    setError(null);
+    try {
+      let created = 0;
+      for (const draft of missingDrafts) {
+        const res = await fetch('/api/admin/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: draft.title,
+            subject: draft.subject,
+            body_html: draft.bodyHtml,
+            segment: draft.segment,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? `No se pudo crear ${draft.title}`);
+        }
+        created++;
+      }
+      setMessage(created ? `${created} borradores de julio creados.` : 'Los borradores de julio ya existen.');
+      onCreated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudieron crear los borradores.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-[#d8cbb5] bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-[#07111d]">P0 julio 2026</p>
+            <span className="rounded-full bg-[#f8f4eb] px-2 py-0.5 text-[10px] font-semibold text-[#29384a]">
+              {julyEmailCampaignDrafts.length - missingDrafts.length}/{julyEmailCampaignDrafts.length} borradores
+            </span>
+          </div>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-[#29384a]">
+            Crea los emails base de julio y copia los enlaces UTM de Metricool para Holded, planes mensuales y certificado digital.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {Object.entries(julyMetricoolLinks).map(([key, url]) => (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-[11px] font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+              >
+                {key}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ))}
+          </div>
+          {message && <p className="mt-2 text-xs font-semibold text-emerald-700">{message}</p>}
+          {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={copyMetricoolLinks}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25]"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {copied ? 'Copiado' : 'Copiar UTMs'}
+          </button>
+          <button
+            type="button"
+            onClick={createDrafts}
+            disabled={creating || missingDrafts.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#07111d] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#1a2a3a] disabled:opacity-50"
+          >
+            {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+            {missingDrafts.length ? `Crear ${missingDrafts.length} borradores` : 'Borradores listos'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function fmtDate(d: string) {
@@ -360,6 +595,9 @@ export function CampanasDashboard() {
           </button>
         </div>
       </div>
+
+      <MetricoolConnectionCard />
+      <JulyCampaignActions campaignTitles={campaigns.map((campaign) => campaign.title)} onCreated={load} />
 
       {/* List */}
       {loading ? (

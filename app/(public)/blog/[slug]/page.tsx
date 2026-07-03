@@ -31,6 +31,7 @@ export async function generateMetadata({
   if (!article) return {};
   const title = `${article.title} | EXPERT Blog`;
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
+  const image = '/branding/expert%20servicios.png';
 
   return {
     title,
@@ -42,12 +43,14 @@ export async function generateMetadata({
       title,
       description: article.excerpt,
       url: canonicalUrl,
-      type: 'article'
+      type: 'article',
+      images: [{ url: image, width: 1200, height: 630, alt: article.title }]
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: article.excerpt
+      description: article.excerpt,
+      images: [image]
     }
   };
 }
@@ -76,13 +79,15 @@ export default async function BlogArticlePage({
   const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
 
-  // Parse "Mayo 2025" → "2025-05-01"
+  // Parse "13 may 2026" → "2026-05-13"
   const MONTHS: Record<string, string> = {
-    'Enero':'01','Febrero':'02','Marzo':'03','Abril':'04','Mayo':'05','Junio':'06',
-    'Julio':'07','Agosto':'08','Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12',
+    ene:'01', feb:'02', mar:'03', abr:'04', may:'05', jun:'06',
+    jul:'07', ago:'08', sep:'09', oct:'10', nov:'11', dic:'12',
   };
-  const [monthName, year] = article.date.split(' ');
-  const datePublished = (MONTHS[monthName] && year) ? `${year}-${MONTHS[monthName]}-01` : article.date;
+  const [day, monthAbbr, year] = article.date.split(' ');
+  const datePublished = (MONTHS[monthAbbr] && day && year)
+    ? `${year}-${MONTHS[monthAbbr]}-${day.padStart(2, '0')}`
+    : article.date;
 
   const blogJsonLd = {
     '@context': 'https://schema.org',
@@ -335,7 +340,12 @@ function Section({ heading, content }: { heading: string; content: string }) {
 function renderInline(text: string): string {
   return escapeInlineHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>');
+    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_match, label: string, url: string) => {
+      const isInternal = url.startsWith('https://expertconsulting.es');
+      const target = isInternal ? '' : ' target="_blank" rel="noopener noreferrer"';
+      return `<a href="${url}" class="font-semibold text-[#D4A017] underline decoration-1 underline-offset-2 hover:text-[#F2C14E]"${target}>${label}</a>`;
+    });
 }
 
 function escapeInlineHtml(text: string): string {

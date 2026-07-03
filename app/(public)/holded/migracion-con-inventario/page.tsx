@@ -139,9 +139,20 @@ const migracionConArticles = articles.filter((a) =>
   ['holded-inventario-guia-completa', 'migrar-inventario-a-holded', 'pack-starter-holded-vs-migracion'].includes(a.slug)
 );
 
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
 export default function MigracionConInventarioPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="brand-blue-bg px-6 py-20 text-[#F8F6F1] md:py-28">

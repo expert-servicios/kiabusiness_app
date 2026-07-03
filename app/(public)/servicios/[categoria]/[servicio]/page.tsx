@@ -10,6 +10,7 @@ import { getViabilityCheck, hasSpecificViabilityCheck } from '@/lib/data/viabili
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
+import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 
 export function generateStaticParams() {
   const params: { categoria: string; servicio: string }[] = [];
@@ -139,10 +140,22 @@ export default async function ServicioDetallePage({
     ],
   };
 
+  const faqJsonLd = service.faqs?.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: service.faqs.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  } : null;
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      {categoria === 'certificado-digital' && <JulyCampaignBanner focus="certificado" />}
 
       {/* ── Hero — sin imagen, fondo oscuro limpio ── */}
       <div className="bg-[#0D1B2A] px-6 pb-10 pt-12 text-[#F8F6F1] md:pb-12 md:pt-16">

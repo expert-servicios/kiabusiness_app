@@ -10,6 +10,7 @@ import { FaqSection } from '@/components/site/FaqSection';
 import { RelatedArticles } from '@/components/site/RelatedArticles';
 import { PlanCtaButton } from '@/components/planes/PlanCtaButton';
 import { BillingToggle } from '@/components/planes/BillingToggle';
+import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 
 export const metadata: Metadata = {
   title: 'Planes de gestión contable con Holded desde 49 €/mes | EXPERT',
@@ -205,6 +206,16 @@ interface Props {
   searchParams: Promise<{ billing?: string }>;
 }
 
+const planesFaqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
 export default async function PlanesPage({ searchParams }: Props) {
   const params    = await searchParams;
   const isAnnual  = params.billing === 'anual';
@@ -213,6 +224,8 @@ export default async function PlanesPage({ searchParams }: Props) {
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(planesFaqJsonLd) }} />
+      <JulyCampaignBanner focus="planes" />
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-24">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Planes mensuales con Holded</p>

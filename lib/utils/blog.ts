@@ -3203,6 +3203,237 @@ La formación laboral básica no convierte a nadie en laboralista, pero sí perm
 
 Bloques de 2 horas, online o presencial. Trabajamos con ejemplos reales adaptados al sector y al tamaño de tu empresa. Incluye material de referencia para consulta posterior.
     `
+  },
+  // ── Julio 2026 — campaña Holded y planes ───────────────────────────────────────
+  {
+    slug: 'checklist-cierre-2t-holded-julio-2026',
+    category: 'Holded',
+    title: 'Checklist de cierre del 2T en Holded antes del 20 de julio',
+    excerpt: 'Qué revisar en facturación, gastos, banco y retenciones antes de presentar el segundo trimestre, y cómo evitar repetir las prisas cada cierre.',
+    date: '30 jun 2026',
+    readTime: '7 min',
+    tags: ['Holded', 'segundo trimestre', 'modelo 303', 'cierre fiscal', 'IVA'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario', 'holded-pack-starter'],
+    body: `
+## Por qué julio es el mes que decide tu segundo trimestre
+
+Hasta el 20 de julio de 2026 vencen las principales obligaciones del segundo trimestre: el modelo 303 de IVA, los pagos fraccionados de IRPF (modelos 130 y 131) y las retenciones de modelos como el 111. Si tus facturas, gastos y movimientos bancarios no están centralizados, el resultado suele ser el mismo cada trimestre: buscar tickets, perseguir facturas de proveedores y cerrar con prisas el último día.
+
+Este checklist no sustituye la revisión de tu asesor, pero te permite llegar al 20 de julio con los datos preparados en lugar de empezar a ordenarlos ese mismo día.
+
+## Checklist antes de presentar el 2T
+
+### 1. Facturación emitida
+- Todas las facturas de abril, mayo y junio están registradas en el sistema, no en borradores sueltos o carpetas de email.
+- Los números de factura son correlativos y no hay huecos sin justificar.
+- El IVA aplicado en cada factura corresponde al tipo correcto (general, reducido o exento).
+
+### 2. Gastos y facturas recibidas
+- Todas las facturas de proveedores están subidas y categorizadas, no solo guardadas como PDF sueltos.
+- Los gastos deducibles están vinculados a su justificante, no introducidos como apunte manual sin soporte.
+- No falta ninguna factura de gastos recurrentes: alquiler, suministros, software, seguros.
+
+### 3. Conciliación bancaria
+- Los movimientos del trimestre están conciliados con las facturas y gastos registrados.
+- No quedan movimientos sin clasificar en la cuenta bancaria conectada.
+
+### 4. Retenciones
+- Si emites facturas con retención de IRPF (profesionales) o tienes empleados, las retenciones del modelo 111 cuadran con nóminas y facturas del trimestre.
+- Si arrendaste un local, el modelo 115 está revisado.
+
+### 5. Pago fraccionado de IRPF (autónomos)
+- En estimación directa, el modelo 130 se calcula sobre el rendimiento real del trimestre: confirma que ingresos y gastos están completos antes de calcularlo.
+- En estimación objetiva, el modelo 131 depende de los signos, índices o módulos de tu actividad.
+
+### 6. Cuadre general antes de presentar
+- Los totales de IVA repercutido y soportado coinciden con lo que vas a declarar.
+- No hay facturas duplicadas ni huérfanas, sin cliente o proveedor asociado.
+
+## Qué pasa si llegas al 20 de julio sin esto resuelto
+
+Presentar con datos incompletos no es solo un riesgo de errores de cálculo: también puede derivar en requerimientos posteriores de la Agencia Tributaria, que añaden tiempo y complicación a algo que podría haberse evitado con un sistema ordenado desde el principio. Esto no garantiza que un requerimiento no vaya a llegar — depende de cada caso — pero sí reduce su origen más habitual: datos dispersos, mal clasificados o incompletos.
+
+## Si este checklist te ha costado completarlo, el problema no es este cierre
+
+Si has tardado en repasar este checklist porque las facturas, los gastos y los movimientos bancarios están repartidos entre Excel, carpetas de email y herramientas distintas, el problema de fondo no es este trimestre concreto: es el sistema.
+
+En EXPERT migramos tu operativa a [Holded](https://expertconsulting.es/holded) con los datos bien vinculados (clientes, proveedores, bancos, facturación e impuestos) para que el siguiente cierre no dependa de buscar información en el último momento. Si vienes de Excel, un programa de escritorio o una gestión dispersa, la opción habitual es la [migración a Holded sin inventario](https://expertconsulting.es/holded/migracion-sin-inventario), pensada para empresas y autónomos sin productos físicos que gestionar.
+
+Después de migrar, lo importante es no volver al mismo punto en el próximo trimestre. Por eso solemos acompañar la migración de un [plan mensual de supervisión](https://expertconsulting.es/planes): revisión periódica, alertas y cierre continuo en vez de una carrera cada tres meses.
+
+## Preguntas frecuentes
+
+**¿Puedo migrar a Holded a mitad de trimestre?**
+Sí. La migración no depende del calendario fiscal y se puede iniciar en cualquier momento. Lo recomendable es empezar el diagnóstico cuanto antes para que los datos del trimestre en curso queden centralizados.
+
+**¿Qué hago si el plazo del 20 de julio ya está muy cerca?**
+Si el plazo está a pocos días, lo prioritario es presentar con los datos disponibles y revisados, y dejar la migración planificada para que el siguiente trimestre no se repita en las mismas condiciones.
+
+**¿Esto sustituye a mi asesor fiscal?**
+No. El checklist ordena la información antes de presentar; la revisión y presentación de los modelos sigue siendo trabajo de un profesional que conozca tu caso concreto.
+
+---
+
+**Fuente oficial**: [Calendario del contribuyente AEAT — Julio 2026](https://sede.agenciatributaria.gob.es/Sede/ayuda/calendario-contribuyente/calendario-contribuyente-2026/calendario-anual/julio.html)
+    `
+  },
+  {
+    slug: 'modelos-303-130-111-preparar-datos-holded',
+    category: 'Holded',
+    title: 'Modelo 303, 130 y 111: cómo preparar los datos desde Holded sin perseguir facturas',
+    excerpt: 'De dónde sale la información que pide cada modelo trimestral y cómo evitar reconstruirla a mano cada vez que toca presentar.',
+    date: '30 jun 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'modelo 303', 'modelo 130', 'modelo 111', 'IVA', 'IRPF'],
+    relatedServiceSlugs: ['holded-pack-starter', 'holded-migracion-sin-inventario'],
+    body: `
+## Qué necesita cada modelo y de dónde sale esa información
+
+### Modelo 303 (IVA)
+Necesita el IVA repercutido (facturas emitidas) y el IVA soportado deducible (facturas recibidas) del trimestre, clasificado por tipo.
+
+### Modelo 130 (pago fraccionado, estimación directa)
+Necesita ingresos y gastos deducibles del trimestre y del ejercicio acumulado, no solo las facturas emitidas en estos tres meses.
+
+### Modelo 111 (retenciones)
+Necesita las retenciones practicadas en facturas a profesionales y, si tienes empleados, las de las nóminas del trimestre.
+
+## Por qué "perseguir facturas" es el síntoma de un problema de sistema
+
+Si cada cierre trimestral implica escribir a proveedores pidiendo facturas, revisar el banco a mano y reconstruir gastos desde tickets sueltos, el problema no es ese trimestre en concreto: es que los datos no se capturan en el momento en que ocurren, sino que se reconstruyen después.
+
+## Cómo estructurar estos datos durante el trimestre, no al final
+
+- Facturas emitidas y recibidas centralizadas con su IVA desglosado por tipo, listas para extraer en el momento de presentar.
+- Conciliación bancaria continua en lugar de un cuadre manual al final del trimestre.
+- Gastos categorizados con su justificante adjunto, no apuntes sueltos sin soporte.
+- Retenciones aplicadas según el tipo de factura o la nómina configurada, no calculadas a mano cada vez.
+
+Esto no elimina la necesidad de revisión profesional antes de presentar — los modelos los prepara y presenta tu asesor — pero sí reduce el trabajo de reconstrucción que normalmente ocupa los días previos al cierre.
+
+## Qué revisar antes de calcular el 130 si tributas en estimación directa
+
+El modelo 130 se calcula sobre el rendimiento neto acumulado del ejercicio, no solo del trimestre. Antes de calcularlo conviene comprobar que:
+- Todos los ingresos del periodo están registrados, no solo las facturas con IVA.
+- Los gastos deducibles están completos y no faltan facturas de proveedores habituales.
+- Los pagos fraccionados de trimestres anteriores están correctamente acumulados.
+
+## Si tu sistema actual no te permite hacer esto sin esfuerzo manual
+
+Si para preparar estos modelos necesitas exportar Excel, cruzar movimientos bancarios a mano y perseguir facturas por email, es probable que el problema no esté en el trimestre, sino en cómo está montado tu sistema de facturación y contabilidad.
+
+En EXPERT migramos tu operativa a [Holded](https://expertconsulting.es/holded) con los datos bien vinculados desde el principio. Si estás empezando a digitalizar tu negocio, el punto de partida habitual es el [Pack Starter de Holded](https://expertconsulting.es/holded/pack-starter). Si ya tienes historial en otro sistema y quieres migrarlo completo, la opción es la [migración a Holded sin inventario](https://expertconsulting.es/holded/migracion-sin-inventario).
+
+## Preguntas frecuentes
+
+**¿Holded calcula automáticamente el modelo 303 o el 130?**
+Holded centraliza y estructura los datos (IVA repercutido, soportado, ingresos y gastos), pero el cálculo final, la revisión y la presentación del modelo siguen siendo trabajo de tu asesor fiscal.
+
+**¿Qué pasa si tengo facturas sin clasificar de trimestres anteriores?**
+Conviene regularizarlas antes de empezar a trabajar con un sistema centralizado, para que los acumulados (como el del modelo 130) sean correctos desde el inicio.
+
+**¿Esto sirve también para el modelo 111 si tengo empleados?**
+Sí. Si el módulo laboral está activo, las retenciones de nómina se integran junto con las de facturas a profesionales, facilitando el cálculo del modelo 111.
+
+---
+
+**Fuente oficial**: [AEAT — obligaciones hasta el 20 de julio de 2026](https://sede.agenciatributaria.gob.es/Sede/ayuda/calendario-contribuyente/calendario-contribuyente-2026/calendario-anual/julio/hasta-20-julio.html)
+    `
+  },
+  {
+    slug: 'plan-supervision-avanzado-colaborativo-comparativa',
+    category: 'Empresas',
+    title: 'Plan Supervisión vs Avanzado vs Colaborativo: qué gestión mensual necesitas',
+    excerpt: 'Comparativa de los tres planes mensuales de EXPERT sobre Holded: qué incluye cada uno, para quién está pensado y cómo elegir sin pasarte de presupuesto.',
+    date: '30 jun 2026',
+    readTime: '6 min',
+    tags: ['planes mensuales', 'Holded', 'gestión contable', 'supervisión fiscal'],
+    body: `
+## Por qué elegir un plan mensual después de migrar a Holded
+
+Migrar a Holded ordena el sistema, pero no sustituye la supervisión continua. Sin un plan de seguimiento, es fácil volver al mismo punto de partida: facturas sin clasificar, conciliaciones pendientes y un cierre trimestral que vuelve a ser una carrera contrarreloj.
+
+Los tres planes mensuales de EXPERT — Supervisión, Avanzado y Colaborativo — cubren distintos niveles de implicación, desde revisión básica hasta preparación y presentación de impuestos. Los tres requieren tener Holded conectado; la licencia de Holded se contrata aparte.
+
+## Comparativa rápida
+
+| Plan | Precio/mes | Implicación | Presentación de impuestos |
+|---|---|---|---|
+| Supervisión | 49 € | Tú llevas la contabilidad en Holded, EXPERT supervisa | No incluida |
+| Avanzado | 99 € | Tú introduces la información, EXPERT revisa y presenta lo trimestral básico | Trimestrales básicos incluidos |
+| Colaborativo | 199 € | Tú organizas o subes facturas, EXPERT revisa, valida y presenta según alcance | Según alcance acordado |
+
+## Plan Supervisión — 49 €/mes
+
+Pensado para autónomos y pequeñas empresas que ya llevan su propia contabilidad en Holded y quieren una segunda mirada profesional sin delegar la gestión.
+
+**Incluye:**
+- Revisión mensual básica de Holded.
+- Alertas básicas de errores y anomalías.
+- Revisión de facturas y categorías principales.
+- Revisión básica de conciliación bancaria.
+- Resumen mensual generado por Kia.
+- Soporte por email y WhatsApp.
+
+**No incluye:** presentación de impuestos, contabilidad delegada, subida de facturas por parte de EXPERT, migración de datos ni nóminas.
+
+Es la entrada recomendada si ya dominas Holded y solo necesitas una supervisión profesional periódica que detecte errores antes de que lleguen al cierre.
+
+## Plan Avanzado — 99 €/mes
+
+Para autónomos y pymes que quieren revisión profesional más activa, además de la preparación y presentación de impuestos trimestrales básicos.
+
+**Incluye:**
+- Revisión mensual de Holded.
+- Preparación y presentación de impuestos trimestrales básicos, cuando aplica.
+- Revisión de cierre trimestral y calendario fiscal.
+- Alertas fiscales de Kia.
+- Soporte en 48 horas.
+- Renta anual del titular autónomo en casos sencillos, o condiciones especiales según complejidad.
+
+**No incluye por defecto:** nóminas/laboral, gestión más delegada, alto volumen de facturas o inventario/e-commerce complejo.
+
+Es el salto natural si en Supervisión detectas que necesitas que EXPERT prepare y presente directamente los modelos trimestrales.
+
+## Plan Colaborativo — 199 €/mes
+
+El más completo de los tres, pensado para negocios que quieren mayor intervención mensual sin llegar todavía a una gestión totalmente personalizada.
+
+**Incluye:**
+- Tú subes u organizas las facturas en Holded; EXPERT revisa y valida mensualmente.
+- Preparación y presentación fiscal según el alcance acordado.
+- Informe mensual y alertas de anomalías.
+- Soporte prioritario en 24 horas.
+
+**No incluye por defecto:** alto volumen sin presupuesto previo, nóminas/laboral, varias sociedades u operativa internacional compleja.
+
+## Cómo elegir entre los tres
+
+- Si ya controlas Holded y solo quieres una alerta cuando algo falla: **Supervisión**.
+- Si quieres que EXPERT presente directamente lo trimestral básico: **Avanzado**.
+- Si prefieres delegar la validación mensual completa y tener soporte prioritario: **Colaborativo**.
+
+Ninguno de los tres planes garantiza un resultado fiscal concreto: el alcance y la complejidad de cada caso se revisan antes de confirmar el plan, especialmente si hay nóminas, varias sociedades o un volumen alto de facturación.
+
+## ¿Vienes de una migración a Holded?
+
+Si acabas de migrar o estás a punto de hacerlo, lo habitual es empezar con [Plan Supervisión](https://expertconsulting.es/planes/supervision) si llevas tú la contabilidad, o con [Plan Avanzado](https://expertconsulting.es/planes/avanzado) si quieres que EXPERT presente ya los modelos trimestrales. Puedes ver el detalle completo y cambiar de plan más adelante en la [página de planes](https://expertconsulting.es/planes).
+
+## Preguntas frecuentes
+
+**¿La licencia de Holded está incluida en el precio del plan?**
+No. Holded se contrata aparte; los planes mensuales requieren tener Holded conectado desde el Panel Cliente.
+
+**¿Puedo empezar en Supervisión y subir de plan más adelante?**
+Sí, puedes cambiar de plan con preaviso si tu necesidad de gestión cambia.
+
+**¿Los planes incluyen nóminas?**
+No por defecto en ninguno de los tres. Si necesitas gestión laboral, debe valorarse aparte según el volumen de empleados.
+
+---
+
+**Fuente**: [Comparativa completa de planes mensuales en EXPERT](https://expertconsulting.es/planes)
+    `
   }
 ];
 
@@ -3213,6 +3444,34 @@ const docsRedirectSlugs = new Set([
 ]);
 
 export const blogArticles = articles.filter((article) => !docsRedirectSlugs.has(article.slug));
+
+const spanishMonthIndex: Record<string, number> = {
+  ene: 0,
+  feb: 1,
+  mar: 2,
+  abr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  ago: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dic: 11,
+};
+
+export function articleDateValue(date: string): number {
+  const [dayRaw, monthRaw, yearRaw] = date.toLowerCase().trim().split(/\s+/);
+  const day = Number(dayRaw);
+  const month = spanishMonthIndex[monthRaw?.slice(0, 3) ?? ''];
+  const year = Number(yearRaw);
+  if (!day || month === undefined || !year) return 0;
+  return Date.UTC(year, month, day);
+}
+
+export function getPublishedBlogArticles(): Article[] {
+  return [...blogArticles].sort((a, b) => articleDateValue(b.date) - articleDateValue(a.date));
+}
 
 export function getArticle(slug: string): Article | undefined {
   return articles.find((a) => a.slug === slug);
