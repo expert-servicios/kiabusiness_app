@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processEmailQueue } from '@/lib/email/email-queue';
 import { verifyCronRequest } from '@/lib/security/cron';
 
-// Vercel Cron — runs every hour (see vercel.json)
+// Supabase pg_cron — runs every hour (see supabase/migrations/20260625000001_pgcron_email_queue.sql)
 // Protected by CRON_SECRET. Fails closed: returns 500 if the secret is not configured.
 export const maxDuration = 60; // seconds — required for batches up to ~20 emails
 
