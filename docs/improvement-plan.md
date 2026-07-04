@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-07-03
+Ultima actualizacion: 2026-07-04
 
 ## Objetivo
 
@@ -23,9 +23,9 @@ Reglas de ejecucion:
 - Los cambios Stripe deben mantener Checkout/Billing como fuente de verdad y ser idempotentes.
 - Los webhooks deben validar origen, registrar trazabilidad y soportar reintentos.
 
-## ALERTA P0 activa (2026-07-03) — ver IMP-024
+## P0 resuelto (2026-07-03 → 2026-07-04) — ver IMP-024
 
-Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-sync`, `daily-summary`, `email-queue`, `tenant-weekly-digest`) han estado fallando desde su creacion (hasta 6 semanas) porque `CRON_SECRET` nunca se configuro en Vercel produccion. Detalle completo, causa raiz y estado del arreglo en IMP-024 (seccion P0).
+Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-sync`, `daily-summary`, `email-queue`, `email-sync`, `tenant-weekly-digest`) estuvieron fallando desde su creacion (hasta 6 semanas) porque `CRON_SECRET` nunca se configuro en Vercel produccion, mas dos bugs independientes en el trigger `pg_cron` de `email-queue`. Los 6 crons estan confirmados en verde desde el 2026-07-04. Detalle completo, causa raiz y verificacion en IMP-024 (seccion P0).
 
 ## Nota de gobernanza del repo (2026-07-03)
 
@@ -186,9 +186,9 @@ Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-syn
 
 ## Pendiente manual (requiere accion del usuario)
 
-0. **[P0 - CRON_SECRET] Configurar variable en Vercel** — `ksenia-expert` → Settings → Environment Variables → `CRON_SECRET` (Production) → redeploy. Ver IMP-024 para el detalle completo y el impacto (todos los cron llevan hasta 6 semanas fallando).
-0b. **[P0 - CRON_SECRET] Configurar secret en GitHub Actions** — `expert-servicios/kiabusiness_app` → Settings → Secrets and variables → Actions → `CRON_SECRET` (mismo valor que en Vercel). Necesario para que `holded-sync.yml` deje de fallar.
-1. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main (Settings → Branches → main → Edit).
+0. ~~**[P0 - CRON_SECRET] Configurar variable en Vercel**~~ — ✅ Hecho y verificado 2026-07-04. Ver IMP-024.
+0b. ~~**[P0 - CRON_SECRET] Configurar secret en GitHub Actions**~~ — ✅ Hecho y verificado 2026-07-04.
+1. ~~**Branch protection status checks**~~ — ✅ Confirmado por el usuario 2026-07-04 (no verificable por API sin rol Admin en el repo — el token de escritura usado en esta sesion devuelve 404 al leer `branches/main/protection`).
 2. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
 3. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
 4. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
@@ -469,7 +469,7 @@ Verificacion:
 
 ### IMP-024 - CRON_SECRET nunca configurado en produccion (todos los cron fallando)
 
-Estado: [~]
+Estado: [x]
 
 Tipo: seguridad, operacion, fiabilidad, P0 critico.
 
@@ -484,32 +484,40 @@ Riesgo: `lib/security/cron.ts` (`verifyCronRequest`) falla cerrado con HTTP 500 
 | `holded-sync` | 2026-06-04 | 79 |
 | `daily-summary` | 2026-06-04 | 7 |
 | `email-queue` | 2026-06-16 | 73 |
+| `email-sync` | 2026-06-17 | 7 |
 | `tenant-weekly-digest` | 2026-06-22 | 1 |
 
 Impacto real: clientes sin avisos de plazos fiscales, admin sin resumen diario, sin canaries de salud de Kia, cola de emails sin procesar por cron, reintentos de Holded sin ejecutarse, digest semanal de tenant_admin sin salir.
 
-Causa raiz adicional (especifica de `email-queue`): ese cron corre via `pg_cron` en Supabase (no Vercel Cron nativo) y llamaba al endpoint solo con la cabecera `x-vercel-cron: 1`, que `verifyCronRequest` nunca comprueba — seguiria fallando aunque se arregle `CRON_SECRET` en Vercel.
+Causa raiz adicional #1 (especifica de `email-queue`): ese cron corre via `pg_cron` en Supabase (no Vercel Cron nativo) y llamaba al endpoint solo con la cabecera `x-vercel-cron: 1`, que `verifyCronRequest` nunca comprueba — seguia fallando aunque se arreglara `CRON_SECRET` en Vercel. Arreglado en PR #9.
+
+Causa raiz adicional #2 (tambien especifica de `email-queue`): la migracion original (y la del PR #9) llamaban a `extensions.http_post(...)`, que nunca existio — `pg_net` instala sus funciones en el schema `net`. El job fallaba a nivel SQL en **todas** sus ejecuciones desde que se creo (2026-06-25), independientemente del problema de `CRON_SECRET`. Arreglado en PR #11.
+
+Causa raiz adicional #3 (la que de verdad bloqueaba todo): tras arreglar #1 y #2 y que el usuario confirmara haber configurado `CRON_SECRET` en Vercel, los cron seguian fallando con el mismo error en cada redeploy sucesivo. Causa: el valor pegado en Vercel tenia espacios en blanco. Una vez corregido y redesplegado, confirmado en verde de dos formas: 0 runtime errors en Vercel tras el redeploy, y ejecucion manual de `holded-sync.yml` (`gh workflow run` → `completed success`).
 
 Archivos principales:
 
 - `lib/security/cron.ts` — logica de verificacion (sin cambios, el fail-closed es correcto por diseno)
-- `supabase/migrations/20260703000001_pgcron_email_queue_auth.sql` — NUEVO: guarda el secreto en Supabase Vault (`cron_secret`) y reprograma `email-queue-hourly` para enviar `Authorization: Bearer <secreto>` real
+- `supabase/migrations/20260703000001_pgcron_email_queue_auth.sql` — guarda el secreto en Supabase Vault (`cron_secret`) y reprograma `email-queue-hourly` para enviar `Authorization: Bearer <secreto>` real
+- `supabase/migrations/20260703000002_fix_pgcron_http_post_schema.sql` — corrige `extensions.http_post` → `net.http_post`
 - `.github/workflows/email-queue.yml` — ELIMINADO: quedo redundante desde que el cron se movio a `pg_cron` (commit `95dd62d`, 2026-06-25); mantener ambos duplicaria el procesamiento
 - `app/api/cron/email-queue/route.ts` — comentario corregido (decia "Vercel Cron", ahora dice "Supabase pg_cron")
-- `.github/workflows/holded-sync.yml` — sin cambios de codigo; solo necesita el secret de GitHub Actions configurado
+- `.github/workflows/holded-sync.yml` — sin cambios de codigo; solo necesitaba el secret de GitHub Actions configurado
 
-Solucion aplicada (2026-07-03):
+Solucion aplicada y verificada (2026-07-03 → 2026-07-04):
 
-- [x] PR `expert-servicios/kiabusiness_app#9` — migracion de auth para el pg_cron de `email-queue` + eliminacion del workflow duplicado.
-- [x] Migracion aplicada en Supabase remoto: secreto `cron_secret` creado en Vault con el mismo valor generado para `CRON_SECRET`.
-- [ ] **Accion manual pendiente (usuario):** configurar `CRON_SECRET` en Vercel → Settings → Environment Variables → Production, y redeploy.
-- [ ] **Accion manual pendiente (usuario):** configurar el mismo valor como secret `CRON_SECRET` en GitHub → `expert-servicios/kiabusiness_app` → Settings → Secrets and variables → Actions.
-- [ ] Verificar tras ambos pasos: `gh run list --repo expert-servicios/kiabusiness_app --workflow=holded-sync.yml` debe mostrar `completed success`; revisar Vercel runtime logs de los 6 crons para confirmar 200 en la siguiente ejecucion de cada uno.
+- [x] PR `expert-servicios/kiabusiness_app#9` (mergeado) — auth pg_cron para `email-queue` + eliminacion del workflow duplicado.
+- [x] PR `expert-servicios/kiabusiness_app#11` (mergeado) — fix schema `net.http_post`.
+- [x] Migraciones aplicadas en Supabase remoto.
+- [x] `CRON_SECRET` configurado en Vercel (Production) — tras un primer intento fallido por espacios en blanco en el valor pegado, corregido y redesplegado.
+- [x] `CRON_SECRET` configurado como secret de GitHub Actions en `expert-servicios/kiabusiness_app`.
+- [x] Verificado: `gh workflow run holded-sync.yml` → `completed success`. `cron.job_run_details` de `email-queue-hourly` en `succeeded` cada hora. 0 runtime errors en Vercel para los 6 cron routes tras el fix.
 
 Notas:
 
 - El fail-closed de `verifyCronRequest` es el comportamiento correcto — el bug fue de configuracion/despliegue, no de codigo defensivo.
-- Este hallazgo no estaba en el plan; se detecto auditando manualmente logs de Vercel, no por monitoreo activo. Considerar una alerta (Vercel Log Drain, o email en `daily-summary` una vez arreglado) que avise si un cron lleva N ejecuciones fallidas seguidas.
+- Este hallazgo no estaba en el plan; se detecto auditando manualmente logs de Vercel, no por monitoreo activo. Considerar una alerta (Vercel Log Drain, o email en `daily-summary`) que avise si un cron lleva N ejecuciones fallidas seguidas — asi un fallo de configuracion como este no vuelve a pasar desapercibido semanas.
+- Se investigo tambien `[webhook] subscription has no resolvable EXPERT user` en `/api/stripe/webhook` (3 suscripciones sin perfil ni fila en `subscriptions`). Confirmado por el usuario (2026-07-03): son suscripciones de Stripe anteriores/ajenas a EXPERT en la misma cuenta, no un bug — el codigo si vincula bien a los clientes que pasan por el checkout de la app. No requiere accion.
 
 ## P1 - Calidad, CI y mantenimiento
 
