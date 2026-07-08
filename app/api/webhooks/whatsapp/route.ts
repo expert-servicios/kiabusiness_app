@@ -1265,6 +1265,15 @@ async function _disabledPost(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
+    // Kill switch: pause all inbound processing (no auto-replies, no storage,
+    // no Kia) while keeping the webhook endpoint itself healthy so Meta
+    // doesn't flag/disable it for repeated failures. Toggle via env var —
+    // fully reversible, no Meta-side changes needed.
+    if (process.env.WABA_PAUSED?.toLowerCase() === 'true') {
+      console.warn('[whatsapp webhook] WABA_PAUSED=true — skipping message processing');
+      return NextResponse.json({ received: true, paused: true });
+    }
+
     const messages = body?.entry?.[0]?.changes?.[0]?.value?.messages;
     if (!messages || messages.length === 0) return NextResponse.json({ received: true });
 
