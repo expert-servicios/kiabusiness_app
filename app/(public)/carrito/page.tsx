@@ -230,7 +230,7 @@ export default function CarritoPage() {
                   </button>
                 )}
                 <a
-                  href="https://wa.me/34696550480"
+                  href="https://wa.me/34669045528"
                   className="block text-center text-sm font-medium text-[#23364D] transition hover:text-[#D4A017]"
                 >
                   ¿Dudas? Escríbenos por WhatsApp

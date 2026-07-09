@@ -7,7 +7,7 @@ import { X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { getCalDemoUrl } from '@/lib/utils/cal';
 
-const WA_NUMBER = '34696550480';
+const WA_NUMBER = '34669045528';
 const SESSION_KEY = 'kia_bubble_dismissed';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,23 +29,23 @@ function getFiscalChip(): FiscalChip | null {
 
   // IRPF campaign: 3 Apr – 30 Jun
   if ((month === 4 && day >= 3) || month === 5 || (month === 6 && day <= 30)) {
-    return { icon: '📋', label: `Campaña Renta ${year - 1}`, waMsg: `Hola Kia, quiero consultar sobre la Campaña de la Renta ${year - 1}.` };
+    return { icon: '📋', label: `Campaña Renta ${year - 1}`, waMsg: `Hola, quiero consultar sobre la Campaña de la Renta ${year - 1}.` };
   }
   // Modelo 720: Jan–Mar
   if (month <= 3) {
     const daysLeft = Math.round((new Date(year, 2, 31).getTime() - now.getTime()) / 86400000);
     if (daysLeft <= 15) {
-      return { icon: '⚠️', label: `M720 — ${daysLeft} días`, waMsg: 'Hola Kia, necesito ayuda urgente con el Modelo 720 (bienes en el extranjero).' };
+      return { icon: '⚠️', label: `M720 — ${daysLeft} días`, waMsg: 'Hola, necesito ayuda urgente con el Modelo 720 (bienes en el extranjero).' };
     }
-    return { icon: '🌍', label: 'Modelo 720', waMsg: 'Hola Kia, tengo bienes o cuentas en el extranjero y quiero saber si tengo que presentar el M720.' };
+    return { icon: '🌍', label: 'Modelo 720', waMsg: 'Hola, tengo bienes o cuentas en el extranjero y quiero saber si tengo que presentar el M720.' };
   }
   // Quarterly VAT: Q1 1–20 Apr, Q2 1–20 Jul, Q3 1–20 Oct
   if ((month === 4 && day <= 2) || (month === 7 && day <= 20) || (month === 10 && day <= 20)) {
-    return { icon: '📊', label: 'Impuestos trimestrales', waMsg: 'Hola Kia, necesito ayuda con las declaraciones trimestrales de IVA e IRPF.' };
+    return { icon: '📊', label: 'Impuestos trimestrales', waMsg: 'Hola, necesito ayuda con las declaraciones trimestrales de IVA e IRPF.' };
   }
   // Q4 / year-end
   if (month >= 11) {
-    return { icon: '📅', label: `Planificación fiscal ${year + 1}`, waMsg: `Hola Kia, quiero revisar mi situación fiscal antes de que acabe el año y planificar ${year + 1}.` };
+    return { icon: '📅', label: `Planificación fiscal ${year + 1}`, waMsg: `Hola, quiero revisar mi situación fiscal antes de que acabe el año y planificar ${year + 1}.` };
   }
   return null;
 }
@@ -66,12 +66,12 @@ type Action =
 const ANON_BASE: Action[] = [
   { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
   { kind: 'cal', url: CAL_DEMO, label: 'Reservar demo Holded', icon: '📅' },
-  { kind: 'wa',       msg: 'Hola Kia, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
+  { kind: 'wa',       msg: 'Hola, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
 ];
 
 const USER_BASE: Action[] = [
   { kind: 'link', href: '/dashboard/expedientes', label: 'Mis expedientes',    icon: '📁' },
-  { kind: 'wa',   msg: 'Hola Kia, soy cliente de EXPERT. Tengo una duda sobre mi expediente.', label: 'Duda sobre mi caso', icon: '💬' },
+  { kind: 'wa',   msg: 'Hola, soy cliente de EXPERT. Tengo una duda sobre mi expediente.', label: 'Duda sobre mi caso', icon: '💬' },
   { kind: 'link', href: '/servicios',             label: 'Ver catálogo',       icon: '📋' },
 ];
 
@@ -149,15 +149,15 @@ export function WhatsAppChatWidget() {
 
   const greetingBody = isLoggedIn
     ? userName
-      ? `Bienvenido/a, ${userName} 😊 ¿En qué puedo ayudarte hoy?`
-      : 'Bienvenido/a de nuevo a EXPERT 😊 ¿En qué puedo ayudarte hoy?'
-    : 'Soy Kia, la asistente de EXPERT. ¿Tienes una consulta sobre fiscalidad, extranjería o empresa?';
+      ? `Bienvenido/a, ${userName} 😊 ¿En qué podemos ayudarte hoy?`
+      : 'Bienvenido/a de nuevo a EXPERT 😊 ¿En qué podemos ayudarte hoy?'
+    : 'Escríbenos por WhatsApp y te ayudamos con tu consulta de fiscalidad, extranjería o empresa. Respondemos en horario laboral.';
 
   const actions = buildActions(isLoggedIn, fiscalChip);
 
   const fallbackWaUrl = buildWaUrl(
     isLoggedIn
-      ? 'Hola Kia, soy cliente de EXPERT. ¿Podéis ayudarme?'
+      ? 'Hola, soy cliente de EXPERT. ¿Podéis ayudarme?'
       : 'Hola, me gustaría obtener información sobre los servicios de EXPERT.',
   );
 
@@ -179,12 +179,11 @@ export function WhatsAppChatWidget() {
         {/* Header */}
         <div className="flex items-center gap-3 bg-[#0D1B2A] px-4 py-3">
           <div className="relative h-10 w-10 shrink-0">
-            <Image src="/branding/kia_bot.png" alt="Kia" fill className="rounded-full object-cover" sizes="40px" />
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#25D366] border-2 border-[#0D1B2A]" aria-label="En línea" />
+            <Image src="/branding/kia_bot.png" alt="EXPERT" fill className="rounded-full object-cover" sizes="40px" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-white leading-none">Kia</p>
-            <p className="mt-0.5 text-xs text-white/55">Asistente EXPERT · En línea</p>
+            <p className="text-sm font-bold text-white leading-none">EXPERT</p>
+            <p className="mt-0.5 text-xs text-white/55">Escríbenos por WhatsApp</p>
           </div>
           <button
             type="button"
@@ -266,15 +265,8 @@ export function WhatsAppChatWidget() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1ebe5d] transition-colors"
           >
             <WhatsAppIcon className="h-4 w-4" />
-            Chatear con Kia
+            Escríbenos por WhatsApp
           </a>
-          <Link
-            href="/ayuda/kia"
-            onClick={dismiss}
-            className="flex w-full items-center justify-center text-[10px] text-[#0D1B2A]/40 hover:text-[#c88b25] transition"
-          >
-            Cómo usar Kia de forma segura →
-          </Link>
         </div>
       </div>
 
@@ -285,12 +277,12 @@ export function WhatsAppChatWidget() {
             href={fallbackWaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Chatear con Kia en WhatsApp"
-            title="Chatear con Kia en WhatsApp"
+            aria-label="Escríbenos por WhatsApp"
+            title="Escríbenos por WhatsApp"
             className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
           >
             <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017]">
-              <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
+              <Image src="/branding/kia_bot.png" alt="EXPERT" fill className="object-cover" sizes="56px" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
               <WhatsAppIcon className="h-3 w-3" />
@@ -300,12 +292,12 @@ export function WhatsAppChatWidget() {
           <button
             type="button"
             onClick={toggleBubble}
-            aria-label="Chatear con Kia en WhatsApp"
-            title="Chatear con Kia en WhatsApp"
+            aria-label="Escríbenos por WhatsApp"
+            title="Escríbenos por WhatsApp"
             className="group relative h-14 w-14 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.22)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 overflow-visible"
           >
             <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-[#D4A017]/60 group-hover:ring-[#D4A017] transition-all">
-              <Image src="/branding/kia_bot.png" alt="Kia — Asistente EXPERT" fill className="object-cover" sizes="56px" />
+              <Image src="/branding/kia_bot.png" alt="EXPERT" fill className="object-cover" sizes="56px" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] border-2 border-white shadow-sm" aria-hidden="true">
               <WhatsAppIcon className="h-3 w-3" />

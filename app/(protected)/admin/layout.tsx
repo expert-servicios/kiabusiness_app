@@ -61,18 +61,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   const enrichedProfile = { ...profile, email: user.email ?? '' };
 
-  const [obligationsData, emailUnreadRaw, wabaUnreadRaw] = await Promise.all([
+  const [obligationsData, emailUnreadRaw] = await Promise.all([
     fetchJson(`/api/admin/fiscal-calendar?year=${new Date().getFullYear()}`, cookieHeader),
     getSupabaseAdmin()
       .from('system_kv')
       .select('value')
       .eq('key', 'email_unread_count')
       .maybeSingle(),
-    getSupabaseAdmin()
-      .from('whatsapp_conversations')
-      .select('id', { count: 'exact', head: true })
-      .eq('direction', 'inbound')
-      .is('read_at', null),
   ]);
 
   // Count urgent (overdue or ≤7 days) pending obligations across all clients
@@ -85,7 +80,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }).length;
 
   const emailUnreadCount = Number(emailUnreadRaw?.data?.value ?? 0);
-  const wabaUnreadCount = wabaUnreadRaw?.count ?? 0;
 
   return (
     <div className="flex min-h-screen bg-[#f8f4eb]">
@@ -98,7 +92,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {children}
       </div>
       <AdminRightPanel emailUnreadCount={emailUnreadCount} />
-      <AdminMobileNav urgentCount={urgentCount} wabaUnreadCount={wabaUnreadCount} />
+      <AdminMobileNav urgentCount={urgentCount} />
       <GlobalSearch />
     </div>
   );

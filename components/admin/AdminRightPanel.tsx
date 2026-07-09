@@ -1,32 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, Mail, Bell, PanelRightOpen, PanelRightClose, Loader2, Maximize2, Minimize2 } from 'lucide-react';
-import { WhatsAppInbox } from './WhatsAppInbox';
+import { Mail, Bell, PanelRightOpen, PanelRightClose, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { CorreoInbox } from './CorreoInbox';
 
-type PanelTab = 'whatsapp' | 'correo' | 'notificaciones';
-
-// ── WhatsApp tab ───────────────────────────────────────────────────────────────
-function WhatsAppTab() {
-  const [conversations, setConversations] = useState<unknown[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/admin/whatsapp')
-      .then((r) => r.json())
-      .then((d) => setConversations(d.conversations ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <PanelLoader />;
-  return (
-    <WhatsAppInbox
-      initialConversations={conversations as Parameters<typeof WhatsAppInbox>[0]['initialConversations']}
-    />
-  );
-}
+type PanelTab = 'correo' | 'notificaciones';
 
 // ── Correo tab ─────────────────────────────────────────────────────────────────
 type CorreoData = {
@@ -127,7 +105,6 @@ function PanelLoader() {
 
 // ── Tab config ────────────────────────────────────────────────────────────────
 const TABS: { id: PanelTab; label: string; icon: React.ElementType }[] = [
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'correo', label: 'Correo', icon: Mail },
   { id: 'notificaciones', label: 'Avisos', icon: Bell },
 ];
@@ -136,7 +113,7 @@ const TABS: { id: PanelTab; label: string; icon: React.ElementType }[] = [
 export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: number }) {
   const [open, setOpen] = useState(false);
   const [wide, setWide] = useState(false);
-  const [tab, setTab] = useState<PanelTab>('whatsapp');
+  const [tab, setTab] = useState<PanelTab>('correo');
   const [mounted, setMounted] = useState<Set<PanelTab>>(new Set());
 
   useEffect(() => {
@@ -238,9 +215,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
                   className={`absolute inset-0 overflow-auto ${tab === id ? 'z-10 visible' : 'z-0 invisible'}`}
                 >
                   {mounted.has(id) && (
-                    id === 'whatsapp' ? <WhatsAppTab /> :
-                    id === 'correo'   ? <CorreoTab />   :
-                    <NotificacionesTab />
+                    id === 'correo' ? <CorreoTab /> : <NotificacionesTab />
                   )}
                 </div>
               ))}

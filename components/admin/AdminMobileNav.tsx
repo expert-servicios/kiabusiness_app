@@ -2,17 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, CreditCard, Users, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CreditCard, Users } from 'lucide-react';
 
 const TABS = [
   { href: '/admin', label: 'Inicio', icon: LayoutDashboard, exact: true },
   { href: '/admin/expedientes', label: 'Tramites', icon: FolderOpen, exact: false },
-  { href: '/admin/whatsapp', label: 'WABA', icon: MessageCircle, exact: false },
   { href: '/admin/clientes', label: 'Clientes', icon: Users, exact: false },
   { href: '/admin/pagos', label: 'Factura', icon: CreditCard, exact: false },
 ];
 
-export function AdminMobileNav({ urgentCount = 0, wabaUnreadCount = 0 }: { urgentCount?: number; wabaUnreadCount?: number }) {
+export function AdminMobileNav({ urgentCount = 0 }: { urgentCount?: number }) {
   const pathname = usePathname();
 
   return (
@@ -21,7 +20,6 @@ export function AdminMobileNav({ urgentCount = 0, wabaUnreadCount = 0 }: { urgen
         {TABS.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           const isHome = exact && href === '/admin';
-          const isWaba = href === '/admin/whatsapp';
           return (
             <Link
               key={href}
@@ -35,11 +33,6 @@ export function AdminMobileNav({ urgentCount = 0, wabaUnreadCount = 0 }: { urgen
               {isHome && urgentCount > 0 && (
                 <span className="absolute right-1 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">
                   {urgentCount}
-                </span>
-              )}
-              {isWaba && wabaUnreadCount > 0 && (
-                <span className="absolute right-1 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#25D366] px-1 text-[9px] font-bold text-white">
-                  {wabaUnreadCount > 99 ? '99+' : wabaUnreadCount}
                 </span>
               )}
             </Link>

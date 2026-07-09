@@ -56,16 +56,14 @@ type WhatsAppWebhookBody = {
   }>;
 };
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const mode      = searchParams.get('hub.mode');
-  const token     = searchParams.get('hub.verify_token');
-  const challenge = searchParams.get('hub.challenge');
+// ── Meta Cloud API integration retired ──────────────────────────────────────
+// WhatsApp is now handled manually on +34 669 04 55 28, outside the Meta
+// WABA/Cloud API. Both handlers below are intentionally inert no-ops — the
+// full implementation stays in this file (dormant) in case of rollback.
+// See the "retirar la API de Meta para WhatsApp" plan for context.
 
-  if (mode === 'subscribe' && token === process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
-    return new NextResponse(challenge, { status: 200 });
-  }
-  return new NextResponse('Forbidden', { status: 403 });
+export async function GET(_request: NextRequest) {
+  return new NextResponse('WhatsApp Cloud API integration retired', { status: 200 });
 }
 
 // ── Message helpers ───────────────────────────────────────────────────────────
@@ -1248,7 +1246,12 @@ ${antiRepeatInstruction}`;
 
 // ── Incoming messages ─────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
+  return NextResponse.json({ received: true, note: 'WhatsApp Cloud API integration retired' });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _disabledPost(request: NextRequest) {
   try {
     const rawBody = await request.text();
     if (!verifyMetaSignature(rawBody, request.headers.get(META_SIGNATURE_HEADER))) {

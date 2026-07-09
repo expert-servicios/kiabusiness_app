@@ -198,7 +198,7 @@ export default async function ServicioDetallePage({
               </Link>
             )}
             <a
-              href="https://wa.me/34696550480"
+              href="https://wa.me/34669045528"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white"
             >
               <MessageCircle className="h-4 w-4" />
@@ -480,7 +480,7 @@ export default async function ServicioDetallePage({
                   </Link>
                 )}
                 <a
-                  href="https://wa.me/34696550480"
+                  href="https://wa.me/34669045528"
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   <MessageCircle className="h-4 w-4 text-[#D4A017]" />

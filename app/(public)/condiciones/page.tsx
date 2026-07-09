@@ -46,7 +46,7 @@ export default function CondicionesPage() {
                 ['CIF', 'B44991776'],
                 ['Domicilio', 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España'],
                 ['Email', 'info@expertconsulting.es'],
-                ['Teléfono', '+34 696 55 04 80'],
+                ['Teléfono', '+34 669 04 55 28'],
               ].map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-1 border-b border-[#f0e8d8] px-5 py-3 last:border-b-0 sm:flex-row sm:gap-4">
                   <span className="w-24 shrink-0 text-xs font-bold uppercase tracking-wide text-[#c88b25]">{label}</span>

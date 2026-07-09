@@ -163,7 +163,7 @@ export default async function DocDetailPage({
                 })}
               </div>
               <a
-                href="https://wa.me/34696550480"
+                href="https://wa.me/34669045528"
                 className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
               >
                 <MessageCircle className="h-4 w-4" />

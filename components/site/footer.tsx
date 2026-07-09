@@ -146,7 +146,7 @@ export function Footer() {
           <ul className="space-y-3 text-sm text-[#9CA3AF]">
             <li className="flex gap-3">
               <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-              <a href="tel:+34696550480" className="transition hover:text-[#D4A017]">+34 696 55 04 80</a>
+              <a href="tel:+34669045528" className="transition hover:text-[#D4A017]">+34 669 04 55 28</a>
             </li>
             <li className="flex gap-3">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />

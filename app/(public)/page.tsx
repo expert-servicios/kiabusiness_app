@@ -198,14 +198,14 @@ export default async function HomePage({
     logo: 'https://expertconsulting.es/branding/expert-app.png',
     image: 'https://expertconsulting.es/branding/expert%20servicios.png',
     description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión.',
-    telephone: '+34696550480',
+    telephone: '+34669045528',
     email: 'info@expertconsulting.es',
     address: { '@type': 'PostalAddress', addressCountry: 'ES' },
     areaServed: 'ES',
     priceRange: '€€',
     contactPoint: {
       '@type': 'ContactPoint',
-      telephone: '+34696550480',
+      telephone: '+34669045528',
       contactType: 'customer service',
       areaServed: 'ES',
       availableLanguage: ['Spanish', 'Russian', 'English']

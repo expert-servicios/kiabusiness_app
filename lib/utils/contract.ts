@@ -17,7 +17,7 @@ const EXPERT = {
   cif: 'B44991776',
   address: 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España',
   email: 'info@expertconsulting.es',
-  phone: '+34 696 55 04 80',
+  phone: '+34 669 04 55 28',
   web: 'https://expertconsulting.es',
   rep: 'Ksenia Ilicheva',
   registro: 'Registro Mercantil de Alicante — Tomo 4562, Folio 146, Hoja A-184902',

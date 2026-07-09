@@ -27,8 +27,8 @@ const contactItems = [
   {
     Icon: MessageCircle,
     label: 'WhatsApp',
-    value: '+34 696 55 04 80',
-    href: 'https://wa.me/34696550480',
+    value: '+34 669 04 55 28',
+    href: 'https://wa.me/34669045528',
     note: 'Respuesta rápida en horario laboral'
   },
   {
@@ -111,7 +111,7 @@ export default function ContactoPage() {
             </div>
 
             <a
-              href="https://wa.me/34696550480"
+              href="https://wa.me/34669045528"
               target="_blank"
               rel="noopener noreferrer"
               className="flex min-h-12 w-full items-center justify-center gap-2.5 bg-[#25D366] px-6 text-sm font-bold text-white transition hover:bg-[#1ebe5d]"

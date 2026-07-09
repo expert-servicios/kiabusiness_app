@@ -62,7 +62,6 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Comms",
     icon: MessageCircle,
     items: [
-      { label: "WABA / WhatsApp", href: "/admin/whatsapp" },
       { label: "Correo", href: "/admin/correo" },
       { label: "Emails", href: "/admin/emails" },
     ],

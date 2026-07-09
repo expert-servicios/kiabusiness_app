@@ -185,7 +185,7 @@ export default async function BlogArticlePage({
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
-                  href="https://wa.me/34696550480"
+                  href="https://wa.me/34669045528"
                   className="inline-flex items-center gap-2 border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
                 >
                   WhatsApp
