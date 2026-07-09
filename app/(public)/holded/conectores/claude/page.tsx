@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, FileText, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
+import { getHoldedMcpBaseUrl } from '@/lib/utils/holded-urls';
 
-const MCP_BASE_URL = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL ?? 'https://claude.expertconsulting.es';
+const MCP_BASE_URL = getHoldedMcpBaseUrl();
 const MCP_URL = `${MCP_BASE_URL.replace(/\/$/, '')}/mcp`;
 const CLAUDE_CONNECT_URL = `https://claude.ai/customize/connectors?${new URLSearchParams({
   modal: 'add-custom-connector',

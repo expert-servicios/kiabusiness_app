@@ -14,11 +14,12 @@ import type {
   ReadinessResult,
 } from '@/lib/data/service-readiness-checks';
 import { calculateReadinessResult } from '@/lib/data/service-readiness-checks';
+import { getHoldedTrialUrl, getHoldedApiDocsUrl, getHoldedAcademyUrl } from '@/lib/utils/holded-urls';
 
 // ── Env-var URLs with safe fallbacks ─────────────────────────────────────────
-const HOLDED_TRIAL_URL   = process.env.NEXT_PUBLIC_HOLDED_TRIAL_URL   ?? 'https://www.holded.com/es';
-const HOLDED_API_URL     = process.env.NEXT_PUBLIC_HOLDED_API_DOCS_URL ?? 'https://developers.holded.com';
-const HOLDED_ACADEMY_URL = process.env.NEXT_PUBLIC_HOLDED_ACADEMY_URL  ?? 'https://www.holded.com/es/academia';
+const HOLDED_TRIAL_URL   = getHoldedTrialUrl();
+const HOLDED_API_URL     = getHoldedApiDocsUrl();
+const HOLDED_ACADEMY_URL = getHoldedAcademyUrl();
 
 // ── CTA config per next-action ────────────────────────────────────────────────
 interface CtaConfig {

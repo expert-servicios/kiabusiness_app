@@ -4,8 +4,9 @@ import { createServerClient } from '@supabase/ssr';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import PostCompraWizard  from '@/components/dashboard/PostCompraWizard';
 import PostCompraWaiting from '@/components/dashboard/PostCompraWaiting';
+import { getHoldedMcpBaseUrl } from '@/lib/utils/holded-urls';
 
-const MCP_BASE = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL ?? 'https://claude.expertconsulting.es';
+const MCP_BASE = getHoldedMcpBaseUrl();
 const MCP_LAUNCH_URL = `${MCP_BASE}/launch`;
 
 interface SubscriptionRecord {
