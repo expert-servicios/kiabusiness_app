@@ -4,30 +4,41 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 
 export function CartSidebar() {
   const { items, removeItem, clearCart, isOpen, close } = useCart();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
+
+  const goToCheckoutUrl = (url: string) => {
+    clearCart();
+    window.location.href = url;
+  };
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
     setLoading(true);
     setError(null);
+    setNeedsProfile(false);
     try {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
       });
-      const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean };
+      const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
         window.location.href = '/auth/login?next=/carrito';
         return;
       }
+      if (res.status === 409 && data.code === 'profile_required') {
+        setNeedsProfile(true);
+        return;
+      }
       if (data.url) {
-        clearCart();
-        window.location.href = data.url;
+        goToCheckoutUrl(data.url);
         return;
       }
       setError(data.error ?? 'No hemos podido iniciar el pago.');
@@ -133,15 +144,22 @@ export function CartSidebar() {
               Precios sin IVA. El total con IVA se confirma en la pasarela de pago Stripe.
             </p>
             {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
-            >
-              <ArrowRight className="h-4 w-4" />
-              {loading ? 'Redirigiendo...' : 'Tramitar pedido'}
-            </button>
+            {needsProfile ? (
+              <QuickProfileGate
+                priceIds={items.map(i => i.priceId)}
+                onCheckoutUrl={goToCheckoutUrl}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
+              >
+                <ArrowRight className="h-4 w-4" />
+                {loading ? 'Redirigiendo...' : 'Tramitar pedido'}
+              </button>
+            )}
             <Link
               href="/carrito"
               onClick={close}

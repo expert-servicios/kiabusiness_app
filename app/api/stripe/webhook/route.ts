@@ -5,14 +5,23 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
+import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import {
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
   paymentConfirmed,
   servicePaymentConfirmed,
+  servicePaymentConfirmedAdmin,
   subscriptionCreated,
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
+
+function getAdminEmails(): string[] {
+  return (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
+    .split(',')
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
 
@@ -350,6 +359,21 @@ export async function POST(req: NextRequest) {
                 tag:   `payment-${quoteId}`,
               }).catch(() => {});
 
+              {
+                const adminEmails = getAdminEmails();
+                if (adminEmails.length) {
+                  const adminTpl = servicePaymentConfirmedAdmin(clientName, clientEmail, amountEur, quote.title ?? 'Presupuesto');
+                  sendEmail({
+                    to: adminEmails,
+                    eventType: 'payment.confirmed.admin',
+                    ...adminTpl,
+                    metadata: { quote_id: quoteId, session_id: session.id }
+                  }).catch((err) => {
+                    console.error('[webhook] admin payment email failed (quote):', err);
+                  });
+                }
+              }
+
               // IMP-005: enqueue job BEFORE the async call so it survives
               // if the serverless function is killed before .then() runs.
               const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
@@ -442,6 +466,50 @@ export async function POST(req: NextRequest) {
         catalogOrderMetadata = (existingCatalogOrder.metadata ?? catalogOrderMetadata) as Record<string, unknown>;
       }
 
+      // ── Sync Stripe-collected billing data back into profiles (best-effort, non-blocking) ──
+      if (session.client_reference_id) {
+        try {
+          const details = session.customer_details as {
+            address?: { line1?: string | null; city?: string | null; postal_code?: string | null; state?: string | null; country?: string | null } | null;
+            tax_ids?: Array<{ type: string; value: string | null }> | null;
+          } | null;
+          const addr = details?.address;
+          const taxIdEntry = details?.tax_ids?.[0];
+
+          const { data: currentProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('full_name,phone,client_type,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code')
+            .eq('id', session.client_reference_id)
+            .maybeSingle();
+
+          const profileUpdates: Record<string, unknown> = {};
+          if (addr?.line1)       profileUpdates.address = addr.line1;
+          if (addr?.city)        profileUpdates.city = addr.city;
+          if (addr?.postal_code) profileUpdates.postal_code = addr.postal_code;
+          if (addr?.state)       profileUpdates.province = addr.state;
+          if (addr?.country)     profileUpdates.billing_country = addr.country;
+          if (taxIdEntry?.value) profileUpdates.tax_id = taxIdEntry.value;
+
+          if (Object.keys(profileUpdates).length > 0 && currentProfile) {
+            const merged = { ...currentProfile, ...profileUpdates };
+            const readiness = computeProfileReadiness(merged);
+
+            await supabaseAdmin
+              .from('profiles')
+              .update({
+                ...profileUpdates,
+                profile_completed: readiness.profileCompleted,
+                billing_ready: readiness.billingReady,
+                habitual_address_ready: readiness.habitualAddressReady,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', session.client_reference_id);
+          }
+        } catch (err) {
+          console.error('[webhook] profile billing sync failed:', err);
+        }
+      }
+
       if (customerEmail) {
         const slugsRaw = session.metadata?.service_slugs ?? session.metadata?.service_slug ?? '';
         const slugList = slugsRaw.split(',').map((s: string) => s.trim());
@@ -480,6 +548,26 @@ export async function POST(req: NextRequest) {
             }
           });
         }
+
+        // ── Notify admins: new catalog/cart payment (email + push) ──
+        const adminEmails = getAdminEmails();
+        if (adminEmails.length) {
+          const adminTpl = servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName);
+          sendEmail({
+            to: adminEmails,
+            eventType: 'service.payment.confirmed.admin',
+            ...adminTpl,
+            metadata: { session_id: session.id, product_type: productType }
+          }).catch((err) => {
+            console.error('[webhook] admin payment email failed:', err);
+          });
+        }
+        notifyAdmins({
+          title: `💰 Pago recibido — ${customerName}`,
+          body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+          url:   `/admin/pagos`,
+          tag:   `catalog-payment-${session.id}`,
+        }).catch(() => {});
 
         const catalogJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
           clientName: customerName, clientEmail: customerEmail,
@@ -620,6 +708,22 @@ export async function POST(req: NextRequest) {
         const monthlyAmount = sub.items.data[0]?.price.unit_amount
           ? sub.items.data[0].price.unit_amount / 100
           : 0;
+
+        {
+          const adminEmails = getAdminEmails();
+          if (adminEmails.length) {
+            const adminTpl = servicePaymentConfirmedAdmin(clientInfo.name, clientInfo.email, monthlyAmount, subscriptionRecord.planName);
+            sendEmail({
+              to: adminEmails,
+              eventType: 'subscription.created.admin',
+              ...adminTpl,
+              metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName }
+            }).catch((err) => {
+              console.error('[webhook] admin payment email failed (subscription):', err);
+            });
+          }
+        }
+
         const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
           clientName: clientInfo.name, clientEmail: clientInfo.email,
           planName: subscriptionRecord.planName, amountEur: monthlyAmount,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 
 const profileUpdateSchema = z.object({
   full_name:         z.string().min(2).max(100).optional(),
@@ -90,11 +91,7 @@ export async function PATCH(request: NextRequest) {
     if (parseResult.data.habitual_country !== undefined) updates.habitual_country = parseResult.data.habitual_country.toUpperCase();
 
     const merged = { ...(currentProfile ?? {}), ...updates } as Record<string, unknown>;
-    const has = (key: string) => typeof merged[key] === 'string' && String(merged[key]).trim().length > 0;
-    const profileCompleted = has('full_name') && has('phone');
-    const billingReady = has('client_type') && has('tax_id') && has('address') && has('city') && has('postal_code');
-    const habitualAddressReady = merged.client_type === 'empresa'
-      || (has('habitual_address') && has('habitual_city') && has('habitual_postal_code'));
+    const { profileCompleted, billingReady, habitualAddressReady } = computeProfileReadiness(merged);
 
     updates.profile_completed = profileCompleted;
     updates.billing_ready = billingReady;

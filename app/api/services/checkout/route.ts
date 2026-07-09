@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profile, error: profileError } = await getSupabaseAdmin()
       .from('profiles')
-      .select('id,full_name,phone,email,stripe_customer_id,profile_completed,billing_ready,client_type,tax_id,address,city,postal_code')
+      .select('id,full_name,phone,email,stripe_customer_id,profile_completed')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -43,14 +43,6 @@ export async function POST(request: NextRequest) {
         error: 'Completa nombre y telefono antes de contratar.',
         code: 'profile_required',
         profileRequired: true,
-      }, { status: 409 });
-    }
-
-    if (!profile.billing_ready) {
-      return NextResponse.json({
-        error: 'Completa los datos de facturacion antes de contratar.',
-        code: 'billing_required',
-        billingRequired: true,
       }, { status: 409 });
     }
 
@@ -75,19 +67,22 @@ export async function POST(request: NextRequest) {
       : `${appUrl}/carrito`;
 
     const session = await stripe.checkout.sessions.create({
-      mode                : 'payment',
-      automatic_tax       : { enabled: true },
-      client_reference_id : user.id,
-      customer            : profile.stripe_customer_id ?? undefined,
-      customer_email      : profile.stripe_customer_id ? undefined : user.email,
-      line_items          : checkoutServices.map(getServiceCheckoutLineItem),
-      success_url         : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
-      cancel_url          : cancelUrl,
-      metadata            : {
+      mode                       : 'payment',
+      automatic_tax              : { enabled: true },
+      billing_address_collection : 'required',
+      tax_id_collection          : { enabled: true, required: 'if_supported' },
+      client_reference_id        : user.id,
+      customer                   : profile.stripe_customer_id ?? undefined,
+      customer_email             : profile.stripe_customer_id ? undefined : user.email,
+      ...(profile.stripe_customer_id ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
+      line_items                 : checkoutServices.map(getServiceCheckoutLineItem),
+      success_url                : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
+      cancel_url                 : cancelUrl,
+      metadata                   : {
         ...getServiceCheckoutMetadata(checkoutServices),
         user_id: user.id,
       },
-      locale              : 'es',
+      locale                     : 'es',
     });
 
     return NextResponse.json({ url: session.url });

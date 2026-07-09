@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 
 const HOLDED_PACKAGE_PRICE_IDS = [
   'price_1SxNObLeYwwgvux4fLN9k8YG',
@@ -42,25 +43,35 @@ export default function CarritoPage() {
   const visibleAddons = HOLDED_ADDONS.filter(a => !items.some(i => i.priceId === a.priceId));
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
+
+  const goToCheckoutUrl = (url: string) => {
+    clearCart();
+    window.location.href = url;
+  };
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
     setLoading(true);
     setError(null);
+    setNeedsProfile(false);
     try {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
       });
-      const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean };
+      const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
         window.location.href = '/auth/login?next=/carrito';
         return;
       }
+      if (res.status === 409 && data.code === 'profile_required') {
+        setNeedsProfile(true);
+        return;
+      }
       if (data.url) {
-        clearCart();
-        window.location.href = data.url;
+        goToCheckoutUrl(data.url);
         return;
       }
       setError(data.error ?? 'No hemos podido iniciar el pago.');
@@ -202,15 +213,22 @@ export default function CarritoPage() {
                 {error && (
                   <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>
                 )}
-                <button
-                  type="button"
-                  onClick={handleCheckout}
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  {loading ? 'Redirigiendo...' : 'Tramitar pedido'}
-                </button>
+                {needsProfile ? (
+                  <QuickProfileGate
+                    priceIds={items.map(i => i.priceId)}
+                    onCheckoutUrl={goToCheckoutUrl}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleCheckout}
+                    disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    {loading ? 'Redirigiendo...' : 'Tramitar pedido'}
+                  </button>
+                )}
                 <a
                   href="https://wa.me/34696550480"
                   className="block text-center text-sm font-medium text-[#23364D] transition hover:text-[#D4A017]"

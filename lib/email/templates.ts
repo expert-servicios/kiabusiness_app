@@ -216,6 +216,22 @@ export function servicePaymentConfirmed(name: string, amount: number, service: s
   };
 }
 
+export function servicePaymentConfirmedAdmin(name: string, email: string, amount: number, service: string) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `Nuevo pago — ${safeName} (€${amount.toFixed(2)})`,
+    html: base('Nuevo pago recibido', `
+      ${heading('Nuevo pago recibido')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha completado un pago en la web.`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Importe', `€${amount.toFixed(2)}`)
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
+    `)
+  };
+}
+
 // ── 6. Case status updated ────────────────────────────────────────────────────
 const STATE_LABELS: Record<string, string> = {
   pendiente_documentacion: 'Pendiente de documentación',
