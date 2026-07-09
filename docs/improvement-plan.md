@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-06-17
+Ultima actualizacion: 2026-07-04
 
 ## Objetivo
 
@@ -22,6 +22,17 @@ Reglas de ejecucion:
 - Los cambios Supabase deben revisar RLS, grants, service role y exposicion via Data API.
 - Los cambios Stripe deben mantener Checkout/Billing como fuente de verdad y ser idempotentes.
 - Los webhooks deben validar origen, registrar trazabilidad y soportar reintentos.
+
+## P0 resuelto (2026-07-03 → 2026-07-04) — ver IMP-024
+
+Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-sync`, `daily-summary`, `email-queue`, `email-sync`, `tenant-weekly-digest`) estuvieron fallando desde su creacion (hasta 6 semanas) porque `CRON_SECRET` nunca se configuro en Vercel produccion, mas dos bugs independientes en el trigger `pg_cron` de `email-queue`. Los 6 crons estan confirmados en verde desde el 2026-07-04. Detalle completo, causa raiz y verificacion en IMP-024 (seccion P0).
+
+## Nota de gobernanza del repo (2026-07-03)
+
+- El repo real / fuente de verdad es `expert-servicios/kiabusiness_app` (upstream). `kiabusiness2025/kiabusiness_app` es un fork de solo lectura (sin permiso de push) usado unicamente para abrir Pull Requests hacia upstream.
+- Todo PR nuevo debe crearse con `gh pr create --repo expert-servicios/kiabusiness_app --head kiabusiness2025:<rama>` tras pushear la rama al fork (`origin`).
+- Branch protection de `main` esta configurada en el repo real (ver commit `2026-06-07`), no en el fork — no protejer el fork es normal y esperado.
+- Los workflows de GitHub Actions con `on: schedule` (`holded-sync.yml`) solo se ejecutan de verdad quedando registrados en el repo real; en el fork aparecen como "not found" aunque el archivo exista, porque los forks no registran triggers de `schedule` por defecto.
 
 ## Decisiones estrategicas tomadas (2026-06-04)
 
@@ -175,7 +186,9 @@ Reglas de ejecucion:
 
 ## Pendiente manual (requiere accion del usuario)
 
-1. **Branch protection status checks** — Añadir `Typecheck`, `Lint`, `Build` como required checks en la regla de main (Settings → Branches → main → Edit).
+0. ~~**[P0 - CRON_SECRET] Configurar variable en Vercel**~~ — ✅ Hecho y verificado 2026-07-04. Ver IMP-024.
+0b. ~~**[P0 - CRON_SECRET] Configurar secret en GitHub Actions**~~ — ✅ Hecho y verificado 2026-07-04.
+1. ~~**Branch protection status checks**~~ — ✅ Confirmado por el usuario 2026-07-04 (no verificable por API sin rol Admin en el repo — el token de escritura usado en esta sesion devuelve 404 al leer `branches/main/protection`).
 2. **Verificacion IMP-004** — Reenviar mismo evento desde Stripe Dashboard → 200 sin duplicar order.
 3. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
 4. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
@@ -453,6 +466,58 @@ Verificacion:
 
 - [x] `npm run typecheck`
 - [x] `npm run build`
+
+### IMP-024 - CRON_SECRET nunca configurado en produccion (todos los cron fallando)
+
+Estado: [x]
+
+Tipo: seguridad, operacion, fiabilidad, P0 critico.
+
+Descubierto: 2026-07-03, durante auditoria de este documento con Vercel runtime error logs (`get_runtime_errors` sobre `prj_UscIRsCiaqY051PTrRVncEfNyquJ`).
+
+Riesgo: `lib/security/cron.ts` (`verifyCronRequest`) falla cerrado con HTTP 500 `Cron not configured` si `process.env.CRON_SECRET` no existe en produccion. Nunca se configuro esa variable en Vercel, asi que **todos** los cron routes protegidos llevan fallando desde su creacion:
+
+| Cron | Fallando desde | Ocurrencias (7d, al 2026-07-03) |
+|---|---|---|
+| `fiscal-reminders` | 2026-05-24 | 7 |
+| `kia-health` | 2026-05-28 | 7 |
+| `holded-sync` | 2026-06-04 | 79 |
+| `daily-summary` | 2026-06-04 | 7 |
+| `email-queue` | 2026-06-16 | 73 |
+| `email-sync` | 2026-06-17 | 7 |
+| `tenant-weekly-digest` | 2026-06-22 | 1 |
+
+Impacto real: clientes sin avisos de plazos fiscales, admin sin resumen diario, sin canaries de salud de Kia, cola de emails sin procesar por cron, reintentos de Holded sin ejecutarse, digest semanal de tenant_admin sin salir.
+
+Causa raiz adicional #1 (especifica de `email-queue`): ese cron corre via `pg_cron` en Supabase (no Vercel Cron nativo) y llamaba al endpoint solo con la cabecera `x-vercel-cron: 1`, que `verifyCronRequest` nunca comprueba — seguia fallando aunque se arreglara `CRON_SECRET` en Vercel. Arreglado en PR #9.
+
+Causa raiz adicional #2 (tambien especifica de `email-queue`): la migracion original (y la del PR #9) llamaban a `extensions.http_post(...)`, que nunca existio — `pg_net` instala sus funciones en el schema `net`. El job fallaba a nivel SQL en **todas** sus ejecuciones desde que se creo (2026-06-25), independientemente del problema de `CRON_SECRET`. Arreglado en PR #11.
+
+Causa raiz adicional #3 (la que de verdad bloqueaba todo): tras arreglar #1 y #2 y que el usuario confirmara haber configurado `CRON_SECRET` en Vercel, los cron seguian fallando con el mismo error en cada redeploy sucesivo. Causa: el valor pegado en Vercel tenia espacios en blanco. Una vez corregido y redesplegado, confirmado en verde de dos formas: 0 runtime errors en Vercel tras el redeploy, y ejecucion manual de `holded-sync.yml` (`gh workflow run` → `completed success`).
+
+Archivos principales:
+
+- `lib/security/cron.ts` — logica de verificacion (sin cambios, el fail-closed es correcto por diseno)
+- `supabase/migrations/20260703000001_pgcron_email_queue_auth.sql` — guarda el secreto en Supabase Vault (`cron_secret`) y reprograma `email-queue-hourly` para enviar `Authorization: Bearer <secreto>` real
+- `supabase/migrations/20260703000002_fix_pgcron_http_post_schema.sql` — corrige `extensions.http_post` → `net.http_post`
+- `.github/workflows/email-queue.yml` — ELIMINADO: quedo redundante desde que el cron se movio a `pg_cron` (commit `95dd62d`, 2026-06-25); mantener ambos duplicaria el procesamiento
+- `app/api/cron/email-queue/route.ts` — comentario corregido (decia "Vercel Cron", ahora dice "Supabase pg_cron")
+- `.github/workflows/holded-sync.yml` — sin cambios de codigo; solo necesitaba el secret de GitHub Actions configurado
+
+Solucion aplicada y verificada (2026-07-03 → 2026-07-04):
+
+- [x] PR `expert-servicios/kiabusiness_app#9` (mergeado) — auth pg_cron para `email-queue` + eliminacion del workflow duplicado.
+- [x] PR `expert-servicios/kiabusiness_app#11` (mergeado) — fix schema `net.http_post`.
+- [x] Migraciones aplicadas en Supabase remoto.
+- [x] `CRON_SECRET` configurado en Vercel (Production) — tras un primer intento fallido por espacios en blanco en el valor pegado, corregido y redesplegado.
+- [x] `CRON_SECRET` configurado como secret de GitHub Actions en `expert-servicios/kiabusiness_app`.
+- [x] Verificado: `gh workflow run holded-sync.yml` → `completed success`. `cron.job_run_details` de `email-queue-hourly` en `succeeded` cada hora. 0 runtime errors en Vercel para los 6 cron routes tras el fix.
+
+Notas:
+
+- El fail-closed de `verifyCronRequest` es el comportamiento correcto — el bug fue de configuracion/despliegue, no de codigo defensivo.
+- Este hallazgo no estaba en el plan; se detecto auditando manualmente logs de Vercel, no por monitoreo activo. Considerar una alerta (Vercel Log Drain, o email en `daily-summary`) que avise si un cron lleva N ejecuciones fallidas seguidas — asi un fallo de configuracion como este no vuelve a pasar desapercibido semanas.
+- Se investigo tambien `[webhook] subscription has no resolvable EXPERT user` en `/api/stripe/webhook` (3 suscripciones sin perfil ni fila en `subscriptions`). Confirmado por el usuario (2026-07-03): son suscripciones de Stripe anteriores/ajenas a EXPERT en la misma cuenta, no un bug — el codigo si vincula bien a los clientes que pasan por el checkout de la app. No requiere accion.
 
 ## P1 - Calidad, CI y mantenimiento
 
@@ -1078,8 +1143,29 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 **Siguiente sprint (media prioridad):**
 1. ~~**Digest semanal tenant_admin**~~ — ✅ COMPLETADO (Sprint H, 2026-06-17): `/api/cron/tenant-weekly-digest`, template `tenantWeeklyDigest`, vercel.json lunes 07:00 UTC.
-2. **Onboarding cliente guiado** — Wizard multi-paso para que el cliente complete perfil, conecte empresas y suba docs iniciales sin ayuda del admin. [EN CURSO 2026-06-17]
+2. ~~**Onboarding cliente guiado**~~ — ✅ COMPLETADO (commit `c9ebb13`, 2026-06-15): wizard multi-paso (`perfil → empresa → Holded → listo`) en `app/(protected)/dashboard/onboarding/page.tsx`, endpoint `app/api/onboarding/complete/route.ts`. Este documento lo tenia marcado erroneamente como "[EN CURSO]" — corregido 2026-07-03.
 3. ~~**Registro Mercantil via Infoempresa**~~ — Descartado: solo se usan fuentes gratuitas y abiertas (BORME, CKAN, VIES ya cubiertos).
+
+### Sprint no documentado (2026-06-17 → 2026-06-25, detectado retroactivamente 2026-07-03)
+
+El plan quedo sin actualizar durante esta ventana pese a 15+ commits en `main`. Resumen para no perder trazabilidad:
+
+- `3d19936`..`a59dd75` — portal tenant, Kia anti-loro, RLS fase 2, rol owner, cola de emails, hardening de seguridad de browser, fix XSS en preview de emails.
+- `61d9acf`, `0064245` — migracion completa Calendly → Cal.com (cero referencias a Calendly restantes).
+- `32ba636`, `46dcc27` — Sprint H: digest semanal tenant + creacion automatica de expediente desde webhook Cal.com.
+- `2230b2f` — hardening de funciones DB, fix WhatsApp, UI admin.
+- `95dd62d` — cron de `email-queue` movido de Vercel Cron (bloqueado por plan Hobby) a `pg_cron` en Supabase. (Ver IMP-024: quedo sin cabecera de auth, arreglado 2026-07-03.)
+- `52dbb20` — excluido `kiabusiness_app/` (carpeta duplicada sin trackear) del build/typecheck de Vercel.
+- `dac6a00`, `7ef57dd` — WABA en accesos rapidos del admin + badge en nav + fix visibilidad de Kia copiloto en mobile.
+- `fedc44b` — script utilitario puntual `sync-env-to-vercel`.
+- `b46a22c` — merge de auditoria de seguridad (Kia, WABA, cron, build).
+- `c43d885` — historial interactivo de emails (borrar/reenviar) + fixes de fiabilidad.
+- `7bc27e3` — tracker de Metricool (pixel de seguimiento) en `app/layout.tsx`.
+- `4babd9c` — SEO: JSON-LD (BlogPosting, CollectionPage, BreadcrumbList) en blog y paginas de servicios; fix de metadata invisible a crawlers en `/solicitar-presupuesto`.
+- `dec617b`, `fd9a802` — fix de fiabilidad: `.catch()` reemplazado por `.then(null, ...)` en query builders de Supabase (el builder no es una Promise real hasta que se resuelve `.then`, asi que `.catch()` podia no dispararse en algunos casos).
+- `7d0fe42` — ocultar badge de reCAPTCHA, fix de posicionamiento del popup de WhatsApp.
+
+No hay items de codigo nuevos que anadir al backlog por este sprint — fue mantenimiento, SEO y fiabilidad, ya completado. Se documenta aqui solo para que el historial de este archivo sea confiable.
 
 ### Fase SaaS
 
