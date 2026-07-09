@@ -3434,6 +3434,439 @@ No por defecto en ninguno de los tres. Si necesitas gestión laboral, debe valor
 
 **Fuente**: [Comparativa completa de planes mensuales en EXPERT](https://expertconsulting.es/planes)
     `
+  },
+  {
+    slug: 'proteccion-temporal-ucranianos-cambio-residencia-espana-2026',
+    category: 'Extranjería',
+    title: 'Protección temporal para ucranianos: nuevas vías para cambiar a residencia en España',
+    excerpt:
+      'El RD 316/2026 permite a titulares de protección temporal por Ucrania solicitar otras autorizaciones de residencia desde España. Qué cambia y a quién puede interesar.',
+    date: '30 jun 2026',
+    readTime: '7 min',
+    tags: ['protección temporal ucranianos España', 'RD 316/2026', 'residencia para ucranianos en España', 'extranjería'],
+    relatedServiceSlugs: ['residencia-larga-duracion-nacional'],
+    body: `
+## Qué es la protección temporal por Ucrania
+
+Desde marzo de 2022, las personas desplazadas desde Ucrania pueden acogerse en España a la **protección temporal** activada por la **Decisión de Ejecución (UE) 2022/382 del Consejo, de 4 de marzo de 2022**, que declaró la existencia de una afluencia masiva de personas desplazadas en el sentido del artículo 5 de la Directiva 2001/55/CE.
+
+Esta protección otorga autorización de residencia y trabajo en España, pero es un régimen **distinto** de la residencia ordinaria: nace de una decisión europea excepcional vinculada a la situación en Ucrania, no de las vías habituales del Reglamento de Extranjería.
+
+## Qué novedad introduce el RD 316/2026
+
+El **Real Decreto 316/2026, de 14 de abril**, modifica el **Real Decreto 1155/2024** y, entre otros cambios, adapta la **disposición adicional decimonovena** del Reglamento de Extranjería, referida precisamente a las personas beneficiarias de protección temporal por Ucrania.
+
+La novedad práctica es esta: las personas **titulares de una autorización de residencia obtenida al amparo de la Decisión de Ejecución (UE) 2022/382** pasan a poder solicitar **autorizaciones de estancia y residencia cuyo procedimiento pueda iniciarse desde territorio nacional**, incluidas determinadas autorizaciones del Reglamento de Extranjería y, en los supuestos en que su procedimiento lo permita, de la **Ley 14/2013**, de apoyo a los emprendedores y su internacionalización.
+
+## Qué significa poder solicitar autorizaciones "desde territorio nacional"
+
+En la práctica española de extranjería, no todas las autorizaciones se pueden iniciar estando ya en España: muchas exigen tramitar un visado desde el consulado del país de origen. Lo que abre el RD 316/2026 es la posibilidad de que, si la persona ya está en España con protección temporal, pueda solicitar directamente aquí aquellas autorizaciones cuyo procedimiento **sí admite iniciarse en territorio nacional**, sin tener que desplazarse a un consulado.
+
+Esto no convierte automáticamente la protección temporal en residencia ordinaria: abre una vía para **transitar** hacia ella, si el caso concreto encaja en alguna de esas autorizaciones.
+
+## Diferencia entre protección temporal, residencia ordinaria, estancia y autorización de la Ley 14/2013
+
+| Régimen | Origen | Vigencia y lógica |
+|---|---|---|
+| Protección temporal (Ucrania) | Decisión de Ejecución (UE) 2022/382 | Régimen excepcional y temporal, ligado a la vigencia de la protección europea |
+| Residencia ordinaria (Reglamento de Extranjería) | RD 1155/2024 | Ligada al motivo de concesión: trabajo, arraigo, familiar, etc.; renovable con requisitos propios |
+| Estancia | Reglamento de Extranjería | Situación de corta duración, no equivalente a residencia |
+| Autorizaciones de la Ley 14/2013 | Ley 14/2013, de emprendedores | Vías específicas para profesionales altamente cualificados, traslados intraempresariales, inversores o emprendedores |
+
+Cada una de estas figuras tiene requisitos, plazos y efectos distintos. El RD 316/2026 no las fusiona: permite que, desde la protección temporal, se acceda al procedimiento de alguna de ellas sin salir de España, cuando el caso lo permite.
+
+## Por qué esto permite planificar una transición ordenada
+
+Muchas personas ucranianas llevan ya varios años residiendo, trabajando y escolarizando a sus hijos en España bajo protección temporal. Poder iniciar desde aquí el paso a una autorización ordinaria —cuando se cumplen sus requisitos— permite planificar esa transición con tiempo, en lugar de depender exclusivamente de las prórrogas sucesivas del régimen de protección temporal.
+
+## Casos prácticos
+
+- **Persona ucraniana trabajando en España**: si su situación laboral encaja en alguna autorización del Reglamento iniciable desde España, puede valorar solicitarla sin esperar a que cambie el marco de la protección temporal.
+- **Familia con menores escolarizados**: la estabilidad de los menores (colegio, entorno, continuidad) es un factor relevante para valorar cuanto antes una vía de residencia más estable.
+- **Persona con medios económicos o proyecto profesional**: puede encajar en alguna de las autorizaciones de la Ley 14/2013 si el procedimiento admite iniciarse en España.
+- **Titular que ya acumula años de residencia legal**: si suma varios años de residencia legal y continuada en España, puede empezar a valorar, a futuro, la vía de la **residencia de larga duración nacional**, aunque para esta última el cómputo y los requisitos deben revisarse caso por caso.
+
+## No todas las personas encajan en la misma vía
+
+El RD 316/2026 abre una puerta, no da una respuesta automática. Cada autorización tiene requisitos propios (contrato, medios económicos, inversión, cualificación) y no todas admiten iniciarse desde España. Antes de dar cualquier paso conviene revisar si el perfil concreto encaja en alguna de ellas y si el procedimiento correspondiente permite tramitarse en territorio nacional.
+
+---
+
+En EXPERT revisamos tu situación y te indicamos si puedes pasar de protección temporal a una autorización de residencia ordinaria o preparar larga duración.
+
+**Fuentes oficiales**: [BOE-A-2026-8284 — Real Decreto 316/2026](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284) · [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099)
+    `
+  },
+  {
+    slug: 'proteccion-temporal-ucrania-asilo-arraigo-diferencias-2026',
+    category: 'Extranjería',
+    title: 'Protección temporal, asilo y arraigo: el error que puede afectar a muchos ucranianos en España',
+    excerpt:
+      'Protección temporal, protección internacional y arraigo no son lo mismo. Con el RD 316/2026 conviene tener muy claro qué vía corresponde a cada situación antes de presentar nada.',
+    date: '30 jun 2026',
+    readTime: '7 min',
+    tags: ['protección temporal ucranianos España', 'cambiar protección temporal a residencia', 'arraigo', 'asilo', 'extranjería'],
+    relatedServiceSlugs: ['arraigo-social', 'residencia-larga-duracion-nacional'],
+    body: `
+## Protección temporal por Ucrania: qué es y de dónde viene
+
+La protección temporal para personas desplazadas desde Ucrania se activó a partir de la **Decisión de Ejecución (UE) 2022/382, de 4 de marzo de 2022**, que apreció una afluencia masiva de personas desplazadas conforme a la Directiva 2001/55/CE. En España, este régimen se recoge en la **disposición adicional decimonovena** del Reglamento de Extranjería (RD 1155/2024, modificado por el RD 316/2026).
+
+Es un régimen de residencia y trabajo, pero **distinto** de la protección internacional y distinto también de las vías ordinarias de arraigo.
+
+## Protección internacional / asilo: qué es y por qué no se debe confundir
+
+La protección internacional (asilo y protección subsidiaria) es un procedimiento propio, con su propia normativa, dirigido a personas que acreditan un temor fundado de persecución o riesgo grave en su país de origen. No depende de la Decisión de Ejecución (UE) 2022/382 ni se activa por ser de nacionalidad ucraniana: se solicita y se instruye como expediente de asilo, con sus propios plazos y criterios de valoración.
+
+Confundir "soy ucraniano/a con protección temporal" con "puedo pedir asilo sin más" es uno de los errores más costosos, porque son procedimientos distintos, con requisitos y consecuencias distintas.
+
+## Arraigo: cuándo puede ser una vía y cuándo no
+
+El arraigo (social, laboral o familiar) es una vía ordinaria del Reglamento de Extranjería pensada, en general, para personas en **situación irregular** que acreditan permanencia, vínculos familiares o relación laboral en España. No está diseñado como vía específica para beneficiarios de protección temporal, que parten de una situación de residencia legal, no de irregularidad.
+
+Esto no significa que el arraigo nunca sea relevante para una persona ucraniana, pero si la persona ya tiene protección temporal, presentar directamente un arraigo social sin revisar antes la situación puede ser un error de planteamiento del expediente.
+
+## La nueva disposición adicional vigésima
+
+El RD 316/2026 introduce una **disposición adicional vigésima** en el Reglamento de Extranjería, que habilita una vía extraordinaria para determinados **solicitantes de protección internacional**. Sus rasgos principales:
+
+- Dirigida a personas que presentaron su solicitud de protección internacional **antes del 1 de enero de 2026**.
+- Puede solicitarse en un **plazo extraordinario hasta el 30 de junio de 2026**.
+- Entre los requisitos generales se exige: ser mayor de edad, encontrarse en España, no ser ya titular de una autorización de residencia o estancia, carecer de antecedentes penales relevantes y no suponer una amenaza para el orden público o la seguridad.
+- Habilita de forma **provisional para residir y trabajar** desde la comunicación de inicio de la tramitación, por cuenta propia o ajena.
+
+## El punto clave para las personas ucranianas
+
+Aquí está el detalle que genera más confusión: la disposición adicional vigésima **excluye expresamente** a quienes sean o hayan sido titulares de una autorización de residencia obtenida al amparo de la **Decisión de Ejecución (UE) 2022/382** (es decir, de la protección temporal por Ucrania).
+
+En otras palabras: si tienes o has tenido protección temporal por Ucrania, **no puedes acogerte a la vía extraordinaria de la disposición adicional vigésima**, aunque hayas presentado en su momento una solicitud de protección internacional. Esa vía extraordinaria está pensada para otro colectivo.
+
+## Qué sí abre el RD 316/2026 para beneficiarios de protección temporal
+
+Lo que sí cambia para las personas con protección temporal por Ucrania es lo previsto en la **disposición adicional decimonovena**: la posibilidad de solicitar, desde territorio español, otras autorizaciones de estancia o residencia cuyo procedimiento admita iniciarse en España. Es una vía distinta de la disposición adicional vigésima, con requisitos propios según la autorización que se pretenda solicitar.
+
+## Errores frecuentes
+
+- **Pedir un arraigo que no corresponde**: presentar un arraigo social sin valorar antes si existe una vía más adecuada o más rápida dado el punto de partida (residencia legal, no irregular).
+- **Desistir de una protección sin estudiar alternativa**: renunciar a la protección temporal o a una solicitud de protección internacional antes de tener clara la vía sustitutiva puede dejar a la persona sin cobertura durante la tramitación.
+- **Pensar que todo ucraniano debe ir por asilo**: la protección temporal no es un paso previo obligatorio hacia el asilo, ni el asilo es la única salida para quien quiere estabilidad jurídica.
+- **No revisar la fecha de residencia legal**: para valorar cualquier vía alternativa (arraigo, larga duración, autorizaciones ordinarias) es imprescindible tener clara la fecha de inicio real de la residencia legal en España.
+
+---
+
+Antes de cambiar de estatus, revisamos tu caso y evitamos presentar una vía incorrecta.
+
+**Fuentes oficiales**: [BOE-A-2026-8284 — Real Decreto 316/2026](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284) · [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099)
+    `
+  },
+  {
+    slug: 'familias-ucranianas-espana-proteccion-temporal-residencia-estable',
+    category: 'Extranjería',
+    title: 'Familias ucranianas en España: cómo planificar el cambio de protección temporal a residencia estable',
+    excerpt:
+      'Muchas familias ucranianas llevan ya años en España con protección temporal. Cómo preparar la documentación y valorar el paso a una residencia más estable en 2026.',
+    date: '30 jun 2026',
+    readTime: '8 min',
+    tags: [
+      'protección temporal ucranianos España',
+      'residencia para ucranianos en España',
+      'cambiar protección temporal a residencia',
+      'residencia larga duración ucranianos',
+      'extranjería para familias ucranianas'
+    ],
+    relatedServiceSlugs: ['residencia-larga-duracion-nacional'],
+    body: `
+## Situación de partida
+
+Muchas familias ucranianas llevan ya varios años viviendo legalmente en España al amparo de la protección temporal activada por la **Decisión de Ejecución (UE) 2022/382**. En ese tiempo han encontrado trabajo, escolarizado a sus hijos y construido una vida asentada, aunque el estatus jurídico de partida siga siendo un régimen pensado como excepcional y temporal.
+
+## Por qué conviene revisar el futuro antes de que el régimen vuelva a cambiar
+
+La protección temporal por Ucrania depende de decisiones europeas y de sus sucesivas prórrogas, y el **Real Decreto 316/2026** ya ha introducido cambios relevantes sobre cómo se puede transitar desde ella hacia otras autorizaciones. Cada modificación normativa puede abrir o cerrar plazos concretos (como el plazo extraordinario hasta el 30 de junio de 2026 para determinados solicitantes de protección internacional).
+
+Por eso, cuanto antes se revise la situación individual y familiar, más margen hay para decidir con calma en lugar de reaccionar contra un plazo que ya está a punto de vencer.
+
+## Qué documentación deben conservar
+
+Para poder valorar cualquier vía alternativa en el futuro, conviene guardar organizada:
+
+- **Resoluciones** de concesión y prórroga de la protección temporal.
+- **TIE** actuales y anteriores.
+- **Empadronamientos**, con el histórico completo si ha habido cambios de domicilio.
+- **Contratos de trabajo** y sus renovaciones.
+- **Vida laboral** actualizada (informe de la Seguridad Social).
+- **Certificados escolares** de los menores, con fechas de inicio de escolarización.
+- **Pasaportes** completos y en vigor de todos los miembros de la familia.
+- **Justificantes de viajes** (billetes, sellos de entrada y salida), útiles para acreditar periodos de permanencia o ausencia.
+
+## Opciones posibles según el caso
+
+- **Mantener la protección temporal** mientras siga vigente, si no hay una alternativa clara todavía o no urge el cambio.
+- **Pasar a una autorización de residencia ordinaria** si el caso encaja en alguna de las vías que el RD 316/2026 permite iniciar desde España.
+- **Valorar la residencia de larga duración nacional** cuando se cumplan 5 años de residencia legal y continuada, revisando con cuidado las reglas de ausencias y la fecha real de inicio del cómputo.
+- **Estudiar autorizaciones por trabajo, estudios, vínculo familiar o la Ley 14/2013**, si el perfil profesional o familiar encaja en alguna de ellas.
+
+Cada una de estas opciones depende de circunstancias personales y familiares muy distintas. No todas las familias van a poder acceder a las mismas vías, y eso debe revisarse caso por caso antes de decidir.
+
+## Menores
+
+Para los hijos menores conviene prestar atención a:
+
+- La **escolarización continuada**, con certificados que acrediten fechas de inicio y continuidad.
+- Su **situación de residencia legal propia**, no solo la de los progenitores.
+- Mantener la **documentación ordenada** desde ya, porque en trámites futuros (residencia ordinaria, larga duración, nacionalidad) la trayectoria del menor se revisa de forma independiente.
+
+## Trabajo
+
+Conservar **nóminas, contratos y vida laboral** actualizados no solo sirve para la protección temporal actual: es la base documental que permitirá acreditar más adelante requisitos de medios económicos o de vínculo laboral en cualquier autorización ordinaria que se quiera solicitar.
+
+## Riesgos que conviene evitar
+
+- **Esperar al último momento**: los plazos extraordinarios (como el de la disposición adicional vigésima, hasta el 30 de junio de 2026) no se reabren indefinidamente.
+- **No conservar resoluciones**: sin el histórico documental completo es más difícil acreditar continuidad de residencia legal.
+- **Confundir protección temporal con asilo**: son regímenes distintos, con requisitos y vías de salida distintas.
+- **Presentar una solicitud incorrecta**: cada vía tiene requisitos propios; una solicitud mal orientada puede retrasar años la estabilidad jurídica de toda la familia.
+
+---
+
+En EXPERT revisamos tu situación familiar completa y diseñamos una estrategia de residencia estable en España.
+
+**Fuentes oficiales**: [BOE-A-2026-8284 — Real Decreto 316/2026](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284) · [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Hoja informativa 49 — Ministerio de Inclusión](https://www.inclusion.gob.es/web/migraciones/w/49.-autorizacion-de-residencia-de-larga-duracion-nacional)
+    `
+  },
+  {
+    slug: 'residencia-larga-duracion-nacional-requisitos',
+    category: 'Extranjería',
+    title: 'Residencia de larga duración nacional: cuándo puedes pedirla y qué revisar antes',
+    excerpt:
+      'La residencia de larga duración nacional permite vivir y trabajar en España de forma indefinida, pero no basta con llevar años con la tarjeta renovada. Qué comprobar antes de presentar.',
+    date: '30 jun 2026',
+    readTime: '7 min',
+    tags: ['residencia larga duración nacional', 'RD 1155/2024', 'extranjería', 'TIE', 'residencia indefinida'],
+    relatedServiceSlugs: ['residencia-larga-duracion-nacional'],
+    body: `
+## Qué es la residencia de larga duración nacional
+
+La residencia de larga duración nacional es la autorización que permite residir y trabajar en España de forma **indefinida**, sin depender de renovar cada cierto tiempo una autorización sujeta a condiciones (contrato, vínculo familiar, medios económicos...). Se regula en los **artículos 182 a 185 del Reglamento de Extranjería**, aprobado por el **Real Decreto 1155/2024, de 19 de noviembre**, y está descrita en la **Hoja informativa 49 del Ministerio de Inclusión**.
+
+## Renovar la residencia temporal no es lo mismo que pasar a larga duración
+
+Renovar una autorización temporal significa volver a acreditar, cada vez, que se mantienen los requisitos que la justificaron: contrato de trabajo, alta como autónomo, vínculo familiar, medios económicos. La larga duración nacional funciona de otra forma: se concede una sola vez y, a partir de ahí, **no depende de mantener esas condiciones**. Lo único que se renueva periódicamente es el soporte físico, la TIE, no la autorización en sí.
+
+Llevar varios años renovando la residencia temporal sin incidencias no significa automáticamente que se cumplan los requisitos de la larga duración: hay que comprobarlo expresamente.
+
+## El requisito general: cinco años de residencia legal y continuada
+
+El punto de partida es haber **residido legal y continuadamente en España durante los cinco años inmediatamente anteriores** a la solicitud. Esto obliga a reconstruir con precisión el histórico de autorizaciones: fecha real de concesión de cada una, fechas de renovación y posibles huecos entre ellas.
+
+## Límite de ausencias
+
+Durante esos cinco años se permite salir de España, pero dentro de límites concretos:
+
+- Ausencias de **hasta seis meses continuados** sin interrumpir el cómputo.
+- Un máximo de **diez meses en total** sumando todas las ausencias dentro del periodo de cinco años.
+- Ese límite se amplía a los supuestos en que las ausencias respondan a **motivos laborales** debidamente acreditados.
+- Las ausencias por **fuerza mayor** justificada pueden valorarse de forma individualizada.
+
+Conviene reconstruir el historial de viajes (sellos de pasaporte, billetes) antes de presentar, porque una ausencia mal contabilizada puede ser motivo de requerimiento o denegación.
+
+## Documentación habitual
+
+- Formulario de solicitud (EX-11).
+- Pasaporte completo y en vigor.
+- Justificante de pago de la tasa.
+- Documentación acreditativa de la residencia legal continuada durante los cinco años (resoluciones, TIE anteriores, renovaciones).
+- Certificado de empadronamiento.
+- Certificado de escolarización de los menores a cargo, si los hay.
+
+## Cuándo presentar
+
+No existe un plazo límite específico para solicitar la larga duración, a diferencia de las renovaciones ordinarias. Lo relevante es no presentar **antes** de haber completado realmente los cinco años exigidos, y cuidar que la autorización actual siga vigente (o dentro de su plazo de renovación) mientras se resuelve el expediente.
+
+## Plazo de resolución y silencio positivo
+
+El plazo legal de resolución es de **tres meses** desde la entrada de la solicitud en el registro del órgano competente. Si transcurre ese plazo sin resolución expresa, la solicitud se entiende **estimada por silencio administrativo positivo**.
+
+## La tasa: modelo 790, código 052, epígrafe 2.6
+
+La solicitud está sujeta al pago de la tasa correspondiente al **modelo 790, código 052, epígrafe 2.6**. El importe y las condiciones de pago pueden variar; conviene comprobar la cuantía vigente en el momento de presentar, en la sede electrónica correspondiente.
+
+## Qué ocurre tras la resolución favorable
+
+Una vez notificada la resolución favorable, hay que solicitar personalmente la **Tarjeta de Identidad de Extranjero (TIE)** en la comisaría de Policía. La autorización en sí es indefinida; lo que se renueva con el tiempo es únicamente la tarjeta física.
+
+## Errores frecuentes
+
+- **Presentar antes de cumplir el plazo**: calcular mal la fecha de inicio del cómputo de los cinco años.
+- **No revisar las ausencias**: no sumar correctamente los periodos fuera de España o no diferenciar las de motivo laboral.
+- **Confundir la fecha de expedición de la TIE con la fecha real de la autorización**: el cómputo se hace sobre la residencia legal, no sobre cuándo se recogió la tarjeta.
+- **No aportar el pasaporte completo**: faltan páginas, está próximo a caducar o no incluye todos los sellos relevantes.
+
+---
+
+*La información puede variar según cambios normativos o criterios de la Oficina de Extranjería competente.*
+
+En EXPERT revisamos tu viabilidad, preparamos el expediente y presentamos la solicitud telemáticamente. Honorarios: 250 € + IVA. Tasas no incluidas.
+
+**Fuentes oficiales**: [Real Decreto 1155/2024, arts. 182 a 185 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Hoja informativa 49 — Ministerio de Inclusión](https://www.inclusion.gob.es/web/migraciones/w/49.-autorizacion-de-residencia-de-larga-duracion-nacional)
+    `
+  },
+  {
+    slug: 'nuevo-reglamento-extranjeria-cambios-2026',
+    category: 'Extranjería',
+    title: 'Nuevo Reglamento de Extranjería: cambios clave que ya afectan a residentes y solicitantes',
+    excerpt:
+      'El Reglamento aprobado por el RD 1155/2024 y actualizado por el RD 316/2026 cambia el arraigo, la residencia de familiares de español, los estudiantes y la larga duración. Qué revisar antes de presentar.',
+    date: '30 jun 2026',
+    readTime: '9 min',
+    tags: ['nuevo reglamento extranjería', 'novedades extranjería 2026', 'arraigo 2 años', 'familiar de español', 'larga duración nacional'],
+    relatedServiceSlugs: ['arraigo-social', 'arraigo-familiar', 'residencia-larga-duracion-nacional'],
+    body: `
+## Introducción
+
+El Reglamento de Extranjería vigente en España es el aprobado por el **Real Decreto 1155/2024, de 19 de noviembre** (BOE-A-2024-24099), en vigor desde el **20 de mayo de 2025**, y actualizado en abril de 2026 por el **Real Decreto 316/2026** (BOE-A-2026-8284). Entre ambas normas cambian aspectos que afectan directamente a residentes, solicitantes de arraigo, familiares de españoles, estudiantes y personas próximas a los cinco años de residencia legal.
+
+Este artículo resume los cambios prácticos más relevantes, sin entrar en el detalle técnico completo de cada figura.
+
+## Tabla de novedades
+
+| Ámbito | Qué cambia |
+|---|---|
+| Arraigo | Se reorganiza en cinco figuras: segunda oportunidad, sociolaboral, social, socioformativo y familiar |
+| Permanencia para arraigo | Se reduce de 3 a 2 años con carácter general, salvo arraigo familiar |
+| Trabajo durante el arraigo | Se habilita para trabajar según la modalidad, con matices propios de cada una |
+| Familiares de español | Nuevo régimen específico, distinto del comunitario y del arraigo familiar |
+| Estudiantes | Posibilidad de trabajar hasta 30 horas semanales en determinados supuestos |
+| Larga duración nacional | Vía de consolidación tras 5 años de residencia legal y continuada |
+| Protección internacional | Advertencia sobre cómo computa la permanencia mientras se tramita |
+| RD 316/2026 | Autorización provisional de trabajo en ciertos procedimientos, nuevo requisito de no tener otra autorización o procedimiento en curso, autorizaciones extraordinarias hasta el 30/06/2026 |
+
+## El nuevo enfoque del arraigo
+
+El Reglamento reorganiza el arraigo en cinco figuras homogeneizadas: **segunda oportunidad, sociolaboral, social, socioformativo y familiar**. Cada una tiene su propio perfil de acceso (situación laboral previa, vínculos familiares, formación en curso, etc.), pero comparten una base común de requisitos generales.
+
+## Reducción del periodo de permanencia a dos años
+
+Con carácter general, el periodo de permanencia exigido para acceder a las vías de arraigo se reduce de **tres a dos años**, salvo en el arraigo familiar, que no exige un periodo mínimo de permanencia previa.
+
+## Habilitación para trabajar según la modalidad
+
+El nuevo Reglamento facilita el acceso al trabajo desde las distintas modalidades de arraigo, pero **no todas funcionan igual**: el arraigo sociolaboral exige acreditar una relación laboral por cuenta ajena con requisitos propios de jornada y salario; otras modalidades tienen matices distintos según su naturaleza. No conviene asumir que cualquier arraigo permite trabajar en las mismas condiciones sin revisar la modalidad concreta.
+
+## Nuevo régimen de familiares de españoles
+
+Se crea un permiso específico para familiares de ciudadanos españoles (cónyuges, hijos y ascendientes), distinto tanto del régimen comunitario como del arraigo familiar tradicional, con requisitos económicos más flexibles que pueden acreditarse, entre otras vías, mediante contrato de trabajo u oferta firme de empleo.
+
+## Estudiantes: hasta 30 horas semanales de trabajo
+
+Para estudiantes de estudios superiores, se contempla la posibilidad de trabajar hasta **30 horas semanales**, siempre que sea compatible con los estudios, además de otras flexibilizaciones sobre el formato de los estudios.
+
+## Larga duración nacional como vía de consolidación
+
+Cumplidos **cinco años de residencia legal y continuada**, y revisadas las reglas de ausencias, la residencia de larga duración nacional permite consolidar la situación de forma indefinida, dejando de depender de renovaciones sujetas a condiciones.
+
+## Advertencia sobre protección internacional
+
+El tiempo transcurrido mientras se tramita una solicitud de protección internacional no siempre computa de la misma forma que la residencia legal ordinaria a efectos de otras autorizaciones. Antes de dar por hecho que ese periodo cuenta para arraigo o larga duración, conviene revisarlo caso por caso.
+
+## Lo que añade el RD 316/2026
+
+La actualización de abril de 2026 incorpora, entre otros puntos:
+
+- **Autorización provisional de trabajo** en determinados procedimientos, para que la tramitación administrativa no frustre una oferta de empleo ya presentada.
+- **Cambios en el régimen de familiares de españoles.**
+- Un **nuevo requisito general para el arraigo**: no ser ya titular de una autorización de estancia o residencia, ni estar como interesado en un procedimiento de concesión, prórroga, renovación o modificación de una autorización. Esto obliga a revisar bien la situación administrativa de partida antes de presentar un arraigo.
+- **Autorizaciones extraordinarias** disponibles solo hasta el **30 de junio de 2026**, dirigidas a colectivos y situaciones concretas definidas en las nuevas disposiciones adicionales del Reglamento.
+
+## Checklist: qué revisar antes de presentar
+
+1. ¿Qué figura encaja realmente con tu situación (arraigo, familiar de español, larga duración, estudiante, protección internacional)?
+2. ¿Cumples el periodo de permanencia exigido para esa vía en concreto?
+3. ¿Ya tienes una autorización vigente o un procedimiento en curso que podría impedirte pedir un arraigo?
+4. ¿Las ausencias del territorio español están dentro de los límites permitidos?
+5. ¿Tu documentación (pasaporte, empadronamiento, antecedentes, informes) está completa y actualizada?
+6. ¿Existe algún plazo extraordinario aplicable a tu caso que esté próximo a vencer?
+
+---
+
+Si no sabes qué autorización encaja con tu situación, revisamos tu caso y te indicamos la vía correcta antes de pagar tasas o presentar una solicitud prematura.
+
+**Fuentes oficiales**: [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Real Decreto 316/2026 (BOE-A-2026-8284)](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284) · [Ministerio de Inclusión, Migraciones — hojas informativas](https://www.inclusion.gob.es/web/migraciones/hojas-informativas)
+    `
+  },
+  {
+    slug: 'arraigo-espana-reforma-2026-tipos-requisitos',
+    category: 'Extranjería',
+    title: 'Arraigo en España tras la reforma: segunda oportunidad, sociolaboral, social, socioformativo y familiar',
+    excerpt:
+      'Cinco modalidades de arraigo, cada una con requisitos propios. Cómo saber si encajas en arraigo social, sociolaboral, socioformativo, familiar o segunda oportunidad tras la reforma.',
+    date: '30 jun 2026',
+    readTime: '9 min',
+    tags: ['arraigo', 'arraigo social', 'arraigo sociolaboral', 'arraigo familiar', 'reforma extranjería 2026'],
+    relatedServiceSlugs: ['arraigo-social', 'arraigo-familiar'],
+    body: `
+## El arraigo dentro de las circunstancias excepcionales
+
+El arraigo es una modalidad de autorización de residencia temporal **por circunstancias excepcionales**, pensada para personas que acreditan un vínculo suficiente con España (permanencia, relación laboral, vínculo familiar o formación) aunque no encajen en las vías ordinarias de residencia. El Reglamento de Extranjería (RD 1155/2024) lo regula en el bloque de artículos dedicado a las circunstancias excepcionales, y ha sido modificado por el **RD 316/2026**.
+
+## Cinco modalidades de arraigo
+
+| Modalidad | Perfil típico | Permanencia exigida |
+|---|---|---|
+| Segunda oportunidad | Tuvo una autorización previa (no de circunstancias excepcionales) que no pudo renovar | Al menos 2 años de residencia previa |
+| Sociolaboral | Acredita una relación laboral por cuenta ajena | 2 años |
+| Social | Vínculos familiares con residentes legales, o informe de integración social | 2 años |
+| Socioformativo | Está cursando o ha finalizado formación reglada | 2 años |
+| Familiar | Progenitor de ciudadano de otro Estado miembro de la UE, EEE o Suiza | No exige periodo mínimo |
+
+**Importante**: el "arraigo familiar" de este cuadro es una figura concreta y limitada (progenitores de menores comunitarios); no debe confundirse con el permiso específico para familiares de ciudadanos españoles, que es una autorización distinta, fuera del bloque de arraigo.
+
+## Requisitos comunes a todas las modalidades
+
+- **Permanencia en España**: 2 años con carácter general, salvo arraigo familiar.
+- **Carecer de antecedentes penales** en España y en los países de residencia anteriores.
+- **No encontrarse en causa de inadmisión** ni suponer una amenaza para el orden público.
+- **Requisito incorporado por el RD 316/2026**: no ser ya titular de una autorización de estancia o residencia, ni tener la condición de interesado en un procedimiento de concesión, prórroga, renovación o modificación de una autorización de estancia o residencia. Este requisito aplica de forma transversal a las cinco modalidades y es clave: si ya tienes una autorización o un trámite en curso, lo que corresponde normalmente es renovar o modificar esa autorización, no presentar un arraigo nuevo.
+
+## Requisitos específicos por modalidad
+
+### Arraigo sociolaboral
+
+Se acredita mediante una relación laboral **por cuenta ajena** (la actividad por cuenta propia no da acceso a esta vía). El contrato, o la suma de varios, debe suponer una jornada semanal mínima en cómputo global, con un salario que alcance al menos el SMI o lo que corresponda según el convenio colectivo aplicable, de forma proporcional a la jornada. La empresa debe estar al corriente de sus obligaciones con la Seguridad Social y con Hacienda.
+
+### Arraigo social
+
+Se accede por dos vías alternativas:
+
+- **Vínculos familiares**: cónyuge, pareja registrada o parientes de primer grado en línea directa con residencia legal en España, acreditando medios económicos suficientes tanto por parte del familiar como del solicitante.
+- **Informe de integración social**, emitido por la Comunidad Autónoma o el Ayuntamiento competente, que valora el periodo de residencia, la vivienda, los vínculos familiares y el esfuerzo de integración sociolaboral y cultural, junto con la acreditación de medios económicos propios.
+
+### Arraigo socioformativo
+
+Dirigido a quien está cursando o ha finalizado una formación reglada. Según el momento, se exige el informe del centro que acredite la promoción al curso siguiente, o la acreditación del título obtenido junto con la inscripción como demandante de empleo, cuando la formación ya ha finalizado. El acceso al trabajo desde esta modalidad tiene matices propios y no equivale automáticamente al régimen general de un contrato de trabajo ordinario.
+
+### Arraigo familiar
+
+Limitado a progenitores de ciudadanos de otro Estado miembro de la Unión Europea, del Espacio Económico Europeo o de Suiza. No exige un periodo mínimo de permanencia previa en España, y su duración es más amplia que la del resto de modalidades.
+
+## Novedades del RD 316/2026 sobre habilitación para trabajar
+
+La reforma de abril de 2026 introduce una habilitación **provisional** para trabajar por cuenta ajena, aplicable una vez admitida a trámite la solicitud en determinados procedimientos, precisamente para que la tramitación administrativa no frustre una oferta de trabajo ya presentada. Esta habilitación provisional no sustituye a la resolución del expediente ni garantiza su concesión final.
+
+## Riesgos prácticos
+
+- **Presentar por la vía equivocada**: pedir arraigo social cuando el perfil encaja mejor en sociolaboral (o al revés) retrasa el expediente y puede llevar a un requerimiento o denegación.
+- **No acreditar bien la permanencia**: empadronamiento con huecos o ausencias no justificadas por encima de lo permitido.
+- **Pedir un arraigo cuando corresponde renovar o modificar otra autorización**: desde el RD 316/2026, tener ya una autorización vigente o un procedimiento en curso puede impedir directamente el acceso al arraigo.
+- **No revisar la situación de protección internacional o asilo**: si existe una solicitud de protección internacional en curso o resuelta, hay que valorar cómo afecta esto a la vía de arraigo antes de presentar.
+- **No ordenar bien los antecedentes penales y la documentación extranjera**: certificados caducados, sin apostilla o sin traducción jurada son causa habitual de requerimientos.
+
+---
+
+Antes de presentar un arraigo, revisamos tu situación y te indicamos la modalidad correcta para evitar denegaciones o requerimientos evitables. Cada expediente debe revisarse de forma individual.
+
+**Fuentes oficiales**: [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Real Decreto 316/2026 (BOE-A-2026-8284)](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284)
+    `
   }
 ];
 
