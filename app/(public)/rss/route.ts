@@ -1,1 +1,4 @@
-export { GET, dynamic, revalidate } from '../feed/route';
+export { GET } from '../feed/route';
+
+export const dynamic = 'force-static';
+export const revalidate = 3600;
