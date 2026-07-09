@@ -956,6 +956,16 @@ Verificacion:
 - [ ] Prueba manual: "¿Cuales son mis expedientes activos?" → Kia responde con contexto del usuario.
 - [ ] Prueba manual: "¿Cómo conecto Holded?" → Kia guia al usuario.
 
+Implementacion 2026-07-09 — WABA retirada por completo (no solo reducida a notificaciones):
+
+- Decision del usuario: se deja de usar la API de Meta (WhatsApp Cloud API) para WhatsApp. El numero pasa de +34 696 55 04 80 (dedicado a WABA) a +34 669 04 55 28 (numero de negocio habitual), atendido manualmente desde la app normal de WhatsApp Business — sin Kia respondiendo, sin plantillas aprobadas por Meta y sin catalogo interactivo por bot.
+- Esto va mas alla de lo previsto en la decision de 2026-06-04 (linea 934: "la integracion WABA queda reducida a canal de notificaciones salientes"): tampoco se usa ya para notificaciones salientes automatizadas. Todas las lineas de este documento que dicen "Prueba manual WABA: ..." quedan obsoletas — no hay canal WABA que probar.
+- `app/api/webhooks/whatsapp/route.ts` (+ alias legacy `app/api/whatsapp/webhook/route.ts`) devuelve 200 sin procesar en GET y POST; la implementacion original queda dormida como `_disabledPost()` por si hace falta revertir.
+- Accesos a `/admin/whatsapp` quitados de sidebar, hero, accesos rapidos, mobile nav y panel derecho de admin (la pagina y su API siguen existiendo, solo sin enlazar).
+- Numero actualizado en todo el sitio publico (widget, footer, contacto, servicios, docs, blog, cita, carrito, JSON-LD, avisos legales, contrato) y variables `META_WHATSAPP_*`/`META_APP_SECRET` marcadas como no usadas en `.env.example`.
+- Kia sigue viva como copiloto en `/api/kia/copilot` — este canal no se vio afectado. Meta se sigue usando para Ads y catalogo, sin relacion con esta integracion.
+- Commit: `ee0d1bc`.
+
 ### IMP-023 - CI minimo con GitHub Actions
 
 Estado: [x]

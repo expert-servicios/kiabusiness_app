@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-09 (checkout mínimo antes de pagar + retirada de WABA)
+
+- Contenido: nueva guía documental `residencia-larga-duracion-nacional` (docs.ts) y 6 artículos de blog sobre residencia de larga duración nacional, reforma del Reglamento de Extranjería y protección temporal para ucranianos.
+- Checkout: el gate antes de pagar se reduce a nombre + teléfono; se elimina el bloqueo por `billing_ready`. Stripe Checkout recoge dirección de facturación y NIF/CIF de forma nativa (`billing_address_collection`, `tax_id_collection`). El webhook de Stripe sincroniza esos datos de vuelta a `profiles` y recalcula `profile_completed`/`billing_ready`/`habitual_address_ready` con el nuevo helper compartido `lib/utils/profile-readiness.ts`.
+- Cesta (`/carrito` + `CartSidebar`): ya no hay callejón sin salida cuando falta el perfil — aparece un formulario inline (`QuickProfileGate`) de 2 campos en vez de un texto de error suelto. `ProfileCompletionWizard` (`/contratar`) se recorta igual.
+- Nuevo paso corto post-compra en `/gracias/pago` (`PostPurchaseProfileStep`) para pedir tipo de cliente y domicilio habitual si falta, sin bloquear el pago ya confirmado.
+- Cerrado un hueco de notificación: admin no recibía ningún aviso (ni push ni email) en compras de catálogo/cesta. Ahora recibe push + email (`servicePaymentConfirmedAdmin`) en compras de catálogo, presupuestos y suscripciones.
+- WABA (WhatsApp Business API de Meta) retirada por decisión del usuario: WhatsApp pasa a atenderse manualmente en +34 669 04 55 28, fuera de la API de Meta. El webhook queda inerte (200 sin procesar, implementación original dormida por si hace falta revertir), se quitaron los accesos a `/admin/whatsapp` de la navegación del panel admin, y el número se actualizó en todo el sitio público, legales y contrato. Kia sigue activa como copiloto en `/api/kia/copilot` (canal aparte); Meta se mantiene para Ads y catálogo. Detalle completo en `docs/improvement-plan.md` (IMP-022) y `docs/kia-implementation-progress.md`.
+- Commits: `8bc33c3`, `b2c4f3f`, `ee0d1bc`.
+
 ## 2026-05-04 (sesión 7 — Admin completo + AI real)
 
 - Creado `GET /api/admin/users`: lista usuarios con email (auth), rol, teléfono, WhatsApp consent, conteos de presupuestos y expedientes activos/totales.
