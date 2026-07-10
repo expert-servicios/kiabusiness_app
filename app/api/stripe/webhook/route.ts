@@ -6,6 +6,7 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
+import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import {
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
@@ -516,12 +517,12 @@ export async function POST(req: NextRequest) {
         const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
         const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
         const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
-        const calFormacionLink = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
-        const calendlyFormacion = calFormacionLink ? `https://cal.com/${calFormacionLink}` : '';
+        const calendlyOnboarding = getCalOnboardingUrl() ?? '';
+        const calendlyFormacion = getCalFormacionUrl() ?? '';
 
         if (isHoldedMigration) {
           const packageName = serviceName;
-          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyFormacion);
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
@@ -608,12 +609,12 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calFormacionLink = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
-        const calendlyFormacion = calFormacionLink ? `https://cal.com/${calFormacionLink}` : '';
+        const calendlyOnboarding = getCalOnboardingUrl() ?? '';
+        const calendlyFormacion = getCalFormacionUrl() ?? '';
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
-          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyFormacion);
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
