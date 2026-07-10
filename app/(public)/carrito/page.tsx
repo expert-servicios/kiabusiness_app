@@ -13,6 +13,10 @@ const HOLDED_PACKAGE_PRICE_IDS = [
   'price_1SxNLlLeYwwgvux4IjCOgIQl',
 ];
 
+// Deshabilitado temporalmente mientras se prioriza el contenido de las
+// páginas de migración — los datos se conservan para reactivar en 1 línea.
+const ADDONS_ENABLED = false;
+
 const HOLDED_ADDONS = [
   {
     priceId: 'price_1TZqKbLeYwwgvux4NHtVCmEV',
@@ -40,7 +44,7 @@ const HOLDED_ADDONS = [
 export default function CarritoPage() {
   const { items, removeItem, clearCart } = useCart();
   const hasHoldedPackage = items.some(i => HOLDED_PACKAGE_PRICE_IDS.includes(i.priceId));
-  const visibleAddons = HOLDED_ADDONS.filter(a => !items.some(i => i.priceId === a.priceId));
+  const visibleAddons = ADDONS_ENABLED ? HOLDED_ADDONS.filter(a => !items.some(i => i.priceId === a.priceId)) : [];
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);

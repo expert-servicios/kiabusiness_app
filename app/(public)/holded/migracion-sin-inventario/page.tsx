@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Check, X, ArrowRight, Calendar, Phone, BookOpen, FileText, ChevronDown } from 'lucide-react';
+import { Check, X, ArrowRight, Calendar, Phone, BookOpen, FileText, ChevronDown, GraduationCap, Sparkles } from 'lucide-react';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
+import { RequestProposalModal } from '@/components/holded/RequestProposalModal';
 import { FaqSection } from '@/components/site/FaqSection';
 import { articles } from '@/lib/utils/blog';
+import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
+
+const CAL_ONBOARDING_URL = getCalOnboardingUrl();
+const CAL_FORMACION_URL = getCalFormacionUrl();
+const SERVICE_NAME = 'Migración a Holded — Sin Inventario';
 
 export const metadata: Metadata = {
   title: 'Migración a Holded sin Inventario: importar facturas y datos históricos | EXPERT',
@@ -32,6 +38,9 @@ const INCLUDES = [
   'Configuración básica de empresa en Holded si no está hecha',
   'Informe de incidencias detectadas durante la importación',
   'Soporte por email durante 30 días',
+  '1 hora de onboarding gratuita para arrancar con Holded',
+  '2 horas de formación especializada sobre los módulos que usas',
+  'Cuenta lista para conectar integraciones personalizadas, incluida IA Claude',
 ];
 
 const NOT_INCLUDES = [
@@ -198,6 +207,74 @@ export default function MigracionSinInventarioPage() {
             <p className="mt-6 text-xs text-[#9CA3AF]">
               Pago único · Requiere cuenta Holded activa · Partner Oficial Holded
             </p>
+
+            <div className="mt-6">
+              <RequestProposalModal
+                serviceName={SERVICE_NAME}
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#F8F6F1]/80 underline underline-offset-4 transition hover:text-[#D4A017]"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Acompañamiento incluido ───────────────────────────────────────── */}
+      <section className="bg-[#F8F6F1] px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Acompañamiento</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold text-[#0D1B2A] md:text-4xl">
+              No solo migramos datos, te dejamos operativo
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            <div className="border border-[#D4A017]/25 bg-white p-6">
+              <Calendar className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 font-serif text-lg font-bold text-[#0D1B2A]">1 hora de onboarding gratuita</h3>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Una sesión guiada para arrancar con Holded ya migrado: dónde está cada cosa y cómo empezar a trabajar desde el primer día.
+              </p>
+              {CAL_ONBOARDING_URL && (
+                <a
+                  href={CAL_ONBOARDING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] hover:text-[#c88b25]"
+                >
+                  Reservar onboarding <ArrowRight className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+            <div className="border border-[#D4A017]/25 bg-white p-6">
+              <GraduationCap className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 font-serif text-lg font-bold text-[#0D1B2A]">2 horas de formación especializada</h3>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Formación práctica sobre los módulos de Holded que realmente usas, para que tu equipo saque partido desde el primer día.
+              </p>
+              {CAL_FORMACION_URL && (
+                <a
+                  href={CAL_FORMACION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] hover:text-[#c88b25]"
+                >
+                  Reservar formación <ArrowRight className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+            <div className="border border-[#D4A017]/25 bg-white p-6">
+              <Sparkles className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 font-serif text-lg font-bold text-[#0D1B2A]">Integraciones personalizadas — IA Claude</h3>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Dejamos tu cuenta lista para conectar Claude a Holded: consulta facturas, contactos o tesorería en lenguaje natural.
+              </p>
+              <Link
+                href="/holded/conectores/claude"
+                className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] hover:text-[#c88b25]"
+              >
+                Ver cómo funciona <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -445,6 +522,10 @@ export default function MigracionSinInventarioPage() {
               <Phone className="h-4 w-4" />
               Llamada 15 min sin coste
             </HoldedCalendlyButton>
+            <RequestProposalModal
+              serviceName={SERVICE_NAME}
+              className="inline-flex min-h-12 items-center gap-2 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/70 underline underline-offset-4 transition hover:text-[#D4A017]"
+            />
           </div>
           <p className="mt-6 text-xs text-[#9CA3AF]">
             ¿Necesitas migrar también inventario?{' '}

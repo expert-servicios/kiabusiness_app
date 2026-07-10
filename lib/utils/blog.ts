@@ -3867,6 +3867,128 @@ Antes de presentar un arraigo, revisamos tu situación y te indicamos la modalid
 
 **Fuentes oficiales**: [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Real Decreto 316/2026 (BOE-A-2026-8284)](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-8284)
     `
+  },
+  {
+    slug: 'ahorra-horas-ia-conectada-holded',
+    category: 'Holded',
+    title: 'Ahorra horas cada semana: lo que cambia cuando conectas IA a tu Holded',
+    excerpt: 'Consultar facturas, tesorería o stock en una frase en vez de navegar pantallas. Qué cambia realmente en el día a día cuando conectas Claude a tu cuenta de Holded.',
+    date: '10 jul 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'IA', 'Claude', 'productividad', 'automatización contable'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    body: `
+## El problema no es Holded, es el tiempo que se va en preguntas pequeñas
+
+"¿Cuánto tengo pendiente de cobro este mes?" "¿Le hemos facturado ya a este cliente?" "¿Cuánto stock queda de esta referencia?" Son preguntas de 10 segundos de respuesta, pero que hoy implican abrir Holded, buscar la sección correcta, filtrar y leer. Multiplicado por cuántas veces al día se repite, son minutos que se acumulan.
+
+## Qué cambia con Claude conectado a Holded
+
+Con el conector oficial de Holded, estas mismas preguntas se responden en lenguaje natural, sin navegar pantallas:
+
+- "¿Cuánto tengo pendiente de cobro este mes?" → resumen inmediato de facturas pendientes.
+- "Crea una factura a [cliente] por [concepto]" → factura creada, lista para revisar.
+- "¿Cuánto stock queda de [producto]?" → disponibilidad al momento, sin abrir el módulo de inventario.
+- "Dame un resumen de tesorería de esta semana" → saldo y movimientos relevantes, sin exportar nada.
+
+No sustituye la revisión profesional de tu asesoría — sigue siendo tu gestor quien valida y presenta impuestos — pero elimina la fricción de las consultas rápidas del día a día.
+
+## Por qué esto solo funciona bien con datos limpios
+
+La IA es tan buena como los datos sobre los que trabaja. Si tu histórico tiene duplicados, NIFs mal introducidos o facturas sin clasificar, las respuestas heredan ese ruido. Por eso tiene más sentido activar esta integración **después** de una migración o implantación bien hecha, no antes — es exactamente el punto en el que dejamos la cuenta cuando migramos tu historial a Holded.
+
+## No hace falta ser una empresa grande para beneficiarte
+
+No es una herramienta pensada solo para equipos grandes con muchos usuarios. Un autónomo o una pyme pequeña con pocas horas para dedicar a "mirar Holded" es, si acaso, quien más nota la diferencia: menos tiempo revisando pantallas, más tiempo en lo que genera negocio.
+
+---
+
+En EXPERT dejamos tu cuenta de Holded lista para conectar Claude como parte del onboarding incluido en nuestros servicios de migración e implantación.
+
+**Fuente oficial**: [Holded — Servidor MCP](https://www.holded.com/developers/mcp)
+    `
+  },
+  {
+    slug: 'casos-reales-claude-holded-facturas-tesoreria-stock',
+    category: 'Holded',
+    title: 'Facturas, tesorería y stock en una frase: casos reales de Claude + Holded',
+    excerpt: 'Ejemplos concretos de lo que puedes pedirle a Claude una vez conectado a tu cuenta de Holded: desde crear una factura hasta consultar el estado de tu inventario.',
+    date: '10 jul 2026',
+    readTime: '6 min',
+    tags: ['Holded', 'IA', 'Claude', 'casos de uso', 'gestión empresarial'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    body: `
+## Cuatro escenarios reales
+
+### 1. Cierre rápido de facturación pendiente
+Antes de una reunión o al final de la semana, en vez de entrar a Holded y filtrar por estado, puedes preguntar directamente "¿qué facturas tengo pendientes de cobro esta semana?" y obtener la lista al momento, con importes y clientes.
+
+### 2. Crear una factura sin salir del chat
+"Crea una factura a [cliente] por [concepto], [importe]" genera la factura en Holded lista para revisar y enviar. Sigue siendo responsabilidad tuya (o de tu asesor) confirmar que los datos fiscales son correctos antes de emitirla en firme.
+
+### 3. Consultar stock antes de confirmar un pedido
+Para negocios con inventario migrado a Holded: "¿cuánto stock queda de [referencia]?" da la respuesta sin entrar al módulo de inventario — útil cuando estás fuera de la oficina o hablando con un cliente por teléfono.
+
+### 4. Fotografía rápida de tesorería
+"Dame un resumen de tesorería de este mes" ofrece una vista general de saldo y movimientos relevantes, sin tener que exportar ni cruzar datos manualmente.
+
+## Lo que la IA no hace (y no debería hacer)
+
+No presenta impuestos, no decide criterios fiscales ni sustituye la revisión de tu asesoría. Los datos que consulta o modifica son siempre visibles y auditables en tu propia cuenta de Holded — nada ocurre "por detrás" sin que quede registrado donde siempre.
+
+## El requisito previo: datos correctos
+
+Estos casos de uso solo son fiables si el histórico de facturas, contactos y stock está bien migrado — sin duplicados, sin NIFs mal formados, sin huecos en el inventario. Una migración ordenada no es solo estética: es lo que hace que estas consultas den respuestas correctas desde el primer día.
+
+---
+
+Si vienes de otro sistema y quieres que tu cuenta de Holded quede lista para trabajar así, nuestros servicios de migración incluyen justo esa preparación.
+
+**Fuente oficial**: [Holded — Servidor MCP](https://www.holded.com/developers/mcp)
+    `
+  },
+  {
+    slug: 'es-seguro-conectar-ia-contabilidad-holded',
+    category: 'Holded',
+    title: '¿Es seguro conectar una IA a tu contabilidad? Lo que debes saber antes de activarlo',
+    excerpt: 'Antes de conectar Claude a tu cuenta de Holded es normal tener dudas de seguridad. Cómo funciona realmente la autorización, qué permisos puede tener la IA y qué controlas tú en todo momento.',
+    date: '10 jul 2026',
+    readTime: '5 min',
+    tags: ['Holded', 'IA', 'Claude', 'seguridad', 'permisos'],
+    relatedServiceSlugs: ['holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    body: `
+## La pregunta lógica: "¿le estoy dando acceso a mi contabilidad a una IA?"
+
+Es una duda razonable, sobre todo la primera vez que se plantea conectar cualquier IA a un sistema que maneja facturas, clientes y tesorería. La respuesta corta: sí hay una conexión real, pero con un control de permisos más estricto de lo que suele imaginarse.
+
+## Cómo se autoriza la conexión
+
+Holded usa **OAuth 2.1**, el mismo tipo de estándar que usan la mayoría de aplicaciones serias para conectar servicios entre sí (es el mecanismo detrás de "iniciar sesión con Google" en muchas apps). Tú inicias sesión en tu propia cuenta de Holded desde el navegador y decides explícitamente qué autorizas — no se comparte ninguna contraseña con Claude.
+
+## La IA nunca puede hacer más de lo que tú puedes hacer
+
+Este es el punto clave: el conector **hereda tus propios permisos de usuario en Holded**. Existen tres niveles:
+
+- **Analista**: solo consulta (facturas, contactos, saldos, stock) — no puede modificar nada.
+- **Operador**: consulta y también puede crear facturas, añadir contactos o registrar pagos.
+- **Personalizado**: eliges permiso por permiso, para un control más ajustado.
+
+Si tu usuario no tiene permiso para borrar una factura, por ejemplo, la IA tampoco puede hacerlo a través del conector. No hay un "modo especial" para la IA que se salte tus propios controles de acceso.
+
+## Puedes revisar y revocar el acceso cuando quieras
+
+Los accesos autorizados se pueden consultar y revocar en cualquier momento desde la sección de desarrolladores de tu cuenta de Holded — igual que revocarías cualquier otra integración conectada.
+
+## Recomendación práctica
+
+Si es la primera vez que lo activas, empezar en modo **Analista** (solo lectura) es razonable: te permite comprobar cómo funciona sin riesgo de que se modifique nada, y subir a Operador más adelante si te resulta útil crear facturas o registrar pagos directamente.
+
+---
+
+Si tienes dudas sobre si activar esta integración te conviene, lo revisamos como parte del acompañamiento de nuestros servicios de migración e implantación de Holded.
+
+**Fuente oficial**: [Holded — Servidor MCP](https://www.holded.com/developers/mcp)
+    `
   }
 ];
 
