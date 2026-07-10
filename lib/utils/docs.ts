@@ -1092,6 +1092,116 @@ Tras el alta recibirás:
 - **Confirmación del alta censal** de Hacienda.
 - **CCC (Código de Cuenta de Cotización)** si vas a tener empleados.
     `
+  },
+
+  // ── Holded ─────────────────────────────────────────────────────────────────
+  {
+    slug: 'novedades-holded-2026-verifactu-wallet-tpv',
+    category: 'holded',
+    title: 'Novedades de Holded 2026: Verifactu, Holded Wallet y TPV',
+    excerpt:
+      'Qué ha cambiado en Holded en 2026: la obligación de Verifactu y sus plazos reales, la nueva cuenta integrada Holded Wallet, el TPV para tienda física y las mejoras de gestión de equipo.',
+    tags: ['Holded', 'Verifactu', 'Holded Wallet', 'TPV Holded', 'facturación electrónica', 'AEAT'],
+    updatedAt: '10 jul 2026',
+    readTime: '9 min',
+    relatedServiceSlugs: ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    relatedServiceCategories: ['holded'],
+    seoTitle: 'Novedades de Holded 2026: Verifactu, Wallet y TPV | EXPERT',
+    seoDescription:
+      'Guía actualizada de las novedades de Holded en 2026: plazos reales de Verifactu, Holded Wallet, TPV para tienda física y mejoras de nómina y conciliación.',
+    body: `
+## Verifactu: la novedad que más preguntas genera
+
+Verifactu es el sistema de la AEAT para verificar facturas en tiempo real y luchar contra el fraude fiscal. Obliga a que los programas de facturación generen, para cada factura, un registro inalterable con hash y firma electrónica, además de un código QR de verificación y la leyenda **"VERI*FACTU"**, para que cualquier receptor pueda comprobar su autenticidad directamente con la AEAT.
+
+**Plazos reales** (no confundir con la fecha de aprobación del reglamento):
+
+- **1 de enero de 2027**: fecha límite para empresas sujetas al Impuesto de Sociedades.
+- **1 de julio de 2027**: fecha límite para autónomos, pymes y el resto de contribuyentes.
+
+Holded ya es **colaborador social de la AEAT** para Verifactu y su software cumple los requisitos técnicos del reglamento, por lo que no hace falta ningún cambio de proveedor: el cumplimiento se activa dentro de la propia cuenta.
+
+## Holded Wallet: cuenta de empresa integrada
+
+Holded Wallet es una cuenta bancaria de empresa integrada directamente en la plataforma: permite cobrar con tarjeta y gestionar cobros y pagos sin salir de Holded, con conciliación automática de las facturas asociadas a cada movimiento. Reduce el paso manual de cruzar el banco con la contabilidad que antes había que hacer aparte.
+
+## TPV para tienda física
+
+El TPV de Holded, pensado para tablets, permite gestionar caja, productos y almacenes desde el propio punto de venta. Cada venta registrada en el TPV se refleja automáticamente en la contabilidad y actualiza el stock en tiempo real — relevante sobre todo para quienes ya tienen el módulo de inventario migrado.
+
+## Otras mejoras recientes de producto
+
+- **Nómina colaborativa**: cálculo automático de bruto, neto y retenciones directamente en la plataforma, con generación de PDF y asiento contable.
+- **Conciliación de facturas mejorada**: vincular movimientos bancarios a facturas desde una sola vista, sin salir del documento.
+- **Gestión de equipo y organigrama**: estructura de la empresa visible de un vistazo, con fichaje y gestión de ausencias centralizados.
+
+## Qué significa esto si estás migrando o ya tienes Holded
+
+Ninguna de estas novedades obliga a rehacer nada si tu cuenta está bien configurada. Verifactu es la que exige más atención por su componente legal — conviene confirmar antes de los plazos indicados que la facturación de tu cuenta ya cumple el reglamento. Holded Wallet y el TPV son opcionales y se activan cuando los necesitas, no cambian el funcionamiento del resto de la cuenta.
+
+Si vienes de otro sistema y no tienes claro cómo queda tu cuenta respecto a estas novedades, es uno de los puntos que revisamos en el onboarding incluido en nuestros servicios de migración e implantación.
+
+---
+
+**Fuentes oficiales**: [Holded — Verifactu](https://www.holded.com/verifactu-invoicing-software) · [Holded — colaborador social AEAT para Verifactu](https://www.holded.com/es/blog/colaborador-social-verifactu-aeat) · [Novedades de producto — news.holded.com](https://news.holded.com/)
+    `
+  },
+  {
+    slug: 'holded-conector-claude-ia-que-puede-hacer',
+    category: 'holded',
+    title: 'Conector Claude para Holded: qué puede hacer la IA con tu cuenta',
+    excerpt:
+      'Guía técnica del conector MCP de Holded con Claude: qué acciones puede hacer la IA (facturas, contactos, stock, tesorería), cómo funciona la autorización y el modelo de permisos.',
+    tags: ['Holded', 'Claude', 'IA', 'MCP', 'conector Holded', 'automatización'],
+    updatedAt: '10 jul 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'],
+    relatedServiceCategories: ['holded'],
+    seoTitle: 'Conector Claude para Holded: qué puede hacer la IA | EXPERT',
+    seoDescription:
+      'Cómo funciona el conector MCP de Holded con Claude: capacidades reales, modelo de permisos de tres niveles y seguridad de la conexión OAuth 2.1.',
+    body: `
+## Qué es el conector Claude para Holded
+
+Holded ofrece un servidor MCP (Model Context Protocol) oficial que permite conectar Claude directamente a tu cuenta. Una vez autorizada la conexión, puedes pedirle a Claude en lenguaje natural que trabaje con tus datos de Holded, sin abrir la plataforma ni buscar manualmente cada dato.
+
+## Qué puede hacer Claude conectado a Holded
+
+- **Facturación**: crear facturas, listarlas por estado, registrar pagos.
+- **Contactos**: consultar y gestionar la ficha de clientes y proveedores.
+- **Inventario**: consultar stock y disponibilidad de producto.
+- **Tesorería**: comprobar saldos y generar resúmenes del estado financiero.
+
+Todo mediante peticiones normales como "lista las facturas pendientes de cobro" o "consulta el stock de este producto" — sin sintaxis técnica.
+
+## Cómo funciona la autorización
+
+La conexión usa **OAuth 2.1 sobre Streamable HTTP**, el estándar habitual para este tipo de integraciones. El usuario autoriza el acceso iniciando sesión en su navegador; los tokens generados se pueden revisar y revocar en cualquier momento desde la sección de desarrolladores de Holded.
+
+## El punto clave de seguridad: Claude nunca hace más de lo que tú puedes hacer
+
+El conector hereda los permisos del usuario que autoriza la conexión. Existen tres niveles:
+
+- **Analista**: solo lectura (consultar facturas, contactos, saldos, stock).
+- **Operador**: lectura y escritura (además puede crear facturas, añadir contactos, registrar pagos).
+- **Personalizado**: permisos elegidos uno a uno para un control más fino.
+
+Si tu usuario de Holded no tiene permiso para hacer algo, Claude tampoco puede hacerlo a través del conector — la IA no obtiene ningún privilegio adicional al que ya tiene la persona que autoriza la conexión.
+
+## Requisitos para activarlo
+
+- Cuenta Holded activa con acceso a la API habilitado.
+- Un cliente compatible con MCP (Claude Desktop, Claude.ai o similar).
+- En workspaces de tipo Team o Enterprise, hace falta acceso de administrador para añadir el conector.
+
+## Cuándo tiene sentido activarlo
+
+Tiene más sentido una vez los datos de la cuenta ya están limpios y validados — es lo que dejamos preparado en nuestros servicios de migración e implantación de Holded, para que la IA trabaje sobre datos correctos desde el primer día.
+
+---
+
+**Fuente oficial**: [Holded — Servidor MCP](https://www.holded.com/developers/mcp)
+    `
   }
 ];
 

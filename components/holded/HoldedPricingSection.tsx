@@ -87,6 +87,10 @@ type Addon = {
   description : string;
 };
 
+// Deshabilitado temporalmente mientras se prioriza el contenido de las
+// páginas de migración — los datos se conservan para reactivar en 1 línea.
+const ADDONS_ENABLED = false;
+
 const ADDONS: Addon[] = [
   {
     priceId     : 'price_1TZqKbLeYwwgvux4NHtVCmEV',
@@ -333,14 +337,16 @@ export function HoldedPricingSection() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">
-                    Módulos opcionales · {selectedPkg.name}
+                    {selectedPkg.name}
                   </p>
                   <h3 className="mt-1 font-serif text-xl font-bold text-[#0D1B2A]">
-                    ¿Quieres añadir módulos complementarios?
+                    Confirma tu paquete
                   </h3>
-                  <p className="mt-1 text-sm text-[#23364D]/70">
-                    Se incluyen en el mismo pago. Puedes omitirlos si no los necesitas ahora.
-                  </p>
+                  {ADDONS_ENABLED && (
+                    <p className="mt-1 text-sm text-[#23364D]/70">
+                      Se incluyen en el mismo pago. Puedes omitirlos si no los necesitas ahora.
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -353,41 +359,43 @@ export function HoldedPricingSection() {
               </div>
 
               {/* Add-on toggle cards */}
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                {ADDONS.map(({ priceId, name, Icon, description, displayPrice }) => {
-                  const isOn = selectedAddonIds.has(priceId);
-                  return (
-                    <button
-                      key={priceId}
-                      type="button"
-                      onClick={() => toggleAddon(priceId)}
-                      className={[
-                        'relative flex flex-col items-start gap-3 border p-5 text-left transition-all',
-                        isOn
-                          ? 'border-[#D4A017] bg-white shadow-[0_4px_16px_rgba(212,160,23,0.15)]'
-                          : 'border-[#D4A017]/25 bg-white/70 hover:border-[#D4A017]/60 hover:bg-white',
-                      ].join(' ')}
-                    >
-                      {/* Checkbox indicator */}
-                      <span className={[
-                        'absolute right-4 top-4 flex h-5 w-5 items-center justify-center border transition-all',
-                        isOn ? 'border-[#D4A017] bg-[#D4A017]' : 'border-[#D4A017]/40 bg-white',
-                      ].join(' ')}>
-                        {isOn && <Check className="h-3 w-3 text-[#0D1B2A]" strokeWidth={3} />}
-                      </span>
+              {ADDONS_ENABLED && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  {ADDONS.map(({ priceId, name, Icon, description, displayPrice }) => {
+                    const isOn = selectedAddonIds.has(priceId);
+                    return (
+                      <button
+                        key={priceId}
+                        type="button"
+                        onClick={() => toggleAddon(priceId)}
+                        className={[
+                          'relative flex flex-col items-start gap-3 border p-5 text-left transition-all',
+                          isOn
+                            ? 'border-[#D4A017] bg-white shadow-[0_4px_16px_rgba(212,160,23,0.15)]'
+                            : 'border-[#D4A017]/25 bg-white/70 hover:border-[#D4A017]/60 hover:bg-white',
+                        ].join(' ')}
+                      >
+                        {/* Checkbox indicator */}
+                        <span className={[
+                          'absolute right-4 top-4 flex h-5 w-5 items-center justify-center border transition-all',
+                          isOn ? 'border-[#D4A017] bg-[#D4A017]' : 'border-[#D4A017]/40 bg-white',
+                        ].join(' ')}>
+                          {isOn && <Check className="h-3 w-3 text-[#0D1B2A]" strokeWidth={3} />}
+                        </span>
 
-                      <div className="flex h-10 w-10 items-center justify-center bg-[#D4A017]/10">
-                        <Icon className="h-5 w-5 text-[#D4A017]" />
-                      </div>
-                      <div className="pr-6">
-                        <p className="font-serif text-base font-bold text-[#0D1B2A]">{name}</p>
-                        <p className="mt-1 text-xs leading-5 text-[#23364D]/80">{description}</p>
-                      </div>
-                      <p className="mt-auto font-bold text-[#D4A017]">{displayPrice}</p>
-                    </button>
-                  );
-                })}
-              </div>
+                        <div className="flex h-10 w-10 items-center justify-center bg-[#D4A017]/10">
+                          <Icon className="h-5 w-5 text-[#D4A017]" />
+                        </div>
+                        <div className="pr-6">
+                          <p className="font-serif text-base font-bold text-[#0D1B2A]">{name}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#23364D]/80">{description}</p>
+                        </div>
+                        <p className="mt-auto font-bold text-[#D4A017]">{displayPrice}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Summary + CTA */}
               <div className="mt-6 flex flex-col gap-4 border-t border-[#D4A017]/30 pt-6 sm:flex-row sm:items-end sm:justify-between">

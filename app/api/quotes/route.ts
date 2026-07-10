@@ -11,6 +11,7 @@ const quoteRequestSchema = z.object({
   hp_url: z.string().optional(),
   email: z.string().email(),
   name: z.string().min(2).max(100),
+  phone: z.string().max(20).optional(),
   services: z.array(z.string().min(1)).min(1),
   description: z.string().max(1000).optional(),
   recaptcha_token: z.string().optional()
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       .insert({
         name: validated.name,
         email: validated.email,
-        phone: null,
+        phone: validated.phone?.trim() || null,
         client_type: 'persona_fisica',
         category: 'Presupuesto',
         service: serviceList,
