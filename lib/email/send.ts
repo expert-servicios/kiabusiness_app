@@ -8,7 +8,7 @@ export interface EmailAttachment {
   type?: string;
 }
 
-interface SendEmailOptions {
+export interface SendEmailOptions {
   to: string | string[];
   eventType: string;
   subject: string;

@@ -15,6 +15,29 @@ import {
   caseDelivered
 } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
+import type { CaseStatus } from '@/lib/cases/case-status';
+
+// IMP-034: este endpoint legado escribe la columna `state` (vocabulario de 8
+// etapas); el flujo nuevo (app/api/admin/cases/[id]/route.ts, panel tenant)
+// lee/escribe `status` (vocabulario de 6 etapas). Sin este mapeo ambas
+// columnas divergen y un expediente puede verse "congelado" en una vista
+// mientras avanza en la otra. No es una unificacion completa — solo
+// mantiene `status` sincronizado en el unico punto de escritura de `state`.
+const STATE_TO_STATUS: Record<string, CaseStatus> = {
+  nuevo:                    'nuevo',
+  docs_pendientes:          'pendiente_cliente',
+  docs_recibidos:           'en_revision',
+  en_tramitacion:           'en_revision',
+  pendiente_externo:        'presentado',
+  resolucion_recibida:      'presentado',
+  entregado:                'finalizado',
+  finalizado:               'finalizado',
+  // Legacy aliases
+  pendiente_documentacion:  'pendiente_cliente',
+  en_revision:              'en_revision',
+  en_proceso:               'en_revision',
+  presentado:               'presentado',
+};
 
 const ALL_STATES = [
   // New 8-stage flow
@@ -171,7 +194,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // Build update payload
     const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (state) updatePayload.state = state;
+    if (state) {
+      updatePayload.state = state;
+      const mappedStatus = STATE_TO_STATUS[state];
+      if (mappedStatus) updatePayload.status = mappedStatus;
+    }
     if (state === 'finalizado' || state === 'entregado') updatePayload.closed_at = new Date().toISOString();
     if (admin_note !== undefined) updatePayload.admin_note = admin_note;
     if (docs_checklist !== undefined) updatePayload.docs_checklist = docs_checklist;

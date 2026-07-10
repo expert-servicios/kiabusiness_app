@@ -131,7 +131,7 @@ Criterio de aceptacion: o se elimina `AdminCaseCard`/`state` en favor de `status
 
 ### IMP-033 - Calendario fiscal del cliente roto + fuga de datos entre clientes para admin
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — nuevo `GET /api/fiscal-calendar` client-scoped (filtra `user_id = auth.uid()`), pagina de cliente repuntada ahi en vez de `/api/admin/fiscal-calendar`. `npx tsc --noEmit` limpio.
 
 Riesgo: `app/(protected)/dashboard/calendario-fiscal/page.tsx:29` llama a `/api/admin/fiscal-calendar`, protegido con `requireAdmin` (403 para clientes). Resultado: clientes normales ven siempre "0 obligaciones" (la seccion esta rota al 100% para ellos); un admin/owner viendo su propio panel de cliente recibe en cambio las obligaciones de TODOS los clientes mezcladas, porque la llamada no manda `userId`.
 
@@ -141,7 +141,7 @@ Criterio de aceptacion: crear `GET /api/fiscal-calendar` client-scoped (filtra p
 
 ### IMP-034 - Unificar las dos maquinas de estado de expediente (`cases.state` vs `cases.status`)
 
-Estado: [ ]
+Estado: [x] Sincronizado 2026-07-10 (no unificado del todo — decision consciente, ver nota). `app/api/cases/[id]/route.ts` ahora escribe tambien `status` (mapeado desde `state` via `STATE_TO_STATUS`) en el mismo punto donde escribe `state`, para que el panel tenant y `/api/admin/cases/[id]` dejen de ver un expediente "congelado". No se elimino la columna `state` ni se migro `AdminCaseCard` — eso seria un refactor mas grande y arriesgado que excede el alcance de un fix P1; queda como mejora futura si se decide unificar del todo. `npx tsc --noEmit` limpio.
 
 Riesgo: el panel de cliente y `AdminCaseCard`/`/api/cases/[id]` leen/escriben `state` (vocabulario legado); `/api/admin/cases/[id]` (mas rico: transiciones validadas, prioridad, notificacion tenant_admin, token de reseña, snapshot de rentabilidad) y el panel tenant leen/escriben `status`. Nada sincroniza ambas — causa raiz de IMP-032, y riesgo de que un expediente se vea "congelado" en una vista mientras avanza en la otra.
 
@@ -151,7 +151,7 @@ Criterio de aceptacion: decidir fuente de verdad unica (`status`, es el vocabula
 
 ### IMP-035 - 3-4 implementaciones de "completar perfil" con validacion inconsistente
 
-Estado: [ ]
+Estado: [x] Resuelto parcialmente 2026-07-10 (minimo viable, ver criterio). `dashboard/onboarding/page.tsx` ahora exige telefono igual que `profile-readiness.ts`/`QuickProfileGate` (validacion en cliente + siempre se envia al PATCH). La unificacion completa en un solo componente reutilizable queda como mejora a medio plazo, no era parte del criterio minimo. `npx tsc --noEmit` limpio.
 
 Riesgo: `dashboard/onboarding/page.tsx` (`ProfileStepForm`) no exige telefono; `lib/utils/profile-readiness.ts` y `QuickProfileGate.tsx` si lo exigen. Un cliente puede completar el onboarding sin telefono, ver "¡Todo listo!", y que el sistema le siga considerando con perfil incompleto en la siguiente compra — contradictorio. Contando `PostPurchaseProfileStep.tsx` y `ProfileForm.tsx` (`/dashboard/perfil`), son 4 implementaciones distintas del mismo formulario.
 
@@ -161,7 +161,7 @@ Criterio de aceptacion: onboarding exige telefono igual que el resto (minimo via
 
 ### IMP-036 - Emails de cliente sin `try/catch` en el webhook de Stripe + guard de idempotencia = eventos huerfanos
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — nuevo helper `sendClientEmail()` (try/catch + log, no lanza) reemplaza los 8 sitios que hacian `await sendEmail(...)` a cliente sin proteccion; los 3 envios a admin (ya con `.catch()`) no se tocaron. `SendEmailOptions` exportado desde `lib/email/send.ts` para tipar el wrapper. `npx tsc --noEmit` limpio.
 
 Riesgo: `app/api/stripe/webhook/route.ts` (lineas ~348-354, 525-550) hace `await sendEmail(...)` a cliente sin `try/catch` (los emails a admin si llevan `.catch()`). Si Resend falla, la excepcion tumba el `POST` con 500; Stripe reintenta, pero el guard de idempotencia (`stripe_processed_events`) ya registro el `event.id` antes de procesar nada, asi que el reintento no vuelve a ejecutar el resto del flujo (sync Holded, etc.) para ese evento — queda huerfano para siempre.
 
@@ -171,7 +171,7 @@ Criterio de aceptacion: envolver los `sendEmail()` a cliente en `try/catch` (igu
 
 ### IMP-037 - El streaming de Kia se queda mudo (`—`) si el proveedor de IA falla
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — `streamAnthropicText` ahora lanza (en vez de `return` silencioso) cuando falta la API key o Anthropic responde con error; el try/catch ya existente en `app/api/kia/copilot/route.ts` lo convierte en un evento SSE `{type:'error'}` explicito en vez de un `done` vacio. `npx tsc --noEmit` limpio.
 
 Riesgo: `lib/ai/kia/kia-provider-router.ts:410` (`streamAnthropicText`): `if (!response.ok || !response.body) return;` — sin lanzar excepcion ni marcar error. El bucle en `app/api/kia/copilot/route.ts:204-213` no detecta nada raro y llega a `done` con artifacts vacios; `KiaCopilotPanel.tsx:225-231` muestra literalmente `—` al usuario, como si Kia hubiera respondido vacio en vez de fallado.
 
@@ -191,7 +191,7 @@ Criterio de aceptacion (a medio plazo, no bloqueante para los P0 de arriba): con
 
 ### IMP-039 - "Hacer admin" sin confirmacion en el panel de usuarios
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — nuevo modal `make_admin` en `AdminUsersTable.tsx`, mismo patron que el modal de eliminar (`ModalShell` + confirmacion explicita), en vez de ejecutar `handleRoleChange` directo desde el `onClick`. `npx tsc --noEmit` limpio.
 
 Riesgo: `components/admin/AdminUsersTable.tsx:484-486` ejecuta `handleRoleChange(u, 'admin')` directo en el `onClick`, sin modal — a diferencia de "Eliminar usuario", que si tiene doble confirmacion. Un clic accidental concede acceso admin a un cliente.
 

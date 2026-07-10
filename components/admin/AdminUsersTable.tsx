@@ -32,7 +32,7 @@ export interface AdminUser {
 
 type SortKey = 'full_name' | 'email' | 'created_at' | 'totalCases' | 'totalQuotes' | 'role';
 type SortDir = 'asc' | 'desc';
-type Modal = null | 'invite' | 'edit' | 'companies' | 'delete' | 'whatsapp';
+type Modal = null | 'invite' | 'edit' | 'companies' | 'delete' | 'whatsapp' | 'make_admin';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -184,6 +184,15 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: AdminUser[] })
   const openDelete = (u: AdminUser) => {
     setSelectedUser(u);
     setModal('delete');
+    setOpenMenu(null);
+  };
+
+  // IMP-039: conceder rol admin es una accion sensible (acceso a clientes,
+  // pagos, integraciones, Kia) — antes se ejecutaba directo desde el
+  // onClick del menu, sin confirmacion, a diferencia de "Eliminar usuario".
+  const openMakeAdmin = (u: AdminUser) => {
+    setSelectedUser(u);
+    setModal('make_admin');
     setOpenMenu(null);
   };
 
@@ -481,7 +490,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: AdminUser[] })
                           </button>
                           <div className="my-1 border-t border-[#f8f4eb]" />
                           {u.role !== 'admin' && (
-                            <button type="button" onClick={() => handleRoleChange(u, 'admin')} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-[#07111d] hover:bg-[#f8f4eb]">
+                            <button type="button" onClick={() => openMakeAdmin(u)} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-[#07111d] hover:bg-[#f8f4eb]">
                               <ShieldCheck className="h-3.5 w-3.5 text-[#d7a33a]" /> Hacer admin
                             </button>
                           )}
@@ -659,6 +668,30 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: AdminUser[] })
               <button type="button" onClick={handleDelete} disabled={loading} className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-60">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Eliminar definitivamente
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
+      {modal === 'make_admin' && selectedUser && (
+        <ModalShell title="Conceder rol de administrador" onClose={closeModal}>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-800">Esta acción concede acceso interno completo.</p>
+              <p className="mt-1 text-xs text-amber-700">
+                <strong>{selectedUser.email}</strong> podrá gestionar clientes, pagos, integraciones y el copiloto Kia como parte del equipo de EXPERT.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closeModal} className={btnSecondary}>Cancelar</button>
+              <button
+                type="button"
+                onClick={async () => { await handleRoleChange(selectedUser, 'admin'); closeModal(); }}
+                className="flex items-center gap-1.5 rounded-xl bg-[#d7a33a] px-4 py-2 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25]"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Hacer admin
               </button>
             </div>
           </div>

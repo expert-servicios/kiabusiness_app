@@ -26,7 +26,7 @@ export default async function ClientFiscalCalendarPage({
   const year = new Date().getFullYear();
 
   const [obligationsData, tokenData] = await Promise.all([
-    fetchWithCookies(`/api/admin/fiscal-calendar?year=${year}`),
+    fetchWithCookies(`/api/fiscal-calendar?year=${year}`),
     fetchWithCookies('/api/auth/google-calendar/status'),
   ]);
 

@@ -388,7 +388,12 @@ export async function* streamAnthropicText(
 ): AsyncGenerator<string> {
   const providers = getKiaProviderOrder();
   const anthropic = providers.find((p) => p.provider === "anthropic");
-  if (!anthropic?.apiKey) return;
+  // IMP-037: antes hacia `return` silencioso aqui y en el fallo de fetch de
+  // abajo — el consumidor (app/api/kia/copilot/route.ts) llegaba a `done`
+  // con cero chunks, y el usuario veia literalmente "—" en vez de un error.
+  // Al lanzar, el try/catch que ya existe alli lo convierte en un evento
+  // SSE `error` explicito en vez de un `done` vacio.
+  if (!anthropic?.apiKey) throw new Error('Kia streaming: no hay proveedor Anthropic configurado');
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -407,7 +412,10 @@ export async function* streamAnthropicText(
     }),
   });
 
-  if (!response.ok || !response.body) return;
+  if (!response.ok || !response.body) {
+    const errBody = await response.text().catch(() => '');
+    throw new Error(`Kia streaming: Anthropic respondio ${response.status} ${errBody.slice(0, 200)}`);
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

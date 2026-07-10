@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
-import { sendEmail } from '@/lib/email/send';
+import { sendEmail, type SendEmailOptions } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
@@ -16,6 +16,22 @@ import {
   subscriptionCreated,
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
+
+// IMP-036: los emails de CLIENTE en este webhook se enviaban con `await
+// sendEmail()` sin try/catch. Si Resend fallaba, la excepcion tumbaba el
+// POST con 500 — pero `stripe_processed_events` ya habia marcado el
+// event.id como procesado antes de llegar aqui, asi que el reintento de
+// Stripe chocaba con la clave unica y no volvia a ejecutar nada del resto
+// del flujo (sync Holded incluido) para ese evento. Este wrapper evita que
+// un fallo de envio tumbe el resto del procesamiento (igual que ya hacian
+// los emails a admin con `.catch()`).
+async function sendClientEmail(options: SendEmailOptions): Promise<void> {
+  try {
+    await sendEmail(options);
+  } catch (err) {
+    console.error(`[webhook] client email failed (${options.eventType}):`, err);
+  }
+}
 
 function getAdminEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
@@ -346,7 +362,7 @@ export async function POST(req: NextRequest) {
               }
 
               const tpl = paymentConfirmed(clientName, amountEur, quote.title ?? 'Servicio contratado');
-              await sendEmail({
+              await sendClientEmail({
                 to: clientEmail,
                 eventType: 'payment.confirmed',
                 ...tpl,
@@ -523,7 +539,7 @@ export async function POST(req: NextRequest) {
         if (isHoldedMigration) {
           const packageName = serviceName;
           const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
-          await sendEmail({
+          await sendClientEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
             ...tpl,
@@ -531,7 +547,7 @@ export async function POST(req: NextRequest) {
           });
         } else if (isHoldedFormacion) {
           const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
-          await sendEmail({
+          await sendClientEmail({
             to: customerEmail,
             eventType: 'holded.formacion.confirmed',
             ...tpl,
@@ -539,7 +555,7 @@ export async function POST(req: NextRequest) {
           });
         } else {
           const tpl = servicePaymentConfirmed(customerName, amountEur, serviceName);
-          await sendEmail({
+          await sendClientEmail({
             to: customerEmail,
             eventType: 'service.payment.confirmed',
             ...tpl,
@@ -615,7 +631,7 @@ export async function POST(req: NextRequest) {
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
           const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
-          await sendEmail({
+          await sendClientEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
             ...tpl,
@@ -639,7 +655,7 @@ export async function POST(req: NextRequest) {
           });
         } else {
           const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
-          await sendEmail({
+          await sendClientEmail({
             to: customerEmail,
             eventType: 'holded.formacion.confirmed',
             ...tpl,
@@ -692,7 +708,7 @@ export async function POST(req: NextRequest) {
       const clientInfo = await getClientEmail(subscriptionRecord.clientId);
       if (clientInfo) {
         const tpl = subscriptionCreated(clientInfo.name, subscriptionRecord.planName, subscriptionRecord.periodEnd);
-        await sendEmail({
+        await sendClientEmail({
           to: clientInfo.email,
           eventType: 'subscription.created',
           ...tpl,
@@ -780,7 +796,7 @@ export async function POST(req: NextRequest) {
         const clientInfo = await getClientEmail(clientId);
         if (clientInfo) {
           const tpl = subscriptionPaymentFailed(clientInfo.name, planName);
-          await sendEmail({
+          await sendClientEmail({
             to: clientInfo.email,
             eventType: 'subscription.payment_failed',
             ...tpl,

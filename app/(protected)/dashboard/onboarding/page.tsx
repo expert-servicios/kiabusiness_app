@@ -93,7 +93,7 @@ function ProfileStepForm({ value, onChange }: {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono</label>
+        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono *</label>
         <input
           type="tel"
           value={value.phone}
@@ -314,6 +314,10 @@ export default function OnboardingPage() {
       setError('El nombre completo es obligatorio.');
       return false;
     }
+    if (!profileData.phone.trim()) {
+      setError('El teléfono es obligatorio.');
+      return false;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -322,7 +326,7 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: profileData.full_name.trim(),
-          ...(profileData.phone.trim() ? { phone: profileData.phone.trim() } : {}),
+          phone: profileData.phone.trim(),
         }),
       });
       if (!res.ok) {
