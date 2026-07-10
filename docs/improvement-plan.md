@@ -1,6 +1,6 @@
 # EXPERT - Plan de mejoras
 
-Ultima actualizacion: 2026-07-04
+Ultima actualizacion: 2026-07-10
 
 ## Objetivo
 
@@ -22,6 +22,207 @@ Reglas de ejecucion:
 - Los cambios Supabase deben revisar RLS, grants, service role y exposicion via Data API.
 - Los cambios Stripe deben mantener Checkout/Billing como fuente de verdad y ser idempotentes.
 - Los webhooks deben validar origen, registrar trazabilidad y soportar reintentos.
+
+## P0 — Auditoria end-to-end 2026-07-10 (ABIERTO)
+
+Origen: auditoria de 4 agentes en paralelo (correos/plantillas, Copiloto Kia, Panel de cliente, Panel de Admin), solicitada tras cerrar la migracion de paginas Holded y la integracion de reservas Cal.com. Regla de prioridad: estos items van antes que cualquier feature nueva.
+
+### Hallazgo raiz — commit de seguridad "Fase 1" nunca llego a `main`
+
+El commit `3dd557adb20541bdb8c99d02b47980e6ac776834` ("fix(security): resolve 6 critical audit findings (Fase 1)") implementa: rate limiting de Kia (12 msg/min), tope de coste diario ($2 via `kia_decision_logs`), sanitizacion de `pageData` contra prompt injection, `sandbox` en el iframe de Cal.com, y parte del fix de escalada de privilegios de `admin/team`. Vive unicamente en `upstream/docs-audit-plan` — `git merge-base --is-ancestor 3dd557a HEAD` confirma que NO es ancestro de `main`. El PR correspondiente nunca se abrio/mergeo. Explica directamente IMP-025, IMP-027 y parte de IMP-028.
+
+Fix: revisar el commit completo (puede tener conflictos con los cambios de Cal.com/Kia de hoy) y mergearlo via PR, o recuperar archivo por archivo si el diff ya no aplica limpio.
+
+### IMP-025 - Kia sin rate limit ni tope de coste diario en produccion
+
+Estado: [ ]
+
+Tipo: seguridad, P0 critico.
+
+Riesgo: cualquier usuario autenticado puede llamar a `app/api/kia/copilot/route.ts` o `app/api/ai/kia/route.ts` sin ningun limite. `lib/ai/kia/kia-cost-tracker.ts` solo registra coste, no lo compara contra un tope ni bloquea. Cada llamada puede disparar hasta 5 iteraciones de tool-loop (`KIA_MAX_TOOL_ITERATIONS`) sobre Sonnet. Exposicion economica sin techo + vector de abuso/DoS.
+
+Archivos: `lib/ai/kia/kia-rate-limit.ts` (no existe en `main`, si en el commit huerfano), `app/api/kia/copilot/route.ts`, `app/api/ai/kia/route.ts`.
+
+Criterio de aceptacion: limite de 12 msg/min por usuario y tope $2/dia por `user_id` (via `kia_decision_logs`) activos en ambos endpoints; una llamada 13 en el mismo minuto devuelve 429 con mensaje claro.
+
+### IMP-026 - IDOR cross-tenant en `/api/ai/kia` via `companyId`
+
+Estado: [ ]
+
+Tipo: seguridad, P0 critico.
+
+Riesgo: `app/api/ai/kia/route.ts:23,56` acepta `companyId` del body sin verificar pertenencia contra `profile_companies` → cualquier cliente autenticado que conozca/adivine un UUID de empresa obtiene nombre, CIF/NIF, estado Holded y resumen contable de otro tenant. Via tool use, `runKiaDecision` se llama sin `allowedToolNames`, exponiendo `get_accounting_snapshot` (usa `service_role` y no valida `companyId` contra el contexto real).
+
+Archivos: `app/api/ai/kia/route.ts`, `lib/ai/kia/kia-context-builder.ts`, `lib/ai/kia/kia-tool-executor.ts`.
+
+Criterio de aceptacion: `companyId` se resuelve solo por pertenencia verificada (join contra `profile_companies`), nunca del body sin validar; `get_accounting_snapshot` ignora `args.companyId` si no coincide con `context.company?.id`; `/api/ai/kia` pasa `allowedToolNames` restringido igual que `/api/kia/copilot`.
+
+### IMP-027 - Prompt injection abierto via `pageData` sin sanitizar
+
+Estado: [ ]
+
+Tipo: seguridad, P0 critico.
+
+Riesgo: `lib/ai/kia/kia-system-prompt.ts:114-115` interpola `JSON.stringify(pageData)` crudo en el system prompt. `pageData` es `z.record(z.string(), z.unknown()).optional()` sin limite de tamano/profundidad, 100% controlado por el cliente.
+
+Archivos: `lib/ai/kia/kia-system-prompt.ts`, `app/api/kia/copilot/route.ts:29`, `app/api/ai/kia/route.ts:22`.
+
+Criterio de aceptacion: `pageData` se aplana a primitivos con tope de tamano/profundidad antes de interpolarse, con delimitador explicito que lo marque como dato no confiable + instruccion anti-injection en el prompt.
+
+### IMP-028 - Un admin no-owner puede degradar, desactivar o borrar la cuenta owner
+
+Estado: [ ]
+
+Tipo: seguridad, P0 critico.
+
+Riesgo: 4 endpoints (`app/api/admin/users/route.ts` DELETE linea 236, PATCH `update_role` linea 123-134, PATCH `toggle_status` linea 154-167; `app/api/admin/clientes/[id]/route.ts` DELETE linea 150-153; `app/api/admin/team/route.ts` PATCH linea 62-80) solo bloquean acciones sobre `role==='admin'`, ninguno excluye `role==='owner'`. Un admin normal puede degradar/desactivar/eliminar la cuenta del owner con una llamada HTTP directa (DevTools/curl).
+
+Archivos: los 4 de arriba.
+
+Criterio de aceptacion: en los 4 endpoints, antes de aplicar cualquier cambio sobre `targetProfile`: `if (targetProfile.role === 'owner' && !isOwner(actor.role)) return 403`. Test manual: con sesion de un admin no-owner, cada uno de los 4 intentos contra una cuenta owner de prueba debe devolver 403.
+
+### IMP-029 - IDOR via `active_company_id` en `PATCH /api/profile`
+
+Estado: [ ]
+
+Tipo: seguridad, P0 critico.
+
+Riesgo: `app/api/profile/route.ts:78` escribe `active_company_id` sin comprobar pertenencia. `app/api/integrations/holded/status/route.ts` y `getIntegrationData()` en `dashboard/integraciones/holded/page.tsx` resuelven `companyId = profile.active_company_id` y consultan `client_integrations` solo por `company_id`, sin reverificar. Un cliente puede ver metadata Holded (`api_key_last4`, `permissions_detected`, `last_success_at`, `consent_at`) de una empresa que no es suya.
+
+Archivos: `app/api/profile/route.ts`, `app/api/integrations/holded/status/route.ts`, `app/(protected)/dashboard/integraciones/holded/page.tsx`.
+
+Criterio de aceptacion: aplicar el mismo patron ya correcto en `holded/connect/route.ts` y `holded/disconnect/route.ts` — verificar `profile_companies` antes de aceptar/usar `active_company_id`.
+
+### IMP-030 - Cola `email_queue` rota por desajuste de esquema (el cron reporta exito sin procesar nada)
+
+Estado: [ ]
+
+Tipo: fiabilidad, P0 critico.
+
+Riesgo: `lib/email/email-queue.ts` usa columnas `max_attempts` y `error` que NO existen en la tabla real (que tiene `last_error`, sin `max_attempts`). `enqueueEmail()` falla siempre en el INSERT; `processEmailQueue()` falla siempre en el SELECT, cae en un `catch` interno y devuelve `{processed:0,failed:0,skipped:0}` **sin lanzar excepcion** — el cron horario reporta 200 OK cada vez sin procesar nada. Confirmado: `email_queue` esta vacia de forma efectiva en produccion. Afecta `notifyTenantAdminDocUploaded`/`StatusChanged` (nunca han salido) y el email de invitacion insertado directo desde `admin/whatsapp/link-client` (queda `pending` para siempre).
+
+Archivos: `lib/email/email-queue.ts`, nueva migracion de reconciliacion en `supabase/migrations/`.
+
+Criterio de aceptacion: migracion que alinee columnas (decidir fuente de verdad: renombrar `last_error`→`error` + anadir `max_attempts` default 3, o ajustar el codigo al esquema real); `processEmailQueue()` no debe tragar un error de esquema sin marcarlo como fallo detectable; tras el fix, un envio de prueba encolado debe aparecer en `status='sent'` tras la siguiente ejecucion del cron.
+
+### IMP-031 - `/gracias/opinion` no existe: sistema de reseñas roto desde el dia 1
+
+Estado: [ ]
+
+Tipo: producto, funcionalidad rota, P0.
+
+Riesgo: `lib/email/templates.ts:286` (`reviewRequest`) enlaza a `app/gracias/opinion?token=...`, pagina que no existe en el arbol actual. El backend (`app/api/reviews/submit/route.ts`, tabla `reviews`, panel `/admin/resenas`) esta completo y listo — nunca se ha completado una valoracion real. Nota: la seccion "Sprint SaaS — Backlog (completado 2026-06-06)" de este mismo documento da esta pagina por construida — es documentacion desincronizada de la realidad, no solo un bug de codigo.
+
+Archivos a crear: `app/(public)/gracias/opinion/page.tsx`.
+
+Criterio de aceptacion: formulario (rating 1-5 + comentario + checkbox `allow_publish`) que haga `POST /api/reviews/submit` con el `token` de la query string; probar con un token real generado por el flujo de finalizacion de expediente.
+
+### IMP-032 - `reviewRequest` con token vacio en flujo legado de expedientes
+
+Estado: [ ]
+
+Tipo: bug, P0 (bug independiente de IMP-031, pero solo sera visible una vez esa exista).
+
+Riesgo: `app/api/cases/[id]/route.ts:99` llama `reviewRequest(clientName, service, '')` — token vacio, sin insertar en `review_requests`. Es el endpoint que usa `components/cases/AdminCaseCard.tsx` (control principal de cambio de estado en `/admin/expedientes/[id]`) via columna `cases.state`. El endpoint correcto (`app/api/admin/cases/[id]/route.ts`, columna `cases.status`) si genera el token e inserta en `review_requests`. Dos maquinas de estado paralelas sobre la misma tabla — ver tambien IMP-034.
+
+Archivos: `app/api/cases/[id]/route.ts`.
+
+Criterio de aceptacion: o se elimina `AdminCaseCard`/`state` en favor de `status`, o se replica la generacion de token + insert en `review_requests` en `app/api/cases/[id]/route.ts`.
+
+## P1 — Auditoria end-to-end 2026-07-10 (ABIERTO)
+
+### IMP-033 - Calendario fiscal del cliente roto + fuga de datos entre clientes para admin
+
+Estado: [ ]
+
+Riesgo: `app/(protected)/dashboard/calendario-fiscal/page.tsx:29` llama a `/api/admin/fiscal-calendar`, protegido con `requireAdmin` (403 para clientes). Resultado: clientes normales ven siempre "0 obligaciones" (la seccion esta rota al 100% para ellos); un admin/owner viendo su propio panel de cliente recibe en cambio las obligaciones de TODOS los clientes mezcladas, porque la llamada no manda `userId`.
+
+Archivos: `app/(protected)/dashboard/calendario-fiscal/page.tsx`, `app/api/admin/fiscal-calendar/route.ts`.
+
+Criterio de aceptacion: crear `GET /api/fiscal-calendar` client-scoped (filtra por `user_id = auth.uid()`), apuntar la pagina de cliente ahi.
+
+### IMP-034 - Unificar las dos maquinas de estado de expediente (`cases.state` vs `cases.status`)
+
+Estado: [ ]
+
+Riesgo: el panel de cliente y `AdminCaseCard`/`/api/cases/[id]` leen/escriben `state` (vocabulario legado); `/api/admin/cases/[id]` (mas rico: transiciones validadas, prioridad, notificacion tenant_admin, token de reseña, snapshot de rentabilidad) y el panel tenant leen/escriben `status`. Nada sincroniza ambas — causa raiz de IMP-032, y riesgo de que un expediente se vea "congelado" en una vista mientras avanza en la otra.
+
+Archivos: `app/api/cases/[id]/route.ts`, `app/api/admin/cases/[id]/route.ts`, `components/cases/AdminCaseCard.tsx`, `supabase/migrations/20260615000002_cases_operational_columns.sql`.
+
+Criterio de aceptacion: decidir fuente de verdad unica (`status`, es el vocabulario mas completo) y migrar todo el codigo que lee/escribe `state` a `status`, o mantener ambas sincronizadas explicitamente en un unico punto de escritura.
+
+### IMP-035 - 3-4 implementaciones de "completar perfil" con validacion inconsistente
+
+Estado: [ ]
+
+Riesgo: `dashboard/onboarding/page.tsx` (`ProfileStepForm`) no exige telefono; `lib/utils/profile-readiness.ts` y `QuickProfileGate.tsx` si lo exigen. Un cliente puede completar el onboarding sin telefono, ver "¡Todo listo!", y que el sistema le siga considerando con perfil incompleto en la siguiente compra — contradictorio. Contando `PostPurchaseProfileStep.tsx` y `ProfileForm.tsx` (`/dashboard/perfil`), son 4 implementaciones distintas del mismo formulario.
+
+Archivos: `app/(protected)/dashboard/onboarding/page.tsx`, `lib/utils/profile-readiness.ts`, `components/cart/QuickProfileGate.tsx`, `components/profile/PostPurchaseProfileStep.tsx`, `components/profile/ProfileForm.tsx`.
+
+Criterio de aceptacion: onboarding exige telefono igual que el resto (minimo viable), evaluar unificar en un solo componente reutilizable a medio plazo.
+
+### IMP-036 - Emails de cliente sin `try/catch` en el webhook de Stripe + guard de idempotencia = eventos huerfanos
+
+Estado: [ ]
+
+Riesgo: `app/api/stripe/webhook/route.ts` (lineas ~348-354, 525-550) hace `await sendEmail(...)` a cliente sin `try/catch` (los emails a admin si llevan `.catch()`). Si Resend falla, la excepcion tumba el `POST` con 500; Stripe reintenta, pero el guard de idempotencia (`stripe_processed_events`) ya registro el `event.id` antes de procesar nada, asi que el reintento no vuelve a ejecutar el resto del flujo (sync Holded, etc.) para ese evento — queda huerfano para siempre.
+
+Archivos: `app/api/stripe/webhook/route.ts`.
+
+Criterio de aceptacion: envolver los `sendEmail()` a cliente en `try/catch` (igual que los de admin), o encolarlos con `enqueueEmail()` una vez resuelto IMP-030.
+
+### IMP-037 - El streaming de Kia se queda mudo (`—`) si el proveedor de IA falla
+
+Estado: [ ]
+
+Riesgo: `lib/ai/kia/kia-provider-router.ts:410` (`streamAnthropicText`): `if (!response.ok || !response.body) return;` — sin lanzar excepcion ni marcar error. El bucle en `app/api/kia/copilot/route.ts:204-213` no detecta nada raro y llega a `done` con artifacts vacios; `KiaCopilotPanel.tsx:225-231` muestra literalmente `—` al usuario, como si Kia hubiera respondido vacio en vez de fallado.
+
+Archivos: `lib/ai/kia/kia-provider-router.ts`, `app/api/kia/copilot/route.ts`, `components/dashboard/KiaCopilotPanel.tsx`.
+
+Criterio de aceptacion: `streamAnthropicText` distingue "cero chunks por fallo" de "cero chunks porque no habia nada que decir"; el cliente recibe un evento de error explicito, no un `done` vacio.
+
+### IMP-038 - Dos motores de chat de Kia con seguridad/capacidades distintas
+
+Estado: [ ]
+
+Riesgo: `/api/ai/kia` usa el motor completo (`runKiaDecision`, tool loop, judge validator, memorias) sincrono/JSON; `/api/kia/copilot` (el que realmente usa el widget flotante, `KiaCopilotPanel.tsx`) usa un prompt simplificado paralelo sin judge validator ni memorias. Es la causa estructural de que las protecciones (`DASHBOARD_SAFE_TOOLS`) se anadieran a uno y no al otro — raiz de IMP-026.
+
+Archivos: `app/api/ai/kia/route.ts`, `app/api/kia/copilot/route.ts`.
+
+Criterio de aceptacion (a medio plazo, no bloqueante para los P0 de arriba): converger en un unico camino que siempre pase por `runKiaDecision` con streaming real.
+
+### IMP-039 - "Hacer admin" sin confirmacion en el panel de usuarios
+
+Estado: [ ]
+
+Riesgo: `components/admin/AdminUsersTable.tsx:484-486` ejecuta `handleRoleChange(u, 'admin')` directo en el `onClick`, sin modal — a diferencia de "Eliminar usuario", que si tiene doble confirmacion. Un clic accidental concede acceso admin a un cliente.
+
+Archivos: `components/admin/AdminUsersTable.tsx`.
+
+Criterio de aceptacion: mismo modal de confirmacion que ya existe para eliminar (patron en `app/(protected)/admin/clientes/page.tsx:589-614`).
+
+### IMP-040 - Listados de admin sin paginacion server-side
+
+Estado: [ ]
+
+Riesgo: `app/api/admin/clientes/route.ts` trae todos los perfiles `role='client'` sin `.limit()` y hace 5 queries adicionales en paralelo sobre esa lista completa; `app/api/admin/users/route.ts` usa `.limit(1000)` pero sin paginacion real de tabla. No rompe nada hoy, pero es la primera pared con la que choca el crecimiento del CRM.
+
+Archivos: `app/api/admin/clientes/route.ts`, `app/api/admin/users/route.ts`, `components/admin/AdminUsersTable.tsx`, `app/(protected)/admin/clientes/page.tsx`.
+
+Criterio de aceptacion: paginacion server-side (cursor o offset+limit) antes de que la base de clientes supere unos pocos cientos.
+
+### Hallazgos menores (bajo impacto, sin bloquear nada)
+
+| Hallazgo | Archivo |
+|---|---|
+| Migracion `profile_billing_and_holded_order_status` reaplicada hoy quedo registrada con la fecha de hoy (`20260710105118`) en vez de su fecha original (`20260523062807`) en el historial de Supabase — desajuste cosmetico repo/BD | `supabase/migrations/20260523062807_profile_billing_and_holded_order_status.sql` |
+| Error gramatical "Se ha recibida" (deberia ser "recibido") | `lib/email/templates.ts:132` |
+| Plantillas huerfanas sin ningun flujo que las dispare: `caseStatusUpdated`, `citaRequested`, `citaRequestAdmin` | `lib/email/templates.ts` |
+| Export `emailTemplates` sin usar en ningun sitio | `lib/email/templates.ts:1371-1380` |
+| Migraciones de `email_queue` duplicadas/obsoletas en el repo (`20260607000002_email_queue.sql` nunca aplicada; `000005`/`000006_email_queue_processing_status.sql` identicos) | `supabase/migrations/` |
+| Ruta duplicada y huerfana `/dashboard/informe/[id]` (singular) vs `/dashboard/informes/[id]` (plural, la real) | `app/(protected)/dashboard/informe/[id]/page.tsx` |
+| `CompanySwitcher` no comprueba `res.ok` tras el PATCH de cambio de empresa activa | `components/dashboard/CompanySwitcher.tsx:51-57` |
+| Seccion "WhatsApp Business (WABA)" todavia visible en configuracion pese a estar retirada (solo muestra booleano, sin fuga de secreto) | `app/(protected)/admin/configuracion/page.tsx:57-61` |
 
 ## P0 resuelto (2026-07-03 → 2026-07-04) — ver IMP-024
 
@@ -1166,6 +1367,14 @@ El plan quedo sin actualizar durante esta ventana pese a 15+ commits en `main`. 
 - `7d0fe42` — ocultar badge de reCAPTCHA, fix de posicionamiento del popup de WhatsApp.
 
 No hay items de codigo nuevos que anadir al backlog por este sprint — fue mantenimiento, SEO y fiabilidad, ya completado. Se documenta aqui solo para que el historial de este archivo sea confiable.
+
+### De la auditoria 2026-07-10 (mejoras de producto, no bugs)
+
+1. **Alerta de "cron verde pero sin trabajo real"** — el propio IMP-030 demuestra que un cron puede reportar exito sin hacer nada util. Anadir chequeo tipo "filas `pending` en `email_queue` con `created_at` > 1h" en `dailyAdminSummary` o similar.
+2. **Registro de auditoria visible para cambios de rol/estado sobre cuentas de staff** — ya existe `audit_logs` pero no se usa en `users/route.ts` PATCH/DELETE ni en `team/route.ts`. Habria detectado IMP-028 en produccion.
+3. **Mensajes de error diferenciados en el chat de Kia** — hoy rate-limit, cost-cap, proveedor caido y sin conexion acaban todos en el mismo generico o en el `—` silencioso de IMP-037.
+4. **Distinguir "sin datos" de "error de carga" en todo el panel de cliente** — `lib/utils/server-fetch.ts` (`fetchWithCookies`) atrapa cualquier error y devuelve `null`; el cliente ve "no tienes nada" tanto si no hay datos como si fallo la peticion.
+5. **Consolidar el patron `assertAdmin` duplicado** — la misma funcion esta copiada literalmente en 15+ route handlers de `admin/**` en vez de usar el `requireAdminClient` centralizado que ya usan otros 20+. Es parte de por que IMP-028 pudo colarse en varios sitios a la vez.
 
 ### Fase SaaS
 
