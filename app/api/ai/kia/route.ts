@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
+import { DASHBOARD_SAFE_TOOLS } from '@/lib/ai/kia/kia-tool-definitions';
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -63,7 +64,19 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .maybeSingle();
 
-  const resolvedCompanyId = companyId ?? profile?.active_company_id ?? undefined;
+  // IMP-026: companyId viene del cliente y no se puede confiar en él sin
+  // verificar pertenencia — si no pertenece al usuario, se ignora en vez de
+  // usarse (evita leer datos contables de otra empresa/tenant).
+  let resolvedCompanyId = profile?.active_company_id ?? undefined;
+  if (companyId && companyId !== resolvedCompanyId) {
+    const { data: membership } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('company_id', companyId)
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    if (membership) resolvedCompanyId = companyId;
+  }
 
   // ── Ejecutar decisión Kia ─────────────────────────────────────────────────
   let result;
@@ -74,6 +87,7 @@ export async function POST(request: NextRequest) {
       message,
       locale     : 'es',
       allowTools : true,
+      allowedToolNames: [...DASHBOARD_SAFE_TOOLS],
       contextInput: {
         channel     : 'dashboard',
         userId      : user.id,

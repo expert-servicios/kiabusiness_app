@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { z } from 'zod';
 import { syncClientToHolded } from '@/lib/integrations/holded';
 import { upsertStripeCustomer } from '@/lib/integrations/stripe';
+import { isOwner } from '@/lib/auth/roles';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -10,7 +11,7 @@ async function requireAdmin(request: NextRequest) {
   if (error || !user) return null;
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? { admin, userId: user.id } : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner') ? { admin, userId: user.id, actorRole: profile.role } : null;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -142,7 +143,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   try {
     const auth = await requireAdmin(_request);
     if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    const { admin: adminClient } = auth;
+    const { admin: adminClient, actorRole } = auth;
 
     const { id } = await params;
 
@@ -150,6 +151,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     const { data: target } = await adminClient.from('profiles').select('role').eq('id', id).single();
     if (target?.role === 'admin') {
       return NextResponse.json({ error: 'No puedes eliminar un administrador' }, { status: 403 });
+    }
+    if (target?.role === 'owner' && !isOwner(actorRole)) {
+      return NextResponse.json({ error: 'Solo el owner puede eliminar esta cuenta' }, { status: 403 });
     }
 
     // Soft-delete: set status to inactive and clear sensitive fields
@@ -188,13 +192,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const auth = await requireAdmin(request);
     if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    const { admin } = auth;
+    const { admin, actorRole } = auth;
 
     const { id } = await params;
     const body = await request.json();
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
+    }
+
+    if (parsed.data.status !== undefined) {
+      const { data: target } = await admin.from('profiles').select('role').eq('id', id).maybeSingle();
+      if (target?.role === 'owner' && !isOwner(actorRole)) {
+        return NextResponse.json({ error: 'Solo el owner puede modificar esta cuenta' }, { status: 403 });
+      }
     }
 
     const update: Record<string, unknown> = {};

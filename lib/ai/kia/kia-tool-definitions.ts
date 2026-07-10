@@ -174,3 +174,27 @@ export function validateKiaToolArguments(name: string, args: Record<string, unkn
   if (!validator) throw new Error(`Unsupported Kia tool: ${name}`);
   return validator.parse(args) as Record<string, unknown>;
 }
+
+// Tools safe to expose to both dashboard-facing chat endpoints (widget copilot
+// and /api/ai/kia). Deliberately excludes tools that read/write data scoped by
+// a caller-supplied companyId argument (e.g. get_accounting_snapshot) — those
+// must go through context.company, resolved server-side from a verified
+// membership, never from an LLM-supplied argument.
+export const DASHBOARD_SAFE_TOOLS = [
+  // User data tools (requires authenticated user context)
+  'get_user_expedientes',
+  'get_user_companies',
+  'get_user_pending_docs',
+  'get_case_status',
+  // Holded integration tools
+  'get_holded_connection_status',
+  'get_holded_invoices',
+  'get_holded_contacts',
+  'get_holded_bank_balance',
+  'get_company_status_snapshot',
+  'generate_company_report',
+  'generate_holded_connection_link',
+  // Navigation links
+  'generate_profile_link',
+  'generate_checkout_gate_link',
+] as const;

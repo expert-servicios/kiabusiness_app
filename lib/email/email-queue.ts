@@ -64,7 +64,7 @@ type QueueRow = {
 
 export async function processEmailQueue(
   batchSize = BATCH_SIZE,
-): Promise<{ processed: number; failed: number; skipped: number }> {
+): Promise<{ processed: number; failed: number; skipped: number; error?: string }> {
   const admin   = getSupabaseAdmin();
   const now     = new Date().toISOString();
   const startMs = Date.now();
@@ -79,8 +79,11 @@ export async function processEmailQueue(
     .limit(batchSize);
 
   if (selectError) {
+    // IMP-030: a schema/query error here must be surfaced, not swallowed as
+    // a quiet "nothing to do" — the cron caller turns this into a failing
+    // response so a broken queue can't report green for weeks unnoticed.
     console.error('[email-queue] failed to fetch jobs:', selectError.message);
-    return { processed: 0, failed: 0, skipped: 0 };
+    return { processed: 0, failed: 0, skipped: 0, error: selectError.message };
   }
   if (!candidates?.length) return { processed: 0, failed: 0, skipped: 0 };
 

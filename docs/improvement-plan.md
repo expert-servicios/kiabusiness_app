@@ -31,11 +31,11 @@ Origen: auditoria de 4 agentes en paralelo (correos/plantillas, Copiloto Kia, Pa
 
 El commit `3dd557adb20541bdb8c99d02b47980e6ac776834` ("fix(security): resolve 6 critical audit findings (Fase 1)") implementa: rate limiting de Kia (12 msg/min), tope de coste diario ($2 via `kia_decision_logs`), sanitizacion de `pageData` contra prompt injection, `sandbox` en el iframe de Cal.com, y parte del fix de escalada de privilegios de `admin/team`. Vive unicamente en `upstream/docs-audit-plan` — `git merge-base --is-ancestor 3dd557a HEAD` confirma que NO es ancestro de `main`. El PR correspondiente nunca se abrio/mergeo. Explica directamente IMP-025, IMP-027 y parte de IMP-028.
 
-Fix: revisar el commit completo (puede tener conflictos con los cambios de Cal.com/Kia de hoy) y mergearlo via PR, o recuperar archivo por archivo si el diff ya no aplica limpio.
+Resuelto 2026-07-10: cherry-pick del commit completo (`git cherry-pick 3dd557a`) sobre rama `audit-2026-07-10-security-fixes` — un unico conflicto trivial (`docs/audit-2026-07-01-plan.md`, ya consolidado/eliminado en `main`, se mantuvo eliminado). Resto de archivos aplico limpio. Revisado diff completo de los 8 archivos antes de dar por bueno. `npx tsc --noEmit` limpio.
 
 ### IMP-025 - Kia sin rate limit ni tope de coste diario en produccion
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 (recuperado via cherry-pick del commit huerfano — ver hallazgo raiz arriba).
 
 Tipo: seguridad, P0 critico.
 
@@ -47,7 +47,7 @@ Criterio de aceptacion: limite de 12 msg/min por usuario y tope $2/dia por `user
 
 ### IMP-026 - IDOR cross-tenant en `/api/ai/kia` via `companyId`
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — `companyId` del body ahora se ignora salvo que se verifique pertenencia via `profile_companies`; `get_accounting_snapshot` ya no confia en `args.companyId`, solo usa `context.company?.id`; se creo `DASHBOARD_SAFE_TOOLS` compartido en `kia-tool-definitions.ts` (antes duplicado local en `copilot/route.ts`) y `/api/ai/kia` ahora tambien pasa `allowedToolNames` restringido. `npx tsc --noEmit` limpio.
 
 Tipo: seguridad, P0 critico.
 
@@ -59,7 +59,7 @@ Criterio de aceptacion: `companyId` se resuelve solo por pertenencia verificada 
 
 ### IMP-027 - Prompt injection abierto via `pageData` sin sanitizar
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 (recuperado via cherry-pick del commit huerfano — ver hallazgo raiz arriba). `sanitizePageData()` aplana a primitivos, capa tamano/profundidad, y el prompt final incluye delimitador explicito anti-injection.
 
 Tipo: seguridad, P0 critico.
 
@@ -71,7 +71,7 @@ Criterio de aceptacion: `pageData` se aplana a primitivos con tope de tamano/pro
 
 ### IMP-028 - Un admin no-owner puede degradar, desactivar o borrar la cuenta owner
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — guard `role==='owner' && !isOwner(actorRole)` anadido en los 4 endpoints originales (`admin/users` DELETE/update_role/toggle_status, `admin/clientes/[id]` DELETE) mas dos adicionales encontrados durante el fix: `admin/clientes/[id]` PATCH `status` (mismo endpoint, ruta de escritura distinta) y `admin/team` PATCH (bloqueaba asignar owner, pero no degradar a un owner existente — ahora tambien). El cherry-pick del commit huerfano ya habia extendido el guard de asignacion a `TENANT_ADMIN`, no solo `OWNER`. `npx tsc --noEmit` limpio.
 
 Tipo: seguridad, P0 critico.
 
@@ -83,7 +83,7 @@ Criterio de aceptacion: en los 4 endpoints, antes de aplicar cualquier cambio so
 
 ### IMP-029 - IDOR via `active_company_id` en `PATCH /api/profile`
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — `PATCH /api/profile` ahora verifica `profile_companies` antes de aceptar `active_company_id`, mismo patron que `holded/connect`. `holded/status/route.ts` no necesito cambio: siempre lee `active_company_id` desde el propio `profiles` del usuario autenticado (nunca del body), asi que queda seguro por construccion al cerrar la unica via de escritura no verificada. `npx tsc --noEmit` limpio.
 
 Tipo: seguridad, P0 critico.
 
@@ -95,7 +95,7 @@ Criterio de aceptacion: aplicar el mismo patron ya correcto en `holded/connect/r
 
 ### IMP-030 - Cola `email_queue` rota por desajuste de esquema (el cron reporta exito sin procesar nada)
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — migracion `20260710120000_fix_email_queue_schema_mismatch.sql` aplicada en produccion via MCP (`last_error`→`error`, `+max_attempts` default 3), confirmada por `information_schema.columns`. Ademas `processEmailQueue()` ya no traga el error de SELECT en silencio: lo devuelve en el resultado, y `/api/cron/email-queue` responde 500/`ok:false` si aparece, para que un fallo de esquema futuro sea visible en monitoring en vez de reportar verde. `npx tsc --noEmit` limpio.
 
 Tipo: fiabilidad, P0 critico.
 
@@ -105,21 +105,19 @@ Archivos: `lib/email/email-queue.ts`, nueva migracion de reconciliacion en `supa
 
 Criterio de aceptacion: migracion que alinee columnas (decidir fuente de verdad: renombrar `last_error`→`error` + anadir `max_attempts` default 3, o ajustar el codigo al esquema real); `processEmailQueue()` no debe tragar un error de esquema sin marcarlo como fallo detectable; tras el fix, un envio de prueba encolado debe aparecer en `status='sent'` tras la siguiente ejecucion del cron.
 
-### IMP-031 - `/gracias/opinion` no existe: sistema de reseñas roto desde el dia 1
+### IMP-031 - ~~`/gracias/opinion` no existe~~ — FALSO POSITIVO, descartado (2026-07-10)
 
-Estado: [ ]
+Estado: descartado, no era un bug real.
 
-Tipo: producto, funcionalidad rota, P0.
+El agente de auditoria de correos busco `app/gracias/opinion` (glob) y no encontro nada, concluyendo que la pagina no existia. En realidad vive en `app/(public)/gracias/opinion/page.tsx` — el agente no tuvo en cuenta el route group `(public)` al construir el patron de busqueda. La pagina existe desde el commit `0b2dd94` ("feat(resenas): complete reviews capture, moderation and public display", Sprint SaaS 2026-06-06) con un fix de build posterior (`7fd6288`, Suspense boundary para `useSearchParams`), y esta correctamente conectada a `POST /api/reviews/submit`. La documentacion de este archivo (seccion "Sprint SaaS — Backlog") ya lo daba por completado correctamente; era el hallazgo de la auditoria el que estaba equivocado, no el codigo.
 
-Riesgo: `lib/email/templates.ts:286` (`reviewRequest`) enlaza a `app/gracias/opinion?token=...`, pagina que no existe en el arbol actual. El backend (`app/api/reviews/submit/route.ts`, tabla `reviews`, panel `/admin/resenas`) esta completo y listo — nunca se ha completado una valoracion real. Nota: la seccion "Sprint SaaS — Backlog (completado 2026-06-06)" de este mismo documento da esta pagina por construida — es documentacion desincronizada de la realidad, no solo un bug de codigo.
+Verificado manualmente el 2026-07-10 leyendo el archivo real antes de "arreglarlo" — se revirtio el intento de recrear la pagina (habria sido una regresion de UI, la version existente es mas completa: incluye copy de etiquetas por estrella, contador de caracteres, y el Suspense boundary correcto).
 
-Archivos a crear: `app/(public)/gracias/opinion/page.tsx`.
-
-Criterio de aceptacion: formulario (rating 1-5 + comentario + checkbox `allow_publish`) que haga `POST /api/reviews/submit` con el `token` de la query string; probar con un token real generado por el flujo de finalizacion de expediente.
+Nota real que SI aplica (no descartada): 0 filas historicas en `reviews` no se debe a que falte la pagina, sino, con alta probabilidad, a IMP-032 (el flujo legado de expedientes envia el enlace con token vacio) combinado con pocos expedientes finalizados aun via el flujo correcto.
 
 ### IMP-032 - `reviewRequest` con token vacio en flujo legado de expedientes
 
-Estado: [ ]
+Estado: [x] Resuelto 2026-07-10 — `app/api/cases/[id]/route.ts` ahora genera el token con `randomBytes(32).toString('hex')` e inserta en `review_requests` (case_id, client_id, expiracion 30 dias) antes de enviar el email, replicando exactamente el patron ya correcto de `app/api/admin/cases/[id]/route.ts`; el email de reseña solo se envia si el token se genero con exito. La unificacion de las dos maquinas de estado (`state`/`status`) sigue pendiente como IMP-034 — este fix no la resuelve, solo cierra la fuga de tokens vacios en la que existe hoy. `npx tsc --noEmit` limpio.
 
 Tipo: bug, P0 (bug independiente de IMP-031, pero solo sera visible una vez esa exista).
 

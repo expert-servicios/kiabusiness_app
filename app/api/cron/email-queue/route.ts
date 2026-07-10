@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await processEmailQueue(20);
+    if (result.error) {
+      return NextResponse.json({ ok: false, ...result, processedAt: new Date().toISOString() }, { status: 500 });
+    }
     return NextResponse.json({ ok: true, ...result, processedAt: new Date().toISOString() });
   } catch (err) {
     console.error('[cron/email-queue]', err);

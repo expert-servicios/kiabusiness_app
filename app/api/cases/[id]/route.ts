@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
@@ -59,8 +60,10 @@ async function sendStageEmail(
   clientName: string,
   service: string,
   note: string | null,
-  organism?: string,
-  docs?: string[]
+  organism: string | undefined,
+  docs: string[] | undefined,
+  caseId: string,
+  clientId: string
 ) {
   const fact = getRandomFunFact();
 
@@ -96,8 +99,28 @@ async function sendStageEmail(
     finalizado: async () => {
       const completedTpl = serviceCompleted(clientName, service);
       await sendEmail({ to: clientEmail, eventType: 'service.completed', ...completedTpl });
-      const reviewTpl = reviewRequest(clientName, service, '');
-      await sendEmail({ to: clientEmail, eventType: 'review.request', ...reviewTpl });
+
+      // IMP-032: generar y persistir un token real de review_requests — antes
+      // se llamaba a reviewRequest() con '' fijo, produciendo un enlace de
+      // valoracion que nunca podia validarse en /gracias/opinion.
+      let reviewToken = '';
+      try {
+        reviewToken = randomBytes(32).toString('hex');
+        const adminSupabase = getSupabaseAdmin();
+        await adminSupabase.from('review_requests').insert({
+          case_id: caseId,
+          client_id: clientId,
+          token: reviewToken,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      } catch {
+        reviewToken = '';
+      }
+
+      if (reviewToken) {
+        const reviewTpl = reviewRequest(clientName, service, reviewToken);
+        await sendEmail({ to: clientEmail, eventType: 'review.request', ...reviewTpl });
+      }
     }
   };
 
@@ -189,7 +212,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           currentCase.service,
           note ?? null,
           organism,
-          docs
+          docs,
+          currentCase.id,
+          currentCase.client_id
         );
       }
     }

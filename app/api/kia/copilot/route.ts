@@ -19,6 +19,7 @@ import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { streamAnthropicText } from '@/lib/ai/kia/kia-provider-router';
 import type { KiaTaskType } from '@/lib/ai/kia/kia-output-schema';
 import type { KiaToolCall, KiaToolResult } from '@/lib/ai/kia/kia-tool-definitions';
+import { DASHBOARD_SAFE_TOOLS } from '@/lib/ai/kia/kia-tool-definitions';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
@@ -34,25 +35,6 @@ const bodySchema = z.object({
     text: z.string().max(1000),
   })).max(10).optional(),
 });
-
-const DASHBOARD_SAFE_TOOLS = [
-  // User data tools (requires authenticated user context)
-  'get_user_expedientes',
-  'get_user_companies',
-  'get_user_pending_docs',
-  'get_case_status',
-  // Holded integration tools
-  'get_holded_connection_status',
-  'get_holded_invoices',
-  'get_holded_contacts',
-  'get_holded_bank_balance',
-  'get_company_status_snapshot',
-  'generate_company_report',
-  'generate_holded_connection_link',
-  // Navigation links
-  'generate_profile_link',
-  'generate_checkout_gate_link',
-] as const;
 
 type CopilotArtifact =
   | { type: 'report'; title: string; url: string; period?: string; cta: string }

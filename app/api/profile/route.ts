@@ -64,6 +64,24 @@ export async function PATCH(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+
+    // IMP-029: active_company_id no puede aceptarse sin verificar que el
+    // usuario pertenece a esa empresa (mismo patron que holded/connect y
+    // admin/clientes/[id] PATCH) — de lo contrario cualquier cliente podria
+    // ver metadata de integraciones de una empresa ajena cambiando su
+    // "empresa activa" a un UUID adivinado/conocido.
+    if (parseResult.data.active_company_id) {
+      const { data: membership } = await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', user.id)
+        .eq('company_id', parseResult.data.active_company_id)
+        .maybeSingle();
+      if (!membership) {
+        return NextResponse.json({ error: 'No tienes acceso a esta empresa' }, { status: 403 });
+      }
+    }
+
     const { data: currentProfile } = await admin
       .from('profiles')
       .select('full_name,phone,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed_at,billing_ready_at')

@@ -71,6 +71,14 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Solo owner puede asignar este rol' }, { status: 403 });
   }
 
+  // IMP-028: bloquea tambien la direccion contraria — degradar a un usuario
+  // que YA es owner (asignandole cualquier otro rol) requiere ser owner.
+  const { data: targetProfile } = await getSupabaseAdmin()
+    .from('profiles').select('role').eq('id', userId).maybeSingle();
+  if (targetProfile?.role === ROLES.OWNER && role !== ROLES.OWNER && !isOwner(actor.role)) {
+    return NextResponse.json({ error: 'Solo el owner puede modificar esta cuenta' }, { status: 403 });
+  }
+
   const { error } = await getSupabaseAdmin()
     .from('profiles')
     .upsert({ id: userId, role, updated_at: new Date().toISOString() }, { onConflict: 'id' });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { isOwner } from '@/lib/auth/roles';
 
 async function getAdminContext(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -23,7 +24,7 @@ async function getAdminContext(request: NextRequest) {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 403 }) };
   }
 
-  return { adminSupabase, user };
+  return { adminSupabase, user, actorRole: profile.role };
 }
 
 async function countLinkedRows(
@@ -110,7 +111,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const context = await getAdminContext(request);
     if (context.error) return context.error;
-    const { adminSupabase, user } = context;
+    const { adminSupabase, user, actorRole } = context;
 
     const body = await request.json();
     const { userId, action } = body;
@@ -124,6 +125,11 @@ export async function PATCH(request: NextRequest) {
       const role = body.role;
       if (!['admin', 'client'].includes(role)) {
         return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
+      }
+      const { data: targetProfile } = await adminSupabase
+        .from('profiles').select('role').eq('id', userId).maybeSingle();
+      if (targetProfile?.role === 'owner' && !isOwner(actorRole)) {
+        return NextResponse.json({ error: 'Solo el owner puede modificar esta cuenta' }, { status: 403 });
       }
       const { error } = await adminSupabase
         .from('profiles')
@@ -156,7 +162,10 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: 'No puedes desactivar tu propia cuenta' }, { status: 400 });
       }
       const { data: profile } = await adminSupabase
-        .from('profiles').select('status').eq('id', userId).single();
+        .from('profiles').select('status,role').eq('id', userId).single();
+      if (profile?.role === 'owner' && !isOwner(actorRole)) {
+        return NextResponse.json({ error: 'Solo el owner puede modificar esta cuenta' }, { status: 403 });
+      }
       const newStatus = profile?.status === 'inactive' ? 'active' : 'inactive';
       const { error } = await adminSupabase
         .from('profiles')
@@ -177,7 +186,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const context = await getAdminContext(request);
     if (context.error) return context.error;
-    const { adminSupabase, user } = context;
+    const { adminSupabase, user, actorRole } = context;
 
     const { userId } = await request.json();
     if (!userId || typeof userId !== 'string') {
@@ -207,6 +216,10 @@ export async function DELETE(request: NextRequest) {
         { error: 'No se puede eliminar un admin desde esta acción. Cambia primero su rol si procede.' },
         { status: 400 }
       );
+    }
+
+    if (targetProfile.role === 'owner' && !isOwner(actorRole)) {
+      return NextResponse.json({ error: 'Solo el owner puede eliminar esta cuenta' }, { status: 403 });
     }
 
     const linkedChecks = await Promise.all([

@@ -86,8 +86,12 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         return ok(toolCall.name, context.accounting);
 
       case 'get_accounting_snapshot': {
-        const companyId = typeof args.companyId === 'string' ? args.companyId : context.company?.id ?? null;
-        if (!companyId) return fail(toolCall.name, 'No hay empresa identificada. Proporciona companyId o asegúrate de que hay una empresa en contexto.');
+        // IMP-026: companyId es un argumento generado por el LLM y no debe
+        // tratarse como confiable — solo se usa la empresa ya resuelta en el
+        // contexto server-side (verificada por pertenencia más arriba en el
+        // pipeline), nunca lo que el modelo decida pasar como argumento.
+        const companyId = context.company?.id ?? null;
+        if (!companyId) return fail(toolCall.name, 'No hay empresa identificada en el contexto del usuario.');
 
         const periods = args.periods as number;
         const includeAnomalies = args.includeAnomalies as boolean;
