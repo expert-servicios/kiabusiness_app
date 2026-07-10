@@ -6,10 +6,7 @@ import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { RequestProposalModal } from '@/components/holded/RequestProposalModal';
 import { FaqSection } from '@/components/site/FaqSection';
 import { articles } from '@/lib/utils/blog';
-import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 
-const CAL_ONBOARDING_URL = getCalOnboardingUrl();
-const CAL_FORMACION_URL = getCalFormacionUrl();
 const SERVICE_NAME = 'Migración a Holded — Con Inventario';
 
 export const metadata: Metadata = {
@@ -238,16 +235,9 @@ export default function MigracionConInventarioPage() {
               <p className="mt-2 text-sm leading-6 text-[#23364D]">
                 Una sesión guiada para arrancar con Holded ya migrado: dónde está cada cosa y cómo empezar a trabajar desde el primer día.
               </p>
-              {CAL_ONBOARDING_URL && (
-                <a
-                  href={CAL_ONBOARDING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] hover:text-[#c88b25]"
-                >
-                  Reservar onboarding <ArrowRight className="h-3 w-3" />
-                </a>
-              )}
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#23364D]/50">
+                Se agenda tras contratar el servicio
+              </p>
             </div>
             <div className="border border-[#D4A017]/25 bg-white p-6">
               <GraduationCap className="h-6 w-6 text-[#D4A017]" />
@@ -255,16 +245,9 @@ export default function MigracionConInventarioPage() {
               <p className="mt-2 text-sm leading-6 text-[#23364D]">
                 Formación práctica sobre los módulos de Holded que realmente usas, incluido inventario, para que tu equipo saque partido desde el primer día.
               </p>
-              {CAL_FORMACION_URL && (
-                <a
-                  href={CAL_FORMACION_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#D4A017] hover:text-[#c88b25]"
-                >
-                  Reservar formación <ArrowRight className="h-3 w-3" />
-                </a>
-              )}
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#23364D]/50">
+                Se agenda tras contratar el servicio
+              </p>
             </div>
             <div className="border border-[#D4A017]/25 bg-white p-6">
               <Sparkles className="h-6 w-6 text-[#D4A017]" />

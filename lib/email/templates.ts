@@ -365,16 +365,19 @@ export function contactAutoReply(nombre: string, asunto: string) {
 }
 
 // ── 13. Holded — migration package confirmed ──────────────────────────────────
-export function holdedMigrationConfirmed(name: string, packageName: string, calendlyUrl: string) {
-  const bookingUrl = calendlyUrl || `${BRAND.appUrl}/cita`;
+export function holdedMigrationConfirmed(name: string, packageName: string, onboardingUrl: string, formacionUrl?: string) {
+  const fallback = `${BRAND.appUrl}/cita`;
+  const onboardingBtn = onboardingUrl || fallback;
+  const formacionBtn = formacionUrl || fallback;
   return {
-    subject: '¡Tu migración a Holded ha comenzado! Reserva tu sesión de formación',
+    subject: '¡Tu migración a Holded ha comenzado! Reserva tu onboarding y formación',
     html: base('Migración a Holded confirmada', `
       ${heading('¡Tu compra está confirmada!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para(`Hemos recibido tu pago para el <strong>${escapeHtml(packageName)}</strong>. En las próximas 24 horas hábiles nos pondremos en contacto para coordinar el inicio de la migración.`)}
-      ${para('Mientras tanto, reserva ya tu sesión de formación incluida (2 horas de onboarding) en el horario que mejor te venga:')}
-      ${btn('Reservar sesión de formación', bookingUrl)}
+      ${para('El servicio incluye 1 hora de onboarding gratuita y 2 horas de formación especializada. Reserva ambas sesiones cuando te venga bien:')}
+      ${btn('Reservar onboarding (1h)', onboardingBtn)}
+      ${btn('Reservar formación (2h)', formacionBtn)}
       ${para('<small style="color:#8899aa;">Si tienes alguna pregunta antes de la primera sesión, responde a este correo y te atendemos.</small>')}
     `)
   };
