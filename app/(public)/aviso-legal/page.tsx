@@ -46,7 +46,7 @@ export default function AvisoLegalPage() {
                 ['CIF', 'B44991776'],
                 ['Domicilio social', 'C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España'],
                 ['Correo electrónico', 'info@expertconsulting.es'],
-                ['Teléfono / WhatsApp Business', '+34 696 55 04 80'],
+                ['Teléfono / WhatsApp Business', '+34 669 04 55 28'],
                 ['Sitio web', 'https://expertconsulting.es'],
                 ['Registro Mercantil', 'Registro Mercantil de Alicante — Tomo 4562, Folio 146, Hoja A-184902'],
                 ['IRUE', '1000176714766'],

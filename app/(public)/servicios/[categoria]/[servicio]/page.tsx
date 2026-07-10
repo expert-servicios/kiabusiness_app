@@ -10,6 +10,7 @@ import { getViabilityCheck, hasSpecificViabilityCheck } from '@/lib/data/viabili
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
+import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 
 export function generateStaticParams() {
   const params: { categoria: string; servicio: string }[] = [];
@@ -139,10 +140,22 @@ export default async function ServicioDetallePage({
     ],
   };
 
+  const faqJsonLd = service.faqs?.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: service.faqs.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  } : null;
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      {categoria === 'certificado-digital' && <JulyCampaignBanner focus="certificado" />}
 
       {/* ── Hero — sin imagen, fondo oscuro limpio ── */}
       <div className="bg-[#0D1B2A] px-6 pb-10 pt-12 text-[#F8F6F1] md:pb-12 md:pt-16">
@@ -185,7 +198,7 @@ export default async function ServicioDetallePage({
               </Link>
             )}
             <a
-              href="https://wa.me/34696550480"
+              href="https://wa.me/34669045528"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white"
             >
               <MessageCircle className="h-4 w-4" />
@@ -467,7 +480,7 @@ export default async function ServicioDetallePage({
                   </Link>
                 )}
                 <a
-                  href="https://wa.me/34696550480"
+                  href="https://wa.me/34669045528"
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   <MessageCircle className="h-4 w-4 text-[#D4A017]" />

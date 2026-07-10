@@ -2,6 +2,19 @@
 
 Ultima actualizacion: 2026-06-04
 
+## Nota (2026-07-09): integracion de WhatsApp (Meta Cloud API / WABA) retirada
+
+WhatsApp ya no pasa por la API de Meta. El numero pasa a ser +34 669 04 55 28,
+atendido manualmente desde la app normal de WhatsApp Business — sin Kia
+respondiendo automaticamente, sin plantillas aprobadas por Meta y sin el
+catalogo interactivo enviado por bot. El webhook (`app/api/webhooks/whatsapp/route.ts`)
+queda inerte (200 OK sin procesar) y el inbox de admin se desenlazo de la
+navegacion, pero el codigo se dejo en su sitio por si hace falta revertir.
+Kia sigue viva como copiloto en el dashboard (`/api/kia/copilot`), que es un
+canal aparte y no se vio afectado. Meta se sigue usando para Ads y catalogo,
+sin relacion con esta integracion. Todo lo de abajo sobre "WABA" describe el
+estado historico de esa integracion, ya retirada.
+
 ## Estado general
 
 Kia ya no es solo un fallback de texto libre. El proyecto tiene una capa incremental de decision estructurada, observabilidad, health checks y auditoria, manteniendo el motor determinista de WABA como primera linea.

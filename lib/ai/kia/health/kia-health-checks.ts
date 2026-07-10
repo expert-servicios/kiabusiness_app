@@ -258,7 +258,7 @@ function technicalResult(params: {
 
 async function checkHoldedMcpBridge(): Promise<KiaHealthCheckResult> {
   const hasSharedSecret = !!process.env.HOLDED_MCP_SHARED_SECRET?.trim();
-  const mcpBaseUrl      = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL?.trim();
+  const mcpBaseUrl      = process.env.NEXT_PUBLIC_HOLDED_MCP_BASE_URL?.replace(/^﻿/, '').trim();
   const hasBaseUrl      = !!mcpBaseUrl;
 
   if (!hasSharedSecret || !hasBaseUrl) {

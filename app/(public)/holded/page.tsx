@@ -22,6 +22,8 @@ import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { HoldedPricingSection } from '@/components/holded/HoldedPricingSection';
 import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
+import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+import { julySiteCampaignLinks } from '@/lib/marketing/july-2026';
 
 export const metadata: Metadata = {
   title: 'Implantación, migración y formación en Holded | EXPERT',
@@ -111,9 +113,21 @@ const holdedFaq = [
   },
 ];
 
+const holdedFaqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: holdedFaq.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
 export default async function HoldedPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(holdedFaqJsonLd) }} />
+      <JulyCampaignBanner focus="holded" />
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="brand-blue-bg px-6 py-20 text-[#F8F6F1] md:py-24">
@@ -128,16 +142,19 @@ export default async function HoldedPage() {
               Dejamos Holded operativo con datos bien vinculados, procesos claros y una configuración preparada para facturación, contabilidad, bancos e impuestos.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
-                <Calendar className="h-4 w-4" />
-                Reservar demo — 30 min
-              </HoldedCalendlyButton>
               <Link
-                href="/holded/conectores"
+                href={julySiteCampaignLinks.holded}
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+              >
+                <Upload className="h-4 w-4" />
+                Diagnóstico migración
+              </Link>
+              <Link
+                href="/holded/pack-starter?utm_source=site&utm_medium=hero&utm_campaign=julio_holded_2026"
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
               >
-                <Bot className="h-4 w-4" />
-                Ver Conectores e IA
+                <Gift className="h-4 w-4" />
+                Ver Pack Starter
               </Link>
             </div>
           </div>
@@ -369,6 +386,26 @@ export default async function HoldedPage() {
               </HoldedCalendlyButton>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Tras la migración: planes mensuales ─────────────────────────────── */}
+      <section className="px-6 py-14 md:py-16">
+        <div className="mx-auto max-w-4xl border border-[#D4A017]/30 bg-white p-8 text-center shadow-[0_8px_24px_rgba(13,27,42,0.07)] md:p-10">
+          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Después de migrar</p>
+          <h2 className="mt-3 font-serif text-2xl font-bold text-[#0D1B2A] md:text-3xl">
+            Mantén Holded al día con un plan mensual
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-[#23364D]">
+            Una migración bien hecha es el primer paso. Para no volver al caos en el siguiente cierre, lo recomendable es supervisión continua: revisión mensual, alertas y acompañamiento experto.
+          </p>
+          <Link
+            href="/planes"
+            className="mt-6 inline-flex min-h-11 items-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Comparar planes mensuales
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 

@@ -211,7 +211,23 @@ export function servicePaymentConfirmed(name: string, amount: number, service: s
         'Cuando el expediente esté preparado, te avisaremos para el pago de la tasa oficial si corresponde.'
       ])}
       ${para('<small style="color:#8899aa;">La tasa administrativa del Ministerio de Justicia no está incluida en este pago y se abonará aparte cuando proceda.</small>')}
-      ${btn('Escribir por WhatsApp', 'https://wa.me/34696550480')}
+      ${btn('Escribir por WhatsApp', 'https://wa.me/34669045528')}
+    `)
+  };
+}
+
+export function servicePaymentConfirmedAdmin(name: string, email: string, amount: number, service: string) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `Nuevo pago — ${safeName} (€${amount.toFixed(2)})`,
+    html: base('Nuevo pago recibido', `
+      ${heading('Nuevo pago recibido')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha completado un pago en la web.`)}
+      ${table(
+        detail('Servicio', escapeHtml(service)),
+        detail('Importe', `€${amount.toFixed(2)}`)
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
     `)
   };
 }
@@ -342,7 +358,7 @@ export function contactAutoReply(nombre: string, asunto: string) {
       ${para('Gracias por ponerte en contacto con nosotros. Hemos recibido tu consulta y te responderemos en menos de <strong>24 horas hábiles</strong>.')}
       ${asunto ? table(detail('Área consultada', escapeHtml(asunto))) : ''}
       ${para('Si tu consulta es urgente, puedes escribirnos directamente por WhatsApp:')}
-      ${btn('Escribir por WhatsApp', 'https://wa.me/34696550480')}
+      ${btn('Escribir por WhatsApp', 'https://wa.me/34669045528')}
       ${para('<small style="color:#8899aa;">Si no enviaste este mensaje, ignora este correo.</small>')}
     `)
   };
@@ -725,7 +741,7 @@ export function caseInProgress(name: string, service: string, note: string | nul
       ${stepsBlock([
         'Tu gestor está tramitando activamente tu expediente.',
         'Te notificaremos por email en cada avance relevante.',
-        'Si tienes cualquier duda urgente, escríbenos por WhatsApp al +34 696 55 04 80.',
+        'Si tienes cualquier duda urgente, escríbenos por WhatsApp al +34 669 04 55 28.',
         'Consulta el estado en tiempo real desde tu panel privado.'
       ])}
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
@@ -929,7 +945,7 @@ export function clientInviteEmail(name: string, inviteUrl: string) {
       ${para('<small style="color:#8899aa;">Este enlace es personal y caduca en 24 horas. Si no lo solicitaste tú, ignora este correo.</small>')}
 
       <div style="margin-top:28px;padding:16px 20px;background:#e8f5e9;border-left:3px solid #25D366;border-radius:0 8px 8px 0;">
-        <p style="margin:0;font-size:13px;color:#1a5c2a;">💡 <strong>¿Tienes dudas?</strong> Puedes escribirnos directamente por WhatsApp al <a href="https://wa.me/34696550480" style="color:#1a9e4a;font-weight:bold;">+34 696 55 04 80</a> — respondemos en menos de 2 horas en horario de oficina.</p>
+        <p style="margin:0;font-size:13px;color:#1a5c2a;">💡 <strong>¿Tienes dudas?</strong> Puedes escribirnos directamente por WhatsApp al <a href="https://wa.me/34669045528" style="color:#1a9e4a;font-weight:bold;">+34 669 04 55 28</a> — respondemos en menos de 2 horas en horario de oficina.</p>
       </div>
     `)
   };

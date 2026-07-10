@@ -1,6 +1,8 @@
 'use client';
 
-const HOLDED_API_URL = process.env.NEXT_PUBLIC_HOLDED_API_DOCS_URL ?? 'https://developers.holded.com';
+import { getHoldedApiDocsUrl } from '@/lib/utils/holded-urls';
+
+const HOLDED_API_URL = getHoldedApiDocsUrl();
 
 const STEPS = [
   {

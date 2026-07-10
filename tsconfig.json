@@ -41,6 +41,7 @@
     "node_modules",
     "app/holded-mcp",
     "apps/holded-mcp",
-    "kiabusiness_app"
+    "kiabusiness_app",
+    "ksenia_expert"
   ]
 }

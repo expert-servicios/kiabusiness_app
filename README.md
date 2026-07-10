@@ -8,7 +8,7 @@ Tenant inicial y caso de uso de referencia: EXPERT ESTUDIOS PROFESIONALES, SLU.
 
 - Dominio canonico: `expertconsulting.es`
 - Email principal: `soy@expertconsulting.es`
-- WhatsApp Business: `+34 696 55 04 80`
+- WhatsApp Business: `+34 669 04 55 28`
 - Empresa: `EXPERT ESTUDIOS PROFESIONALES, SLU`
 - CIF: `B44991776`
 - Direccion: `C/ Pintor Agrassot, 19 - 03110 Mutxamel (Alicante)`

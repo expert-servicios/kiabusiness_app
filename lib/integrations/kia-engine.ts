@@ -5,6 +5,8 @@
  * executes the returned replies + side-effects.
  */
 
+import { getHoldedTrialUrl } from '@/lib/utils/holded-urls';
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type KiaLang     = 'es' | 'ru';
@@ -1600,7 +1602,7 @@ export function processKiaStep(
     };
   }
   if (interaction === 'btn_holded_trial') {
-    const trialUrl = process.env.NEXT_PUBLIC_HOLDED_TRIAL_URL ?? 'https://www.holded.com/es';
+    const trialUrl = getHoldedTrialUrl();
     const body     = lang === 'ru'
       ? `🚀 *Попробуй Holded бесплатно 14 дней:*\n\n${trialUrl}\n\nЭто доступ к software Holded, не план EXPERT. Если нужна настройка или обучение, подскажу Pack Starter или подходящий платный формат.`
       : `🚀 *Prueba Holded gratis 14 días:*\n\n${trialUrl}\n\nEs acceso al software Holded, no un plan EXPERT. Si necesitas configuración o formación, te oriento con Pack Starter o el servicio adecuado.`;

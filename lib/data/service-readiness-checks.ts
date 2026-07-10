@@ -253,9 +253,8 @@ const HOLDED_MIGRACION_SIN_INVENTARIO: ReadinessCheck = {
       text : '¿Cuántos años de historial quieres migrar?',
       type : 'single',
       options: [
-        { id: 'este_anio',    label: 'Solo el ejercicio actual',         nextAction: 'continue_checkout' },
-        { id: 'hasta_3',      label: 'Hasta 3 años atrás',               nextAction: 'continue_checkout' },
-        { id: 'mas_3',        label: 'Más de 3 años',                    nextAction: 'book_call' },
+        { id: 'ejercicio_actual',    label: 'Solo el ejercicio actual',           nextAction: 'continue_checkout' },
+        { id: 'actual_y_anterior',   label: 'Ejercicio actual y anterior',        nextAction: 'continue_checkout' },
       ],
     },
     {

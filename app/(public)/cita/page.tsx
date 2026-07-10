@@ -91,7 +91,7 @@ export default function CitaPage() {
                 <Link href="/contacto" className="inline-flex items-center justify-center rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">
                   Contactar
                 </Link>
-                <a href="tel:+34696550480" className="inline-flex items-center justify-center rounded-xl border border-[#D4A017]/30 px-5 py-3 text-sm font-bold text-[#0D1B2A]">
+                <a href="tel:+34669045528" className="inline-flex items-center justify-center rounded-xl border border-[#D4A017]/30 px-5 py-3 text-sm font-bold text-[#0D1B2A]">
                   Llamar
                 </a>
               </div>

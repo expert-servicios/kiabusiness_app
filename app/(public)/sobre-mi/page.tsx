@@ -35,9 +35,35 @@ const values = [
   { title: 'Respuesta rápida', text: 'Los plazos de Hacienda no esperan. Me comprometo a responder y actuar a tiempo, siempre.' }
 ];
 
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Ksenia Ilicheva',
+  url: 'https://expertconsulting.es/sobre-mi',
+  jobTitle: 'Asesora Fiscal, Legal y Administrativa',
+  worksFor: {
+    '@type': 'Organization',
+    name: 'EXPERT — Asesoría Fiscal y Legal',
+    url: 'https://expertconsulting.es',
+  },
+  description: 'Más de 20 años de experiencia en asesoría fiscal, legal y administrativa en España. Colaboradora social AEAT, Holded Solution Partner, Punto de Registro Camerfirma y Red PAE.',
+  knowsLanguage: ['es', 'ru', 'en'],
+  sameAs: [
+    'https://www.linkedin.com/in/ksenia-ilicheva/',
+    'https://expertconsulting.es',
+  ],
+  hasCredential: [
+    { '@type': 'EducationalOccupationalCredential', name: 'Colaboradora Social AEAT', recognizedBy: { '@type': 'Organization', name: 'Agencia Tributaria' } },
+    { '@type': 'EducationalOccupationalCredential', name: 'Holded Solution Partner', recognizedBy: { '@type': 'Organization', name: 'Holded' } },
+    { '@type': 'EducationalOccupationalCredential', name: 'Punto de Registro Camerfirma', recognizedBy: { '@type': 'Organization', name: 'Camerfirma' } },
+    { '@type': 'EducationalOccupationalCredential', name: 'Red PAE', recognizedBy: { '@type': 'Organization', name: 'Red PAE — Puntos de Atención al Emprendedor' } },
+  ],
+};
+
 export default function SobreMiPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
       {/* Hero */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[auto_1fr] lg:items-center">

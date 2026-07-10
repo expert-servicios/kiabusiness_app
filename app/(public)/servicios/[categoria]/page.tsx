@@ -103,7 +103,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
               Solicitar presupuesto
             </Link>
             <a
-              href="https://wa.me/34696550480"
+              href="https://wa.me/34669045528"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
               Consulta por WhatsApp
@@ -186,7 +186,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                       <a
-                        href="https://wa.me/34696550480"
+                        href="https://wa.me/34669045528"
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
                       >
                         <MessageCircle className="h-4 w-4 text-[#D4A017]" />

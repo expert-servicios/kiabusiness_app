@@ -23,7 +23,8 @@ import { Hero } from '@/components/site/Hero';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { HoldedDemoForm } from '@/components/site/HoldedDemoForm';
-import { articles } from '@/lib/utils/blog';
+import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+import { getPublishedBlogArticles } from '@/lib/utils/blog';
 
 export const metadata: Metadata = {
   title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
@@ -197,9 +198,19 @@ export default async function HomePage({
     logo: 'https://expertconsulting.es/branding/expert-app.png',
     image: 'https://expertconsulting.es/branding/expert%20servicios.png',
     description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión.',
-    telephone: '+34696550480',
+    telephone: '+34669045528',
+    email: 'info@expertconsulting.es',
     address: { '@type': 'PostalAddress', addressCountry: 'ES' },
     areaServed: 'ES',
+    priceRange: '€€',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+34669045528',
+      contactType: 'customer service',
+      areaServed: 'ES',
+      availableLanguage: ['Spanish', 'Russian', 'English']
+    },
+    founder: { '@type': 'Person', name: 'Ksenia Ilicheva', url: 'https://expertconsulting.es/sobre-mi' },
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Servicios de asesoría',
@@ -207,10 +218,16 @@ export default async function HomePage({
         { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Declaración de la Renta (IRPF)' } },
         { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Asesoría de extranjería' } },
         { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Constitución de sociedades' } },
-        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Contabilidad para autónomos' } }
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Contabilidad para autónomos' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Migración e implantación de Holded' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Certificado digital sin desplazamiento' } }
       ]
     },
-    sameAs: ['https://expertconsulting.es']
+    sameAs: [
+      'https://www.linkedin.com/in/ksenia-ilicheva/',
+      'https://www.instagram.com/expert_servicios/',
+      'https://www.facebook.com/expertapp'
+    ]
   };
 
   return (
@@ -220,6 +237,8 @@ export default async function HomePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+        {/* Campaña temporal julio 2026, retirar tras el 31/07 */}
+        <JulyCampaignBanner focus="holded" />
         <Hero />
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <AdvisorSaasTeaser />
@@ -479,7 +498,7 @@ const categoryColors: Record<string, string> = {
 };
 
 function BlogPreview() {
-  const preview = articles.slice(0, 3);
+  const preview = getPublishedBlogArticles().slice(0, 3);
 
   return (
     <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">

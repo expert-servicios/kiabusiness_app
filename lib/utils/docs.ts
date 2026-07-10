@@ -304,6 +304,129 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
 
   // ── Extranjería ────────────────────────────────────────────────────────────
   {
+    slug: 'residencia-larga-duracion-nacional',
+    category: 'extranjeria-nacionalidad',
+    title: 'Guía práctica de residencia de larga duración nacional en España',
+    excerpt:
+      'Guía documental de referencia sobre la autorización de residencia de larga duración nacional: requisitos de los 5 años, reglas de ausencias, documentación, tasa y plazos según el RD 1155/2024.',
+    tags: [
+      'residencia de larga duración',
+      'residencia larga duración nacional',
+      'RD 1155/2024',
+      'extranjería',
+      'TIE',
+      'tasa 790-052'
+    ],
+    updatedAt: '8 jul 2026',
+    readTime: '12 min',
+    relatedServiceSlugs: ['residencia-larga-duracion-nacional'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Residencia de larga duración nacional en España | Guía práctica',
+    seoDescription:
+      'Requisitos de los 5 años de residencia legal, reglas de ausencias, documentación, tasa 790-052 epígrafe 2.6 y plazos para la residencia de larga duración nacional.',
+    body: `
+## Qué es la residencia de larga duración nacional
+
+La autorización de residencia de larga duración nacional es el régimen que permite a una persona extranjera residir y trabajar en España de forma **indefinida**, en las mismas condiciones que los españoles en cuanto al acceso al empleo, sin necesidad de renovar periódicamente una autorización sujeta a condiciones.
+
+Se regula en los **artículos 182 a 185 del Reglamento de Extranjería**, aprobado por el **Real Decreto 1155/2024, de 19 de noviembre** (texto consolidado en el BOE), y está descrita también en la **Hoja informativa 49 del Ministerio de Inclusión, Seguridad Social y Migraciones**.
+
+No debe confundirse con la residencia de larga duración-UE, que tiene un régimen y unos efectos de movilidad europea distintos. Esta guía se refiere específicamente a la modalidad **nacional**.
+
+## Diferencia entre residencia temporal, renovación ordinaria y larga duración
+
+| Situación | Vigencia | Condiciones |
+|---|---|---|
+| Residencia temporal inicial | 1 año | Ligada al motivo de concesión (arraigo, trabajo, familiar, etc.) |
+| Renovación ordinaria | 2–5 años según el caso | Debe acreditarse el mantenimiento de los requisitos cada vez que se renueva |
+| Residencia de larga duración nacional | Indefinida | Se concede una sola vez; la TIE se renueva periódicamente, pero la autorización no caduca |
+
+La diferencia esencial es que la residencia temporal y sus renovaciones dependen de mantener determinadas condiciones (contrato, vínculo familiar, medios económicos, etc.), mientras que la larga duración nacional, una vez concedida, no está sujeta a esas condiciones para mantenerse: solo se renueva el soporte físico (la TIE).
+
+## Requisito general: 5 años de residencia legal y continuada
+
+El requisito central es haber **residido legal y continuadamente en territorio español durante los 5 años inmediatamente anteriores** a la presentación de la solicitud.
+
+Esto exige revisar con precisión:
+
+- La fecha real de inicio de la residencia legal (no siempre coincide con la fecha de expedición de la TIE).
+- Que no haya habido periodos de irregularidad sobrevenida entre autorizaciones.
+- Que las distintas autorizaciones y renovaciones encajen sin huecos documentales relevantes.
+
+## Reglas de ausencias del territorio español
+
+Durante esos 5 años se permiten ausencias, pero dentro de límites estrictos:
+
+- **Ausencias de hasta 6 meses continuados**: no interrumpen el cómputo, siempre que no se superen los límites totales indicados a continuación.
+- **Límite total de 10 meses en el conjunto de los 5 años**: la suma de todas las ausencias no puede superar este total.
+- **Ampliación a 18 meses si las ausencias son por motivos laborales**: cuando las salidas de España responden a razones de trabajo debidamente acreditadas, el límite conjunto se amplía hasta 18 meses dentro del periodo de 5 años.
+- **Supuestos de fuerza mayor**: ausencias motivadas por causas de fuerza mayor debidamente justificadas pueden valorarse de forma individualizada por el órgano competente, sin computar necesariamente en contra del solicitante.
+
+Antes de presentar la solicitud conviene reconstruir con detalle el historial de entradas y salidas (sellos de pasaporte, billetes, empadronamiento) para comprobar que ninguna ausencia, ni por separado ni en conjunto, pone en riesgo el expediente.
+
+## Documentación habitual
+
+- Formulario de solicitud (modelo EX-11).
+- Pasaporte completo en vigor, con copia de todas las páginas.
+- Justificante de pago de la tasa.
+- Certificado de antecedentes penales, cuando proceda.
+- Certificado de empadronamiento actualizado.
+- Documentación acreditativa de la residencia legal continuada durante los 5 años (resoluciones, tarjetas anteriores, renovaciones).
+- Certificado de escolarización de los menores a cargo, si los hay.
+- Traducción jurada y, en su caso, apostilla o legalización de los documentos extranjeros.
+
+## Presentación telemática
+
+La solicitud puede presentarse por vía telemática a través de la sede electrónica correspondiente (Mercurio), con certificado digital, Cl@ve o representación autorizada. También cabe presentación presencial en la oficina de extranjería competente cuando la solicitud se tramita desde territorio español.
+
+## Plazo de resolución: 3 meses
+
+El plazo legal máximo de resolución es de **3 meses** desde la fecha de entrada de la solicitud en el registro del órgano competente para tramitarla.
+
+## Silencio administrativo positivo
+
+Si transcurre el plazo de 3 meses sin resolución expresa, la solicitud se entiende **estimada por silencio administrativo positivo**. Esto no exime de comprobar que el expediente esté correctamente registrado ni sustituye a la resolución expresa a efectos de tramitar después la TIE.
+
+## Tasa: modelo 790, código 052, epígrafe 2.6
+
+La tasa aplicable a la autorización de residencia de larga duración se abona mediante el **modelo 790, código 052, epígrafe 2.6** ("autorización de residencia de larga duración y autorización de residencia de larga duración-UE"). El justificante de pago debe conservarse y aportarse junto con la solicitud.
+
+## Expedición de TIE tras resolución favorable
+
+Una vez notificada la resolución favorable, debe solicitarse personalmente la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía, dentro del plazo indicado en la notificación.
+
+La renovación posterior de la TIE (no de la autorización, que es indefinida) sigue un calendario propio: primera renovación a los 5 años, renovaciones sucesivas cada 5 años hasta los 30 años de edad del titular, y cada 10 años a partir de esa edad.
+
+## Errores frecuentes
+
+1. **Presentar antes de cumplir los 5 años**: adelantarse a la fecha real de cumplimiento del plazo, calculada de forma incorrecta, es la causa más habitual de requerimientos y denegaciones.
+2. **Confundir la fecha de expedición de la TIE con la fecha real de la autorización**: el cómputo de los 5 años se hace sobre la residencia legal, no sobre la fecha en que se recogió la tarjeta.
+3. **No revisar las ausencias con detalle**: no sumar correctamente los periodos fuera de España, o no diferenciar ausencias laborales de otras, puede llevar a presentar sin cumplir realmente el requisito.
+4. **No aportar el pasaporte completo**: faltan páginas, sellos de entrada/salida o el pasaporte está próximo a caducar.
+5. **No comprobar la situación de los menores escolarizados a cargo**: su documentación y continuidad de residencia también debe revisarse cuando forman parte del expediente familiar.
+
+## Checklist previo a contratación del servicio
+
+Antes de iniciar el trámite, conviene confirmar:
+
+1. Han transcurrido 5 años completos de residencia legal y continuada, contados desde la fecha real de inicio, no desde la TIE.
+2. Las ausencias del territorio español no superan los límites (6 meses continuados / 10 meses totales, o 18 meses si son laborales).
+3. No existen periodos de irregularidad sobrevenida sin justificar entre autorizaciones.
+4. El pasaporte está en vigor y completo.
+5. Los menores a cargo tienen su documentación y escolarización en orden.
+6. Se dispone de toda la documentación acreditativa del histórico de residencia (resoluciones, TIE anteriores, renovaciones).
+7. Los documentos extranjeros están traducidos por traductor jurado y, si procede, apostillados o legalizados.
+
+## Honorarios
+
+En EXPERT revisamos tu viabilidad, preparamos el expediente y presentamos la solicitud telemáticamente. Honorarios: 250 € + IVA. Tasas no incluidas.
+
+---
+
+**Fuentes oficiales**: [Real Decreto 1155/2024 (BOE-A-2024-24099)](https://www.boe.es/buscar/doc.php?id=BOE-A-2024-24099) · [Hoja informativa 49 — Ministerio de Inclusión](https://www.inclusion.gob.es/web/migraciones/w/49.-autorizacion-de-residencia-de-larga-duracion-nacional)
+    `
+  },
+  {
     slug: 'arraigo-social-requisitos-y-proceso',
     category: 'extranjeria-nacionalidad',
     title: 'Arraigo social: requisitos, documentación y proceso completo',

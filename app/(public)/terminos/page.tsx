@@ -39,7 +39,7 @@ export default function TerminosPage() {
               <li><strong>CIF:</strong> B44991776</li>
               <li><strong>Domicilio:</strong> C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España</li>
               <li><strong>Email de contacto:</strong> info@expertconsulting.es</li>
-              <li><strong>Teléfono:</strong> +34 696 55 04 80</li>
+              <li><strong>Teléfono:</strong> +34 669 04 55 28</li>
               <li><strong>Ámbito geográfico:</strong> España</li>
             </ul>
           </Section>
@@ -204,7 +204,7 @@ export default function TerminosPage() {
                   info@expertconsulting.es
                 </a>
               </li>
-              <li>Teléfono: +34 696 55 04 80</li>
+              <li>Teléfono: +34 669 04 55 28</li>
               <li>
                 Formulario de contacto:{' '}
                 <Link href="/contacto" className="text-[#D4A017] hover:text-[#F2C14E]">

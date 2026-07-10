@@ -64,19 +64,13 @@ export async function POST(request: NextRequest) {
     const adminSupabase = getSupabaseAdmin();
     const { data: profile } = await adminSupabase
       .from('profiles')
-      .select('stripe_customer_id, profile_completed, billing_ready, active_company_id')
+      .select('stripe_customer_id, profile_completed, active_company_id')
       .eq('id', user.id)
       .single();
 
     if (!profile?.profile_completed) {
       return NextResponse.json(
         { error: 'Completa tu perfil antes de suscribirte.', code: 'profile_required' },
-        { status: 409 }
-      );
-    }
-    if (!profile?.billing_ready) {
-      return NextResponse.json(
-        { error: 'Completa tus datos fiscales antes de suscribirte.', code: 'billing_required' },
         { status: 409 }
       );
     }
@@ -112,6 +106,9 @@ export async function POST(request: NextRequest) {
       customer: profile?.stripe_customer_id ?? undefined,
       customer_email: profile?.stripe_customer_id ? undefined : user.email,
       client_reference_id: user.id,
+      billing_address_collection: 'required',
+      tax_id_collection: { enabled: true, required: 'if_supported' },
+      ...(profile?.stripe_customer_id ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
       metadata: { user_id: user.id, plan_name: configuredPlan.name, billing: configuredPlan.interval },
       subscription_data: {
         metadata: {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
-import { blogArticles } from '@/lib/utils/blog';
+import { getPublishedBlogArticles } from '@/lib/utils/blog';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 
 export const metadata: Metadata = {
@@ -30,9 +30,31 @@ const categoryColors: Record<string, string> = {
   Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
 };
 
+const blogJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: 'Blog EXPERT — Fiscalidad, Extranjería y Gestión Administrativa',
+  url: 'https://expertconsulting.es/blog',
+  inLanguage: 'es-ES',
+  publisher: {
+    '@type': 'Organization',
+    name: 'EXPERT — Asesoría Fiscal y Legal',
+    url: 'https://expertconsulting.es',
+    logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-app.png' },
+  },
+  blogPost: getPublishedBlogArticles().map((a) => ({
+    '@type': 'BlogPosting',
+    headline: a.title,
+    url: `https://expertconsulting.es/blog/${a.slug}`,
+  })),
+};
+
 export default function BlogPage() {
+  const articles = getPublishedBlogArticles();
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }} />
       {/* Hero */}
       <div className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-5xl">
@@ -47,7 +69,7 @@ export default function BlogPage() {
       {/* Articles */}
       <section className="mx-auto max-w-5xl px-6 py-12 md:py-16">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {blogArticles.map((article) => {
+          {articles.map((article) => {
             const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
             return (
               <article

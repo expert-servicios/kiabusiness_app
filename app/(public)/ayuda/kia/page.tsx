@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Guía de buenas prácticas para interactuar con Kia de forma segura y eficaz. Qué puede hacer, qué no hace, cómo proteger tus datos y cómo contratar servicios de forma segura.',
 };
 
-const WA_NUMBER   = '34696550480';
+const WA_NUMBER   = '34669045528';
 const PORTAL_URL  = '/dashboard';
 const VIABILITY_URL = '/solicitar-presupuesto';
 const CAL_URL = getCalDemoUrl() ?? '/cita';
@@ -27,7 +27,7 @@ export default function KiaGuiaPage() {
             Cómo usar Kia de forma segura
           </h1>
           <p className="mt-4 text-base text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Kia es la asistente virtual de EXPERT. Te ayuda a elegir servicios, comprobar viabilidad, preparar documentación y seguir tus expedientes, siempre de forma segura y con el respaldo del equipo profesional.
+            Kia es la asistente virtual de EXPERT, disponible en tu Panel Cliente. Te ayuda a elegir servicios, comprobar viabilidad, preparar documentación y seguir tus expedientes, siempre de forma segura y con el respaldo del equipo profesional. WhatsApp lo atiende directamente el equipo de EXPERT.
           </p>
         </div>
       </section>
@@ -155,7 +155,7 @@ export default function KiaGuiaPage() {
         {/* Section 7 — Documents */}
         <Section icon={FileText} title="Envío de documentos" color="text-[#07111d]">
           <p className="text-sm text-[#29384a]">
-            Kia clasifica automáticamente los documentos que envías por WhatsApp para asociarlos a tu expediente. Si hay dudas sobre el tipo de documento, el equipo de EXPERT los revisará manualmente.
+            Kia clasifica automáticamente los documentos que subes desde el Portal Cliente para asociarlos a tu expediente. Si hay dudas sobre el tipo de documento, el equipo de EXPERT los revisará manualmente.
           </p>
           <div className="mt-3 space-y-1 text-sm text-[#29384a]">
             <p>→ Envía los documentos que el equipo te solicite expresamente.</p>
@@ -167,7 +167,7 @@ export default function KiaGuiaPage() {
         {/* Section 8 — Languages */}
         <Section icon={Globe} title="Idiomas" color="text-[#07111d]">
           <p className="text-sm text-[#29384a]">
-            Puedes escribir a Kia en <strong>español</strong> o en <strong>ruso</strong>. Kia detecta el idioma automáticamente y responde en el mismo idioma.
+            Puedes escribir a Kia en <strong>español</strong> o en <strong>ruso</strong> desde el Panel Cliente. Kia detecta el idioma automáticamente y responde en el mismo idioma.
           </p>
         </Section>
 
@@ -183,13 +183,13 @@ export default function KiaGuiaPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25] mb-4">¿Listo/a para empezar?</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <a
-              href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola Kia, quiero información sobre los servicios de EXPERT.')}`}
+              href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola, quiero información sobre los servicios de EXPERT.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white hover:bg-[#20b858] transition"
             >
               <MessageCircle className="h-4 w-4 shrink-0" />
-              Hablar con Kia por WhatsApp
+              Escríbenos por WhatsApp
             </a>
             <Link
               href={VIABILITY_URL}
