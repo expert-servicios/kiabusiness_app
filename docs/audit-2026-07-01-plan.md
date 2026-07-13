@@ -56,16 +56,26 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
 - [ ] Sin flujo de reseteo de contraseña (solo magic link) → cuenta bloqueada si se
       pierde el email.
 - [ ] Sin verificación de email en registro.
-- [ ] WABA: endpoints no comprueban `status === 'inactive'` del admin.
-      `app/api/admin/whatsapp/route.ts:1-14`
-- [ ] WABA: normalización de teléfono inconsistente en `link-client` → duplicados.
-      `app/api/admin/whatsapp/link-client/route.ts:42,113`
-- [ ] WABA: falta `return` tras error en `WhatsAppInbox.tsx:569` → estado corrupto.
-- [ ] Holded sync: job puede quedar en `status='running'` para siempre si falla el
-      update tras completar. Fix: recovery query para jobs "running" >5 min.
-      `app/api/cron/holded-sync/route.ts:108-138`
-- [ ] Email queue: condición de carrera si 2 crons concurrentes reclaman el mismo job.
-      `lib/email/email-queue.ts:102-109`
+- [x] WABA: endpoints no comprobaban `status === 'inactive'` del admin. Fix
+      aplicado en los 5 `requireAdmin()` locales de WABA (`whatsapp/route.ts`,
+      `link-client`, `upload`, `ai-compose`, `ai-compose/stream`).
+- [x] WABA: normalización de teléfono inconsistente en `link-client` — al guardar
+      el teléfono en el perfil se usaba el valor crudo en vez del normalizado.
+      Fix aplicado: usa `normalized` consistentemente.
+      `app/api/admin/whatsapp/link-client/route.ts`
+- [x] WABA: `return` tras error en `WhatsAppInbox.tsx:569` — verificado, ya estaba
+      presente en el código actual (corregido en un merge anterior). Sin acción.
+- [x] Holded sync: job podía quedar en `status='running'` para siempre si el
+      proceso moría a mitad de ejecución. Fix aplicado: recovery query al inicio
+      del cron que reclama jobs "running" con más de 10 min de antigüedad
+      (`started_at`) y los devuelve a `queued`/`failed` según intentos restantes.
+      También corregido bug de índice en `RETRY_DELAY_MIN` (usaba `attempts` en
+      vez de `attempts - 1`, causando que el 1er reintento esperase 15 min en vez
+      de 5). `app/api/cron/holded-sync/route.ts`
+- [x] Email queue: **falso positivo verificado**. El claim (`update ... eq('status',
+      'pending') .select()`) es una sola sentencia SQL atómica — Postgres serializa
+      la concurrencia a nivel de fila, así que dos crons solapados no pueden
+      reclamar el mismo job. No requiere cambio.
 - [ ] Formularios públicos: sin validación de formato de teléfono (regex España).
 - [ ] Formulario de viabilidad no envía email de aviso al equipo (solo al cliente).
       `app/api/services/viabilidad/route.ts:103-139`

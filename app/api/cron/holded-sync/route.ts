@@ -13,9 +13,16 @@ const BATCH_SIZE      = 10;
 const RETRY_DELAY_MIN = [5, 15];
 
 function nextRunAt(attempts: number): string {
-  const delayMin = RETRY_DELAY_MIN[attempts] ?? 60;
+  // attempts is 1-indexed (attempts already includes the failure just recorded),
+  // so the Nth failure's delay lives at index N-1: attempt 1 -> 5min, attempt 2 -> 15min.
+  const delayMin = RETRY_DELAY_MIN[attempts - 1] ?? 60;
   return new Date(Date.now() + delayMin * 60 * 1000).toISOString();
 }
+
+// A job stuck in 'running' past this window means the process died mid-execution
+// (crash, timeout, deploy) after marking it running but before recording the
+// result — reclaim it so it isn't orphaned forever.
+const STALE_RUNNING_MIN = 10;
 
 type SyncJobRow = {
   id: string;
@@ -82,6 +89,25 @@ export async function GET(request: NextRequest) {
 
   const admin = getSupabaseAdmin();
   const now   = new Date().toISOString();
+
+  // Reclaim jobs orphaned by a mid-execution crash: stuck in 'running' past the
+  // stale window. Put them back in the normal queued/failed retry pool.
+  const staleThreshold = new Date(Date.now() - STALE_RUNNING_MIN * 60 * 1000).toISOString();
+  const { data: staleJobs } = await admin
+    .from('holded_sync_jobs')
+    .select('id, attempts')
+    .eq('status', 'running')
+    .lt('started_at', staleThreshold);
+
+  for (const stale of staleJobs ?? []) {
+    const staleAttempts = (stale.attempts as number) ?? 0;
+    const isLastAttempt = staleAttempts >= MAX_ATTEMPTS;
+    await admin.from('holded_sync_jobs').update({
+      status      : isLastAttempt ? 'failed' : 'queued',
+      error       : 'Reclaimed: job stuck in running past stale window',
+      next_run_at : isLastAttempt ? null : now,
+    }).eq('id', stale.id);
+  }
 
   // Pick up jobs that need processing: queued OR failed with retries remaining
   const { data: jobs, error: fetchError } = await admin

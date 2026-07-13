@@ -14,7 +14,8 @@ async function requireAdmin(request: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
   const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
+  const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
+  if (profile?.status === 'inactive') return null;
   return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
 }
 
