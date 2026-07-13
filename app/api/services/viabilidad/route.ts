@@ -138,6 +138,34 @@ export async function POST(request: NextRequest) {
       console.error('[viabilidad] email error:', emailErr);
     }
 
+    // Admin notification — staff wasn't being alerted of new assessments at all.
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()).filter(Boolean) ?? [];
+    if (adminEmails.length) {
+      try {
+        const resend = getResendClient();
+        const resultLabel =
+          viability.result === 'viable' ? '🟢 VIABLE' :
+          viability.result === 'parcial' ? '🟡 VIABLE PARCIAL' :
+          '🔴 NO VIABLE';
+        await resend.emails.send({
+          from: 'EXPERT Consultoría <noreply@expertconsulting.es>',
+          to: adminEmails,
+          subject: `Nueva evaluación de viabilidad: ${check.serviceName} — ${resultLabel}`,
+          html: `<!DOCTYPE html>
+<html lang="es"><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h1 style="font-size:18px;">Nueva evaluación de viabilidad</h1>
+  <p><strong>Servicio:</strong> ${check.serviceName}</p>
+  <p><strong>Resultado:</strong> ${resultLabel}</p>
+  <p><strong>Cliente:</strong> ${body.clientName} — <a href="mailto:${body.clientEmail}">${body.clientEmail}</a>${body.clientPhone ? ` — ${body.clientPhone}` : ''}</p>
+  <p><strong>Resumen IA:</strong> ${viability.summary}</p>
+  ${viability.escalate ? '<p style="color:#991b1b;font-weight:700;">⚠️ Marcado para escalar a un asesor.</p>' : ''}
+</body></html>`,
+        });
+      } catch (adminEmailErr) {
+        console.error('[viabilidad] admin email error:', adminEmailErr);
+      }
+    }
+
     return NextResponse.json({
       result: viability.result,
       emoji: viability.emoji,

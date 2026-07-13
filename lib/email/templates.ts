@@ -289,6 +289,19 @@ export function reviewRequest(name: string, service: string, token: string, bran
   };
 }
 
+// ── 8b. Review received confirmation ────────────────────────────────────────
+export function reviewReceived(name: string, brand?: TenantBrand) {
+  const brandDisplay = brand?.name ?? 'EXPERT';
+  return {
+    subject: `Gracias por tu valoración — ${brandDisplay}`,
+    html: base('Valoración recibida', `
+      ${heading('¡Gracias por tu opinión!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para('Hemos recibido tu valoración correctamente. Agradecemos mucho que te hayas tomado el tiempo de compartir tu experiencia con nosotros.')}
+    `, brand)
+  };
+}
+
 // ── 9. Subscription created ───────────────────────────────────────────────────
 export function subscriptionCreated(name: string, planName: string, periodEnd: string | null) {
   const renewal = periodEnd

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { sendEmail } from '@/lib/email/send';
+import { reviewReceived } from '@/lib/email/templates';
 
 const REVIEW_TOKEN_RE = /^[a-f0-9]{64}$/i;
 const MAX_COMMENT_LENGTH = 800;
@@ -86,6 +88,21 @@ export async function POST(request: NextRequest) {
 
     // Invalidate token by deleting the request row
     await admin.from('review_requests').delete().eq('id', req.id);
+
+    // Confirm receipt to the client — best-effort, doesn't block the response
+    try {
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('full_name,email')
+        .eq('id', req.client_id)
+        .maybeSingle();
+      if (profile?.email) {
+        const tpl = reviewReceived(profile.full_name ?? 'cliente');
+        await sendEmail({ to: profile.email, eventType: 'review.received', ...tpl });
+      }
+    } catch (emailErr) {
+      console.error('[reviews/submit] confirmation email failed:', emailErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

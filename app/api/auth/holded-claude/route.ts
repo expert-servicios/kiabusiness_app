@@ -27,7 +27,9 @@ const SESSION_TTL_S  = 3600; // 1 hour — enough to complete the consent flow
 
 function getSessionSecret(): Uint8Array | null {
   const secret = process.env.HOLDED_MCP_SESSION_SECRET;
-  if (!secret || secret.length < 16) return null;
+  // HS256 needs a cryptographically strong key; 32 bytes (256 bits) is the
+  // minimum recommended so the signature can't be brute-forced.
+  if (!secret || secret.length < 32) return null;
   return new TextEncoder().encode(secret);
 }
 

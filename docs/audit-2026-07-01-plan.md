@@ -84,20 +84,34 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
 
 ## 3. MEDIOS
 
-- [ ] `/api/reports/generate` permite a un admin generar informes de clientes de
-      otro tenant sin verificar aislamiento. `app/api/reports/generate/route.ts:32-44`
-- [ ] `HOLDED_MCP_SESSION_SECRET` solo exige 16 bytes — débil para HS256, subir a 32.
-      `app/api/auth/holded-claude/route.ts:28-31`
+- [x] `/api/reports/generate` — **falso positivo verificado**. `isStaffRole()` solo
+      cubre `owner`/`admin` (personal interno de EXPERT), que por diseño operan
+      sobre todos los tenants — es su función como operador de la plataforma. Un
+      `tenant_admin` (rol SaaS externo) que intente usar `adminClientId` ya recibe
+      403 porque no pasa `isStaffRole()`; no hay bypass de aislamiento real. Sin
+      cambio de código.
+- [x] `HOLDED_MCP_SESSION_SECRET` solo exigía 16 bytes — débil para HS256. Fix
+      aplicado: mínimo subido a 32 bytes en `app/api/auth/holded-claude/route.ts`
+      y en el fallback compartido `lib/auth/oauth-state.ts`. Ya documentado en
+      `.env.example` con `openssl rand -hex 32` (genera 64 chars = 32 bytes).
 - [ ] Emails de clientes expuestos innecesariamente en listados admin
       (`/api/admin/users`, `/api/admin/team`).
 - [ ] Sin logging de auditoría en cambios de rol de equipo.
 - [ ] Accesibilidad: falta `aria-live`/`role="alert"` en errores de formularios,
       labels ausentes en varios inputs.
 - [ ] Página `/gracias/*` indexable en sitemap pese a bloqueo en robots.txt.
-- [ ] Holded retry delay mal calculado (bug de índice de array) — 3er intento
-      espera 60 min en vez de 15. `app/api/cron/holded-sync/route.ts:13-17`
 - [ ] Fiscal reminders no usa `enqueueEmail()` (llama a Resend directo) → sin
       idempotencia real ante timeouts.
+
+### Fase 3 — gaps de email cerrados
+
+- [x] Formulario de viabilidad ahora también notifica al equipo (`ADMIN_EMAILS`)
+      con resultado IA + datos del cliente, además del email al cliente que ya
+      existía. `app/api/services/viabilidad/route.ts`
+- [x] Reseñas: el cliente recibe confirmación de recepción tras enviar su
+      valoración. Nueva plantilla `reviewReceived()` en `lib/email/templates.ts`,
+      conectada en `app/api/reviews/submit/route.ts` (best-effort, no bloquea la
+      respuesta si el email falla).
 
 ## 4. Revisión de flujos de correo (formularios + OAuth login)
 

@@ -19,8 +19,9 @@ function getOAuthStateSecret(): Uint8Array {
     process.env.INTERNAL_API_SECRET ??
     process.env.HOLDED_MCP_SESSION_SECRET;
 
-  if (!secret || secret.length < 16) {
-    throw new Error('OAUTH_STATE_SECRET, INTERNAL_API_SECRET or HOLDED_MCP_SESSION_SECRET is required for OAuth state');
+  // HS256 needs a cryptographically strong key; 32 bytes (256 bits) minimum.
+  if (!secret || secret.length < 32) {
+    throw new Error('OAUTH_STATE_SECRET, INTERNAL_API_SECRET or HOLDED_MCP_SESSION_SECRET (32+ chars) is required for OAuth state');
   }
 
   return new TextEncoder().encode(secret);
