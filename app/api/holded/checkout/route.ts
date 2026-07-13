@@ -2,20 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
+// Amounts (cents, ex-VAT) must stay in sync with the advertised `price` in
+// lib/utils/catalog.ts for these same stripePriceId entries — they were
+// previously out of sync (490€/1200€/2400€ hardcoded here vs 499€/899€/
+// 1199€ advertised on the service pages), a latent overcharge risk if this
+// route is ever wired up as an alternate checkout path.
 const HOLDED_CHECKOUTS: Record<string, { name: string; unitAmount: number; productType: string }> = {
   price_1SxNObLeYwwgvux4fLN9k8YG: {
     name: 'Pack Starter - Onboarding a Holded',
-    unitAmount: 49000,
+    unitAmount: 49900,
     productType: 'holded',
   },
   price_1SxNJcLeYwwgvux42XH9HxiJ: {
     name: 'Migracion completa a Holded - sin inventario',
-    unitAmount: 120000,
+    unitAmount: 89900,
     productType: 'holded',
   },
   price_1SxNLlLeYwwgvux4IjCOgIQl: {
     name: 'Migracion completa a Holded - con inventario',
-    unitAmount: 240000,
+    unitAmount: 119900,
     productType: 'holded',
   },
   price_1SyB8ULeYwwgvux4sZbYod1B: {

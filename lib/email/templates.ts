@@ -748,6 +748,20 @@ export function caseDocsReceived(name: string, service: string, note: string | n
 }
 
 // Stage 4: en_tramitacion — tramitación activa
+export function caseBlocked(name: string, service: string, note: string | null, brand?: TenantBrand) {
+  return {
+    subject: `Necesitamos tu atención — expediente de ${service}`,
+    html: base('Expediente pendiente de resolución', `
+      ${heading('Tu expediente necesita tu atención')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> se ha detenido temporalmente y necesitamos algo de tu parte para poder continuar.`)}
+      ${note ? noteBlock(note) : ''}
+      ${para('Contacta con tu gestor o responde a este correo para resolverlo lo antes posible.')}
+      ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
+    `, brand)
+  };
+}
+
 export function caseInProgress(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
     subject: `Tu expediente de ${service} está en tramitación`,

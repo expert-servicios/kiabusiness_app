@@ -791,6 +791,37 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (event.type === 'invoice.payment_failed') {
+    // customer.subscription.updated only notifies on the *first* transition
+    // into past_due; Stripe also fires this event on each dunning retry
+    // without necessarily changing subscription status again, so it needs
+    // its own notification path or later retries go silent.
+    const invoice = event.data.object as Stripe.Invoice;
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subscriptionId = typeof parentSub === 'string' ? parentSub : parentSub?.id;
+
+    if (subscriptionId) {
+      const { data: dbSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('client_id,plan_name')
+        .eq('stripe_subscription_id', subscriptionId)
+        .maybeSingle();
+
+      if (dbSub?.client_id) {
+        const clientInfo = await getClientEmail(dbSub.client_id);
+        if (clientInfo) {
+          const tpl = subscriptionPaymentFailed(clientInfo.name, dbSub.plan_name ?? 'Suscripción');
+          await sendEmail({
+            to: clientInfo.email,
+            eventType: 'subscription.payment_failed',
+            ...tpl,
+            metadata: { subscription_id: subscriptionId, invoice_id: invoice.id }
+          });
+        }
+      }
+    }
+  }
+
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription;
     await supabaseAdmin

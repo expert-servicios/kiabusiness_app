@@ -51,7 +51,8 @@ export default async function InformePage({ params }: Props) {
     .eq('id', user.id)
     .single();
 
-  const isOwner = report.client_id === user.id || report.phone_number === profile?.phone;
+  const isOwner = report.client_id === user.id
+    || (!!report.phone_number && !!profile?.phone && report.phone_number === profile.phone);
   const isAdmin = isStaffRole(profile?.role);
   if (!isOwner && !isAdmin) redirect('/dashboard');
 

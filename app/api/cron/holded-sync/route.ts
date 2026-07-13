@@ -109,11 +109,11 @@ export async function GET(request: NextRequest) {
     }).eq('id', stale.id);
   }
 
-  // Pick up jobs that need processing: queued OR failed with retries remaining
+  // Pick up jobs that need processing: queued, or failed/retrying with retries remaining
   const { data: jobs, error: fetchError } = await admin
     .from('holded_sync_jobs')
     .select('id, job_type, attempts, metadata')
-    .in('status', ['queued', 'failed'])
+    .in('status', ['queued', 'failed', 'retrying'])
     .lt('attempts', MAX_ATTEMPTS)
     .or(`next_run_at.is.null,next_run_at.lte.${now}`)
     .order('created_at', { ascending: true })

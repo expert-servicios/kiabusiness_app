@@ -14,6 +14,7 @@ import {
   caseInProgress,
   casePendingExternal,
   caseDelivered,
+  caseBlocked,
   reviewRequest,
   type TenantBrand,
 } from '@/lib/email/templates';
@@ -80,6 +81,10 @@ async function sendCaseStatusEmail(params: {
     case 'presentado':
       if (!isEnabled('case.presentado')) return;
       tpl = casePendingExternal(clientName, service, null, adminNote, funFact, brand);
+      break;
+    case 'bloqueado':
+      if (!isEnabled('case.bloqueado')) return;
+      tpl = caseBlocked(clientName, service, adminNote, brand);
       break;
     case 'finalizado': {
       const sendDelivered = isEnabled('case.finalizado');

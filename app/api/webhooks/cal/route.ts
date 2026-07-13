@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 
@@ -46,9 +46,10 @@ async function autoCreateCase(
   payload: CalPayload,
 ) {
   try {
-    // Look up the user by email
-    const { data: authList } = await admin.auth.admin.listUsers();
-    const authUser = authList?.users.find((u) => u.email === attendee.email);
+    // Look up the user by email (paginated — listUsers() alone silently
+    // truncates at the default page size, missing users beyond it)
+    const authUsers = await listAllAuthUsers();
+    const authUser = authUsers.find((u) => u.email === attendee.email);
     if (!authUser) return; // attendee has no account — skip case creation
 
     // Check if a case already exists for this slot (idempotent)
@@ -121,72 +122,88 @@ export async function POST(request: NextRequest) {
   const { triggerEvent, payload } = event;
   const admin = getSupabaseAdmin();
 
-  if (triggerEvent === 'BOOKING_CREATED') {
-    const attendee = payload.attendees?.[0];
-    const slug     = payload.eventType?.slug ?? '';
+  try {
+    if (triggerEvent === 'BOOKING_CREATED') {
+      const attendee = payload.attendees?.[0];
+      const slug     = payload.eventType?.slug ?? '';
 
-    const meetingUrl = payload.videoCallUrl ?? null;
-    const confirmedDate = payload.startTime.slice(0, 10);
-    const confirmedTime = payload.startTime.slice(11, 16);
+      const meetingUrl = payload.videoCallUrl ?? null;
+      const confirmedDate = payload.startTime.slice(0, 10);
+      const confirmedTime = payload.startTime.slice(11, 16);
 
-    await admin.from('appointments').upsert({
-      cal_uid       : payload.uid,
-      name          : attendee?.name ?? '',
-      email         : attendee?.email ?? '',
-      service       : payload.eventType?.title ?? payload.title,
-      status        : 'confirmed',
-      confirmed_date: confirmedDate,
-      confirmed_time: confirmedTime,
-      meeting_url   : meetingUrl,
-      notes         : null,
-      updated_at    : new Date().toISOString(),
-    }, { onConflict: 'cal_uid' });
-
-    // Auto-create case for onboarding/formacion bookings when the attendee
-    // has an existing user account (no payment went through Stripe for this booking).
-    if ((slug === 'onboarding' || slug === 'formacion') && attendee?.email) {
-      await autoCreateCase(admin, attendee, payload);
-    }
-
-    // Send branded confirmation email for reunion / demo bookings.
-    // Cal.com sends its own generic confirmation; ours adds brand and meeting link.
-    if ((slug === 'reunion' || slug === 'demo') && attendee?.email) {
-      const dateLabel = new Date(confirmedDate + 'T12:00:00').toLocaleDateString('es-ES', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-      });
-      sendEmail({
-        to       : attendee.email,
-        eventType: 'cita.confirmed',
-        ...citaConfirmed(attendee.name, payload.eventType?.title ?? payload.title, dateLabel, confirmedTime, meetingUrl),
-        metadata : { cal_uid: payload.uid, slug },
-      }).catch((e: unknown) => console.error('[cal/webhook] citaConfirmed email:', e));
-    }
-
-    console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug, hasMeetingUrl: !!meetingUrl }));
-  }
-
-  if (triggerEvent === 'BOOKING_CANCELLED') {
-    await admin
-      .from('appointments')
-      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-      .eq('cal_uid', payload.uid);
-
-    console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CANCELLED', uid: payload.uid }));
-  }
-
-  if (triggerEvent === 'BOOKING_RESCHEDULED') {
-    await admin
-      .from('appointments')
-      .update({
-        confirmed_date: payload.startTime.slice(0, 10),
-        confirmed_time: payload.startTime.slice(11, 16),
+      const { error: upsertError } = await admin.from('appointments').upsert({
+        cal_uid       : payload.uid,
+        name          : attendee?.name ?? '',
+        email         : attendee?.email ?? '',
+        service       : payload.eventType?.title ?? payload.title,
         status        : 'confirmed',
-        meeting_url   : payload.videoCallUrl ?? null,
+        confirmed_date: confirmedDate,
+        confirmed_time: confirmedTime,
+        meeting_url   : meetingUrl,
+        notes         : null,
         updated_at    : new Date().toISOString(),
-      })
-      .eq('cal_uid', payload.uid);
+      }, { onConflict: 'cal_uid' });
 
-    console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_RESCHEDULED', uid: payload.uid }));
+      if (upsertError) {
+        console.error('[cal/webhook] BOOKING_CREATED appointments upsert failed:', upsertError.message, 'uid:', payload.uid);
+      }
+
+      // Auto-create case for onboarding/formacion bookings when the attendee
+      // has an existing user account (no payment went through Stripe for this booking).
+      if ((slug === 'onboarding' || slug === 'formacion') && attendee?.email) {
+        await autoCreateCase(admin, attendee, payload);
+      }
+
+      // Send branded confirmation email for reunion / demo bookings.
+      // Cal.com sends its own generic confirmation; ours adds brand and meeting link.
+      if ((slug === 'reunion' || slug === 'demo') && attendee?.email) {
+        const dateLabel = new Date(confirmedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        });
+        sendEmail({
+          to       : attendee.email,
+          eventType: 'cita.confirmed',
+          ...citaConfirmed(attendee.name, payload.eventType?.title ?? payload.title, dateLabel, confirmedTime, meetingUrl),
+          metadata : { cal_uid: payload.uid, slug },
+        }).catch((e: unknown) => console.error('[cal/webhook] citaConfirmed email:', e));
+      }
+
+      console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug, hasMeetingUrl: !!meetingUrl }));
+    }
+
+    if (triggerEvent === 'BOOKING_CANCELLED') {
+      const { error: cancelError } = await admin
+        .from('appointments')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('cal_uid', payload.uid);
+
+      if (cancelError) {
+        console.error('[cal/webhook] BOOKING_CANCELLED update failed:', cancelError.message, 'uid:', payload.uid);
+      }
+      console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CANCELLED', uid: payload.uid }));
+    }
+
+    if (triggerEvent === 'BOOKING_RESCHEDULED') {
+      const { error: rescheduleError } = await admin
+        .from('appointments')
+        .update({
+          confirmed_date: payload.startTime.slice(0, 10),
+          confirmed_time: payload.startTime.slice(11, 16),
+          status        : 'confirmed',
+          meeting_url   : payload.videoCallUrl ?? null,
+          updated_at    : new Date().toISOString(),
+        })
+        .eq('cal_uid', payload.uid);
+
+      if (rescheduleError) {
+        console.error('[cal/webhook] BOOKING_RESCHEDULED update failed:', rescheduleError.message, 'uid:', payload.uid);
+      }
+      console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_RESCHEDULED', uid: payload.uid }));
+    }
+  } catch (err) {
+    // Still return 200 below — Cal.com would otherwise retry with the same
+    // payload and duplicate side effects; we've logged enough to investigate.
+    console.error('[cal/webhook] unhandled error processing', triggerEvent, payload.uid, err instanceof Error ? err.message : err);
   }
 
   return NextResponse.json({ ok: true });

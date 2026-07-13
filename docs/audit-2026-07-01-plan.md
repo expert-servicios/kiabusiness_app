@@ -132,6 +132,94 @@ Todos los hallazgos MEDIOS restantes cerrados (ver detalle arriba). Auditoría
 positivos documentados (email-queue race, reports tenant isolation, gracias
 sitemap).
 
+---
+
+## Fase 5 — Auditoría 2026-07-13: dashboard, servicios, suscripciones, reuniones, Holded
+
+Repaso completo pedido antes de escalar tráfico: dashboard cliente, catálogo de
+servicios, checkout (único + suscripción mensual), migración a Holded,
+reuniones (Cal.com), formularios restantes, flujos de email cliente-admin.
+Se corrió el test suite completo (`npm run test`, 83/83 verde) antes y después.
+
+### Corregido
+
+- [x] **Control de acceso roto en `/dashboard/informe/[id]`** — `report.phone_number
+      === profile?.phone` con ambos `null` evaluaba `true`, dando acceso a
+      cualquier usuario sin teléfono a informes de otros usuarios sin teléfono.
+      Fix: exige que ambos valores sean no-nulos antes de comparar.
+      `app/(protected)/dashboard/informe/[id]/page.tsx`
+- [x] **Bug crítico introducido en Fase 2: retry de Holded sync roto** — al marcar
+      un job como `status: 'retrying'`, la query de selección solo buscaba
+      `['queued', 'failed']` — `'retrying'` nunca se volvía a recoger, así que
+      **ningún job fallido se reintentaba nunca** tras el primer fallo. Fix:
+      añadido `'retrying'` a la lista de estados consultados.
+      `app/api/cron/holded-sync/route.ts`
+- [x] **Precios desalineados en `/api/holded/checkout`** — ruta alternativa (no usada
+      actualmente por ningún botón activo, pero código vivo/reutilizable) tenía
+      importes hardcodeados que no coincidían con el catálogo: 490€/1200€/2400€
+      en vez de 499€/899€/1199€. Corregido para igualar el catálogo — evita un
+      cobro incorrecto si esta ruta se conecta a un botón en el futuro.
+      `app/api/holded/checkout/route.ts`
+- [x] **Webhook de Cal.com sin manejo de errores** — todo el cuerpo del `POST` podía
+      lanzar sin capturar; un fallo de Supabase dejaba al cliente creyendo que su
+      cita estaba confirmada (Cal.com sí la muestra) mientras el equipo nunca la
+      veía en `appointments`. Fix: try/catch envolvente + logging por evento y
+      por operación de DB, siempre devuelve 200 para evitar reintentos duplicados
+      de Cal.com. `app/api/webhooks/cal/route.ts`
+- [x] **`listUsers()` sin paginar en auto-creación de expediente por reserva** — con
+      más de ~50-1000 usuarios, clientes reales dejaban de generar expediente
+      automático al reservar onboarding/formación, sin error visible. Fix: usa
+      el helper `listAllAuthUsers()` ya paginado.
+      `app/api/webhooks/cal/route.ts`
+- [x] **Estado `bloqueado` de expediente no notificaba al cliente** — un cliente
+      cuyo expediente se bloquea nunca se entera. Fix: nueva plantilla
+      `caseBlocked()` conectada en el switch de estados.
+      `lib/email/templates.ts`, `app/api/admin/cases/[id]/route.ts`
+- [x] **`invoice.payment_failed` no se manejaba** — solo se notificaba en la
+      primera transición a `past_due`; los reintentos posteriores de Stripe no
+      generaban ni email al cliente ni visibilidad para el equipo. Fix: nuevo
+      handler que reutiliza la plantilla `subscriptionPaymentFailed`.
+      `app/api/stripe/webhook/route.ts`
+      ⚠️ **Acción manual requerida:** verificar en el Dashboard de Stripe que el
+      endpoint de webhook tiene suscrito el evento `invoice.payment_failed`
+      (los eventos se seleccionan ahí, no en código).
+
+### Pendiente de verificación manual (no accionable desde código)
+
+- ⚠️ **pg_cron de `email-queue` puede no estar activo en producción.** Existen 3
+  migraciones (`20260625000001`, `20260703000001`, `20260703000002`) que crean
+  y luego corrigen el cron job de Supabase pg_cron para `email-queue`. La
+  migración de fix (`20260703000001`) inserta un secreto **placeholder** en
+  Vault (`REPLACE_VIA_SQL_EDITOR_TO_MATCH_VERCEL_CRON_SECRET`) que debe
+  reemplazarse manualmente vía SQL Editor para que coincida con `CRON_SECRET`
+  de Vercel — si nunca se reemplazó, el cron lleva fallando en silencio desde
+  que se creó (401 por secreto no configurado) y **los emails en cola nunca se
+  envían**. Verificar en Supabase Dashboard → Database → Cron Jobs, y si el
+  secreto sigue siendo el placeholder, reemplazarlo con el valor real.
+- ⚠️ 36 de 57 servicios del catálogo no tienen `stripePriceId` — muestran
+  "Solicitar presupuesto" en vez de compra directa. Parece intencional
+  (servicios que requieren presupuesto personalizado), pero confirmar que es
+  el comportamiento deseado y no un olvido de configuración.
+- ⚠️ Compras de servicio/carrito (`product_type: 'service'|'cart'` en el
+  webhook de Stripe) no crean fila en `cases` automáticamente — solo compras
+  vinculadas a un `quote.client_id` generan expediente. Si se espera que toda
+  compra abra expediente automáticamente, es un gap de producto a decidir, no
+  un bug de código (comportamiento consistente, solo posiblemente incompleto).
+
+### Verificado sin acción — diseño correcto
+
+- Formulario de presupuesto avanzado (`app/api/presupuesto-avanzado`) y de
+  para-asesorías (`app/api/saas-leads`) — honeypot, rate limit, Zod, spam
+  guard y reCAPTCHA en orden correcto, sin gaps.
+- Flujo de reseñas (`/gracias/opinion` + `/api/reviews/submit`) — token
+  validado por regex y expiración, envío duplicado bloqueado.
+- Configuración de Cal.com (`lib/utils/cal.ts`) — 4 URLs derivadas
+  consistentemente de env vars, slugs coinciden en todos los puntos de uso.
+- Checkout de suscripciones (`SubscriptionCheckoutButton`, `/api/subscriptions/
+  checkout`) y portal de cliente (`CustomerPortalButton`) — bloqueos claros con
+  mensajes en español cuando falta perfil/Holded, sin crashes.
+- Idempotencia de eventos de Stripe (`stripe_processed_events`) — diseño sólido.
+
 ## 4. Revisión de flujos de correo (formularios + OAuth login)
 
 Hallazgos de la investigación — no todo son bugs, pero documentar para decidir:
