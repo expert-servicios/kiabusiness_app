@@ -50,7 +50,7 @@ export function FormacionBuyButton({ area }: { area: string }) {
       >
         {loading ? 'Redirigiendo...' : 'Reservar sesión — 180 €'}
       </button>
-      {error && <p className="text-center text-xs font-semibold text-red-700">{error}</p>}
+      {error && <p role="alert" aria-live="assertive" className="text-center text-xs font-semibold text-red-700">{error}</p>}
     </div>
   );
 }

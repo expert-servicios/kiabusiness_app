@@ -94,14 +94,26 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
       aplicado: mínimo subido a 32 bytes en `app/api/auth/holded-claude/route.ts`
       y en el fallback compartido `lib/auth/oauth-state.ts`. Ya documentado en
       `.env.example` con `openssl rand -hex 32` (genera 64 chars = 32 bytes).
-- [ ] Emails de clientes expuestos innecesariamente en listados admin
-      (`/api/admin/users`, `/api/admin/team`).
-- [ ] Sin logging de auditoría en cambios de rol de equipo.
-- [ ] Accesibilidad: falta `aria-live`/`role="alert"` en errores de formularios,
-      labels ausentes en varios inputs.
-- [ ] Página `/gracias/*` indexable en sitemap pese a bloqueo en robots.txt.
-- [ ] Fiscal reminders no usa `enqueueEmail()` (llama a Resend directo) → sin
-      idempotencia real ante timeouts.
+- [x] Emails de clientes en listados admin (`/api/admin/users`, `/api/admin/team`)
+      — **revisado, sin acción**. Es un panel de gestión de clientes/equipo para
+      staff ya autenticado y autorizado; el email es necesario para la función
+      (contactar clientes, gestionar equipo). No es una fuga a terceros no
+      autorizados — redactarlo rompería la funcionalidad.
+- [x] Sin logging de auditoría en cambios de rol de equipo. Fix aplicado: inserts
+      en la tabla `audit_logs` (ya existía, sin uso) en cada `PATCH`/`POST` de
+      `app/api/admin/team/route.ts` — registra actor, acción, usuario objetivo,
+      rol nuevo y rol previo. Best-effort, no bloquea la operación si falla.
+- [x] Accesibilidad: `aria-live`/`role="alert"` añadido a los mensajes de error de
+      9 formularios públicos (contacto, presupuesto, carrito, checkout de
+      servicios/Holded/formación, para-asesorías, demo Holded). `aria-label`
+      añadido a los inputs sin `<label>` de `HoldedDemoForm.tsx`.
+- [x] Página `/gracias/*` indexable — **verificado, ya resuelto**. El layout
+      compartido (`app/(public)/gracias/layout.tsx`) ya define
+      `robots: { index: false, follow: false }` y ninguna ruta `/gracias/*`
+      aparece en `sitemap.ts`. El hallazgo de la auditoría estaba desactualizado.
+- [x] Fiscal reminders migrado a `enqueueEmail()` en vez de llamar a Resend
+      directamente — ahora tiene reintento con backoff igual que el resto de
+      emails transaccionales. `app/api/cron/fiscal-reminders/route.ts`
 
 ### Fase 3 — gaps de email cerrados
 
@@ -112,6 +124,13 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
       valoración. Nueva plantilla `reviewReceived()` en `lib/email/templates.ts`,
       conectada en `app/api/reviews/submit/route.ts` (best-effort, no bloquea la
       respuesta si el email falla).
+
+## Fase 4 — completa
+
+Todos los hallazgos MEDIOS restantes cerrados (ver detalle arriba). Auditoría
+2026-07-01 completa: 6 críticos + 6 altos + 6 medios resueltos, 3 falsos
+positivos documentados (email-queue race, reports tenant isolation, gracias
+sitemap).
 
 ## 4. Revisión de flujos de correo (formularios + OAuth login)
 

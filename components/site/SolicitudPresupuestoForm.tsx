@@ -233,7 +233,7 @@ export function SolicitudPresupuestoForm() {
             </div>
 
             {error && (
-              <p className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+              <p role="alert" aria-live="assertive" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
             )}
 
             <div className="border-t border-[#D4A017]/25 pt-6">

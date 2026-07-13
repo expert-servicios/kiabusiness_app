@@ -31,6 +31,26 @@ function redirectForRole(role: TeamRole) {
   return '/dashboard';
 }
 
+async function logRoleChange(input: {
+  actorId: string;
+  action: 'role_change' | 'role_invite';
+  targetUserId: string;
+  role: TeamRole;
+  previousRole?: string | null;
+}) {
+  try {
+    await getSupabaseAdmin().from('audit_logs').insert({
+      actor_id: input.actorId,
+      action: input.action,
+      entity: 'profiles.role',
+      entity_id: input.targetUserId,
+      metadata: { role: input.role, previous_role: input.previousRole ?? null },
+    });
+  } catch (err) {
+    console.error('[admin/team] audit log insert failed:', err);
+  }
+}
+
 export async function GET(request: NextRequest) {
   const actor = await assertStaff(request);
   if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
@@ -71,11 +91,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Solo owner puede asignar este rol' }, { status: 403 });
   }
 
+  const { data: previousProfile } = await getSupabaseAdmin()
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+
   const { error } = await getSupabaseAdmin()
     .from('profiles')
     .upsert({ id: userId, role, updated_at: new Date().toISOString() }, { onConflict: 'id' });
 
   if (error) return NextResponse.json({ error: 'Error al actualizar rol' }, { status: 500 });
+
+  await logRoleChange({
+    actorId: actor.user.id,
+    action: 'role_change',
+    targetUserId: userId,
+    role,
+    previousRole: previousProfile?.role ?? null,
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -100,6 +135,13 @@ export async function POST(request: NextRequest) {
   await getSupabaseAdmin()
     .from('profiles')
     .upsert({ id: invited.user.id, role: safeRole, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+
+  await logRoleChange({
+    actorId: actor.user.id,
+    action: 'role_invite',
+    targetUserId: invited.user.id,
+    role: safeRole,
+  });
 
   return NextResponse.json({ ok: true, userId: invited.user.id });
 }

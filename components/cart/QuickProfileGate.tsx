@@ -91,7 +91,7 @@ export function QuickProfileGate({ priceIds, onCheckoutUrl }: Props) {
         </span>
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={loadingProfile} className={inputCls} placeholder="+34 6XX XXX XXX" />
       </label>
-      {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
+      {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
       <button
         type="submit"
         disabled={saving || loadingProfile || !canSave}

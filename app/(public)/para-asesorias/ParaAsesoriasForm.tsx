@@ -120,7 +120,7 @@ export function ParaAsesoriasForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div role="alert" aria-live="assertive" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
       <input

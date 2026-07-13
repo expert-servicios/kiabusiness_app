@@ -215,7 +215,7 @@ export default function CarritoPage() {
                   Precios sin IVA. El total exacto con IVA se calcula y confirma en la pasarela de pago Stripe.
                 </div>
                 {error && (
-                  <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>
+                  <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>
                 )}
                 {needsProfile ? (
                   <QuickProfileGate

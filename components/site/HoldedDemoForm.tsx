@@ -83,6 +83,7 @@ export function HoldedDemoForm() {
           onChange={onChange}
           required
           placeholder="Nombre"
+          aria-label="Nombre"
           className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
         />
         <input
@@ -92,6 +93,7 @@ export function HoldedDemoForm() {
           onChange={onChange}
           required
           placeholder="Email"
+          aria-label="Email"
           className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
         />
         <input
@@ -99,6 +101,7 @@ export function HoldedDemoForm() {
           value={fields.empresa}
           onChange={onChange}
           placeholder="Empresa o actividad"
+          aria-label="Empresa o actividad"
           className="min-h-12 border border-[#D4A017]/25 bg-[#F8F6F1] px-4 text-sm outline-none transition focus:border-[#D4A017]"
         />
         <textarea
@@ -108,11 +111,12 @@ export function HoldedDemoForm() {
           required
           rows={4}
           placeholder="Qué sistema utilizas ahora y qué necesitas migrar"
+          aria-label="Qué sistema utilizas ahora y qué necesitas migrar"
           className="border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-sm outline-none transition focus:border-[#D4A017]"
         />
       </div>
       {status === 'error' && (
-        <p className="mt-3 text-sm text-red-600">
+        <p role="alert" aria-live="assertive" className="mt-3 text-sm text-red-600">
           Error al enviar. Escríbenos a{' '}
           <a href="mailto:info@expertconsulting.es" className="underline">
             info@expertconsulting.es

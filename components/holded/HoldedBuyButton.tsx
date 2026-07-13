@@ -39,7 +39,7 @@ export function HoldedBuyButton({ priceId, packageName }: { priceId: string; pac
         <ShoppingCart className="h-4 w-4" />
         {loading ? 'Redirigiendo...' : 'Comprar ahora'}
       </button>
-      {error && <p className="text-center text-xs font-semibold text-red-700">{error}</p>}
+      {error && <p role="alert" aria-live="assertive" className="text-center text-xs font-semibold text-red-700">{error}</p>}
     </div>
   );
 }

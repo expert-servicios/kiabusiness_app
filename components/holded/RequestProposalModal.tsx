@@ -133,7 +133,7 @@ export function RequestProposalModal({ serviceName, label = 'Recibir propuesta p
                   className="w-full border border-[#D4A017]/30 bg-[#F8F6F1] px-4 py-3 text-sm text-[#0D1B2A] placeholder-[#9CA3AF] focus:border-[#D4A017] focus:outline-none"
                 />
 
-                {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
+                {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
 
                 <button
                   type="submit"

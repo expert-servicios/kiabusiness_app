@@ -143,7 +143,7 @@ export function CartSidebar() {
             <p className="text-xs leading-relaxed text-[#23364D]/60">
               Precios sin IVA. El total con IVA se confirma en la pasarela de pago Stripe.
             </p>
-            {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
+            {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
             {needsProfile ? (
               <QuickProfileGate
                 priceIds={items.map(i => i.priceId)}

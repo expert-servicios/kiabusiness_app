@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
-import { getResendClient } from '@/lib/integrations/resend';
+import { enqueueEmail } from '@/lib/email/email-queue';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { verifyCronRequest } from '@/lib/security/cron';
 
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
   console.log(JSON.stringify({ cron: 'fiscal-reminders', event: 'start', at: new Date().toISOString() }));
 
   const admin = getSupabaseAdmin();
-  const resend = getResendClient();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -112,18 +111,22 @@ export async function GET(request: NextRequest) {
     const html = buildEmailHtml(firstName, claimed1, claimed7, claimed30);
 
     try {
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
+      // Routed through the durable queue instead of calling Resend directly:
+      // gives us retry-with-backoff for transient failures. The obligation is
+      // already claimed above so this never causes a duplicate reminder.
+      await enqueueEmail({
         to: email,
         subject,
         html,
+        eventType: 'fiscal.reminder',
+        metadata: { userId, obligationIds: allToRemind.map((o) => o.id) },
       });
       sent++;
     } catch (err) {
-      console.error(`Failed to send reminder to ${email}:`, err);
+      console.error(`Failed to enqueue reminder for ${email}:`, err);
       skipped++;
       // Best-effort: the obligation is already claimed (reminded_*_at set) to
-      // prevent duplicate sends on retry; a real send failure here means the
+      // prevent duplicate sends on retry; an enqueue failure here means the
       // user misses this reminder tier until the next one triggers.
     }
   }

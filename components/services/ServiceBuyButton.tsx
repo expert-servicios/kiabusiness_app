@@ -52,7 +52,7 @@ export function ServiceBuyButton({ priceId, label, className }: ServiceBuyButton
         <ShoppingCart className="h-4 w-4" />
         {loading ? 'Redirigiendo...' : label}
       </button>
-      {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
+      {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
     </div>
   );
 }
