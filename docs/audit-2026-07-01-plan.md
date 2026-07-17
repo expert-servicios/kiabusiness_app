@@ -186,16 +186,13 @@ Se corrió el test suite completo (`npm run test`, 83/83 verde) antes y después
 
 ### Pendiente de verificación manual (no accionable desde código)
 
-- ⚠️ **pg_cron de `email-queue` puede no estar activo en producción.** Existen 3
-  migraciones (`20260625000001`, `20260703000001`, `20260703000002`) que crean
-  y luego corrigen el cron job de Supabase pg_cron para `email-queue`. La
-  migración de fix (`20260703000001`) inserta un secreto **placeholder** en
-  Vault (`REPLACE_VIA_SQL_EDITOR_TO_MATCH_VERCEL_CRON_SECRET`) que debe
-  reemplazarse manualmente vía SQL Editor para que coincida con `CRON_SECRET`
-  de Vercel — si nunca se reemplazó, el cron lleva fallando en silencio desde
-  que se creó (401 por secreto no configurado) y **los emails en cola nunca se
-  envían**. Verificar en Supabase Dashboard → Database → Cron Jobs, y si el
-  secreto sigue siendo el placeholder, reemplazarlo con el valor real.
+- [x] **pg_cron de `email-queue` — verificado en vivo (2026-07-17), funcionando
+      correctamente.** Confirmado vía MCP de Supabase (proyecto EXPERT,
+      `ybtpqscmqrrjjmuoryap`): `cron.job_run_details` muestra 10 ejecuciones
+      horarias consecutivas en `status: succeeded`, y el secreto en
+      `vault.decrypted_secrets` (`cron_secret`) ya NO es el placeholder —
+      64 caracteres, valor real configurado. El cron está enviando los emails
+      en cola correctamente. Sin acción adicional.
 - ⚠️ 36 de 57 servicios del catálogo no tienen `stripePriceId` — muestran
   "Solicitar presupuesto" en vez de compra directa. Parece intencional
   (servicios que requieren presupuesto personalizado), pero confirmar que es
