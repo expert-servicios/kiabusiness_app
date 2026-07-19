@@ -9,6 +9,7 @@ import { categories } from '@/lib/utils/catalog';
 import { CartIcon } from '@/components/cart/CartIcon';
 
 const navLinks = [
+  { label: 'Formación', href: '/academy' },
   { label: 'Para asesorías', href: '/para-asesorias', highlight: true },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },

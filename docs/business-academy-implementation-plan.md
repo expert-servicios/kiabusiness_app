@@ -185,18 +185,27 @@ completa es un proyecto aparte, fuera de alcance de este lanzamiento.
 
 ---
 
-## Fases de implementación (Fase A en adelante, bajo confirmación explícita)
+## Fases de implementación
 
-- **Fase A — Landing `/academy`:** `lib/data/academy-catalog.ts` con el
-  contenido íntegro del programa (16 módulos, FAQ, precios, requisitos),
+- **Fase A — Landing `/academy` + menú de navegación:** `lib/data/academy-catalog.ts`
+  con el contenido íntegro del programa (16 módulos, FAQ, precios, requisitos),
   página de ficha usando el layout público existente (`Header`/`Footer`),
-  metadata SEO, entrada en sitemap. Sin checkout ni Kia todavía — solo
-  contenido + formulario de lead capture apuntando a `/api/academy/leads`.
+  metadata SEO, entrada en sitemap. Nueva entrada **"Formación"** en el nav
+  principal (`components/site/header.tsx`), enlace directo (no dropdown,
+  solo hay 1 programa por ahora) siguiendo el mismo estilo que "Reservar cita".
 - **Fase B — Lead capture + email:** `app/api/academy/leads/route.ts` +
-  plantillas de email + notificación push a admin, siguiendo el patrón de
-  `/api/quotes` al detalle.
-- **Fase C — Reserva de entrevista:** integración Cal.com (`getCalAcademyUrl`),
-  botón "Reservar entrevista de admisión" en la ficha.
+  formulario embebido en la ficha + plantillas de email + notificación push a
+  admin, siguiendo el patrón de `/api/quotes` al detalle (honeypot, rate
+  limit, spam guard, reCAPTCHA, doble email cliente/admin).
+- **Fase C — Reserva de entrevista de admisión:** integración Cal.com
+  (`getCalAcademyUrl`, nueva env var `NEXT_PUBLIC_CAL_ACADEMY_LINK`), botón
+  "Reservar entrevista de admisión" en la ficha reutilizando
+  `CalendlyButton`/`CalendlyModal` existentes.
+- **Fase C.2 — Descarga de la programación (PDF):** endpoint
+  `app/api/academy/programa-pdf/route.ts` con `@react-pdf/renderer`
+  (mismo patrón que `app/api/reports/[id]/pdf/route.ts`), genera un PDF con
+  los 16 módulos, duración, precio y datos de contacto — descarga directa,
+  sin gate de lead (documento promocional, no de cliente).
 - **Fase D — Checkout del programa:** Stripe Price real para los 2.950€,
   flujo de pago único, matrícula del alumno (decidir si crea un `case` o una
   entidad nueva `academy_enrollments`).
@@ -206,6 +215,11 @@ completa es un proyecto aparte, fuera de alcance de este lanzamiento.
   pueda responder preguntas sin necesidad de que el usuario navegue la ficha
   completa.
 
-No se implementa código de estas fases en este commit — este documento
-establece el análisis y el plan; la implementación arranca cuando el usuario
-lo confirme explícitamente, empezando por la Fase A.
+### Estado de implementación
+
+Fases A, B, C y C.2 implementadas en esta rama (landing completa, nav,
+formulario de contacto con lead capture, botón de reserva de entrevista,
+descarga de PDF de la programación). Fases D–F (checkout de pago, add-on de
+certificación oficial, Kia) quedan pendientes — requieren decisiones de
+producto (Stripe Price real, modelo de matrícula) que no se han tomado
+todavía.

@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
       // Send branded confirmation email for reunion / demo bookings.
       // Cal.com sends its own generic confirmation; ours adds brand and meeting link.
-      if ((slug === 'reunion' || slug === 'demo') && attendee?.email) {
+      if ((slug === 'reunion' || slug === 'demo' || slug === 'academy-admision') && attendee?.email) {
         const dateLabel = new Date(confirmedDate + 'T12:00:00').toLocaleDateString('es-ES', {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
         });

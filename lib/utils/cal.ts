@@ -21,3 +21,7 @@ export function getCalOnboardingUrl(): string | null {
 export function getCalFormacionUrl(): string | null {
   return calUrl(process.env.NEXT_PUBLIC_CAL_FORMACION_LINK);
 }
+
+export function getCalAcademyUrl(): string | null {
+  return calUrl(process.env.NEXT_PUBLIC_CAL_ACADEMY_LINK);
+}

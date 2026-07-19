@@ -141,6 +141,46 @@ export function quoteReceivedAdmin(name: string, email: string, services: string
   };
 }
 
+// ── 2b. Academy lead received (client) ───────────────────────────────────────
+export function academyLeadReceivedClient(name: string, programName: string) {
+  return {
+    subject: 'Hemos recibido tu solicitud de información — EXPERT Business Academy',
+    html: base('Solicitud recibida', `
+      ${heading('¡Gracias por tu interés!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido tu solicitud de información sobre <strong>${escapeHtml(programName)}</strong>. Revisaremos tu perfil y te contactaremos en un plazo de 24 horas hábiles con toda la información sobre modalidad, calendario y requisitos.`)}
+      ${para('Si lo prefieres, también puedes reservar directamente una entrevista de admisión desde nuestra web.')}
+      ${btn('Ver el programa', `${BRAND.appUrl}/academy`)}
+    `)
+  };
+}
+
+// ── 2c. Academy lead received (admin) ────────────────────────────────────────
+export function academyLeadReceivedAdmin(input: {
+  name: string; email: string; phone?: string | null; programName: string;
+  currentRole?: string | null; experience?: string | null; language: string; certificationInterest: boolean;
+}) {
+  const safeName = escapeHtml(input.name);
+  const safeEmail = escapeHtml(input.email);
+  return {
+    subject: `Nueva solicitud EXPERT Business Academy — ${safeName}`,
+    html: base('Nueva solicitud Academy', `
+      ${heading('Nueva solicitud de información — Academy')}
+      ${table(
+        detail('Nombre', safeName),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Teléfono', escapeHtml(input.phone ?? '—')),
+        detail('Programa', escapeHtml(input.programName)),
+        detail('Puesto actual', escapeHtml(input.currentRole ?? '—')),
+        detail('Experiencia', escapeHtml(input.experience ?? '—')),
+        detail('Idioma preferido', escapeHtml(input.language)),
+        detail('Interés certificación oficial', input.certificationInterest ? 'Sí' : 'No')
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin`)}
+    `)
+  };
+}
+
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
 export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
   const expiry = expiresAt
