@@ -217,9 +217,30 @@ completa es un proyecto aparte, fuera de alcance de este lanzamiento.
 
 ### Estado de implementación
 
-Fases A, B, C y C.2 implementadas en esta rama (landing completa, nav,
-formulario de contacto con lead capture, botón de reserva de entrevista,
-descarga de PDF de la programación). Fases D–F (checkout de pago, add-on de
-certificación oficial, Kia) quedan pendientes — requieren decisiones de
-producto (Stripe Price real, modelo de matrícula) que no se han tomado
-todavía.
+Fases A, B, C y C.2 implementadas y **mergeadas a `main`** (desplegadas en
+producción). Landing completa, nav, formulario de contacto con lead capture,
+botón de reserva de entrevista, descarga de PDF de la programación.
+
+**Enlace en vivo para la oferta comercial** (formulario de solicitud de
+información, NO de compra):
+
+```
+https://expertconsulting.es/academy#solicitar-info
+```
+
+Fases D–F (checkout de pago, add-on de certificación oficial, Kia) quedan
+pendientes — requieren decisiones de producto que no se han tomado todavía:
+
+- [ ] **Fase D bloqueada por Stripe Price real.** El usuario está creando
+      manualmente en el Dashboard de Stripe dos productos: el programa
+      (2.950 €, pago único) y la certificación oficial ADGD0210 opcional
+      (500 € + IVA, pago único, producto separado — no se vende junto en el
+      mismo carrito). En cuanto existan los `price_...`, conectar en
+      `lib/data/academy-catalog.ts` (`stripePriceId`) y decidir el modelo de
+      matrícula: ¿`case` estándar o entidad nueva `academy_enrollments`?
+      (recomendado en la sección 5 de este documento: entidad nueva, un curso
+      no es un trámite de gestoría).
+- [ ] Fase E: flujo de certificación oficial con revisión manual admin antes
+      de habilitar el pago — depende de que Fase D exista primero.
+- [ ] Fase F: bloque de conocimiento de Kia sobre el curso — no bloqueante,
+      puede hacerse en paralelo en cualquier momento.
