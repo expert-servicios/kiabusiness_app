@@ -251,6 +251,63 @@ export function academyEnrollmentPendingLinkAdmin(name: string, email: string, p
   };
 }
 
+// ── 2h. Certification requested (admin) ──────────────────────────────────────
+export function academyCertificationRequestedAdmin(name: string, email: string, programName: string) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `Solicitud de certificación oficial — ${safeName}`,
+    html: base('Solicitud de certificación', `
+      ${heading('Solicitud de certificación oficial ADGD0210')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}), matriculado en <strong>${escapeHtml(programName)}</strong>, ha solicitado la certificación profesional oficial opcional.`)}
+      ${para('Revisa si cumple los requisitos de acceso antes de aprobarla — recuerda que es una cualificación de nivel 3 y exige requisitos académicos o de competencias según normativa. Aprueba o rechaza la solicitud desde el panel.')}
+      ${btn('Revisar en el panel', `${BRAND.appUrl}/admin/academy-matriculas`)}
+    `)
+  };
+}
+
+// ── 2i. Certification approved (client) ──────────────────────────────────────
+export function academyCertificationApproved(name: string, programName: string, price: string) {
+  return {
+    subject: 'Tu certificación oficial ha sido aprobada — EXPERT',
+    html: base('Certificación aprobada', `
+      ${heading('¡Certificación oficial aprobada!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos revisado tu solicitud de certificación oficial ADGD0210 para <strong>${escapeHtml(programName)}</strong> y cumples los requisitos de acceso. Ya puedes completar el pago (${escapeHtml(price)}) desde tu área privada.`)}
+      ${btn('Pagar certificación oficial', `${BRAND.appUrl}/dashboard/academy`)}
+    `)
+  };
+}
+
+// ── 2j. Certification paid (client) ──────────────────────────────────────────
+export function academyCertificationPaid(name: string, programName: string, amount: number) {
+  return {
+    subject: '¡Pago de certificación recibido! — EXPERT',
+    html: base('Certificación pagada', `
+      ${heading('¡Pago recibido!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido tu pago de la certificación oficial ADGD0210 asociada a <strong>${escapeHtml(programName)}</strong>.`)}
+      ${table(detail('Importe abonado', `€${amount.toFixed(2)}`))}
+      ${para('Nuestro equipo te contactará para formalizar la incorporación al itinerario oficial a través del centro acreditado colaborador.')}
+      ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard/academy`)}
+    `)
+  };
+}
+
+// ── 2k. Certification paid (admin) ───────────────────────────────────────────
+export function academyCertificationPaidAdmin(name: string, email: string, programName: string, amount: number) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `Certificación oficial pagada — ${safeName} (€${amount.toFixed(2)})`,
+    html: base('Certificación pagada', `
+      ${heading('Certificación oficial pagada')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha pagado la certificación oficial ADGD0210 de ${escapeHtml(programName)}.`)}
+      ${table(detail('Importe', `€${amount.toFixed(2)}`))}
+      ${para('Formaliza la incorporación de este alumno al itinerario oficial con el centro acreditado colaborador.')}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/academy-matriculas`)}
+    `)
+  };
+}
+
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
 export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
   const expiry = expiresAt

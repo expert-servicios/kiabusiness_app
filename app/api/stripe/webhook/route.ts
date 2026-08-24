@@ -12,6 +12,8 @@ import {
   academyEnrollmentConfirmedAdmin,
   academyEnrollmentPendingLink,
   academyEnrollmentPendingLinkAdmin,
+  academyCertificationPaid,
+  academyCertificationPaidAdmin,
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
   paymentConfirmed,
@@ -540,6 +542,76 @@ export async function POST(req: NextRequest) {
         }
 
         console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_program', program_slug: programSlug, session_id: session.id, linked: Boolean(clientId) }));
+      }
+    }
+
+    if (session.mode === 'payment' && productType === 'academy_certification') {
+      const enrollmentId = session.metadata?.enrollment_id ?? '';
+      const programSlug = session.metadata?.program_slug ?? '';
+      const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
+      const clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
+      const amountEur = Number(session.amount_total ?? 0) / 100;
+      const paymentId = (session.payment_intent as string) ?? session.id;
+      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+      const customerName =
+        (session.customer_details as { name?: string } | null)?.name ??
+        customerEmail?.split('@')[0] ??
+        'Cliente';
+
+      const { data: existingOrder } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('stripe_payment_id', paymentId)
+        .maybeSingle();
+
+      if (!existingOrder && enrollmentId) {
+        await supabaseAdmin.from('orders').insert({
+          source            : 'academy',
+          client_id         : clientId,
+          stripe_payment_id : paymentId,
+          amount_eur        : amountEur,
+          currency          : session.currency?.toUpperCase() ?? 'EUR',
+          status            : 'paid',
+          service_slugs     : `${programSlug}-certification`,
+          metadata          : {
+            checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: productType },
+          },
+        });
+
+        await supabaseAdmin
+          .from('academy_enrollments')
+          .update({ certification_status: 'paid', updated_at: new Date().toISOString() })
+          .eq('id', enrollmentId);
+
+        if (customerEmail) {
+          const tpl = academyCertificationPaid(customerName, programName, amountEur);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'academy.certification.paid',
+            ...tpl,
+            metadata: { session_id: session.id, enrollment_id: enrollmentId },
+          });
+
+          const adminEmails = getAdminEmails();
+          if (adminEmails.length) {
+            const adminTpl = academyCertificationPaidAdmin(customerName, customerEmail, programName, amountEur);
+            sendEmail({
+              to: adminEmails,
+              eventType: 'academy.certification.paid.admin',
+              ...adminTpl,
+              metadata: { session_id: session.id, enrollment_id: enrollmentId },
+            }).catch((err) => console.error('[webhook] admin certification email failed:', err));
+          }
+
+          notifyAdmins({
+            title: `🎓 Certificación oficial pagada — ${customerName}`,
+            body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+            url  : '/admin/academy-matriculas',
+            tag  : `academy-certification-${session.id}`,
+          }).catch(() => {});
+        }
+
+        console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_certification', enrollment_id: enrollmentId, session_id: session.id }));
       }
     }
 
