@@ -193,41 +193,31 @@ Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-syn
 3. **Verificacion IMP-005** — Pago prueba → confirmar job en `holded_sync_jobs`; ejecutar `GET /api/cron/holded-sync` con `Bearer CRON_SECRET`.
 4. **Verificacion IMP-016** — WABA: boton `Omitir email` + consulta libre durante `asking_email`.
 5. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → probar "mis expedientes", "mis empresas".
-6. **Holded scheduler externo** — Configurar cron-job.org o GitHub Actions scheduled que llame `GET https://expertconsulting.es/api/cron/holded-sync` con `Authorization: Bearer CRON_SECRET` cada 15 min.
+6. ~~**Holded scheduler externo**~~ — ✅ `holded-sync.yml` (GitHub Actions) confirmado funcionando 2026-07-04.
 7. ~~**DNS**~~ — ✅ `kseniailicheva.com` redirect 301 a `expertconsulting.es` implementado.
-8. **Calendly** — Actualizar username en calendly.com/settings. Añadir `NEXT_PUBLIC_CALENDLY_URL` en Vercel env vars.
+8. ~~**Calendly**~~ — Obsoleto: la app migro completamente a Cal.com (commits `61d9acf`, `0064245`), cero referencias a Calendly restantes.
 
 ---
 
 ## Proximo sprint de codigo (ideas priorizadas)
 
-### Alta prioridad
+Nota (2026-07-04): esta seccion tenia items marcados como pendientes que ya estaban completados hace semanas (ver "Plan por fases" mas abajo para el detalle real de cada sprint). Consolidado aqui para que no vuelva a divergir.
 
-1. ~~**Email queue worker**~~ — ✅ COMPLETADO (2026-06-15): `lib/email/email-queue.ts` + `/api/cron/email-queue/route.ts`, cron en `vercel.json` cada hora.
+### Media prioridad (genuinamente abierto)
 
-2. **Kia herramientas (tool calls)** — Permitir a Kia consultar datos reales del usuario: lista de expedientes, estado de empresas conectadas, documentos pendientes. Requiere `kia-tool-executor.ts` con verificacion de permisos.
+1. **Notificaciones push tenant_admin** — Web Push o email digest semanal con resumen de actividad de su tenant (el digest semanal por email ya existe; falta la variante push).
 
-3. **Streaming SSE para Kia** — Las respuestas largas de Kia bloquean la UI. Implementar Server-Sent Events para streaming progresivo en `/api/ai/kia`.
+### Backlog / Fase SaaS avanzada (genuinamente abierto, sin codigo escrito)
 
-4. **Scheduler externo para Holded sync** — Configurar cron externo (GitHub Actions scheduled, cron-job.org o Vercel Cron pro) que llame `/api/cron/holded-sync` con `CRON_SECRET` cada 15 minutos.
+2. **Piloto con 1-3 asesorias externas** — Crear tenants reales, asignar `tenant_admin`, activar branding y Holded. Medir adopcion del portal y del copiloto Kia. Operacional, no requiere codigo previo.
 
-### Media prioridad
+3. **RAG / pgvector para Holded Academy** — Crawl de help.holded.com → chunks → embeddings → busqueda semantica en tiempo real. Pendiente cuando el volumen de preguntas tecnicas lo justifique.
 
-5. **Registro Mercantil via Infoempresa** — Integrar infoempresa.com como fuente adicional en el resolver de empresas (forma juridica, capital, objeto social, administradores actuales).
+4. **Stripe por tenant** — Cuenta Stripe independiente por asesoria para facturar a sus propios clientes desde la plataforma.
 
-6. **Onboarding cliente guiado** — Wizard para que el propio cliente (no solo el admin) complete su perfil, conecte empresas y suba documentacion inicial.
+5. **WhatsApp por tenant** — WABA number independiente por tenant para notificaciones salientes white-label.
 
-7. **Notificaciones push tenant_admin** — Web Push o email digest semanal con resumen de actividad de su tenant.
-
-### Backlog / Fase SaaS avanzada
-
-8. **Piloto con 1-3 asesorias externas** — Crear tenants reales, asignar `tenant_admin`, activar branding y Holded. Medir adopcion del portal y del copiloto Kia.
-
-9. **RAG / pgvector para Holded Academy** — Crawl de help.holded.com → chunks → embeddings → busqueda semantica en tiempo real. Pendiente cuando el volumen de preguntas tecnicas lo justifique.
-
-10. **Stripe por tenant** — Cuenta Stripe independiente por asesoria para facturar a sus propios clientes desde la plataforma.
-
-11. **WhatsApp por tenant** — WABA number independiente por tenant para notificaciones salientes white-label.
+Descartado: Registro Mercantil via Infoempresa (solo se usan fuentes gratuitas y abiertas — BORME, CKAN, VIES ya cubiertos).
 
 ---
 
@@ -1132,7 +1122,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 
 ### Inmediato (pendiente manual)
 
-1. **Merge PR #7** — github.com/expert-servicios/kiabusiness_app/pull/7
+1. ~~**Merge PR #7**~~ — ✅ Mergeado 2026-06-07.
 2. Realizar verificaciones manuales IMP-004 (Stripe reenvio), IMP-005 (Holded sync), IMP-016 (WABA omitir email), IMP-022 (widget Kia).
 
 ### Proximo sprint de codigo
