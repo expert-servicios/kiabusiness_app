@@ -55,41 +55,51 @@ Formación individual para implantar un proceso laboral claro, documentado y con
 
 ## Programa
 
-### Módulo 1 · Fundamentos de la gestión laboral · 1,5 horas
+### Módulo 1 · Arquitectura de la gestión laboral · 1 hora
 
-Relación laboral, organismos, obligaciones, plazos, responsabilidades, calendario y archivo.
+**Capa transversal.** Relación laboral, organismos, obligaciones, plazos, responsabilidades, calendario, expediente digital y mapa Holded–Creative Quality–TGSS/SEPE.
 
 ### Módulo 2 · Convenio colectivo de hostelería · 2,5 horas
 
-Ámbitos, grupos, categorías, jornada, descansos, vacaciones, periodo de prueba, pagas, nocturnidad, festivos y complementos.
+**Teoría + aplicación en Holded.** Ámbitos, grupos, categorías, jornada, descansos, vacaciones, periodo de prueba, pagas, nocturnidad, festivos y complementos. Traducción del convenio a reglas de configuración.
 
-### Módulo 3 · Conceptos retributivos y tablas salariales · 3 horas
+### Módulo 3 · Conceptos retributivos y tablas salariales · 2,5 horas
 
-Salario base, complementos, horas, pagas extras, percepciones extrasalariales, parcialidad, atrasos, bases e IRPF.
+**Teoría + Holded Nóminas.** Salario base, complementos, horas, pagas extras, percepciones extrasalariales, parcialidad, atrasos, bases, IRPF y parametrización de conceptos.
 
-### Módulo 4 · Configuración laboral en Holded · 2 horas
+### Módulo 4 · Configuración laboral y contractual en Holded · 2,5 horas
 
-Centro de trabajo, CCC, CNAE, convenio, conceptos, cuentas, empleados, grupos, jornadas, salario e IRPF.
+**Herramienta principal: Holded.** Gema Nóminas, Equipo Pro, centros, CCC, CNAE, convenio, cuentas, empleados, contratos internos, grupos, jornadas, salario, pagas, IRPF y permisos.
 
 ### Módulo 5 · Contratación y afiliación · 2,5 horas
 
-Documentación previa, alta, TA, IDC, contrato, Contrat@, huella electrónica, Holded y comprobación cruzada.
+**Herramientas principales: DelegaRed/NetContrata + Sistema RED/Contrat@.** Documentación previa, alta TGSS, TA, IDC, contrato, comunicación al SEPE, huella electrónica y comprobación cruzada con Holded. Holded conserva y alimenta datos, pero no sustituye la comunicación oficial.
 
 ### Módulo 6 · Gestión mensual de nóminas · 3 horas
 
-Incidencias, borradores, revisión, aprobación, PDF, entrega, remesa SEPA, pago y contabilización.
+**Herramienta principal: Holded Nóminas.** Centro de modificaciones, incidencias, borradores, revisión, aprobación, PDF, entrega, remesa SEPA, pago, asiento automático y conciliación.
 
-### Módulo 7 · Seguridad Social y SILTRA · 2,5 horas
+### Módulo 7 · Cotización: Holded + SILTRA/TGSS · 3 horas
 
-Liquidaciones, bases, CRA, respuestas, discrepancias, DCL, confirmación, RNT, RLC y conciliación.
+**Preparación: Holded. Transmisión y liquidación oficial: SILTRA/TGSS.** Ficheros de bases, CRA, L00/L03, envío externo, respuestas, discrepancias, DCL, confirmación, RNT, RLC, modalidad de pago y conciliación.
 
 ### Módulo 8 · Variaciones, bajas y finiquitos · 2 horas
 
-Cambios contractuales, prórrogas, transformaciones, bajas, vacaciones, indemnizaciones y certificado de empresa.
+**Holded + DelegaRed/NetContrata + Sistema RED/Contrat@/Certific@2.** Cambios salariales y contractuales, prórrogas, transformaciones, baja TGSS, liquidación y finiquito en Holded, vacaciones, indemnizaciones y certificado de empresa al SEPE.
 
 ### Módulo 9 · Cierre laboral y fiscal · 1 hora
 
-Conciliación, banco, contabilidad, modelos 111 y 190, certificados y archivo.
+**Herramienta principal: Holded; evidencias externas: TGSS/SEPE.** Conciliación de nóminas con RNT/RLC, banco y contabilidad; modelos 111 y 190 desde Holded; certificados, cuadro de control y archivo.
+
+## Distribución por plataforma
+
+| Plataforma | Qué se aprende a realizar | Qué no sustituye |
+| --- | --- | --- |
+| **Holded Nóminas / Equipo Pro** | configuración laboral, contratos internos, cálculo y aprobación de nóminas, finiquitos, remesas, asientos, preparación de ficheros SILTRA/CRA y gestión documental | alta/baja oficial TGSS, envío SILTRA, comunicación Contrat@ y Certific@2 |
+| **DelegaRed / NetContrata – Creative Quality** | interfaz operativa para afiliación, contratos, prórrogas, transformaciones, huellas y, según servicio contratado, Certific@2 | revisión jurídica, aceptación final por TGSS o SEPE y liquidación de cuotas |
+| **Sistema RED / RED Directo – TGSS** | altas, bajas, variaciones, consultas e IDC | nómina, contrato firmado, comunicación SEPE y liquidación SILTRA |
+| **SILTRA / Sistema de Liquidación Directa** | transmisión, respuestas, cálculos, confirmación, RNT y RLC | cálculo contractual, comunicación Contrat@ o certificado de empresa |
+| **Contrat@ / Certific@2 – SEPE** | comunicación de contratos y certificados/periodos que procedan | afiliación TGSS, nómina y cotización |
 
 ## Tutorías incluidas
 
@@ -116,4 +126,3 @@ Formación exenta de IVA cuando concurran los requisitos del artículo 20.Uno.9.
 - [Solicitar información](/contacto)
 - [Reservar reunión informativa](/cita)
 - [Descargar programa](/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf)
-

@@ -136,7 +136,7 @@ Mantén preparado el modelo para migrar posteriormente a `stripePriceId` y `/api
 
 ## Descarga
 
-- Publica el PDF corporativo genérico, nunca el personalizado de Ilya.
+- Publica el PDF corporativo genérico, nunca una versión personalizada para cliente.
 - Usa el archivo estático indicado en `public/downloads/...` o adapta el endpoint PDF para servir el diseño corporativo equivalente.
 - El nombre de descarga debe ser `programa-gestion-laboral-integral-expert.pdf`.
 - Registra evento de descarga.
@@ -166,7 +166,7 @@ Los contenidos marcados `access: public` son indexables. Los marcados `access: s
 ## Privacidad y datos de cliente
 
 - No publiques nombres, NIF, CCC, NAF, salarios, contratos ni datos de trabajadores reales.
-- No publiques el dossier ruso personalizado de Ilya Ovchinnikov.
+- No publiques ningún dossier personalizado para cliente.
 - Todos los ejemplos deben ser ficticios o anonimizados.
 - Las capturas deben ocultar datos personales y credenciales.
 
@@ -218,7 +218,7 @@ Propiedades permitidas: `program_slug`, `locale`, `cta_location`, `article_slug`
 7. Verificar formulario, éxito y error.
 8. Verificar fallback de reunión.
 9. Verificar rutas públicas y privadas de `/docs/laboral`.
-10. Verificar que ningún contenido personalizado de Ilya es público.
+10. Verificar que ningún contenido personalizado de cliente es público.
 
 ## Entregables de implementación
 
@@ -245,4 +245,3 @@ Propiedades permitidas: `program_slug`, `locale`, `cta_location`, `article_slug`
 ## Criterio final de aceptación
 
 Un visitante debe poder comprender el curso, descargar la programación, solicitar información, reservar una reunión o pagar en menos de dos minutos. Un alumno autorizado debe poder navegar los manuales privados, mientras que un visitante no matriculado solo accede a contenidos públicos y a la explicación comercial del programa.
-

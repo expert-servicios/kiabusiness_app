@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BookOpen, Clock, Lock, Unlock } from 'lucide-react';
+import { BookOpen, Lock } from 'lucide-react';
 import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
 import { getActiveEnrollment } from '@/lib/utils/academy-enrollment';
+import { AcademyKnowledgeIndex } from '@/components/docs/AcademyKnowledgeIndex';
 
 const PROGRAM_SLUG = 'gestion-laboral-integral';
 
@@ -30,6 +31,10 @@ export default async function AcademyKnowledgeIndexPage() {
             Manuales operativos del Programa de Gestión Laboral Integral, desde la configuración inicial hasta el
             cierre mensual y anual.
           </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#9CA3AF]">
+            Filtra los contenidos por fase del ciclo laboral o por herramienta: Holded, Sistema RED, SILTRA,
+            DelegaRed, NetContrata, Contrat@, Certific@2, TGSS, SEPE y AEAT.
+          </p>
           {!enrolled && (
             <div className="mt-6 inline-flex items-center gap-2 rounded-md border border-white/15 px-4 py-2 text-sm text-[#9CA3AF]">
               <Lock className="h-4 w-4 text-[#D4A017]" />
@@ -41,38 +46,20 @@ export default async function AcademyKnowledgeIndexPage() {
 
       <section className="px-6 py-14">
         <div className="mx-auto max-w-5xl">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {articles.map((article) => {
-              const locked = article.access === 'student' && !enrolled;
-              return (
-                <Link
-                  key={article.slug}
-                  href={`/docs/laboral/${article.slug}`}
-                  className="group border border-[#D4A017]/25 bg-white p-5 transition hover:border-[#D4A017]"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#D4A017]">
-                      Módulo {article.module}
-                    </p>
-                    {locked ? (
-                      <Lock className="h-4 w-4 text-[#9CA3AF]" />
-                    ) : (
-                      <Unlock className="h-4 w-4 text-[#D4A017]" />
-                    )}
-                  </div>
-                  <h2 className="mt-2 font-serif text-lg font-bold text-[#0D1B2A] group-hover:text-[#D4A017]">
-                    {article.title}
-                  </h2>
-                  {article.readTime && (
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-[#8899aa]">
-                      <Clock className="h-3.5 w-3.5" />
-                      {article.readTime}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+          <AcademyKnowledgeIndex
+            enrolled={enrolled}
+            articles={articles.map((article) => ({
+              slug: article.slug,
+              title: article.title,
+              module: article.module,
+              access: article.access,
+              status: article.status,
+              readTime: article.readTime,
+              tags: article.tags,
+              phase: article.phase,
+              tools: article.tools,
+            }))}
+          />
 
           {!enrolled && (
             <div className="mt-10 flex flex-col items-center gap-3 border border-[#D4A017]/30 bg-white p-8 text-center">

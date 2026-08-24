@@ -41,6 +41,31 @@ Capacidad para ejecutar y controlar la gestión laboral ordinaria con procedimie
 8. Variaciones, bajas y finiquitos.
 9. Cierre laboral y fiscal.
 
+## Distribución funcional actualizada
+
+La ampliación de **Holded Nóminas** permite concentrar en Holded la configuración,
+el cálculo mensual, los contratos internos, los finiquitos, la remesa, la
+contabilidad y la preparación de ficheros de cotización. El programa mantiene las
+plataformas oficiales porque Holded no sustituye la presentación o aceptación por
+TGSS y SEPE.
+
+| Bloque | Sistema formativo principal | Sistema oficial o complementario |
+|---|---|---|
+| Empresa, centro, convenio y empleado | Holded | documentación laboral |
+| Contrato interno y salario | Holded Equipo Pro / Nóminas | convenio y contrato firmado |
+| Alta, baja y variaciones | DelegaRed/NetContrata | Sistema RED / TGSS |
+| Comunicación contractual | DelegaRed/NetContrata | Contrat@ / SEPE |
+| Nómina, finiquito, pago y asiento | Holded Nóminas | banco y expediente |
+| Bases y ficheros de cotización | Holded Nóminas | SILTRA / TGSS |
+| Respuestas, DCL, RNT y RLC | SILTRA / TGSS | incorporación posterior a Holded |
+| Certificado de empresa | solución Creative Quality | Certific@2 / SEPE |
+| 111 y 190 | Holded | AEAT |
+
+La comunicación comercial debe evitar la expresión “todo se hace desde Holded”.
+La formulación correcta es: **Holded centraliza el cálculo y la gestión interna;
+Creative Quality facilita afiliación y empleo; TGSS, SILTRA y SEPE validan las
+comunicaciones oficiales.**
+
 ## Incluido
 
 - 20 horas individuales;
@@ -95,5 +120,4 @@ flowchart TD
 - El programa aparece en sitemap y metadata.
 - La base laboral permite navegación por módulo.
 - El contenido privado exige sesión y matrícula.
-- No aparecen datos personales de Ilya ni de trabajadores.
-
+- No aparecen datos personales de clientes ni de trabajadores.

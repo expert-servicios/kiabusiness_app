@@ -93,6 +93,5 @@ La versión pública principal se redacta en español. La versión rusa debe man
 
 - No usar capturas de clientes reales sin anonimización irreversible.
 - No incluir claves, certificados, CSV descargados, CCC, NAF o IBAN.
-- No publicar el dossier personalizado de Ilya.
-- No incluir datos reales de los 11 trabajadores de INVERSIONES PASO SEGURO, S.L.U.
-
+- No publicar ningún dossier personalizado de cliente.
+- No incluir datos reales de empresas o trabajadores.

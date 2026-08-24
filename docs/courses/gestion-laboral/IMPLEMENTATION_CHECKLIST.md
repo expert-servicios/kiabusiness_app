@@ -9,43 +9,43 @@
 
 ## Fase 1 · Catálogo y landing
 
-- [ ] Ampliar `AcademyProgram` sin romper el programa actual.
-- [ ] Añadir `gestion-laboral-integral`.
-- [ ] Crear ruta por slug.
-- [ ] Implementar hero, módulos, metodología, precio y FAQ.
-- [ ] Añadir CTAs de pago, contacto, reunión y descarga.
+- [x] Ampliar `AcademyProgram` sin romper el programa actual.
+- [x] Añadir `gestion-laboral-integral`.
+- [x] Crear ruta por slug.
+- [x] Implementar hero, módulos, metodología, precio y FAQ.
+- [x] Añadir CTAs de pago, contacto, reunión y descarga.
 - [ ] Añadir metadata y JSON-LD.
 
 ## Fase 2 · Leads y conversión
 
-- [ ] Adaptar `AcademyLeadForm` por programa.
+- [x] Adaptar `AcademyLeadForm` por programa.
 - [ ] Añadir campos laborales no sensibles.
-- [ ] Validar en servidor.
-- [ ] Confirmar emails y persistencia.
+- [x] Validar en servidor.
+- [x] Confirmar emails y persistencia.
 - [ ] Instrumentar eventos.
 
 ## Fase 3 · Descarga
 
-- [ ] Publicar PDF genérico.
-- [ ] Verificar nombre y MIME.
+- [x] Publicar PDF genérico.
+- [x] Verificar nombre y MIME.
 - [ ] Registrar descarga.
-- [ ] Excluir documento personalizado de Ilya.
+- [x] Excluir documentos personalizados de clientes.
 
 ## Fase 4 · Base de conocimientos
 
-- [ ] Implementar loader Markdown.
-- [ ] Validar frontmatter con Zod.
-- [ ] Crear categoría `/docs/laboral`.
-- [ ] Crear artículo por manual.
-- [ ] Añadir filtros por fase y herramienta.
-- [ ] Añadir estados editoriales.
+- [x] Implementar loader Markdown.
+- [x] Validar frontmatter con Zod.
+- [x] Crear categoría `/docs/laboral`.
+- [x] Crear artículo por manual.
+- [x] Añadir filtros por fase y herramienta.
+- [x] Añadir estados editoriales.
 
 ## Fase 5 · Área privada
 
-- [ ] Definir matrícula/entitlement.
-- [ ] Proteger en servidor los manuales `student`.
-- [ ] Crear vista de acceso no autorizado.
-- [ ] Conectar webhook Stripe antes de automatizar acceso.
+- [x] Definir matrícula/entitlement.
+- [x] Proteger en servidor los manuales `student`.
+- [x] Crear vista de acceso no autorizado.
+- [x] Conectar webhook Stripe antes de automatizar acceso.
 - [ ] Añadir auditoría mínima.
 
 ## Fase 6 · Calidad y lanzamiento
@@ -57,7 +57,6 @@
 - [ ] QA responsive y accesibilidad.
 - [ ] QA del embudo completo.
 - [ ] Revisión de privacidad.
-- [ ] Sitemap.
-- [ ] Changelog.
+- [x] Sitemap.
+- [x] Changelog.
 - [ ] Publicación.
-
