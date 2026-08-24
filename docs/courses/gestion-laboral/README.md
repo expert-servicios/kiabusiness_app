@@ -46,7 +46,13 @@ Para que el webhook identifique la compra como `academy_program`/`gestion-labora
 
 Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bloque completo del webhook se salta silenciosamente (mismo comportamiento que hoy, antes de este cambio).
 
-**Limitación conocida, aceptada por ahora:** si un comprador de Payment Link no tiene cuenta EXPERT con el mismo email de compra, la vinculación de su matrícula sigue siendo manual (admin crea la fila `academy_enrollments` a mano tras verificar en Stripe). Auto-vincular por email en el primer login futuro requeriría hacer `academy_enrollments.client_id` nullable + añadir una columna `client_email` — se ha dejado fuera de esta fase para no depender de otra migración de Supabase en esta sesión.
+**Limitación conocida, aceptada por ahora:** si un comprador de Payment Link no tiene cuenta EXPERT con el mismo email de compra, la vinculación de su matrícula sigue siendo manual. Auto-vincular por email en el primer login futuro requeriría hacer `academy_enrollments.client_id` nullable + añadir una columna `client_email` — se ha dejado fuera de esta fase para no depender de otra migración de Supabase en esta sesión.
+
+**Fase 2c — vista admin de matrículas: implementada.** `/admin/academy-matriculas` (enlace "Matrículas Academy" en el sidebar, bajo Facturación) permite hacer ese paso manual sin SQL:
+
+- Lista los pedidos "pendientes de vincular" (compras de Payment Link cuyo email no coincidía con ninguna cuenta) con un campo para introducir el email una vez la persona se ha registrado — el botón "Vincular matrícula" crea la fila `academy_enrollments`, actualiza `orders.client_id` y envía el email de confirmación normal (`academyEnrollmentConfirmed`), reutilizando `/api/admin/academy/enrollments/link-order`.
+- Lista todas las matrículas existentes con selector de `status` (activa/cancelada/completada) y, para el Programa Superior, selector de `certification_status` (sin solicitar → solicitada → en revisión → aprobada/rechazada → pagada) — la base para la Fase E de certificación oficial, aunque el checkout de esa opción sigue sin implementarse.
+- Permite crear una matrícula manual (transferencia, cortesía, etc.) buscando por email de una cuenta ya existente — `/api/admin/academy/enrollments` (POST).
 
 - Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
 - JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.

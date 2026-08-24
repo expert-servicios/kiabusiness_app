@@ -73,6 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Suscripciones", href: "/admin/suscripciones" },
       { label: "Pagos Stripe", href: "/admin/pagos" },
+      { label: "Matrículas Academy", href: "/admin/academy-matriculas" },
     ],
   },
   {
