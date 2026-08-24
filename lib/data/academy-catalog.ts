@@ -38,6 +38,8 @@ export interface AcademyProgram {
   /** External Stripe Payment Link — used instead of stripePriceId when there's no internal Checkout Session integration yet. Opens in the same tab, no query params. */
   paymentLink?: string;
   downloadHref?: string;
+  /** Link to the program's gated knowledge base (e.g. /docs/laboral), if it has one. */
+  knowledgeBaseHref?: string;
   officialCertification?: AcademyOfficialCertification;
   audience: string[];
   outcomes: string[];
@@ -607,6 +609,7 @@ export const academyPrograms: AcademyProgram[] = [
     taxNote: 'Formación exenta de IVA cuando concurran los requisitos del artículo 20.Uno.9.º de la Ley 37/1992.',
     paymentLink: 'https://buy.stripe.com/6oU00kftqgMs9jU5gJ8EM0i',
     downloadHref: '/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf',
+    knowledgeBaseHref: '/docs/laboral',
     audience: [
       'Gerentes y administradores de pymes.',
       'Responsables de administración.',
