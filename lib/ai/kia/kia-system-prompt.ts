@@ -33,7 +33,7 @@ const PAE_CONTEXT_RE =
 const CCAA_CONTEXT_RE =
   /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos documentados|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*comunidad|ccaa.*impuesto|impuesto.*regional)\b/i;
 const ACADEMY_CONTEXT_RE =
-  /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|curso.*direcci[oó]n|direcci[oó]n.*administraci[oó]n.*gesti[oó]n|entrevista de admisi[oó]n|matr[ií]cul|курс|академ)\b/i;
+  /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|curso.*direcci[oó]n|direcci[oó]n.*administraci[oó]n.*gesti[oó]n|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|курс|академ)\b/i;
 
 const PAGE_DATA_MAX_KEYS = 20;
 const PAGE_DATA_MAX_STRING_LEN = 300;

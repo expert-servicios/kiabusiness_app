@@ -135,18 +135,20 @@ export default function AcademyPage() {
       {/* Proyecto final + metodología */}
       <section className="px-6 py-14">
         <div className="mx-auto max-w-5xl grid gap-10 md:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wide text-[#D4A017]">Proyecto final</h3>
-            <p className="mt-3 text-sm leading-6 text-[#23364D]">{program.finalProject.description}</p>
-            <ul className="mt-4 space-y-1.5">
-              {program.finalProject.options.map((opt) => (
-                <li key={opt} className="flex items-start gap-2 text-sm leading-6 text-[#23364D]">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-                  {opt}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {program.finalProject && (
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[#D4A017]">Proyecto final</h3>
+              <p className="mt-3 text-sm leading-6 text-[#23364D]">{program.finalProject.description}</p>
+              <ul className="mt-4 space-y-1.5">
+                {program.finalProject.options.map((opt) => (
+                  <li key={opt} className="flex items-start gap-2 text-sm leading-6 text-[#23364D]">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                    {opt}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-[#D4A017]">Metodología EXPERT</h3>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -161,20 +163,22 @@ export default function AcademyPage() {
       </section>
 
       {/* Certificación oficial */}
-      <section className="px-6 pb-14">
-        <div className="mx-auto max-w-5xl border border-[#D4A017]/30 bg-white p-6 sm:p-8">
-          <h3 className="font-serif text-xl font-bold">Certificación oficial homologada opcional</h3>
-          <p className="mt-3 text-sm leading-6 text-[#23364D]">
-            El contenido del itinerario está alineado con el Certificado Profesional de nivel 3{' '}
-            <strong>{program.officialCertification.code} — {program.officialCertification.name}</strong>.
-          </p>
-          <p className="mt-2 text-sm leading-6 text-[#23364D]">{program.officialCertification.requirementsNote}</p>
-          <p className="mt-4 text-lg font-bold text-[#0D1B2A]">{program.officialCertification.price}</p>
-          <p className="mt-1 text-xs text-[#8899aa]">
-            Importe independiente del precio del programa, se abona únicamente cuando se confirma la incorporación al itinerario oficial.
-          </p>
-        </div>
-      </section>
+      {program.officialCertification && (
+        <section className="px-6 pb-14">
+          <div className="mx-auto max-w-5xl border border-[#D4A017]/30 bg-white p-6 sm:p-8">
+            <h3 className="font-serif text-xl font-bold">Certificación oficial homologada opcional</h3>
+            <p className="mt-3 text-sm leading-6 text-[#23364D]">
+              El contenido del itinerario está alineado con el Certificado Profesional de nivel 3{' '}
+              <strong>{program.officialCertification.code} — {program.officialCertification.name}</strong>.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#23364D]">{program.officialCertification.requirementsNote}</p>
+            <p className="mt-4 text-lg font-bold text-[#0D1B2A]">{program.officialCertification.price}</p>
+            <p className="mt-1 text-xs text-[#8899aa]">
+              Importe independiente del precio del programa, se abona únicamente cuando se confirma la incorporación al itinerario oficial.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Precio */}
       <section className="brand-blue-bg px-6 py-14 text-[#F8F6F1]">
@@ -214,6 +218,7 @@ export default function AcademyPage() {
       </section>
 
       {/* Perfiles objetivo */}
+      {program.targetProfiles && (
       <section className="px-6 py-14">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-serif text-2xl font-bold sm:text-3xl">Una formación. Diferentes objetivos profesionales.</h2>
@@ -227,6 +232,7 @@ export default function AcademyPage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* FAQ */}
       <FaqSection items={program.faqs} />

@@ -70,12 +70,12 @@ function ProgramPDF({ program }: { program: AcademyProgram }) {
         ),
       ),
 
-      React.createElement(View, { style: styles.section },
+      program.officialCertification ? React.createElement(View, { style: styles.section },
         React.createElement(Text, { style: styles.sectionTitle }, 'Certificación oficial opcional'),
         React.createElement(Text, { style: styles.faqA },
           `${program.officialCertification.code} — ${program.officialCertification.name}. ${program.officialCertification.price}. ${program.officialCertification.requirementsNote}`
         ),
-      ),
+      ) : null,
 
       React.createElement(View, { style: styles.section },
         React.createElement(Text, { style: styles.sectionTitle }, 'Preguntas frecuentes'),

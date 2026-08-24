@@ -29,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/servicios`,                       changeFrequency: 'monthly', priority: 0.9, lastModified: now },
     { url: `${BASE}/planes`,                          changeFrequency: 'monthly', priority: 0.9, lastModified: now },
     { url: `${BASE}/academy`,                         changeFrequency: 'monthly', priority: 0.85, lastModified: now },
+    { url: `${BASE}/academy/gestion-laboral-integral`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     { url: `${BASE}/holded`,                          changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     { url: `${BASE}/holded/conectores`,               changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/holded/conectores/claude`,        changeFrequency: 'monthly', priority: 0.72, lastModified: now },

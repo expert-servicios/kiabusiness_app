@@ -142,7 +142,7 @@ export function quoteReceivedAdmin(name: string, email: string, services: string
 }
 
 // ── 2b. Academy lead received (client) ───────────────────────────────────────
-export function academyLeadReceivedClient(name: string, programName: string) {
+export function academyLeadReceivedClient(name: string, programName: string, programPath: string = '/academy') {
   return {
     subject: 'Hemos recibido tu solicitud de información — EXPERT Business Academy',
     html: base('Solicitud recibida', `
@@ -150,7 +150,7 @@ export function academyLeadReceivedClient(name: string, programName: string) {
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para(`Hemos recibido tu solicitud de información sobre <strong>${escapeHtml(programName)}</strong>. Revisaremos tu perfil y te contactaremos en un plazo de 24 horas hábiles con toda la información sobre modalidad, calendario y requisitos.`)}
       ${para('Si lo prefieres, también puedes reservar directamente una entrevista de admisión desde nuestra web.')}
-      ${btn('Ver el programa', `${BRAND.appUrl}/academy`)}
+      ${btn('Ver el programa', `${BRAND.appUrl}${programPath}`)}
     `)
   };
 }
