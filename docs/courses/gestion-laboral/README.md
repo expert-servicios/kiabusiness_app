@@ -27,9 +27,27 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - Kia (`kia-academy-knowledge.ts`) actualizada: sabe que solo el índice es público y nunca debe insinuar que alguien sin matrícula puede ver los manuales completos.
 - `app/sitemap.ts` — solo se añade `/docs/laboral/indice` (el único contenido realmente público); el índice y los manuales privados quedan fuera del sitemap.
 
-**Fase 2b — pendiente, no implementada en este commit:**
+**Fase 2b — webhook de matrícula: implementada, con un paso manual pendiente en Stripe.**
 
-- Integración de webhook para el Payment Link externo → creación automática de `academy_enrollments` para este curso (hoy esa tabla solo se rellena desde `/api/academy/checkout`, que este curso no usa). Sin esto, comprar por Payment Link no da acceso automático a los manuales — hoy requiere que un admin cree manualmente la fila `academy_enrollments` (`program_slug: 'gestion-laboral-integral'`, `status: 'active'`) tras verificar el pago en Stripe. Es el paso que de verdad conecta el pago con el acceso a la base de conocimientos.
+`app/api/stripe/webhook/route.ts` (bloque `product_type === 'academy_program'`) ya reacciona a pagos del Payment Link externo, no solo a los de `/api/academy/checkout`:
+
+- Si la sesión trae `client_reference_id`/`metadata.user_id` (checkout interno) se usa directamente.
+- Si no (compra por Payment Link, que deliberadamente no exige login antes de pagar), se busca un `profiles` existente por el email de la compra. Si hay coincidencia, se crea la fila `academy_enrollments` automáticamente — el comprador recibe acceso a los manuales sin intervención manual.
+- Si no hay ninguna cuenta con ese email, se registra igualmente el pago en `orders` (para no perder trazabilidad ni duplicar el email en reintentos del webhook de Stripe) y se envían dos emails nuevos: al comprador (`academyEnrollmentPendingLink`, pidiéndole crear cuenta/iniciar sesión con el mismo email) y a admin (`academyEnrollmentPendingLinkAdmin`, con instrucción de vincular manualmente la matrícula cuando esa persona tenga cuenta).
+
+⚠️ **Paso manual pendiente — configurar el Payment Link en el Dashboard de Stripe:**
+Para que el webhook identifique la compra como `academy_program`/`gestion-laboral-integral`, el Payment Link (`https://buy.stripe.com/6oU00kftqgMs9jU5gJ8EM0i`) necesita metadata configurada en Stripe Dashboard → Payment Links → editar este enlace → Metadata:
+
+| Key | Value |
+|---|---|
+| `product_type` | `academy_program` |
+| `program_slug` | `gestion-laboral-integral` |
+| `program_name` | `Programa personalizado de Gestión Laboral Integral` |
+
+Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bloque completo del webhook se salta silenciosamente (mismo comportamiento que hoy, antes de este cambio).
+
+**Limitación conocida, aceptada por ahora:** si un comprador de Payment Link no tiene cuenta EXPERT con el mismo email de compra, la vinculación de su matrícula sigue siendo manual (admin crea la fila `academy_enrollments` a mano tras verificar en Stripe). Auto-vincular por email en el primer login futuro requeriría hacer `academy_enrollments.client_id` nullable + añadir una columna `client_email` — se ha dejado fuera de esta fase para no depender de otra migración de Supabase en esta sesión.
+
 - Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
 - JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.
 - Estados `validated`/`pending_update` del frontmatter de los manuales (hoy todos en `draft`) — sin flujo de revisión editorial todavía; se muestran igual, sin badge de estado en la UI.
