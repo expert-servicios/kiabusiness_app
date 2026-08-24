@@ -16,6 +16,7 @@ import { KIA_DGT_KNOWLEDGE_PROMPT } from "./prompts/kia-dgt-knowledge";
 import { KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT } from "./prompts/kia-justicia-registros-knowledge";
 import { KIA_PAE_KNOWLEDGE_PROMPT } from "./prompts/kia-pae-knowledge";
 import { KIA_CCAA_KNOWLEDGE_PROMPT } from "./prompts/kia-ccaa-knowledge";
+import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
 
 const HOLDED_CONTEXT_RE =
   /\bholded\b|pack starter|migraci[oó]n holded|formaci[oó]n holded|plan supervision|plan avanzado|plan colaborativo|erp|control horario.*holded|holded.*control horario|холдед/i;
@@ -31,6 +32,8 @@ const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
   /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos documentados|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*comunidad|ccaa.*impuesto|impuesto.*regional)\b/i;
+const ACADEMY_CONTEXT_RE =
+  /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|curso.*direcci[oó]n|direcci[oó]n.*administraci[oó]n.*gesti[oó]n|entrevista de admisi[oó]n|matr[ií]cul|курс|академ)\b/i;
 
 const PAGE_DATA_MAX_KEYS = 20;
 const PAGE_DATA_MAX_STRING_LEN = 300;
@@ -92,6 +95,7 @@ export function buildKiaSystemPrompt(params: {
   includeJusticia?: boolean;
   includePae?: boolean;
   includeCcaa?: boolean;
+  includeAcademy?: boolean;
   fewShotBlock?: string;
   subAgentAddendum?: string;
 }): string {
@@ -111,6 +115,8 @@ export function buildKiaSystemPrompt(params: {
   const withPae = params.includePae ?? matchesContext(PAE_CONTEXT_RE, params);
   const withCcaa =
     params.includeCcaa ?? matchesContext(CCAA_CONTEXT_RE, params);
+  const withAcademy =
+    params.includeAcademy ?? matchesContext(ACADEMY_CONTEXT_RE, params);
 
   return `
 <role>
@@ -185,6 +191,7 @@ ${withDgt ? KIA_DGT_KNOWLEDGE_PROMPT : ""}
 ${withJusticia ? KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT : ""}
 ${withPae ? KIA_PAE_KNOWLEDGE_PROMPT : ""}
 ${withCcaa ? KIA_CCAA_KNOWLEDGE_PROMPT : ""}
+${withAcademy ? KIA_ACADEMY_KNOWLEDGE_PROMPT : ""}
 
 ${params.fewShotBlock ? `\n<few_shot_examples>\n${params.fewShotBlock}\n</few_shot_examples>` : ""}
 

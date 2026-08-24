@@ -257,12 +257,9 @@ https://expertconsulting.es/academy#solicitar-info
   sección de precio de `/academy` — redirige a login si no hay sesión, a
   completar perfil si falta, o a Stripe Checkout.
 
-  ⚠️ **Pendiente de aplicar en Supabase:** la migración
-  `20260721000001_academy_enrollments.sql` está escrita pero no se ha podido
-  aplicar automáticamente en esta sesión (sin acceso autenticado al MCP de
-  Supabase). Debe aplicarse manualmente (SQL Editor o `supabase db push`)
-  antes de que el checkout funcione en producción — si no, el webhook
-  fallará al intentar insertar en `academy_enrollments` (tabla inexistente).
+  ✅ Migración `20260721000001_academy_enrollments.sql` aplicada manualmente
+  por el usuario en Supabase — el checkout de matrícula ya está operativo
+  de extremo a extremo.
 
 - [ ] **Fase E — certificación oficial opcional.** El Stripe Price ya existe
       (`price_1U80fDLeYwwgvux48ZV4MWyp`) pero deliberadamente no se expone
@@ -271,5 +268,26 @@ https://expertconsulting.es/academy#solicitar-info
       vista admin para marcar `certification_status` = `approved` en un
       `academy_enrollment`, y solo entonces generar un enlace de pago (Stripe
       Payment Link o checkout ad-hoc) para ese alumno concreto.
-- [ ] Fase F: bloque de conocimiento de Kia sobre el curso — no bloqueante,
-      puede hacerse en paralelo en cualquier momento.
+- [x] **Fase F — conocimiento de Kia: implementada.** Nuevo bloque
+      `lib/ai/kia/prompts/kia-academy-knowledge.ts`, siguiendo el mismo
+      patrón que `kia-holded-knowledge.ts`: programa (precio, horas,
+      16 módulos, a quién va dirigido), certificación oficial opcional
+      (precio, requisitos, reglas para no prometer elegibilidad ni tramitar
+      el pago directamente) y reglas de tono ("matrícula"/"solicitud de
+      información", nunca "expediente"). Se inyecta condicionalmente vía un
+      nuevo `ACADEMY_CONTEXT_RE` en `kia-system-prompt.ts` (mismo mecanismo
+      que Holded/AEAT/SS/etc.) y se conecta en `kia-decision-engine.ts` con
+      detección por mensaje, `serviceSlug` y `currentPage`. No se tocó el
+      catálogo transaccional de Kia (`kia-services-catalog.ts`) porque la
+      Academy no usa el sistema de `flowType`/checkout de servicios — tiene
+      su propia ruta de checkout dedicada.
+
+### Estado final
+
+Todas las fases (A–F) del plan quedan implementadas y desplegadas en
+producción. La Academy tiene landing, nav, captación de leads, reserva de
+entrevista, descarga de programación, checkout de matrícula funcional de
+extremo a extremo, y Kia puede responder preguntas sobre el curso. Único
+punto abierto: la vista admin de Fase E para aprobar y cobrar la
+certificación oficial opcional — sin fecha, a definir cuando haya demanda
+real de esa opción.
