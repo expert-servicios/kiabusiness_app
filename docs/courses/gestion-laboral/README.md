@@ -6,33 +6,27 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 
 **Fase 1 — landing pública, pago, PDF, leads: implementada.**
 
-- `lib/data/academy-catalog.ts` — segundo programa `gestion-laboral-integral` añadido al array `academyPrograms` (interfaces `AcademyProgram`/`AcademyOfficialCertification` ampliadas con campos opcionales: `hoursTutoring`, `valueLabel`, `taxNote`, `paymentLink`, `downloadHref`, `tutoringIncluded`; `officialCertification`, `finalProject` y `targetProfiles` pasan a opcionales porque este curso no los tiene).
-- `app/(public)/academy/[slug]/page.tsx` — nueva ruta dinámica para programas distintos del índice 0, para no tocar ni duplicar `/academy` (que sigue sirviendo el Programa Superior sin cambios). Sirve `/academy/gestion-laboral-integral`.
-- CTA de pago **"Inscribirme y pagar"** enlaza directo al Payment Link de Stripe aprobado (`paymentLink` en el catálogo) — NO usa `/api/academy/checkout` ni un `stripePriceId`, tal como exige `STRIPE_AND_CONVERSION.md` ("no crear un Price ID ficticio", "no reutilizar el del Programa Superior").
-- `app/(public)/gracias/academy/gestion-laboral-integral/page.tsx` — página de éxito para configurar como redirect del Payment Link en el Dashboard de Stripe. No afirma matrícula activa (eso requeriría el webhook de la Fase 2).
-- PDF corporativo genérico copiado desde la rama de origen a `public/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf` (26 páginas, verificado que NO es la versión personalizada de Ilya Ovchinnikov).
-- Formulario de leads: reutiliza `AcademyLeadForm`/`app/api/academy/leads` sin cambios (ya son genéricos por `programSlug`).
-- Reserva de reunión informativa: reutiliza `CalendlyButton`/`getCalAcademyUrl()` sin cambios (mismo slot de Cal.com que el Programa Superior).
-- `app/sitemap.ts` — entrada añadida.
-- Kia: `lib/ai/kia/prompts/kia-academy-knowledge.ts` ampliado con un bloque `academy_program_2` y reglas para no confundir los dos programas ni prometer la exención de IVA como garantizada. `ACADEMY_CONTEXT_RE` (system prompt) e `includeAcademy` (decision engine) amplían sus regex.
+- `lib/data/academy-catalog.ts` — segundo programa `gestion-laboral-integral` añadido al array `academyPrograms`.
+- `app/(public)/academy/[slug]/page.tsx` — ruta dinámica que sirve `/academy/gestion-laboral-integral` sin sustituir el Programa Superior.
+- CTA de pago conectado al Payment Link aprobado, sin reutilizar el Price ID del Programa Superior.
+- `app/(public)/gracias/academy/gestion-laboral-integral/page.tsx` — página de éxito para configurar en Stripe.
+- PDF corporativo genérico publicado sin datos personalizados de clientes.
+- Formulario de leads y reserva de reunión reutilizan los componentes genéricos existentes.
+- Sitemap y contexto de Kia actualizados para distinguir ambos programas.
 
-**Fase 2a — base de conocimientos `/docs/laboral`: implementada.**
+**Fase 2 — contenidos terminados; integración web y validación funcional pendientes:**
 
-- `lib/utils/academy-knowledge.ts` — cargador de contenido: lee `content/academy/gestion-laboral/knowledge/*.md` con `fs.readdirSync`/`readFileSync` (ruta literal, para que el file-tracing de Next.js/Vercel empaquete los archivos correctamente) y parsea el frontmatter (`access`, `status`, `module`, `tags`, etc.) con un parser propio minimalista, sin depender de ninguna librería nueva.
-- `lib/utils/academy-enrollment.ts` — `getActiveEnrollment(programSlug)`: comprueba sesión (cookies, patrón ya usado en `/gracias/pago`) y busca una fila `academy_enrollments` con `status = 'active'` para ese programa. Se ejecuta siempre en servidor — nunca se decide el acceso en el cliente.
-- `app/(public)/docs/laboral/page.tsx` — índice: el manual `00-indice.md` (`access: public`) se muestra listado junto a los 8 manuales privados, marcados con candado si el visitante no tiene matrícula activa. `robots: noindex` porque la página en sí no aporta contenido propio indexable.
-- `app/(public)/docs/laboral/[slug]/page.tsx` — ficha de manual. Solo el artículo público se pre-renderiza (`generateStaticParams` filtra por `access === 'public'`); los 8 manuales privados se sirven dinámicamente por request (Next.js detecta el uso de `cookies()` dentro de `getActiveEnrollment` y desactiva el cacheo estático automáticamente). Sin matrícula, el `body` del manual **nunca se envía al cliente** — se renderiza una pantalla de bloqueo en su lugar, no solo se oculta con CSS/JS.
-- `components/docs/AcademyKnowledgeArticle.tsx` — renderer de markdown reutilizando el mismo patrón ya usado en `/docs/[slug]` (duplicado, no refactorizado desde el original, para no tocar la página pública de docs ya en producción).
-- CTA **"Explorar manuales"** añadido a la landing del curso (`knowledgeBaseHref` nuevo en el catálogo).
-- Kia (`kia-academy-knowledge.ts`) actualizada: sabe que solo el índice es público y nunca debe insinuar que alguien sin matrícula puede ver los manuales completos.
-- `app/sitemap.ts` — solo se añade `/docs/laboral/indice` (el único contenido realmente público); el índice y los manuales privados quedan fuera del sitemap.
+- servir `/docs/laboral` con control de acceso público/alumno verificado en servidor;
+- conectar el Payment Link con `academy_enrollments` mediante webhook o migrar a checkout interno;
+- incorporar analítica de conversión;
+- añadir JSON-LD `Course`, `Offer`, `Organization` y `BreadcrumbList`.
 
-**Fase 2b — pendiente, no implementada en este commit:**
+Los manuales 01–08 ya están redactados como SOPs y los artículos 10–16 cubren
+el mapa de herramientas y las rutas específicas. Todos permanecen en `review`
+hasta realizar las 58 capturas previstas y ejecutar las pruebas de extremo a
+extremo en cuentas autorizadas.
 
-- Integración de webhook para el Payment Link externo → creación automática de `academy_enrollments` para este curso (hoy esa tabla solo se rellena desde `/api/academy/checkout`, que este curso no usa). Sin esto, comprar por Payment Link no da acceso automático a los manuales — hoy requiere que un admin cree manualmente la fila `academy_enrollments` (`program_slug: 'gestion-laboral-integral'`, `status: 'active'`) tras verificar el pago en Stripe. Es el paso que de verdad conecta el pago con el acceso a la base de conocimientos.
-- Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
-- JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.
-- Estados `validated`/`pending_update` del frontmatter de los manuales (hoy todos en `draft`) — sin flujo de revisión editorial todavía; se muestran igual, sin badge de estado en la UI.
+Esta actualización amplía los contenidos fuente, la programación por plataformas y el dossier descargable, sin alterar el código de la Fase 1.
 
 ## Objetivo
 
@@ -86,7 +80,7 @@ El programa corporativo público debe servirse desde:
 /downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf
 ```
 
-La versión rusa personalizada para Ilya Ovchinnikov contiene datos de cliente y no debe publicarse como descarga general.
+Las versiones personalizadas contienen datos de cliente y no deben publicarse como descarga general.
 
 ## Datos comerciales aprobados
 
@@ -105,4 +99,3 @@ La versión rusa personalizada para Ilya Ovchinnikov contiene datos de cliente y
 No afirmar de forma absoluta que cualquier formación está exenta de IVA. Usar:
 
 > Formación exenta de IVA cuando concurran los requisitos del artículo 20.Uno.9.º de la Ley 37/1992.
-

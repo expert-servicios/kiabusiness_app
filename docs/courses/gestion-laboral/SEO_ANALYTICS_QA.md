@@ -46,7 +46,7 @@ Instrumentar los eventos definidos en `STRIPE_AND_CONVERSION.md`. Validar que no
 - [ ] Formulario asociado al slug correcto.
 - [ ] Reserva abre Cal.com o `/cita`.
 - [ ] PDF se descarga y abre.
-- [ ] El PDF no contiene datos de Ilya.
+- [ ] El PDF no contiene datos personales ni información de clientes.
 - [ ] Las rutas `/docs/laboral` cargan.
 - [ ] Los manuales privados bloquean acceso anónimo.
 - [ ] El sitemap incluye solo rutas públicas.
@@ -79,4 +79,3 @@ npm run build
 - [ ] Condiciones de contratación accesibles.
 - [ ] Alcance y exclusiones claros.
 - [ ] No se promete sustitución absoluta del criterio profesional.
-

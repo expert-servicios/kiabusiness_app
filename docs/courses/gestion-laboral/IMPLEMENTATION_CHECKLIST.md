@@ -29,7 +29,7 @@
 - [ ] Publicar PDF genérico.
 - [ ] Verificar nombre y MIME.
 - [ ] Registrar descarga.
-- [ ] Excluir documento personalizado de Ilya.
+- [ ] Excluir cualquier documento personalizado de clientes.
 
 ## Fase 4 · Base de conocimientos
 
@@ -60,4 +60,3 @@
 - [ ] Sitemap.
 - [ ] Changelog.
 - [ ] Publicación.
-
