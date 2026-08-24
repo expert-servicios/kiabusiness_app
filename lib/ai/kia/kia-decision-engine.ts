@@ -85,6 +85,7 @@ export async function runKiaDecision(input: {
     includeJusticia: /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas)\b/i.test(msg) || /constitucion.sl|arraigo|nacionalidad|notaria|herencia/i.test(slug),
     includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
+    includeAcademy : /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
     fewShotBlock,
   });
 
