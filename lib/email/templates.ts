@@ -217,6 +217,40 @@ export function academyEnrollmentConfirmedAdmin(name: string, email: string, pro
   };
 }
 
+// ── 2f. Academy enrollment paid but needs manual account linking (client) ───
+// Used when a Stripe Payment Link purchase (no login required beforehand)
+// can't be matched to an existing profile by email.
+export function academyEnrollmentPendingLink(name: string, programName: string) {
+  return {
+    subject: '¡Pago recibido! Un último paso para activar tu acceso — EXPERT',
+    html: base('Pago recibido', `
+      ${heading('¡Pago recibido!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido tu pago de <strong>${escapeHtml(programName)}</strong>. Para activar tu acceso a la base de conocimientos y a tu área privada, crea una cuenta o inicia sesión usando el <strong>mismo email</strong> con el que has pagado.`)}
+      ${para('En cuanto lo hagas, nuestro equipo vinculará tu matrícula a tu cuenta y te avisaremos por email.')}
+      ${btn('Crear cuenta / Iniciar sesión', `${BRAND.appUrl}/auth/login`)}
+    `)
+  };
+}
+
+// ── 2g. Academy enrollment paid but needs manual account linking (admin) ────
+export function academyEnrollmentPendingLinkAdmin(name: string, email: string, programName: string, amount: number) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `⚠️ Matrícula Academy sin vincular — ${safeName} (€${amount.toFixed(2)})`,
+    html: base('Matrícula sin vincular', `
+      ${heading('Matrícula pagada sin cuenta vinculada')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha pagado ${escapeHtml(programName)} mediante el enlace de pago directo de Stripe, pero no existe ninguna cuenta EXPERT con ese email.`)}
+      ${para('En cuanto esta persona cree una cuenta o inicie sesión con el mismo email, crea manualmente su fila en la tabla academy_enrollments (program_slug, status: active) para darle acceso a los manuales.')}
+      ${table(
+        detail('Programa', escapeHtml(programName)),
+        detail('Importe', `€${amount.toFixed(2)}`)
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
+    `)
+  };
+}
+
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
 export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
   const expiry = expiresAt
