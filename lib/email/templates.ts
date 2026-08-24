@@ -181,6 +181,42 @@ export function academyLeadReceivedAdmin(input: {
   };
 }
 
+// ── 2d. Academy enrollment confirmed (client) ────────────────────────────────
+export function academyEnrollmentConfirmed(name: string, programName: string, amount: number) {
+  return {
+    subject: '¡Matrícula confirmada! — EXPERT Business Academy',
+    html: base('Matrícula confirmada', `
+      ${heading('¡Bienvenido/a a EXPERT Business Academy!')}
+      ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
+      ${para(`Hemos recibido tu pago y tu matrícula en <strong>${escapeHtml(programName)}</strong> está confirmada.`)}
+      ${table(
+        detail('Programa', escapeHtml(programName)),
+        detail('Importe abonado', `€${amount.toFixed(2)}`)
+      )}
+      ${para('En los próximos días te contactaremos con el acceso al campus virtual y el calendario de inicio.')}
+      ${para('Si estás interesado/a en la certificación oficial ADGD0210 opcional, responde a este email y revisaremos tu situación antes de habilitar ese pago adicional.')}
+      ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
+    `)
+  };
+}
+
+// ── 2e. Academy enrollment confirmed (admin) ─────────────────────────────────
+export function academyEnrollmentConfirmedAdmin(name: string, email: string, programName: string, amount: number) {
+  const safeName = escapeHtml(name);
+  return {
+    subject: `Nueva matrícula Academy — ${safeName} (€${amount.toFixed(2)})`,
+    html: base('Nueva matrícula Academy', `
+      ${heading('Nueva matrícula — EXPERT Business Academy')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha completado el pago de matrícula.`)}
+      ${table(
+        detail('Programa', escapeHtml(programName)),
+        detail('Importe', `€${amount.toFixed(2)}`)
+      )}
+      ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
+    `)
+  };
+}
+
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
 export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
   const expiry = expiresAt
