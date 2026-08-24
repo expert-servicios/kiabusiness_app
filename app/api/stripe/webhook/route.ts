@@ -8,6 +8,8 @@ import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import {
+  academyEnrollmentConfirmed,
+  academyEnrollmentConfirmedAdmin,
   holdedFormacionConfirmed,
   holdedMigrationConfirmed,
   paymentConfirmed,
@@ -412,6 +414,80 @@ export async function POST(req: NextRequest) {
     }
 
     const productType = session.metadata?.product_type;
+
+    if (session.mode === 'payment' && productType === 'academy_program') {
+      const clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
+      const programSlug = session.metadata?.program_slug ?? '';
+      const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
+      const amountEur = Number(session.amount_total ?? 0) / 100;
+      const paymentId = (session.payment_intent as string) ?? session.id;
+      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+      const customerName =
+        (session.customer_details as { name?: string } | null)?.name ??
+        customerEmail?.split('@')[0] ??
+        'Cliente';
+
+      const { data: existingEnrollment } = await supabaseAdmin
+        .from('academy_enrollments')
+        .select('id')
+        .eq('stripe_payment_id', paymentId)
+        .maybeSingle();
+
+      if (!existingEnrollment && clientId) {
+        await supabaseAdmin.from('orders').insert({
+          source            : 'academy',
+          client_id         : clientId,
+          stripe_payment_id : paymentId,
+          amount_eur        : amountEur,
+          currency          : session.currency?.toUpperCase() ?? 'EUR',
+          status            : 'paid',
+          service_slugs     : programSlug,
+          metadata          : {
+            checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: productType },
+          },
+        });
+
+        await supabaseAdmin.from('academy_enrollments').insert({
+          client_id         : clientId,
+          program_slug      : programSlug,
+          program_name      : programName,
+          amount_eur        : amountEur,
+          stripe_payment_id : paymentId,
+          status            : 'active',
+        });
+
+        if (customerEmail) {
+          const tpl = academyEnrollmentConfirmed(customerName, programName, amountEur);
+          await sendEmail({
+            to: customerEmail,
+            eventType: 'academy.enrollment.confirmed',
+            ...tpl,
+            metadata: { session_id: session.id, program_slug: programSlug },
+          });
+
+          const adminEmails = getAdminEmails();
+          if (adminEmails.length) {
+            const adminTpl = academyEnrollmentConfirmedAdmin(customerName, customerEmail, programName, amountEur);
+            sendEmail({
+              to: adminEmails,
+              eventType: 'academy.enrollment.confirmed.admin',
+              ...adminTpl,
+              metadata: { session_id: session.id, program_slug: programSlug },
+            }).catch((err) => console.error('[webhook] admin academy email failed:', err));
+          }
+
+          notifyAdmins({
+            title: `🎓 Nueva matrícula Academy — ${customerName}`,
+            body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+            url  : '/admin/pagos',
+            tag  : `academy-enrollment-${session.id}`,
+          }).catch(() => {});
+        }
+
+        console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_program', program_slug: programSlug, session_id: session.id }));
+      }
+    }
+
     if (session.mode === 'payment' && (productType === 'service' || productType === 'cart')) {
       const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
       const customerName =

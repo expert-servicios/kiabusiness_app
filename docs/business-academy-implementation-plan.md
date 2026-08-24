@@ -228,19 +228,48 @@ información, NO de compra):
 https://expertconsulting.es/academy#solicitar-info
 ```
 
-Fases D–F (checkout de pago, add-on de certificación oficial, Kia) quedan
-pendientes — requieren decisiones de producto que no se han tomado todavía:
+**Fase D — checkout del programa: implementada.**
 
-- [ ] **Fase D bloqueada por Stripe Price real.** El usuario está creando
-      manualmente en el Dashboard de Stripe dos productos: el programa
-      (2.950 €, pago único) y la certificación oficial ADGD0210 opcional
-      (500 € + IVA, pago único, producto separado — no se vende junto en el
-      mismo carrito). En cuanto existan los `price_...`, conectar en
-      `lib/data/academy-catalog.ts` (`stripePriceId`) y decidir el modelo de
-      matrícula: ¿`case` estándar o entidad nueva `academy_enrollments`?
-      (recomendado en la sección 5 de este documento: entidad nueva, un curso
-      no es un trámite de gestoría).
-- [ ] Fase E: flujo de certificación oficial con revisión manual admin antes
-      de habilitar el pago — depende de que Fase D exista primero.
+- Stripe Price real del programa creado por el usuario:
+  `price_1U80bxLeYwwgvux4wMUqsf7h` (2.950 €, pago único) — conectado en
+  `lib/data/academy-catalog.ts` (`stripePriceId`).
+- Stripe Price real de la certificación oficial creado:
+  `price_1U80fDLeYwwgvux48ZV4MWyp` (500 € + IVA) — guardado en el catálogo
+  pero **sin checkout público expuesto todavía** (ver Fase E).
+- `app/api/academy/checkout/route.ts` — mismo patrón que
+  `/api/services/checkout` (login obligatorio, perfil completo obligatorio,
+  Stripe Checkout Session en modo `payment` usando el `price` real de
+  Stripe directamente, `automatic_tax`, recogida de dirección e IVA).
+- Modelo de matrícula: **entidad nueva `academy_enrollments`**, tal como se
+  recomendaba en la sección 5 — migración
+  `supabase/migrations/20260721000001_academy_enrollments.sql`. Guarda
+  `program_slug`, `amount_eur`, `stripe_payment_id`, `status` y el estado de
+  la certificación oficial (`certification_status`) para cuando se
+  implemente la Fase E. También amplía el `check` de `orders.source` para
+  aceptar `'academy'`, porque el webhook sigue insertando en `orders` en
+  paralelo (consistencia financiera con el resto del catálogo — reporting,
+  paneles admin existentes).
+- `app/api/stripe/webhook/route.ts` — nuevo bloque para
+  `product_type === 'academy_program'`: inserta en `orders` +
+  `academy_enrollments` (idempotente por `stripe_payment_id`), envía email
+  de confirmación al alumno y notificación a admin (email + push).
+- Botón **"Matricularme ahora"** (`AcademyCheckoutButton`) añadido en la
+  sección de precio de `/academy` — redirige a login si no hay sesión, a
+  completar perfil si falta, o a Stripe Checkout.
+
+  ⚠️ **Pendiente de aplicar en Supabase:** la migración
+  `20260721000001_academy_enrollments.sql` está escrita pero no se ha podido
+  aplicar automáticamente en esta sesión (sin acceso autenticado al MCP de
+  Supabase). Debe aplicarse manualmente (SQL Editor o `supabase db push`)
+  antes de que el checkout funcione en producción — si no, el webhook
+  fallará al intentar insertar en `academy_enrollments` (tabla inexistente).
+
+- [ ] **Fase E — certificación oficial opcional.** El Stripe Price ya existe
+      (`price_1U80fDLeYwwgvux48ZV4MWyp`) pero deliberadamente no se expone
+      ningún botón de checkout público para ella todavía, porque el negocio
+      exige revisión manual de requisitos de acceso antes de cobrar. Falta:
+      vista admin para marcar `certification_status` = `approved` en un
+      `academy_enrollment`, y solo entonces generar un enlace de pago (Stripe
+      Payment Link o checkout ad-hoc) para ese alumno concreto.
 - [ ] Fase F: bloque de conocimiento de Kia sobre el curso — no bloqueante,
       puede hacerse en paralelo en cualquier momento.

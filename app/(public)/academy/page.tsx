@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Check, Clock, Globe, Award, Download, CalendarCheck } from 'lucide-react';
 import { academyPrograms } from '@/lib/data/academy-catalog';
 import { AcademyLeadForm } from '@/components/site/AcademyLeadForm';
+import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 import { FaqSection } from '@/components/site/FaqSection';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
@@ -199,6 +200,16 @@ export default function AcademyPage() {
               </li>
             ))}
           </ul>
+
+          {program.stripePriceId && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <AcademyCheckoutButton
+                programSlug={program.slug}
+                className="inline-flex items-center gap-2 bg-[#D4A017] px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <p className="text-xs text-[#9CA3AF]">Pago único y seguro con Stripe · Factura con IVA incluida</p>
+            </div>
+          )}
         </div>
       </section>
 

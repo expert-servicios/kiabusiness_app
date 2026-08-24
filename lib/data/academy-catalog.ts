@@ -13,6 +13,7 @@ export interface AcademyOfficialCertification {
   code: string;
   name: string;
   price: string;
+  stripePriceId?: string;
   requirementsNote: string;
 }
 
@@ -28,6 +29,7 @@ export interface AcademyProgram {
   hoursTotal: number;
   price: string;
   priceNote: string;
+  stripePriceId?: string;
   officialCertification: AcademyOfficialCertification;
   audience: string[];
   outcomes: string[];
@@ -54,10 +56,12 @@ export const academyPrograms: AcademyProgram[] = [
     hoursTotal: 520,
     price: '2.950 €',
     priceNote: 'Precio especial de lanzamiento',
+    stripePriceId: 'price_1U80bxLeYwwgvux4wMUqsf7h',
     officialCertification: {
       code: 'ADGD0210',
       name: 'Creación y Gestión de Microempresas',
       price: '500 € + IVA',
+      stripePriceId: 'price_1U80fDLeYwwgvux48ZV4MWyp',
       requirementsNote:
         'Por tratarse de una cualificación de nivel 3, el acceso a la vía oficial exige cumplir alguno de los requisitos académicos o de competencias establecidos por la normativa aplicable. Antes de contratar esta opción, EXPERT revisará individualmente la situación del participante.',
     },
