@@ -46,7 +46,11 @@ function parseTags(raw: string | undefined): string[] {
 function loadAll(): AcademyKnowledgeArticle[] {
   let filenames: string[];
   try {
-    filenames = fs.readdirSync(KNOWLEDGE_DIR).filter((f) => f.endsWith('.md'));
+    // Sort by filename (00-, 01-, 02-...) — the numbered prefix is the
+    // authoritative operational sequence. The `module` frontmatter field
+    // maps articles to course modules and isn't 1:1 with file order (some
+    // modules span multiple manuals), so it must not be used for sorting.
+    filenames = fs.readdirSync(KNOWLEDGE_DIR).filter((f) => f.endsWith('.md')).sort();
   } catch {
     return [];
   }
@@ -71,8 +75,7 @@ function loadAll(): AcademyKnowledgeArticle[] {
         tags: parseTags(data.tags),
         body,
       } satisfies AcademyKnowledgeArticle;
-    })
-    .sort((a, b) => a.module - b.module);
+    });
 }
 
 let cache: AcademyKnowledgeArticle[] | null = null;

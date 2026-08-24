@@ -24,13 +24,30 @@ export async function getActiveEnrollment(programSlug: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { user: null, enrolled: false as const };
 
-  const { data: enrollment } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+
+  // Admin deactivation only flips profiles.status — it doesn't revoke the
+  // existing Supabase session, and /docs/laboral isn't in the proxy's
+  // isProtectedPath check, so a deactivated account could otherwise keep
+  // reading gated manuals until its session naturally expires.
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('status')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profile?.status === 'inactive') return { user, enrolled: false as const };
+
+  // A student can legitimately have more than one active row for the same
+  // program (e.g. bought twice) — the DB only enforces uniqueness on
+  // stripe_payment_id, not on (client_id, program_slug, status). Don't use
+  // maybeSingle(), which errors (and returns data: null) on multiple rows.
+  const { data: enrollments } = await admin
     .from('academy_enrollments')
     .select('id')
     .eq('client_id', user.id)
     .eq('program_slug', programSlug)
     .eq('status', 'active')
-    .maybeSingle();
+    .limit(1);
 
-  return { user, enrolled: Boolean(enrollment) };
+  return { user, enrolled: Boolean(enrollments?.length) };
 }

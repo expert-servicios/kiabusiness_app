@@ -17,7 +17,12 @@ export function AcademyKnowledgeArticleBody({ body }: { body: string }) {
 }
 
 function getSections(body: string) {
-  return body
+  // Every knowledge manual starts with a top-level "# Title" before its
+  // "## " sections — strip it here so it doesn't become a bogus first
+  // section (the title is already rendered in the page hero).
+  const withoutH1 = body.trim().replace(/^#\s[^\n]*\n?/, '');
+
+  return withoutH1
     .trim()
     .split(/\n(?=## )/)
     .filter(Boolean)

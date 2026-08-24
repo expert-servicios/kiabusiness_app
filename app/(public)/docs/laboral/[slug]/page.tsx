@@ -93,7 +93,7 @@ export default async function AcademyKnowledgeArticlePage({ params }: { params: 
               </Link>
               {!user && (
                 <Link
-                  href={`/auth/login?redirect=/docs/laboral/${slug}`}
+                  href={`/auth/login?next=${encodeURIComponent(`/docs/laboral/${slug}`)}`}
                   className="inline-flex items-center gap-2 border border-[#0D1B2A]/20 px-6 py-3 text-sm font-semibold text-[#0D1B2A] transition hover:border-[#D4A017]"
                 >
                   Iniciar sesión
