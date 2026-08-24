@@ -29,13 +29,17 @@ export default function GraciasGestionLaboralPage() {
 
         {calAcademyUrl && (
           <div className="mt-8">
+            {/* Reuses the same Academy informational-meeting slot as the landing
+                page — there is no dedicated post-purchase training-session
+                calendar yet, so the label stays consistent with what the link
+                actually books instead of implying a course session. */}
             <CalendlyButton
               url={calAcademyUrl}
               fallbackHref="/cita"
               className="inline-flex items-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <CalendarCheck className="h-4 w-4" />
-              Reservar primera sesión
+              Reservar reunión informativa
             </CalendlyButton>
           </div>
         )}
@@ -48,10 +52,10 @@ export default function GraciasGestionLaboralPage() {
             Volver al inicio
           </Link>
           <Link
-            href="/dashboard"
+            href="/contacto"
             className="inline-flex items-center justify-center bg-[#0D1B2A] px-6 py-3 text-sm font-bold text-[#F8F6F1] transition hover:bg-[#23364D]"
           >
-            Ir a mi panel
+            Contactar con EXPERT
           </Link>
         </div>
       </div>

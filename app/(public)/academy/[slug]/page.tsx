@@ -257,7 +257,11 @@ export default async function AcademyProgramPage({ params }: Props) {
             adecuada, el calendario y la opción de formación en ruso.
           </p>
           <div className="mt-8">
-            <AcademyLeadForm programSlug={program.slug} programName={program.name} />
+            <AcademyLeadForm
+              programSlug={program.slug}
+              programName={program.name}
+              hasOfficialCertification={Boolean(program.officialCertification)}
+            />
           </div>
         </div>
       </section>

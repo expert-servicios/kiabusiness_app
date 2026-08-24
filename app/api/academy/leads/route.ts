@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { academyLeadReceivedClient, academyLeadReceivedAdmin } from '@/lib/email/templates';
-import { getAcademyProgram } from '@/lib/data/academy-catalog';
+import { getAcademyProgram, getAcademyProgramPath } from '@/lib/data/academy-catalog';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al guardar la solicitud' }, { status: 500 });
     }
 
-    const clientTpl = academyLeadReceivedClient(validated.name, program.name);
+    const clientTpl = academyLeadReceivedClient(validated.name, program.name, getAcademyProgramPath(program.slug));
     await sendEmail({
       to: validated.email,
       eventType: 'academy.lead.received',

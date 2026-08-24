@@ -4,7 +4,16 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
-export function AcademyLeadForm({ programSlug, programName }: { programSlug: string; programName: string }) {
+export function AcademyLeadForm({
+  programSlug,
+  programName,
+  hasOfficialCertification = true,
+}: {
+  programSlug: string;
+  programName: string;
+  /** Set to false for programs with no official-certification add-on (e.g. Gestión Laboral Integral) to hide that checkbox. */
+  hasOfficialCertification?: boolean;
+}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -34,7 +43,7 @@ export function AcademyLeadForm({ programSlug, programName }: { programSlug: str
           currentRole,
           experience,
           language,
-          certificationInterest,
+          certificationInterest: hasOfficialCertification ? certificationInterest : false,
           hp_url: hp,
           recaptcha_token,
         }),
@@ -167,15 +176,17 @@ export function AcademyLeadForm({ programSlug, programName }: { programSlug: str
             ))}
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-[#23364D]">
-          <input
-            type="checkbox"
-            checked={certificationInterest}
-            onChange={(e) => setCertificationInterest(e.target.checked)}
-            className="h-4 w-4 accent-[#D4A017]"
-          />
-          Me interesa la certificación oficial ADGD0210
-        </label>
+        {hasOfficialCertification && (
+          <label className="flex items-center gap-2 text-sm text-[#23364D]">
+            <input
+              type="checkbox"
+              checked={certificationInterest}
+              onChange={(e) => setCertificationInterest(e.target.checked)}
+              className="h-4 w-4 accent-[#D4A017]"
+            />
+            Me interesa la certificación oficial ADGD0210
+          </label>
+        )}
       </div>
 
       {error && (

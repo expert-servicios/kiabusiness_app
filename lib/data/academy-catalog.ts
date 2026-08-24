@@ -712,3 +712,8 @@ export const academyPrograms: AcademyProgram[] = [
 export function getAcademyProgram(slug: string): AcademyProgram | undefined {
   return academyPrograms.find((p) => p.slug === slug);
 }
+
+/** `/academy` serves academyPrograms[0] directly; every other program lives at `/academy/{slug}`. */
+export function getAcademyProgramPath(slug: string): string {
+  return academyPrograms[0]?.slug === slug ? '/academy' : `/academy/${slug}`;
+}
