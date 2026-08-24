@@ -37,6 +37,7 @@ PROGRAMA PERSONALIZADO DE GESTION LABORAL INTEGRAL
 - A quien va dirigido: gerentes y administradores de pyme, responsables de administracion, personal de RRHH no especialista, empresas usuarias de Holded, empresas con Sistema RED/SILTRA.
 - Fuera de alcance explicito (Kia debe decirlo si preguntan): NO incluye representacion en litigios, despidos complejos o colectivos, inspecciones de trabajo, sancion disciplinaria compleja, negociacion colectiva, ni que EXPERT ejecute la gestion laboral mensual del cliente — es formacion para que la propia empresa la ejecute con criterio para saber cuando escalar a un profesional.
 - Descarga de programacion disponible en la landing ("Descargar programa").
+- Base de conocimientos en /docs/laboral: el indice general es publico, pero los 8 manuales operativos (configuracion, convenio, alta y contratacion, nominas, SILTRA, variaciones, bajas/finiquitos, cierre laboral) son EXCLUSIVOS para alumnos con matricula activa verificada en servidor — nunca digas a alguien sin matricula que puede acceder a los manuales completos, solo al indice publico.
 - Reunion informativa gratuita y sin compromiso mediante el mismo boton de reserva de la Academy.
 </academy_program_2>
 

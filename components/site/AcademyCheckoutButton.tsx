@@ -20,7 +20,7 @@ export function AcademyCheckoutButton({ programSlug, className }: { programSlug:
       });
 
       if (res.status === 401) {
-        router.push(`/auth/login?redirect=/academy`);
+        router.push(`/auth/login?next=${encodeURIComponent('/academy')}`);
         return;
       }
 

@@ -61,5 +61,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup']
+  // /docs/laboral is included so a request there also refreshes/persists a
+  // rotated Supabase session cookie (getUser() above) — it does not become
+  // a protected path: isProtectedPath/isAuthPath don't match it, so no
+  // redirect logic runs for it here; per-article access is enforced in
+  // lib/utils/academy-enrollment.ts instead, since the public index article
+  // must stay reachable without a session.
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup', '/docs/laboral/:path*']
 };

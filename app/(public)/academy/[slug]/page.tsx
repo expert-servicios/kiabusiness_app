@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Check, Clock, Globe, Download, CalendarCheck, CreditCard } from 'lucide-react';
+import { Check, Clock, Globe, Download, CalendarCheck, CreditCard, BookOpen } from 'lucide-react';
 import { academyPrograms, getAcademyProgram } from '@/lib/data/academy-catalog';
 import { AcademyLeadForm } from '@/components/site/AcademyLeadForm';
 import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
@@ -118,6 +118,15 @@ export default async function AcademyProgramPage({ params }: Props) {
               >
                 <Download className="h-4 w-4" />
                 Descargar programa
+              </a>
+            )}
+            {program.knowledgeBaseHref && (
+              <a
+                href={program.knowledgeBaseHref}
+                className="inline-flex items-center gap-2 border border-white/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/85 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                <BookOpen className="h-4 w-4" />
+                Explorar manuales
               </a>
             )}
           </div>

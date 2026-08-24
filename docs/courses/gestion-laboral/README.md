@@ -16,12 +16,23 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - `app/sitemap.ts` — entrada añadida.
 - Kia: `lib/ai/kia/prompts/kia-academy-knowledge.ts` ampliado con un bloque `academy_program_2` y reglas para no confundir los dos programas ni prometer la exención de IVA como garantizada. `ACADEMY_CONTEXT_RE` (system prompt) e `includeAcademy` (decision engine) amplían sus regex.
 
-**Fase 2 — pendiente, no implementada en este commit:**
+**Fase 2a — base de conocimientos `/docs/laboral`: implementada.**
 
-- `/docs/laboral` con los 9 manuales de `content/academy/gestion-laboral/knowledge/` y control de acceso `public`/`student` (requiere sesión + matrícula activa verificada en servidor, no solo ocultar enlaces). Los Markdown ya están en el repo como contenido fuente, pero no hay ninguna ruta ni componente sirviéndolos todavía.
-- Integración de webhook para el Payment Link externo → creación automática de `academy_enrollments` para este curso (hoy esa tabla solo se rellena desde `/api/academy/checkout`, que este curso no usa). Sin esto, una compra por Payment Link no queda registrada en el sistema — hace falta seguimiento manual o migrar este curso a `stripePriceId` + checkout interno más adelante.
+- `lib/utils/academy-knowledge.ts` — cargador de contenido: lee `content/academy/gestion-laboral/knowledge/*.md` con `fs.readdirSync`/`readFileSync` (ruta literal, para que el file-tracing de Next.js/Vercel empaquete los archivos correctamente) y parsea el frontmatter (`access`, `status`, `module`, `tags`, etc.) con un parser propio minimalista, sin depender de ninguna librería nueva.
+- `lib/utils/academy-enrollment.ts` — `getActiveEnrollment(programSlug)`: comprueba sesión (cookies, patrón ya usado en `/gracias/pago`) y busca una fila `academy_enrollments` con `status = 'active'` para ese programa. Se ejecuta siempre en servidor — nunca se decide el acceso en el cliente.
+- `app/(public)/docs/laboral/page.tsx` — índice: el manual `00-indice.md` (`access: public`) se muestra listado junto a los 8 manuales privados, marcados con candado si el visitante no tiene matrícula activa. `robots: noindex` porque la página en sí no aporta contenido propio indexable.
+- `app/(public)/docs/laboral/[slug]/page.tsx` — ficha de manual. Solo el artículo público se pre-renderiza (`generateStaticParams` filtra por `access === 'public'`); los 8 manuales privados se sirven dinámicamente por request (Next.js detecta el uso de `cookies()` dentro de `getActiveEnrollment` y desactiva el cacheo estático automáticamente). Sin matrícula, el `body` del manual **nunca se envía al cliente** — se renderiza una pantalla de bloqueo en su lugar, no solo se oculta con CSS/JS.
+- `components/docs/AcademyKnowledgeArticle.tsx` — renderer de markdown reutilizando el mismo patrón ya usado en `/docs/[slug]` (duplicado, no refactorizado desde el original, para no tocar la página pública de docs ya en producción).
+- CTA **"Explorar manuales"** añadido a la landing del curso (`knowledgeBaseHref` nuevo en el catálogo).
+- Kia (`kia-academy-knowledge.ts`) actualizada: sabe que solo el índice es público y nunca debe insinuar que alguien sin matrícula puede ver los manuales completos.
+- `app/sitemap.ts` — solo se añade `/docs/laboral/indice` (el único contenido realmente público); el índice y los manuales privados quedan fuera del sitemap.
+
+**Fase 2b — pendiente, no implementada en este commit:**
+
+- Integración de webhook para el Payment Link externo → creación automática de `academy_enrollments` para este curso (hoy esa tabla solo se rellena desde `/api/academy/checkout`, que este curso no usa). Sin esto, comprar por Payment Link no da acceso automático a los manuales — hoy requiere que un admin cree manualmente la fila `academy_enrollments` (`program_slug: 'gestion-laboral-integral'`, `status: 'active'`) tras verificar el pago en Stripe. Es el paso que de verdad conecta el pago con el acceso a la base de conocimientos.
 - Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
 - JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.
+- Estados `validated`/`pending_update` del frontmatter de los manuales (hoy todos en `draft`) — sin flujo de revisión editorial todavía; se muestran igual, sin badge de estado en la UI.
 
 ## Objetivo
 
