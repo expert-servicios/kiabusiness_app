@@ -227,6 +227,93 @@ async function updateOrderHoldedResult(
   }
 }
 
+// Shared by the checkout.session.completed (payment_status === 'paid') and
+// checkout.session.async_payment_succeeded handlers below — a delayed
+// payment method (e.g. SEPA debit) can make Stripe send "completed" with
+// payment_status still 'unpaid', with the actual confirmation arriving
+// later as async_payment_succeeded. Fulfilling only on a definitively
+// paid session avoids granting access for a payment that can still fail.
+async function fulfillAcademyCertification(supabaseAdmin: SupabaseAdmin, session: Stripe.Checkout.Session) {
+  const enrollmentId = session.metadata?.enrollment_id ?? '';
+  if (!enrollmentId) return;
+
+  const programSlug = session.metadata?.program_slug ?? '';
+  const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
+  const clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
+  const amountEur = Number(session.amount_total ?? 0) / 100;
+  const paymentId = (session.payment_intent as string) ?? session.id;
+  const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+  const customerName =
+    (session.customer_details as { name?: string } | null)?.name ??
+    customerEmail?.split('@')[0] ??
+    'Cliente';
+
+  const { data: existingOrder } = await supabaseAdmin
+    .from('orders')
+    .select('id')
+    .eq('stripe_payment_id', paymentId)
+    .maybeSingle();
+
+  if (existingOrder) return;
+
+  // Update the enrollment FIRST and verify it actually succeeded before
+  // recording the order — this endpoint always returns 200 to Stripe, so
+  // the only way a failed update gets retried is if inserting the order
+  // (our idempotency check above) never happens when the update failed.
+  const { error: enrollError } = await supabaseAdmin
+    .from('academy_enrollments')
+    .update({ certification_status: 'paid', updated_at: new Date().toISOString() })
+    .eq('id', enrollmentId);
+
+  if (enrollError) {
+    console.error('[webhook] CRITICAL: failed to mark certification paid, will retry on next Stripe delivery:', enrollError.message, 'enrollment:', enrollmentId, 'payment:', paymentId);
+    return;
+  }
+
+  await supabaseAdmin.from('orders').insert({
+    source            : 'academy',
+    client_id         : clientId,
+    stripe_payment_id : paymentId,
+    amount_eur        : amountEur,
+    currency          : session.currency?.toUpperCase() ?? 'EUR',
+    status            : 'paid',
+    service_slugs     : `${programSlug}-certification`,
+    metadata          : {
+      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: 'academy_certification' },
+    },
+  });
+
+  if (customerEmail) {
+    const tpl = academyCertificationPaid(customerName, programName, amountEur);
+    await sendEmail({
+      to: customerEmail,
+      eventType: 'academy.certification.paid',
+      ...tpl,
+      metadata: { session_id: session.id, enrollment_id: enrollmentId },
+    });
+
+    const adminEmails = getAdminEmails();
+    if (adminEmails.length) {
+      const adminTpl = academyCertificationPaidAdmin(customerName, customerEmail, programName, amountEur);
+      sendEmail({
+        to: adminEmails,
+        eventType: 'academy.certification.paid.admin',
+        ...adminTpl,
+        metadata: { session_id: session.id, enrollment_id: enrollmentId },
+      }).catch((err) => console.error('[webhook] admin certification email failed:', err));
+    }
+
+    notifyAdmins({
+      title: `🎓 Certificación oficial pagada — ${customerName}`,
+      body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+      url  : '/admin/academy-matriculas',
+      tag  : `academy-certification-${session.id}`,
+    }).catch(() => {});
+  }
+
+  console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_certification', enrollment_id: enrollmentId, session_id: session.id }));
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripeClient();
   const body = await req.text();
@@ -419,7 +506,7 @@ export async function POST(req: NextRequest) {
 
     const productType = session.metadata?.product_type;
 
-    if (session.mode === 'payment' && productType === 'academy_program') {
+    if (session.mode === 'payment' && productType === 'academy_program' && session.payment_status === 'paid') {
       const programSlug = session.metadata?.program_slug ?? '';
       const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
       const amountEur = Number(session.amount_total ?? 0) / 100;
@@ -545,74 +632,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (session.mode === 'payment' && productType === 'academy_certification') {
-      const enrollmentId = session.metadata?.enrollment_id ?? '';
-      const programSlug = session.metadata?.program_slug ?? '';
-      const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
-      const clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
-      const amountEur = Number(session.amount_total ?? 0) / 100;
-      const paymentId = (session.payment_intent as string) ?? session.id;
-      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
-      const customerName =
-        (session.customer_details as { name?: string } | null)?.name ??
-        customerEmail?.split('@')[0] ??
-        'Cliente';
-
-      const { data: existingOrder } = await supabaseAdmin
-        .from('orders')
-        .select('id')
-        .eq('stripe_payment_id', paymentId)
-        .maybeSingle();
-
-      if (!existingOrder && enrollmentId) {
-        await supabaseAdmin.from('orders').insert({
-          source            : 'academy',
-          client_id         : clientId,
-          stripe_payment_id : paymentId,
-          amount_eur        : amountEur,
-          currency          : session.currency?.toUpperCase() ?? 'EUR',
-          status            : 'paid',
-          service_slugs     : `${programSlug}-certification`,
-          metadata          : {
-            checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: productType },
-          },
-        });
-
-        await supabaseAdmin
-          .from('academy_enrollments')
-          .update({ certification_status: 'paid', updated_at: new Date().toISOString() })
-          .eq('id', enrollmentId);
-
-        if (customerEmail) {
-          const tpl = academyCertificationPaid(customerName, programName, amountEur);
-          await sendEmail({
-            to: customerEmail,
-            eventType: 'academy.certification.paid',
-            ...tpl,
-            metadata: { session_id: session.id, enrollment_id: enrollmentId },
-          });
-
-          const adminEmails = getAdminEmails();
-          if (adminEmails.length) {
-            const adminTpl = academyCertificationPaidAdmin(customerName, customerEmail, programName, amountEur);
-            sendEmail({
-              to: adminEmails,
-              eventType: 'academy.certification.paid.admin',
-              ...adminTpl,
-              metadata: { session_id: session.id, enrollment_id: enrollmentId },
-            }).catch((err) => console.error('[webhook] admin certification email failed:', err));
-          }
-
-          notifyAdmins({
-            title: `🎓 Certificación oficial pagada — ${customerName}`,
-            body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
-            url  : '/admin/academy-matriculas',
-            tag  : `academy-certification-${session.id}`,
-          }).catch(() => {});
-        }
-
-        console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_certification', enrollment_id: enrollmentId, session_id: session.id }));
-      }
+    if (session.mode === 'payment' && productType === 'academy_certification' && session.payment_status === 'paid') {
+      await fulfillAcademyCertification(supabaseAdmin, session);
     }
 
     if (session.mode === 'payment' && (productType === 'service' || productType === 'cart')) {
@@ -884,6 +905,17 @@ export async function POST(req: NextRequest) {
           .update({ stripe_customer_id: customerId })
           .eq('id', userId);
       }
+    }
+  }
+
+  // Delayed payment methods (e.g. SEPA debit) can leave a Checkout Session
+  // "completed" but not yet paid — Stripe confirms success later via this
+  // event. Only the academy_certification flow currently opts into
+  // fulfillment via a helper that's safe to call from both events.
+  if (event.type === 'checkout.session.async_payment_succeeded') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.metadata?.product_type === 'academy_certification') {
+      await fulfillAcademyCertification(supabaseAdmin, session);
     }
   }
 

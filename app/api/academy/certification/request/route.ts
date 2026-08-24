@@ -19,12 +19,16 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: enrollment } = await admin
     .from('academy_enrollments')
-    .select('id, client_id, program_slug, program_name, certification_status')
+    .select('id, client_id, program_slug, program_name, status, certification_status')
     .eq('id', parsed.data.enrollmentId)
     .maybeSingle();
 
   if (!enrollment || enrollment.client_id !== user.id) {
     return NextResponse.json({ error: 'Matrícula no encontrada' }, { status: 404 });
+  }
+
+  if (enrollment.status === 'cancelled') {
+    return NextResponse.json({ error: 'Esta matrícula está cancelada' }, { status: 409 });
   }
 
   const program = getAcademyProgram(enrollment.program_slug);

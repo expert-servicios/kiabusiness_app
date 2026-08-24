@@ -47,14 +47,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const price = program?.officialCertification?.price ?? '';
     const { data: profile } = await admin
       .from('profiles')
-      .select('full_name, email')
+      .select('full_name')
       .eq('id', updated.client_id)
       .maybeSingle();
+    // profiles.email isn't reliably populated for every account (only
+    // backfilled once historically; the signup trigger doesn't set it) —
+    // Auth is the source of truth for the address to actually notify.
+    const { data: authUser } = await admin.auth.admin.getUserById(updated.client_id);
+    const email = authUser?.user?.email;
 
-    if (profile?.email) {
-      const tpl = academyCertificationApproved(profile.full_name ?? profile.email.split('@')[0], updated.program_name, price);
+    if (email) {
+      const tpl = academyCertificationApproved(profile?.full_name ?? email.split('@')[0], updated.program_name, price);
       sendEmail({
-        to: profile.email,
+        to: email,
         eventType: 'academy.certification.approved',
         ...tpl,
         metadata: { enrollment_id: updated.id },
