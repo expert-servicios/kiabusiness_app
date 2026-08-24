@@ -26,18 +26,27 @@ export interface AcademyProgram {
   metaDescription: string;
   hoursTraining: number;
   hoursInternship: number;
+  hoursTutoring?: number;
   hoursTotal: number;
   price: string;
   priceNote: string;
+  /** Comparison "value" shown crossed out against `price` (e.g. "1.450 €"). */
+  valueLabel?: string;
+  /** Fiscal note shown near the price when applicable (e.g. IVA exemption condition). Always render as conditional, never as an absolute claim. */
+  taxNote?: string;
   stripePriceId?: string;
-  officialCertification: AcademyOfficialCertification;
+  /** External Stripe Payment Link — used instead of stripePriceId when there's no internal Checkout Session integration yet. Opens in the same tab, no query params. */
+  paymentLink?: string;
+  downloadHref?: string;
+  officialCertification?: AcademyOfficialCertification;
   audience: string[];
   outcomes: string[];
   modules: AcademyModule[];
-  finalProject: { description: string; options: string[] };
+  finalProject?: { description: string; options: string[] };
+  tutoringIncluded?: { title: string; hours: number }[];
   methodology: string[];
   languages: Array<'es' | 'ru'>;
-  targetProfiles: { title: string; description: string }[];
+  targetProfiles?: { title: string; description: string }[];
   faqs: { q: string; a: string }[];
 }
 
@@ -576,6 +585,125 @@ export const academyPrograms: AcademyProgram[] = [
       {
         q: '¿Puedo aplicar el proyecto a mi empresa actual?',
         a: 'Sí. El proyecto final puede orientarse a mejorar un departamento, automatizar procesos, implantar un sistema administrativo o resolver una necesidad real de la empresa.',
+      },
+    ],
+  },
+  {
+    slug: 'gestion-laboral-integral',
+    name: 'Programa personalizado de Gestión Laboral Integral',
+    tagline: 'De la normativa a la ejecución autónoma',
+    shortDescription:
+      'Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y las soluciones de Creative Quality.',
+    metaTitle: 'Curso de Gestión Laboral con Holded y SILTRA | EXPERT',
+    metaDescription:
+      'Formación práctica de 20 horas y 5 horas de tutoría para gestionar contratos, nóminas, cotizaciones, SILTRA, finiquitos y cierres laborales.',
+    hoursTraining: 20,
+    hoursInternship: 0,
+    hoursTutoring: 5,
+    hoursTotal: 25,
+    price: '1.200 €',
+    priceNote: 'Pago único',
+    valueLabel: '1.450 €',
+    taxNote: 'Formación exenta de IVA cuando concurran los requisitos del artículo 20.Uno.9.º de la Ley 37/1992.',
+    paymentLink: 'https://buy.stripe.com/6oU00kftqgMs9jU5gJ8EM0i',
+    downloadHref: '/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf',
+    audience: [
+      'Gerentes y administradores de pymes.',
+      'Responsables de administración.',
+      'Profesionales de RR. HH. no especialistas.',
+      'Empresas usuarias de Holded.',
+      'Organizaciones que quieren asumir su gestión laboral ordinaria.',
+      'Empresas con Sistema RED / SILTRA y herramientas de contratación.',
+    ],
+    outcomes: [
+      'Interpretar el convenio colectivo aplicable.',
+      'Aplicar categorías y tablas salariales.',
+      'Configurar correctamente trabajadores y contratos en Holded.',
+      'Ejecutar altas, bajas y variaciones.',
+      'Preparar contratos y comunicaciones.',
+      'Calcular, revisar, aprobar y pagar nóminas.',
+      'Preparar SILTRA, CRA, RNT y RLC.',
+      'Gestionar pagas extras, atrasos y finiquitos.',
+      'Presentar modelos 111 y 190 desde Holded.',
+      'Cerrar cada periodo con trazabilidad documental.',
+    ],
+    modules: [
+      {
+        order: 1,
+        title: 'Fundamentos de la gestión laboral',
+        topics: ['Relación laboral, organismos, obligaciones, plazos, responsabilidades, calendario y archivo.'],
+      },
+      {
+        order: 2,
+        title: 'Convenio colectivo de hostelería',
+        topics: ['Ámbitos, grupos, categorías, jornada, descansos, vacaciones, periodo de prueba, pagas, nocturnidad, festivos y complementos.'],
+      },
+      {
+        order: 3,
+        title: 'Conceptos retributivos y tablas salariales',
+        topics: ['Salario base, complementos, horas, pagas extras, percepciones extrasalariales, parcialidad, atrasos, bases e IRPF.'],
+      },
+      {
+        order: 4,
+        title: 'Configuración laboral en Holded',
+        topics: ['Centro de trabajo, CCC, CNAE, convenio, conceptos, cuentas, empleados, grupos, jornadas, salario e IRPF.'],
+      },
+      {
+        order: 5,
+        title: 'Contratación y afiliación',
+        topics: ['Documentación previa, alta, TA, IDC, contrato, Contrat@, huella electrónica, Holded y comprobación cruzada.'],
+      },
+      {
+        order: 6,
+        title: 'Gestión mensual de nóminas',
+        topics: ['Incidencias, borradores, revisión, aprobación, PDF, entrega, remesa SEPA, pago y contabilización.'],
+      },
+      {
+        order: 7,
+        title: 'Seguridad Social y SILTRA',
+        topics: ['Liquidaciones, bases, CRA, respuestas, discrepancias, DCL, confirmación, RNT, RLC y conciliación.'],
+      },
+      {
+        order: 8,
+        title: 'Variaciones, bajas y finiquitos',
+        topics: ['Cambios contractuales, prórrogas, transformaciones, bajas, vacaciones, indemnizaciones y certificado de empresa.'],
+      },
+      {
+        order: 9,
+        title: 'Cierre laboral y fiscal',
+        topics: ['Conciliación, banco, contabilidad, modelos 111 y 190, certificados y archivo.'],
+      },
+    ],
+    tutoringIncluded: [
+      { title: 'Implantación y dudas', hours: 1.5 },
+      { title: 'Acompañamiento en un cierre laboral', hours: 2.5 },
+      { title: 'Revisión final y plan de autonomía', hours: 1 },
+    ],
+    methodology: [
+      'Formación online e individual.',
+      'Español o ruso.',
+      'Manuales y checklists.',
+      'Casos prácticos.',
+      'Acompañamiento en un cierre real.',
+      'Acceso a actualizaciones de los materiales vinculados al programa.',
+    ],
+    languages: ['es', 'ru'],
+    faqs: [
+      {
+        q: '¿Este curso sustituye la gestión laboral que hace EXPERT para sus clientes?',
+        a: 'No. Es formación para que tu empresa ejecute y controle su propia gestión laboral ordinaria de forma documentada, sabiendo cuándo escalar a un profesional. No incluye representación en litigios, despidos complejos, inspecciones ni negociación colectiva.',
+      },
+      {
+        q: '¿Qué pasa si mi empresa usa un convenio distinto al de hostelería?',
+        a: 'El módulo de convenio colectivo se adapta al convenio aplicable a tu empresa — el de hostelería es el punto de partida del temario, no una limitación.',
+      },
+      {
+        q: '¿Las 5 horas de tutoría tienen coste adicional?',
+        a: 'No, van incluidas en el precio de 1.200 €.',
+      },
+      {
+        q: '¿Puedo pagar directamente sin hablar antes con alguien?',
+        a: 'Sí, puedes inscribirte y pagar directamente. Si prefieres resolver dudas antes, también puedes solicitar información o reservar una reunión informativa gratuita y sin compromiso.',
       },
     ],
   },
