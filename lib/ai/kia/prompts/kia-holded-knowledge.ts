@@ -51,7 +51,8 @@ MODULOS PRINCIPALES:
      * El administrador ve informes de presencia, horas trabajadas y ausencias.
      * Disenado para cumplir el registro de jornada del Real Decreto-ley 8/2019.
    - Gestion de ausencias (vacaciones, bajas, permisos).
-   - Nota: nominas y contratos laborales no se gestionan directamente en Holded standard; requieren complementos o un asesor laboral.
+   - Holded Nóminas permite configurar convenios, centros, empleados y contratos, calcular nóminas y finiquitos, preparar ficheros de cotización y registrar respuestas, RLC y RNT.
+   - La transmisión oficial de cotizaciones se realiza externamente mediante SILTRA/TGSS. Las altas, bajas, variaciones y comunicaciones al SEPE también requieren los canales oficiales correspondientes.
 
 6. CRM
    - Contactos (clientes, proveedores, leads).
@@ -86,6 +87,11 @@ Servicios de implementacion (pago unico):
   * No incluye migracion de stock ni gestion de inventario.
 - Migracion completa con inventario: 1.199 EUR + IVA
   * Igual que la anterior mas migracion de productos, stock y almacenes.
+- Migracion laboral a Holded: 50 EUR + IVA por empleado
+  * Pedido minimo de 5 empleados (250 EUR + IVA).
+  * Revisión documental, perfil laboral, contrato, jornada, salario, IRPF y nomina de prueba.
+  * No incluye regularizaciones historicas, TGSS/SEPE, SILTRA ni gestion mensual.
+  * Requiere revision previa de 15 minutos para confirmar plantilla y alcance.
 - Formacion Holded por horas: precio segun sesiones acordadas.
 
 Planes mensuales de gestion con Holded conectado:
@@ -134,7 +140,7 @@ P: Puedo usar Holded sin saber contabilidad?
 R: Si. Holded automatiza muchos asientos y tiene interfaz intuitiva. Con el Pack Starter de EXPERT se configura correctamente desde el principio.
 
 P: Holded incluye nominas?
-R: El modulo de RRHH permite ficha de empleados y control horario, pero la gestion de nominas completa (calculo, generacion de nominas legales) requiere un complemento o asesor laboral. EXPERT puede ayudar con la parte laboral por separado.
+R: Holded dispone de funcionalidades de Nominas para configurar datos laborales, calcular nominas y finiquitos y preparar ficheros de cotizacion. No sustituye los canales oficiales: la transmision se realiza mediante SILTRA/TGSS y las comunicaciones de afiliacion o empleo por los sistemas correspondientes. EXPERT ofrece migracion laboral por 50 EUR + IVA por empleado y un programa formativo completo.
 
 P: Se puede probar gratis?
 R: Si. Holded ofrece 14 dias de prueba gratuita sin tarjeta. Enlace: https://www.holded.com/es (a traves de EXPERT como partner se puede gestionar el acceso).

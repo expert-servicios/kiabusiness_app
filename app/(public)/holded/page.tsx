@@ -17,6 +17,7 @@ import {
   Upload,
   Clock,
   Zap,
+  UsersRound,
 } from 'lucide-react';
 import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
 import { HoldedPricingSection } from '@/components/holded/HoldedPricingSection';
@@ -303,6 +304,43 @@ export default async function HoldedPage() {
 
       {/* ── Pricing + add-on configurator ─────────────────────────────────── */}
       <HoldedPricingSection />
+
+      {/* ── Migración laboral por empleado ───────────────────────────────── */}
+      <section className="bg-[#0D1B2A] px-6 py-16 text-white md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_0.7fr] lg:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Nuevo · Área laboral</p>
+            <h2 className="mt-4 max-w-3xl font-serif text-3xl font-bold leading-tight md:text-4xl">
+              Migración laboral a Holded desde 50 € + IVA por empleado
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#D1D5DB] md:text-base">
+              Configuramos cada perfil laboral, revisamos contrato, jornada, salario e IRPF y comprobamos el resultado con una nómina de prueba. Un servicio puntual para empezar con una plantilla limpia y validada.
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/holded/migracion-laboral"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+              >
+                Ver migración laboral <ArrowRight className="h-4 w-4" />
+              </Link>
+              <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]">
+                <Calendar className="h-4 w-4" />
+                Revisión previa — 15 min
+              </HoldedCalendlyButton>
+            </div>
+          </div>
+          <div className="border border-[#D4A017]/35 bg-white/5 p-7">
+            <UsersRound className="h-8 w-8 text-[#D4A017]" />
+            <p className="mt-5 font-serif text-5xl font-bold">50 €</p>
+            <p className="mt-1 text-sm text-[#D1D5DB]">+ IVA por empleado · pedido mínimo 5</p>
+            <ul className="mt-6 space-y-3 text-sm text-[#D1D5DB]">
+              {['Perfil laboral configurado', 'Datos contrastados', 'Nómina de prueba', 'Informe de incidencias'].map((item) => (
+                <li key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#D4A017]" />{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
       {/* ── Process steps ─────────────────────────────────────────────────── */}
       <section className="px-6 py-16 md:py-20">
