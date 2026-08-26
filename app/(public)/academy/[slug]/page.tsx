@@ -60,9 +60,63 @@ export default async function AcademyProgramPage({ params }: Props) {
   if (getAcademyProgram(slug)?.slug !== program.slug) notFound();
 
   const calAcademyUrl = getCalAcademyUrl();
+  const canonicalUrl = `https://expertconsulting.es/academy/${program.slug}`;
+  // Spanish formatting: "." is a thousands separator, "," is the decimal mark
+  // (e.g. "2.950 €" -> "2950", "1.200 €" -> "1200"). Strip dots before commas
+  // or a naive digit-group regex truncates thousands-separated prices.
+  const priceValue = program.price.match(/[\d.,]+/)?.[0]?.replace(/\./g, '').replace(',', '.');
+
+  const courseJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: program.name,
+    description: program.metaDescription,
+    provider: {
+      '@type': 'Organization',
+      name: 'EXPERT',
+      sameAs: 'https://expertconsulting.es',
+    },
+    url: canonicalUrl,
+    ...(priceValue
+      ? {
+          offers: {
+            '@type': 'Offer',
+            price: priceValue,
+            priceCurrency: 'EUR',
+            availability: 'https://schema.org/InStock',
+            url: canonicalUrl,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://expertconsulting.es' },
+      { '@type': 'ListItem', position: 2, name: 'EXPERT Business Academy', item: 'https://expertconsulting.es/academy' },
+      { '@type': 'ListItem', position: 3, name: program.name, item: canonicalUrl },
+    ],
+  };
+
+  const faqJsonLd = program.faqs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: program.faqs.map(({ q, a }) => ({
+          '@type': 'Question',
+          name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
+      }
+    : null;
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
       {/* Hero */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] sm:py-20">
         <div className="mx-auto max-w-5xl">
