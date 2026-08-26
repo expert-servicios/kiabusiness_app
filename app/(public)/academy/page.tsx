@@ -28,7 +28,10 @@ export const metadata: Metadata = {
   },
 };
 
-const priceValue = program.price.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(/\./g, '').replace(',', '.');
+// Spanish formatting: "." is a thousands separator, "," is the decimal mark
+// (e.g. "2.950 €" -> "2950", "1.200 €" -> "1200"). Strip dots before commas
+// or a naive digit-group regex truncates thousands-separated prices.
+const priceValue = program.price.match(/[\d.,]+/)?.[0]?.replace(/\./g, '').replace(',', '.');
 
 const courseJsonLd = {
   '@context': 'https://schema.org',
