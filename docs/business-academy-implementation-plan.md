@@ -261,13 +261,33 @@ https://expertconsulting.es/academy#solicitar-info
   por el usuario en Supabase — el checkout de matrícula ya está operativo
   de extremo a extremo.
 
-- [ ] **Fase E — certificación oficial opcional.** El Stripe Price ya existe
-      (`price_1U80fDLeYwwgvux48ZV4MWyp`) pero deliberadamente no se expone
-      ningún botón de checkout público para ella todavía, porque el negocio
-      exige revisión manual de requisitos de acceso antes de cobrar. Falta:
-      vista admin para marcar `certification_status` = `approved` en un
-      `academy_enrollment`, y solo entonces generar un enlace de pago (Stripe
-      Payment Link o checkout ad-hoc) para ese alumno concreto.
+- [x] **Fase E — certificación oficial opcional: implementada.** Flujo
+      completo de extremo a extremo, sin ningún botón de pago público — el
+      alumno inicia la solicitud, pero solo puede pagar tras revisión manual
+      de admin, tal como exigía el negocio:
+      1. **Solicitud (alumno):** `/dashboard/academy` — nueva sección "Mis
+         matrículas" con botón "Solicitar certificación" cuando
+         `certification_status = 'none'`. `POST /api/academy/certification/request`
+         verifica que la matrícula sea del propio usuario, marca
+         `certification_requested = true` y `certification_status = 'requested'`,
+         notifica a admin (email + push).
+      2. **Revisión (admin):** en `/admin/academy-matriculas` (Fase 2c) el
+         selector de `certification_status` ya permitía mover
+         `requested → under_review → approved/rejected`. Al marcar
+         `approved`, `PATCH /api/admin/academy/enrollments/[id]` envía
+         automáticamente el email `academyCertificationApproved` al alumno.
+      3. **Pago (alumno, self-service):** una vez `approved`, el panel
+         muestra el botón "Pagar certificación oficial". `POST
+         /api/academy/certification/checkout` verifica que
+         `certification_status === 'approved'` antes de crear la Stripe
+         Checkout Session (usa `officialCertification.stripePriceId`,
+         `price_1U80fDLeYwwgvux48ZV4MWyp`) — nadie puede pagar sin que un
+         admin haya aprobado antes su matrícula concreta.
+      4. **Webhook:** nuevo bloque `product_type === 'academy_certification'`
+         en `app/api/stripe/webhook/route.ts` — al completarse el pago,
+         marca `certification_status = 'paid'`, registra el pago en
+         `orders` (idempotente por `stripe_payment_id`) y envía
+         confirmaciones al alumno y a admin.
 - [x] **Fase F — conocimiento de Kia: implementada.** Nuevo bloque
       `lib/ai/kia/prompts/kia-academy-knowledge.ts`, siguiendo el mismo
       patrón que `kia-holded-knowledge.ts`: programa (precio, horas,
@@ -287,7 +307,6 @@ https://expertconsulting.es/academy#solicitar-info
 Todas las fases (A–F) del plan quedan implementadas y desplegadas en
 producción. La Academy tiene landing, nav, captación de leads, reserva de
 entrevista, descarga de programación, checkout de matrícula funcional de
-extremo a extremo, y Kia puede responder preguntas sobre el curso. Único
-punto abierto: la vista admin de Fase E para aprobar y cobrar la
-certificación oficial opcional — sin fecha, a definir cuando haya demanda
-real de esa opción.
+extremo a extremo, certificación oficial opcional con revisión manual y
+pago self-service tras aprobación, y Kia puede responder preguntas sobre
+el curso. No quedan fases abiertas del plan original.
