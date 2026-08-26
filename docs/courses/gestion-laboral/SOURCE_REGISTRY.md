@@ -1,6 +1,6 @@
 # Registro de fuentes de la base de conocimientos laboral
 
-Última verificación general: **24 de agosto de 2026**.
+Última verificación general: **26 de agosto de 2026**.
 
 ## Criterios
 
@@ -13,7 +13,9 @@
 
 | ID | Propietario | Recurso | Artículos |
 |---|---|---|---|
-| TGSS-ABV | TGSS | [Alta, baja y variación](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136) | 10, 12 |
+| TGSS-ABV | TGSS | [Alta, baja y variación en Régimen General](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136) | 06, 10, 12 |
+| BOE-RD84 | BOE | [Real Decreto 84/1996, artículo 32.3](https://www.boe.es/eli/es/rd/1996/01/26/84/con) | 06, 12 |
+| BOE-RD643 | BOE | [Real Decreto 643/2026](https://www.boe.es/buscar/doc.php?id=BOE-A-2026-16557) | 06, 12 |
 | TGSS-SILTRA | TGSS | [Manuales SILTRA](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/5300/2837/2838/2840/196800?changeLanguage=es) | 13, 16 |
 | TGSS-SLD | TGSS | [Especificaciones SLD](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/5300/2837/2838/2841?changeLanguage=es) | 13 |
 | SEPE-CERT | SEPE | [Guía Certific@2](https://www.sepe.es/HomeSepe/ca/dam/SiteSepe/contenidos/empresas/contratos_trabajo/certificados_empresa/pdf/guia_uso_certifica_servicios_empresas.pdf) | 15 |

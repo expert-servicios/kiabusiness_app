@@ -1,15 +1,15 @@
 ---
 title: Variaciones laborales y contractuales
-slug: variaciones-laborales
+slug: variaciones
 category: laboral
 module: 8
 access: student
 status: review
-updatedAt: 2026-08-24
+updatedAt: 2026-08-26
 readTime: 35 min
 tags: [variaciones, Sistema RED, DelegaRed, Contrat@, Holded]
 tools: [Holded, DelegaRed, NetContrata, Sistema RED, Contrat@]
-sourcesVerifiedAt: 2026-08-24
+sourcesVerifiedAt: 2026-08-26
 reviewCycleDays: 90
 ---
 
@@ -17,7 +17,7 @@ reviewCycleDays: 90
 
 ## Finalidad y plazo
 
-Comunicar y documentar cambios de jornada, coeficiente, grupo, ocupación, contrato, salario, categoría o centro. TGSS publica con carácter general 6 días naturales para variaciones; algunos actos tienen reglas específicas.
+Comunicar y documentar cambios de jornada, coeficiente, grupo, ocupación, contrato, salario, categoría o centro. Desde el **1 de agosto de 2026**, las variaciones deben comunicarse a la TGSS, con carácter general, dentro de los **seis días naturales siguientes** a aquel en que se produzcan, sin perjuicio de las reglas específicas aplicables a determinados actos.
 
 ## Clasificar antes de actuar
 
@@ -73,10 +73,13 @@ Errores: modificar Holded sin TGSS, fecha distinta, borrar histórico, comunicar
 
 ## Fuentes
 
-- [TGSS: alta, baja y variación](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
+- [TGSS: alta, baja y variación en Régimen General](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
+- [BOE: artículo 32.3 del Real Decreto 84/1996](https://www.boe.es/eli/es/rd/1996/01/26/84/con)
+- [BOE: Real Decreto 643/2026](https://www.boe.es/buscar/doc.php?id=BOE-A-2026-16557)
 - [Creative Quality: NetContrata](https://www.creative-quality.es/netcontrata/)
 - [Holded Academy: crear contratos y aumentos](https://help.holded.com/es/articles/10484753-como-crear-contratos)
 
 ## Historial
 
+- 2026-08-26: plazo general actualizado a seis días naturales desde el 1 de agosto de 2026, conforme al Real Decreto 643/2026 y al artículo 32.3 vigente del Real Decreto 84/1996.
 - 2026-08-24: SOP multicanal de variaciones.

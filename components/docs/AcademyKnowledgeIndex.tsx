@@ -57,7 +57,7 @@ export function AcademyKnowledgeIndex({ articles, enrolled }: { articles: Articl
             onChange={(event) => setPhase(event.target.value)}
             className="h-10 w-full border border-[#0D1B2A]/15 bg-[#F8F6F1] px-3 text-sm outline-none transition focus:border-[#D4A017]"
           >
-            {phases.map((item) => <option key={item}>{item === ALL ? 'Todas las fases' : item}</option>)}
+            {phases.map((item) => <option key={item} value={item}>{item === ALL ? 'Todas las fases' : item}</option>)}
           </select>
         </label>
         <label>
@@ -67,7 +67,7 @@ export function AcademyKnowledgeIndex({ articles, enrolled }: { articles: Articl
             onChange={(event) => setTool(event.target.value)}
             className="h-10 w-full border border-[#0D1B2A]/15 bg-[#F8F6F1] px-3 text-sm outline-none transition focus:border-[#D4A017]"
           >
-            {tools.map((item) => <option key={item}>{item === ALL ? 'Todas las herramientas' : item}</option>)}
+            {tools.map((item) => <option key={item} value={item}>{item === ALL ? 'Todas las herramientas' : item}</option>)}
           </select>
         </label>
       </div>

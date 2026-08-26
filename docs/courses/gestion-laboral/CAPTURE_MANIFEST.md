@@ -2,6 +2,11 @@
 
 Estado: **pendiente de sesión funcional autorizada**.
 
+Documentos de ejecución:
+
+- [Protocolo de capturas y validación funcional](./CAPTURE_VALIDATION_RUNBOOK.md)
+- [Registro de las 58 ubicaciones](./CAPTURE_VALIDATION_TRACKER.csv)
+
 ## Volumen previsto
 
 | Manual | Herramienta | Capturas mínimas |

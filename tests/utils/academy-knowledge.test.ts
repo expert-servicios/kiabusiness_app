@@ -28,6 +28,19 @@ describe('academy labor knowledge base', () => {
     expect(article?.phase).toBe('Cotización');
     expect(article?.tools).toEqual(expect.arrayContaining(['Holded', 'SILTRA']));
     expect(article?.status).toBe('review');
+
+    const siltraArticle = getAcademyKnowledgeArticle('siltra-cotizaciones');
+    expect(siltraArticle?.tools).toEqual(expect.arrayContaining(['Holded', 'SILTRA']));
+
+    const variationsArticle = getAcademyKnowledgeArticle('variaciones');
+    expect(variationsArticle?.tools).toEqual(expect.arrayContaining(['NetContrata', 'Sistema RED']));
+  });
+
+  it('uses routed slugs instead of Markdown source paths in internal links', () => {
+    const invalidLinks = getAcademyKnowledgeArticles()
+      .flatMap((article) => article.body.match(/\]\(\.\/[^)]*\.md\)/g) ?? []);
+
+    expect(invalidLinks).toEqual([]);
   });
 
   it('rejects malformed or incomplete frontmatter', () => {

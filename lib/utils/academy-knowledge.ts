@@ -34,6 +34,7 @@ const frontmatterSchema = z.object({
   updatedAt: z.iso.date(),
   readTime: z.string().min(1),
   tags: z.array(z.string().min(1)),
+  tools: z.array(z.string().min(1)).default([]),
   sourcesVerifiedAt: z.iso.date().optional(),
 });
 
@@ -80,7 +81,7 @@ function parseFrontmatter(raw: string): { data: Record<string, string>; body: st
   return { data, body: match[2].trim() };
 }
 
-function parseTags(raw: string | undefined): string[] {
+function parseInlineList(raw: string | undefined): string[] {
   if (!raw) return [];
   const inner = raw.replace(/^\[/, '').replace(/\]$/, '');
   return inner.split(',').map((tag) => tag.trim()).filter(Boolean);
@@ -97,7 +98,8 @@ export function parseAcademyKnowledgeArticle(filename: string, raw: string): Aca
   const { data, body } = parseFrontmatter(raw);
   const parsed = frontmatterSchema.safeParse({
     ...data,
-    tags: parseTags(data.tags),
+    tags: parseInlineList(data.tags),
+    tools: parseInlineList(data.tools),
   });
 
   if (!parsed.success) {
@@ -108,7 +110,7 @@ export function parseAcademyKnowledgeArticle(filename: string, raw: string): Aca
     ...parsed.data,
     sourcesVerifiedAt: parsed.data.sourcesVerifiedAt,
     phase: PHASE_BY_MODULE[parsed.data.module] ?? 'Otros',
-    tools: getTools(parsed.data.tags),
+    tools: getTools([...parsed.data.tags, ...parsed.data.tools]),
     body,
   };
 }

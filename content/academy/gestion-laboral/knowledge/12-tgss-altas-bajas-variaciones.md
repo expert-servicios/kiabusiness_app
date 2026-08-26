@@ -5,10 +5,10 @@ category: laboral
 module: 5
 access: student
 status: review
-updatedAt: 2026-08-24
+updatedAt: 2026-08-26
 readTime: 25 min
 tags: [TGSS, Sistema RED, RED Directo, afiliación, IDC]
-sourcesVerifiedAt: 2026-08-24
+sourcesVerifiedAt: 2026-08-26
 ---
 
 # TGSS: altas, bajas y variaciones mediante Sistema RED
@@ -20,8 +20,8 @@ Comunicar a TGSS el inicio, cese o modificación de la relación laboral y compr
 ## Plazos publicados por TGSS
 
 - **Alta:** antes del inicio de la actividad y hasta 60 días antes.
-- **Baja:** 6 días naturales desde el cese.
-- **Variación de datos:** 6 días naturales.
+- **Baja:** desde el 1 de agosto de 2026, dentro de los 6 días naturales siguientes al cese; también puede comunicarse con carácter previo.
+- **Variación de datos:** desde el 1 de agosto de 2026, dentro de los 6 días naturales siguientes a aquel en que se produzca.
 
 Los plazos deben volver a comprobarse antes de publicar o ejecutar un trámite.
 
@@ -71,8 +71,11 @@ Ante autorización de trabajo dudosa, alta fuera de plazo, bonificación, sustit
 ## Fuente oficial
 
 - [TGSS: alta, baja y variación en Régimen General](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
+- [BOE: artículo 32.3 del Real Decreto 84/1996](https://www.boe.es/eli/es/rd/1996/01/26/84/con)
+- [BOE: Real Decreto 643/2026](https://www.boe.es/buscar/doc.php?id=BOE-A-2026-16557)
 - [Sistema RED](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/5300)
 
 ## Historial de cambios
 
+- 2026-08-26: plazo general actualizado a seis días naturales desde el 1 de agosto de 2026, conforme al Real Decreto 643/2026 y al artículo 32.3 vigente del Real Decreto 84/1996.
 - 2026-08-24: plazos y alcance contrastados con TGSS.

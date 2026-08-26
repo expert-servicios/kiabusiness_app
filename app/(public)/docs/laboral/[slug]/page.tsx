@@ -87,7 +87,7 @@ export default async function AcademyKnowledgeArticlePage({ params }: { params: 
             {article.status !== 'validated' && (
               <div className="mb-8 flex items-start gap-3 border border-[#D4A017]/35 bg-[#D4A017]/8 p-4 text-sm leading-6 text-[#23364D]">
                 <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#A97600]" />
-                <p>Material en {article.status === 'review' ? 'revisión' : 'borrador'}. Contrasta plazos y datos sensibles con la fuente oficial vigente antes de ejecutar un trámite real.</p>
+                <p>Material en estado «{statusLabel(article.status).toLocaleLowerCase('es')}». Contrasta plazos y datos sensibles con la fuente oficial vigente antes de ejecutar un trámite real.</p>
               </div>
             )}
             <AcademyKnowledgeArticleBody body={article.body} />
