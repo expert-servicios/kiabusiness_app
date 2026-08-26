@@ -10,7 +10,7 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - `app/(public)/academy/[slug]/page.tsx` — nueva ruta dinámica para programas distintos del índice 0, para no tocar ni duplicar `/academy` (que sigue sirviendo el Programa Superior sin cambios). Sirve `/academy/gestion-laboral-integral`.
 - CTA de pago **"Inscribirme y pagar"** enlaza directo al Payment Link de Stripe aprobado (`paymentLink` en el catálogo) — NO usa `/api/academy/checkout` ni un `stripePriceId`, tal como exige `STRIPE_AND_CONVERSION.md` ("no crear un Price ID ficticio", "no reutilizar el del Programa Superior").
 - `app/(public)/gracias/academy/gestion-laboral-integral/page.tsx` — página de éxito para configurar como redirect del Payment Link en el Dashboard de Stripe. No afirma matrícula activa (eso requeriría el webhook de la Fase 2).
-- PDF corporativo genérico copiado desde la rama de origen a `public/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf` (26 páginas, verificado que NO es la versión personalizada de Ilya Ovchinnikov).
+- PDF corporativo genérico copiado desde la rama de origen a `public/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf` (26 páginas, verificado que no contiene personalización de cliente).
 - Formulario de leads: reutiliza `AcademyLeadForm`/`app/api/academy/leads` sin cambios (ya son genéricos por `programSlug`).
 - Reserva de reunión informativa: reutiliza `CalendlyButton`/`getCalAcademyUrl()` sin cambios (mismo slot de Cal.com que el Programa Superior).
 - `app/sitemap.ts` — entrada añadida.
@@ -18,14 +18,15 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 
 **Fase 2a — base de conocimientos `/docs/laboral`: implementada.**
 
-- `lib/utils/academy-knowledge.ts` — cargador de contenido: lee `content/academy/gestion-laboral/knowledge/*.md` con `fs.readdirSync`/`readFileSync` (ruta literal, para que el file-tracing de Next.js/Vercel empaquete los archivos correctamente) y parsea el frontmatter (`access`, `status`, `module`, `tags`, etc.) con un parser propio minimalista, sin depender de ninguna librería nueva.
+- `lib/utils/academy-knowledge.ts` — cargador de contenido: lee `content/academy/gestion-laboral/knowledge/*.md`, valida el frontmatter con Zod y deriva las facetas de fase y herramienta.
 - `lib/utils/academy-enrollment.ts` — `getActiveEnrollment(programSlug)`: comprueba sesión (cookies, patrón ya usado en `/gracias/pago`) y busca una fila `academy_enrollments` con `status = 'active'` para ese programa. Se ejecuta siempre en servidor — nunca se decide el acceso en el cliente.
-- `app/(public)/docs/laboral/page.tsx` — índice: el manual `00-indice.md` (`access: public`) se muestra listado junto a los 8 manuales privados, marcados con candado si el visitante no tiene matrícula activa. `robots: noindex` porque la página en sí no aporta contenido propio indexable.
-- `app/(public)/docs/laboral/[slug]/page.tsx` — ficha de manual. Solo el artículo público se pre-renderiza (`generateStaticParams` filtra por `access === 'public'`); los 8 manuales privados se sirven dinámicamente por request (Next.js detecta el uso de `cookies()` dentro de `getActiveEnrollment` y desactiva el cacheo estático automáticamente). Sin matrícula, el `body` del manual **nunca se envía al cliente** — se renderiza una pantalla de bloqueo en su lugar, no solo se oculta con CSS/JS.
-- `components/docs/AcademyKnowledgeArticle.tsx` — renderer de markdown reutilizando el mismo patrón ya usado en `/docs/[slug]` (duplicado, no refactorizado desde el original, para no tocar la página pública de docs ya en producción).
+- `app/(public)/docs/laboral/page.tsx` — índice de 16 artículos, con búsqueda y filtros por fase/herramienta; los artículos privados se marcan con candado si el visitante no tiene matrícula activa. `robots: noindex` porque la página en sí no aporta contenido propio indexable.
+- `app/(public)/docs/laboral/[slug]/page.tsx` — ficha de manual. Solo los dos artículos públicos se pre-renderizan; los 14 manuales privados se sirven dinámicamente por request. Sin matrícula, el `body` del manual **nunca se envía al cliente**.
+- `components/docs/AcademyKnowledgeArticle.tsx` — renderer seguro del subconjunto utilizado de Markdown: títulos, listas, checklists, tablas, citas, código, enlaces y tarjetas de vídeo.
+- La ficha muestra fase, herramientas, estado editorial, fecha de revisión y navegación anterior/siguiente.
 - CTA **"Explorar manuales"** añadido a la landing del curso (`knowledgeBaseHref` nuevo en el catálogo).
 - Kia (`kia-academy-knowledge.ts`) actualizada: sabe que solo el índice es público y nunca debe insinuar que alguien sin matrícula puede ver los manuales completos.
-- `app/sitemap.ts` — solo se añade `/docs/laboral/indice` (el único contenido realmente público); el índice y los manuales privados quedan fuera del sitemap.
+- `app/sitemap.ts` — incorpora dinámicamente solo los dos artículos públicos; el índice de categoría y los manuales privados quedan fuera del sitemap.
 
 **Fase 2b — webhook de matrícula: implementada, con un paso manual pendiente en Stripe.**
 
@@ -56,7 +57,14 @@ Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bl
 
 - Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
 - JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.
-- Estados `validated`/`pending_update` del frontmatter de los manuales (hoy todos en `draft`) — sin flujo de revisión editorial todavía; se muestran igual, sin badge de estado en la UI.
+- Los estados editoriales ya se validan y se muestran. Falta el flujo administrativo para promover un artículo de `review` a `validated`.
+
+**Fase 2c — ampliación editorial incorporada:**
+
+- los manuales 01–08 están redactados como procedimientos operativos completos;
+- los artículos 10–16 cubren el mapa de responsabilidades y los flujos específicos de Holded, TGSS/Sistema RED, SILTRA, DelegaRed/NetContrata y Certific@2;
+- el manifiesto identifica 58 capturas pendientes de producir con cuentas de demostración autorizadas;
+- todos los procedimientos permanecen en `review` hasta completar prueba funcional, contraste profesional y revisión de anonimización.
 
 ## Objetivo
 
@@ -99,7 +107,14 @@ content/academy/gestion-laboral/
     ├── 05-siltra-y-cotizaciones.md
     ├── 06-variaciones.md
     ├── 07-bajas-y-finiquitos.md
-    └── 08-cierre-laboral.md
+    ├── 08-cierre-laboral.md
+    ├── 10-mapa-herramientas.md
+    ├── 11-holded-configuracion-nominas.md
+    ├── 12-tgss-altas-bajas-variaciones.md
+    ├── 13-holded-siltra-liquidacion.md
+    ├── 14-delegared-netcontrata-contratos.md
+    ├── 15-certifica2-certificado-empresa.md
+    └── 16-recursos-audiovisuales-capturas.md
 ```
 
 ## Activo descargable
@@ -110,7 +125,7 @@ El programa corporativo público debe servirse desde:
 /downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf
 ```
 
-La versión rusa personalizada para Ilya Ovchinnikov contiene datos de cliente y no debe publicarse como descarga general.
+Las versiones personalizadas para clientes contienen información privada y no deben publicarse como descarga general.
 
 ## Datos comerciales aprobados
 
@@ -129,4 +144,3 @@ La versión rusa personalizada para Ilya Ovchinnikov contiene datos de cliente y
 No afirmar de forma absoluta que cualquier formación está exenta de IVA. Usar:
 
 > Formación exenta de IVA cuando concurran los requisitos del artículo 20.Uno.9.º de la Ley 37/1992.
-

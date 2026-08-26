@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { categories, services } from '@/lib/utils/catalog';
 import { blogArticles } from '@/lib/utils/blog';
 import { docs } from '@/lib/utils/docs';
+import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
 
 const BASE = 'https://expertconsulting.es';
 
@@ -30,7 +31,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/planes`,                          changeFrequency: 'monthly', priority: 0.9, lastModified: now },
     { url: `${BASE}/academy`,                         changeFrequency: 'monthly', priority: 0.85, lastModified: now },
     { url: `${BASE}/academy/gestion-laboral-integral`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
-    { url: `${BASE}/docs/laboral/indice`,              changeFrequency: 'monthly', priority: 0.5, lastModified: now },
     { url: `${BASE}/holded`,                          changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     { url: `${BASE}/holded/conectores`,               changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/holded/conectores/claude`,        changeFrequency: 'monthly', priority: 0.72, lastModified: now },
@@ -96,5 +96,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: now
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...serviceRoutes, ...docRoutes, ...blogRoutes];
+  const laborKnowledgeRoutes: MetadataRoute.Sitemap = getAcademyKnowledgeArticles()
+    .filter((article) => article.access === 'public')
+    .map((article) => ({
+      url: `${BASE}/docs/laboral/${article.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.55,
+      lastModified: new Date(`${article.updatedAt}T00:00:00Z`),
+    }));
+
+  return [...staticRoutes, ...categoryRoutes, ...serviceRoutes, ...docRoutes, ...laborKnowledgeRoutes, ...blogRoutes];
 }

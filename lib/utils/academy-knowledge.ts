@@ -1,29 +1,73 @@
 import fs from 'fs';
 import path from 'path';
+import { z } from 'zod';
 
-// Loads the "Gestión Laboral Integral" student knowledge base from
-// content/academy/gestion-laboral/knowledge/*.md. Access control (public vs
-// student-gated) is read from frontmatter but MUST be enforced server-side
-// by the caller (checking session + an active academy_enrollments row) —
-// this loader only parses content, it does not gate anything.
+// This module only loads and validates content. Student access must always be
+// enforced by the server-side route before an article body is rendered.
+
+export const academyKnowledgeStatuses = ['draft', 'review', 'validated', 'pending_update', 'outdated'] as const;
 
 export interface AcademyKnowledgeArticle {
   slug: string;
   title: string;
   module: number;
   access: 'public' | 'student';
-  status: 'draft' | 'validated' | 'pending_update';
+  status: (typeof academyKnowledgeStatuses)[number];
   updatedAt: string;
+  sourcesVerifiedAt?: string;
   readTime: string;
   tags: string[];
+  phase: string;
+  tools: string[];
   body: string;
 }
 
 const KNOWLEDGE_DIR = path.join(process.cwd(), 'content', 'academy', 'gestion-laboral', 'knowledge');
 
+const frontmatterSchema = z.object({
+  title: z.string().min(1),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  category: z.literal('laboral'),
+  module: z.coerce.number().int().min(0),
+  access: z.enum(['public', 'student']),
+  status: z.enum(academyKnowledgeStatuses),
+  updatedAt: z.iso.date(),
+  readTime: z.string().min(1),
+  tags: z.array(z.string().min(1)),
+  tools: z.array(z.string().min(1)).default([]),
+  sourcesVerifiedAt: z.iso.date().optional(),
+});
+
+const PHASE_BY_MODULE: Record<number, string> = {
+  0: 'Orientación',
+  1: 'Mapa del proceso',
+  2: 'Convenio y salarios',
+  3: 'Configuración',
+  4: 'Configuración',
+  5: 'Incorporación',
+  6: 'Nómina',
+  7: 'Cotización',
+  8: 'Cambios y bajas',
+  9: 'Cierre',
+};
+
+const TOOL_ALIASES: Array<{ name: string; matches: string[] }> = [
+  { name: 'Holded', matches: ['holded'] },
+  { name: 'Sistema RED', matches: ['sistema red', 'red directo'] },
+  { name: 'SILTRA', matches: ['siltra', 'sistema de liquidación directa', 'sld', 'rnt', 'rlc', 'dcl', 'cra'] },
+  { name: 'DelegaRed', matches: ['delegared'] },
+  { name: 'NetContrata', matches: ['netcontrata'] },
+  { name: 'Contrat@', matches: ['contrat@'] },
+  { name: 'Certific@2', matches: ['certific@2'] },
+  { name: 'TGSS', matches: ['tgss', 'afiliación', 'idc'] },
+  { name: 'SEPE', matches: ['sepe', 'certificado de empresa'] },
+  { name: 'AEAT', matches: ['modelo 111', 'modelo 190'] },
+];
+
 function parseFrontmatter(raw: string): { data: Record<string, string>; body: string } {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return { data: {}, body: raw };
+  const normalized = raw.replace(/\r\n/g, '\n');
+  const match = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!match) throw new Error('Falta el bloque de frontmatter delimitado por ---');
 
   const data: Record<string, string> = {};
   for (const line of match[1].split('\n')) {
@@ -31,51 +75,59 @@ function parseFrontmatter(raw: string): { data: Record<string, string>; body: st
     if (colonIndex === -1) continue;
     const key = line.slice(0, colonIndex).trim();
     const value = line.slice(colonIndex + 1).trim();
-    data[key] = value;
+    data[key] = value.replace(/^(["'])(.*)\1$/, '$2');
   }
 
   return { data, body: match[2].trim() };
 }
 
-function parseTags(raw: string | undefined): string[] {
+function parseInlineList(raw: string | undefined): string[] {
   if (!raw) return [];
   const inner = raw.replace(/^\[/, '').replace(/\]$/, '');
-  return inner.split(',').map((t) => t.trim()).filter(Boolean);
+  return inner.split(',').map((tag) => tag.trim()).filter(Boolean);
+}
+
+function getTools(tags: string[]): string[] {
+  const normalizedTags = tags.map((tag) => tag.toLocaleLowerCase('es'));
+  return TOOL_ALIASES
+    .filter(({ matches }) => matches.some((match) => normalizedTags.some((tag) => tag.includes(match))))
+    .map(({ name }) => name);
+}
+
+export function parseAcademyKnowledgeArticle(filename: string, raw: string): AcademyKnowledgeArticle {
+  const { data, body } = parseFrontmatter(raw);
+  const parsed = frontmatterSchema.safeParse({
+    ...data,
+    tags: parseInlineList(data.tags),
+    tools: parseInlineList(data.tools),
+  });
+
+  if (!parsed.success) {
+    throw new Error(`Frontmatter no válido en ${filename}: ${z.prettifyError(parsed.error)}`);
+  }
+
+  return {
+    ...parsed.data,
+    sourcesVerifiedAt: parsed.data.sourcesVerifiedAt,
+    phase: PHASE_BY_MODULE[parsed.data.module] ?? 'Otros',
+    tools: getTools([...parsed.data.tags, ...parsed.data.tools]),
+    body,
+  };
 }
 
 function loadAll(): AcademyKnowledgeArticle[] {
   let filenames: string[];
   try {
-    // Sort by filename (00-, 01-, 02-...) — the numbered prefix is the
-    // authoritative operational sequence. The `module` frontmatter field
-    // maps articles to course modules and isn't 1:1 with file order (some
-    // modules span multiple manuals), so it must not be used for sorting.
-    filenames = fs.readdirSync(KNOWLEDGE_DIR).filter((f) => f.endsWith('.md')).sort();
+    // The numbered filename prefix is the authoritative reading order.
+    filenames = fs.readdirSync(KNOWLEDGE_DIR).filter((filename) => filename.endsWith('.md')).sort();
   } catch {
     return [];
   }
 
-  return filenames
-    .map((filename) => {
-      const raw = fs.readFileSync(path.join(KNOWLEDGE_DIR, filename), 'utf-8');
-      const { data, body } = parseFrontmatter(raw);
-
-      const access = data.access === 'public' ? 'public' : 'student';
-      const status: AcademyKnowledgeArticle['status'] =
-        data.status === 'validated' || data.status === 'pending_update' ? data.status : 'draft';
-
-      return {
-        slug: data.slug ?? filename.replace(/^\d+-/, '').replace(/\.md$/, ''),
-        title: data.title ?? filename,
-        module: Number(data.module ?? 0),
-        access,
-        status,
-        updatedAt: data.updatedAt ?? '',
-        readTime: data.readTime ?? '',
-        tags: parseTags(data.tags),
-        body,
-      } satisfies AcademyKnowledgeArticle;
-    });
+  return filenames.map((filename) => {
+    const raw = fs.readFileSync(path.join(KNOWLEDGE_DIR, filename), 'utf-8');
+    return parseAcademyKnowledgeArticle(filename, raw);
+  });
 }
 
 let cache: AcademyKnowledgeArticle[] | null = null;
@@ -86,5 +138,5 @@ export function getAcademyKnowledgeArticles(): AcademyKnowledgeArticle[] {
 }
 
 export function getAcademyKnowledgeArticle(slug: string): AcademyKnowledgeArticle | undefined {
-  return getAcademyKnowledgeArticles().find((a) => a.slug === slug);
+  return getAcademyKnowledgeArticles().find((article) => article.slug === slug);
 }
