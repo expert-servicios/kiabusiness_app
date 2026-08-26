@@ -50,6 +50,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/holded/pack-starter`,             changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/holded/migracion-sin-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/holded/migracion-con-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/holded/migracion-laboral`,        changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     // Planes
     { url: `${BASE}/planes/gratuito`,                 changeFrequency: 'monthly', priority: 0.55, lastModified: now },
     { url: `${BASE}/planes/supervision`,              changeFrequency: 'monthly', priority: 0.7, lastModified: now },

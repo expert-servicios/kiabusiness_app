@@ -1458,6 +1458,44 @@ export const services: Service[] = [
 
   // ── Holded — Módulos adicionales ───────────────────────────────────────────
   {
+    slug: 'holded-migracion-laboral',
+    categoria: 'holded',
+    name: 'Migración laboral a Holded',
+    shortDescription: 'Configuración y validación de la plantilla laboral en Holded por empleado.',
+    description:
+      'Migramos la información laboral vigente de cada empleado a Holded, configuramos contrato, jornada, categoría, salario, pagas e IRPF y comprobamos el resultado mediante una nómina de prueba. Incluye informe de incidencias y entrega documentada.',
+    metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
+    metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
+    price: '50 € + IVA / empleado',
+    duration: '3–5 días hábiles para hasta 15 empleados',
+    includes: [
+      'Revisión documental previa',
+      'Perfil laboral configurado por empleado',
+      'Contrato, jornada, categoría y estructura salarial',
+      'IRPF y pagas extraordinarias informados',
+      'Nómina de prueba por empleado',
+      'Informe final de incidencias',
+    ],
+    notIncluded: [
+      'Regularizaciones y recálculos históricos',
+      'Comunicaciones a TGSS o SEPE',
+      'Envíos mediante SILTRA',
+      'Gestión mensual de nóminas',
+      'Licencia de Holded',
+    ],
+    reviewBeforeHiring: [
+      'Número de empleados a migrar',
+      'Estado de la configuración laboral de Holded',
+      'Disponibilidad de contratos, nómina vigente e IDC',
+      'Necesidad de regularizaciones históricas',
+    ],
+    faqs: [
+      { q: '¿Cuál es el pedido mínimo?', a: 'El pedido mínimo es de 5 empleados, equivalente a 250 € + IVA.' },
+      { q: '¿Incluye la gestión mensual?', a: 'No. Es una implantación puntual; la gestión mensual se contrata por separado.' },
+      { q: '¿Cómo se contrata?', a: 'Primero realizamos una revisión de 15 minutos y confirmamos el número de expedientes facturables. Después enviamos el enlace de pago con la cantidad correcta.' },
+    ],
+  },
+  {
     slug: 'holded-modulo-laboral',
     categoria: 'holded',
     name: 'Módulo Laboral Holded',
