@@ -314,6 +314,133 @@ async function fulfillAcademyCertification(supabaseAdmin: SupabaseAdmin, session
   console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_certification', enrollment_id: enrollmentId, session_id: session.id }));
 }
 
+// Shared by checkout.session.completed (payment_status === 'paid') and
+// checkout.session.async_payment_succeeded — same rationale as
+// fulfillAcademyCertification above: a delayed payment method can leave a
+// session "completed" but still unpaid, with the real confirmation arriving
+// later via the async event. Internal /api/academy/checkout Sessions carry
+// client_reference_id (login required); external Payment Link purchases
+// (e.g. Gestión Laboral Integral) don't require login before paying, so we
+// fall back to matching the buyer's checkout email against an existing
+// profile.
+async function fulfillAcademyProgram(supabaseAdmin: SupabaseAdmin, session: Stripe.Checkout.Session) {
+  const programSlug = session.metadata?.program_slug ?? '';
+  const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
+  const amountEur = Number(session.amount_total ?? 0) / 100;
+  const paymentId = (session.payment_intent as string) ?? session.id;
+  const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
+  const customerName =
+    (session.customer_details as { name?: string } | null)?.name ??
+    customerEmail?.split('@')[0] ??
+    'Cliente';
+
+  let clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
+  if (!clientId && customerEmail) {
+    const { data: matchedProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', customerEmail)
+      .maybeSingle();
+    clientId = matchedProfile?.id ?? null;
+  }
+
+  // Idempotency is checked against `orders`, not `academy_enrollments`,
+  // because the unmatched-buyer branch below has no client_id to put in
+  // an enrollment row — without this, a Stripe webhook retry would
+  // re-send the "create an account" email every time.
+  const { data: existingOrder } = await supabaseAdmin
+    .from('orders')
+    .select('id')
+    .eq('stripe_payment_id', paymentId)
+    .maybeSingle();
+
+  if (existingOrder) return;
+
+  await supabaseAdmin.from('orders').insert({
+    source            : 'academy',
+    client_id         : clientId,
+    stripe_payment_id : paymentId,
+    amount_eur        : amountEur,
+    currency          : session.currency?.toUpperCase() ?? 'EUR',
+    status            : 'paid',
+    service_slugs     : programSlug,
+    metadata          : {
+      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: 'academy_program' },
+    },
+  });
+
+  if (clientId) {
+    await supabaseAdmin.from('academy_enrollments').insert({
+      client_id         : clientId,
+      program_slug      : programSlug,
+      program_name      : programName,
+      amount_eur        : amountEur,
+      stripe_payment_id : paymentId,
+      status            : 'active',
+    });
+
+    if (customerEmail) {
+      const tpl = academyEnrollmentConfirmed(customerName, programName, amountEur);
+      await sendEmail({
+        to: customerEmail,
+        eventType: 'academy.enrollment.confirmed',
+        ...tpl,
+        metadata: { session_id: session.id, program_slug: programSlug },
+      });
+
+      const adminEmails = getAdminEmails();
+      if (adminEmails.length) {
+        const adminTpl = academyEnrollmentConfirmedAdmin(customerName, customerEmail, programName, amountEur);
+        sendEmail({
+          to: adminEmails,
+          eventType: 'academy.enrollment.confirmed.admin',
+          ...adminTpl,
+          metadata: { session_id: session.id, program_slug: programSlug },
+        }).catch((err) => console.error('[webhook] admin academy email failed:', err));
+      }
+
+      notifyAdmins({
+        title: `🎓 Nueva matrícula Academy — ${customerName}`,
+        body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+        url  : '/admin/pagos',
+        tag  : `academy-enrollment-${session.id}`,
+      }).catch(() => {});
+    }
+  } else if (customerEmail) {
+    // Payment Link purchase with no matching profile yet — record the
+    // payment (orders row above) but leave academy_enrollments empty
+    // until an admin links it after the buyer creates/logs into an
+    // account with the same email.
+    const tpl = academyEnrollmentPendingLink(customerName, programName);
+    await sendEmail({
+      to: customerEmail,
+      eventType: 'academy.enrollment.pending_link',
+      ...tpl,
+      metadata: { session_id: session.id, program_slug: programSlug },
+    });
+
+    const adminEmails = getAdminEmails();
+    if (adminEmails.length) {
+      const adminTpl = academyEnrollmentPendingLinkAdmin(customerName, customerEmail, programName, amountEur);
+      sendEmail({
+        to: adminEmails,
+        eventType: 'academy.enrollment.pending_link.admin',
+        ...adminTpl,
+        metadata: { session_id: session.id, program_slug: programSlug },
+      }).catch((err) => console.error('[webhook] admin pending-link email failed:', err));
+    }
+
+    notifyAdmins({
+      title: `⚠️ Matrícula Academy sin vincular — ${customerName}`,
+      body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)} · sin cuenta con ese email`,
+      url  : '/admin/pagos',
+      tag  : `academy-enrollment-pending-${session.id}`,
+    }).catch(() => {});
+  }
+
+  console.log(JSON.stringify({ webhook: 'stripe', event: session.payment_status === 'paid' ? 'checkout.session.completed' : 'checkout.session.async_payment_succeeded', product_type: 'academy_program', program_slug: programSlug, session_id: session.id, linked: Boolean(clientId) }));
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripeClient();
   const body = await req.text();
@@ -507,129 +634,7 @@ export async function POST(req: NextRequest) {
     const productType = session.metadata?.product_type;
 
     if (session.mode === 'payment' && productType === 'academy_program' && session.payment_status === 'paid') {
-      const programSlug = session.metadata?.program_slug ?? '';
-      const programName = session.metadata?.program_name ?? 'Programa EXPERT Business Academy';
-      const amountEur = Number(session.amount_total ?? 0) / 100;
-      const paymentId = (session.payment_intent as string) ?? session.id;
-      const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
-      const customerName =
-        (session.customer_details as { name?: string } | null)?.name ??
-        customerEmail?.split('@')[0] ??
-        'Cliente';
-
-      // client_reference_id is only set by our own /api/academy/checkout
-      // (auth required before pay). External Stripe Payment Links — used
-      // by courses without an internal Checkout Session, e.g. Gestión
-      // Laboral Integral, deliberately do NOT require login before paying
-      // — so fall back to matching the buyer's checkout email against an
-      // existing profile. If nobody matches, we still record nothing here;
-      // the confirmation email below tells the buyer how to get linked and
-      // admin is notified to reconcile manually.
-      let clientId = session.client_reference_id ?? session.metadata?.user_id ?? null;
-      if (!clientId && customerEmail) {
-        const { data: matchedProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('email', customerEmail)
-          .maybeSingle();
-        clientId = matchedProfile?.id ?? null;
-      }
-
-      // Idempotency is checked against `orders`, not `academy_enrollments`,
-      // because the unmatched-buyer branch below has no client_id to put in
-      // an enrollment row — without this, a Stripe webhook retry would
-      // re-send the "create an account" email every time.
-      const { data: existingOrder } = await supabaseAdmin
-        .from('orders')
-        .select('id')
-        .eq('stripe_payment_id', paymentId)
-        .maybeSingle();
-
-      if (!existingOrder) {
-        await supabaseAdmin.from('orders').insert({
-          source            : 'academy',
-          client_id         : clientId,
-          stripe_payment_id : paymentId,
-          amount_eur        : amountEur,
-          currency          : session.currency?.toUpperCase() ?? 'EUR',
-          status            : 'paid',
-          service_slugs     : programSlug,
-          metadata          : {
-            checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: productType },
-          },
-        });
-
-        if (clientId) {
-          await supabaseAdmin.from('academy_enrollments').insert({
-            client_id         : clientId,
-            program_slug      : programSlug,
-            program_name      : programName,
-            amount_eur        : amountEur,
-            stripe_payment_id : paymentId,
-            status            : 'active',
-          });
-
-          if (customerEmail) {
-            const tpl = academyEnrollmentConfirmed(customerName, programName, amountEur);
-            await sendEmail({
-              to: customerEmail,
-              eventType: 'academy.enrollment.confirmed',
-              ...tpl,
-              metadata: { session_id: session.id, program_slug: programSlug },
-            });
-
-            const adminEmails = getAdminEmails();
-            if (adminEmails.length) {
-              const adminTpl = academyEnrollmentConfirmedAdmin(customerName, customerEmail, programName, amountEur);
-              sendEmail({
-                to: adminEmails,
-                eventType: 'academy.enrollment.confirmed.admin',
-                ...adminTpl,
-                metadata: { session_id: session.id, program_slug: programSlug },
-              }).catch((err) => console.error('[webhook] admin academy email failed:', err));
-            }
-
-            notifyAdmins({
-              title: `🎓 Nueva matrícula Academy — ${customerName}`,
-              body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
-              url  : '/admin/pagos',
-              tag  : `academy-enrollment-${session.id}`,
-            }).catch(() => {});
-          }
-        } else if (customerEmail) {
-          // Payment Link purchase with no matching profile yet — record the
-          // payment (orders row above) but leave academy_enrollments empty
-          // until an admin links it after the buyer creates/logs into an
-          // account with the same email.
-          const tpl = academyEnrollmentPendingLink(customerName, programName);
-          await sendEmail({
-            to: customerEmail,
-            eventType: 'academy.enrollment.pending_link',
-            ...tpl,
-            metadata: { session_id: session.id, program_slug: programSlug },
-          });
-
-          const adminEmails = getAdminEmails();
-          if (adminEmails.length) {
-            const adminTpl = academyEnrollmentPendingLinkAdmin(customerName, customerEmail, programName, amountEur);
-            sendEmail({
-              to: adminEmails,
-              eventType: 'academy.enrollment.pending_link.admin',
-              ...adminTpl,
-              metadata: { session_id: session.id, program_slug: programSlug },
-            }).catch((err) => console.error('[webhook] admin pending-link email failed:', err));
-          }
-
-          notifyAdmins({
-            title: `⚠️ Matrícula Academy sin vincular — ${customerName}`,
-            body : `${programName.slice(0, 60)} · €${amountEur.toFixed(0)} · sin cuenta con ese email`,
-            url  : '/admin/pagos',
-            tag  : `academy-enrollment-pending-${session.id}`,
-          }).catch(() => {});
-        }
-
-        console.log(JSON.stringify({ webhook: 'stripe', event: 'checkout.session.completed', product_type: 'academy_program', program_slug: programSlug, session_id: session.id, linked: Boolean(clientId) }));
-      }
+      await fulfillAcademyProgram(supabaseAdmin, session);
     }
 
     if (session.mode === 'payment' && productType === 'academy_certification' && session.payment_status === 'paid') {
@@ -910,12 +915,14 @@ export async function POST(req: NextRequest) {
 
   // Delayed payment methods (e.g. SEPA debit) can leave a Checkout Session
   // "completed" but not yet paid — Stripe confirms success later via this
-  // event. Only the academy_certification flow currently opts into
-  // fulfillment via a helper that's safe to call from both events.
+  // event. Both academy flows use fulfillment helpers that are safe to call
+  // from either event (idempotent on orders.stripe_payment_id).
   if (event.type === 'checkout.session.async_payment_succeeded') {
     const session = event.data.object as Stripe.Checkout.Session;
     if (session.metadata?.product_type === 'academy_certification') {
       await fulfillAcademyCertification(supabaseAdmin, session);
+    } else if (session.metadata?.product_type === 'academy_program') {
+      await fulfillAcademyProgram(supabaseAdmin, session);
     }
   }
 

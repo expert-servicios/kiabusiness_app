@@ -53,26 +53,32 @@ export async function POST(request: NextRequest) {
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
 
-    const session = await stripe.checkout.sessions.create({
-      mode                       : 'payment',
-      automatic_tax              : { enabled: true },
-      billing_address_collection : 'required',
-      tax_id_collection          : { enabled: true, required: 'if_supported' },
-      client_reference_id        : user.id,
-      customer                   : profile.stripe_customer_id ?? undefined,
-      customer_email             : profile.stripe_customer_id ? undefined : user.email,
-      ...(profile.stripe_customer_id ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
-      line_items                 : [{ price: program.stripePriceId, quantity: 1 }],
-      success_url                : `${appUrl}/gracias/pago?source=academy&service=${program.slug}`,
-      cancel_url                 : `${appUrl}/academy`,
-      metadata                   : {
-        product_type : 'academy_program',
-        program_slug : program.slug,
-        program_name : program.name,
-        user_id      : user.id,
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode                       : 'payment',
+        automatic_tax              : { enabled: true },
+        billing_address_collection : 'required',
+        tax_id_collection          : { enabled: true, required: 'if_supported' },
+        client_reference_id        : user.id,
+        customer                   : profile.stripe_customer_id ?? undefined,
+        customer_email             : profile.stripe_customer_id ? undefined : user.email,
+        ...(profile.stripe_customer_id ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
+        line_items                 : [{ price: program.stripePriceId, quantity: 1 }],
+        success_url                : `${appUrl}/gracias/pago?source=academy&service=${program.slug}`,
+        cancel_url                 : `${appUrl}/academy`,
+        metadata                   : {
+          product_type : 'academy_program',
+          program_slug : program.slug,
+          program_name : program.name,
+          user_id      : user.id,
+        },
+        locale                     : 'es',
       },
-      locale                     : 'es',
-    });
+      // Deterministic per user + program: a double-click or client retry within
+      // Stripe's 24h idempotency window reuses the same Checkout Session
+      // instead of creating a second one for the same purchase attempt.
+      { idempotencyKey: `academy-checkout-${user.id}-${program.slug}` }
+    );
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
