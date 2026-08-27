@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getAcademyProgram } from '@/lib/data/academy-catalog';
-
-async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
-}
+import { requireAdminClient } from '@/lib/auth/require-admin';
 
 export async function GET(request: NextRequest) {
-  const admin = await requireAdmin(request);
+  const admin = await requireAdminClient(request);
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const [{ data: enrollments, error: enrollError }, { data: unlinkedOrders, error: ordersError }] = await Promise.all([
@@ -46,7 +37,7 @@ const createSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const admin = await requireAdmin(request);
+  const admin = await requireAdminClient(request);
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const parsed = createSchema.safeParse(await request.json());
