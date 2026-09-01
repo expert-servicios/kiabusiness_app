@@ -6,6 +6,23 @@ import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 import { trackAcademyEvent } from '@/lib/utils/analytics';
 import { countryDialCodes, DEFAULT_DIAL_CODE } from '@/lib/data/country-dial-codes';
 
+// Combines a selected dial code with the raw phone input into one
+// international-looking string. Handles two cases the naive
+// `${dialCode} ${phone}` concatenation got wrong (flagged in review):
+// - the user pastes an already-international number (starts with the
+//   selected dial code, or any "+") — used as-is instead of duplicating
+//   the prefix;
+// - a domestic number with a leading trunk "0" (common outside Spain,
+//   e.g. UK "07123...") — the leading 0 is dropped before prefixing.
+function composePhoneNumber(dialCode: string, rawPhone: string): string {
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('+')) return trimmed;
+  const digitsOnly = trimmed.replace(/[^\d]/g, '');
+  const withoutTrunkZero = digitsOnly.replace(/^0+/, '');
+  return `${dialCode}${withoutTrunkZero}`;
+}
+
 const STUDIES_OPTIONS = [
   'Educación secundaria / ESO',
   'Bachillerato',
@@ -43,7 +60,7 @@ export function AcademyLeadForm({
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE.dialCode);
+  const [countryIso2, setCountryIso2] = useState(DEFAULT_DIAL_CODE.iso2);
   const [phone, setPhone] = useState('');
   const [currentRole, setCurrentRole] = useState('');
   const [studies, setStudies] = useState('');
@@ -62,6 +79,7 @@ export function AcademyLeadForm({
     setError('');
     try {
       const recaptcha_token = await getRecaptchaToken('academy_lead');
+      const dialCode = countryDialCodes.find((c) => c.iso2 === countryIso2)?.dialCode ?? DEFAULT_DIAL_CODE.dialCode;
       const res = await fetch('/api/academy/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +87,7 @@ export function AcademyLeadForm({
           programSlug,
           name,
           email,
-          phone: phone.trim() ? `${dialCode} ${phone.trim()}` : '',
+          phone: composePhoneNumber(dialCode, phone),
           currentRole,
           studies,
           companyName,
@@ -155,13 +173,13 @@ export function AcademyLeadForm({
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Teléfono</label>
           <div className="flex gap-2">
             <select
-              value={dialCode}
-              onChange={(e) => setDialCode(e.target.value)}
+              value={countryIso2}
+              onChange={(e) => setCountryIso2(e.target.value)}
               aria-label="Prefijo del país"
               className="w-[6.5rem] shrink-0 border border-[#D4A017]/30 bg-white px-2 py-3 text-sm text-[#0D1B2A] focus:border-[#D4A017] focus:outline-none"
             >
               {countryDialCodes.map((c) => (
-                <option key={c.iso2} value={c.dialCode}>{c.flag} {c.dialCode}</option>
+                <option key={c.iso2} value={c.iso2}>{c.flag} {c.dialCode}</option>
               ))}
             </select>
             <input
