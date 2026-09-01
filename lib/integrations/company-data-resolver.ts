@@ -135,6 +135,17 @@ export function validateSpanishTaxIdFormat(taxId: string): TaxIdValidationResult
     return { valid, normalized: raw, type: 'nif', error: valid ? undefined : 'Letra de control incorrecta' };
   }
 
+  // ── NIF especial (personas físicas): K/L/M + 7 digits + letter
+  // K: españoles menores de 14 años; L: españoles residentes en el
+  // extranjero; M: extranjeros sin NIE. They must receive the same RGPD
+  // treatment as a regular NIF and never be sent to enrichment providers.
+  if (/^[KLM][0-9]{7}[A-Z]$/i.test(raw)) {
+    const digits  = raw.slice(1, 8);
+    const control = raw[8]!;
+    const valid   = control === nifControlLetter(digits);
+    return { valid, normalized: raw, type: 'nif', error: valid ? undefined : 'Letra de control incorrecta' };
+  }
+
   return { valid: false, normalized: null, type: 'unknown', error: 'Formato no reconocido como NIF, NIE o CIF español' };
 }
 
@@ -239,7 +250,12 @@ function getFromResolverCache(key: string): CompanySuggestion[] | null {
     resolverCache.delete(key);
     return null;
   }
-  return entry.suggestions;
+  // Return defensive copies: callers add UI state to suggestions in a few
+  // places and must not be able to mutate the process-wide cache.
+  return entry.suggestions.map((suggestion) => ({
+    ...suggestion,
+    warnings: [...suggestion.warnings],
+  }));
 }
 
 function setInResolverCache(key: string, suggestions: CompanySuggestion[]): void {
@@ -247,7 +263,13 @@ function setInResolverCache(key: string, suggestions: CompanySuggestion[]): void
     const oldest = resolverCache.keys().next().value;
     if (oldest !== undefined) resolverCache.delete(oldest);
   }
-  resolverCache.set(key, { suggestions, expiresAt: Date.now() + RESOLVER_TTL_MS });
+  resolverCache.set(key, {
+    suggestions: suggestions.map((suggestion) => ({
+      ...suggestion,
+      warnings: [...suggestion.warnings],
+    })),
+    expiresAt: Date.now() + RESOLVER_TTL_MS,
+  });
 }
 
 // ── Ranking / deduplication ───────────────────────────────────────────────────
@@ -308,17 +330,16 @@ export async function searchCompanyByTaxId(taxId: string): Promise<CompanySugges
   }
 
   const empty: CompanySuggestion[] = [];
-  const [viesResults, ocResults, ckanResults] = await Promise.all([
+  const [viesResults, ckanResults] = await Promise.all([
     fromVies(taxId).catch(() => empty),
-    isOpenCorporatesEnabled()
-      ? fromOpenCorporates(validation.normalized ?? taxId).catch(() => empty)
-      : Promise.resolve(empty),
     isCkanEnabled()
       ? searchCkanCompaniesByTaxId(validation.normalized ?? taxId).catch(() => empty)
       : Promise.resolve(empty),
   ]);
 
-  return mergeSuggestions([...viesResults, ...ocResults, ...ckanResults]);
+  // OpenCorporates' generic company search is name-based. Passing a CIF to it
+  // can return unrelated name matches, so it is deliberately excluded here.
+  return mergeSuggestions([...viesResults, ...ckanResults]);
 }
 
 /**
@@ -335,6 +356,12 @@ export async function resolveCompanyData(input: {
   bestSuggestion       ?: CompanySuggestion;
   requiresUserConfirmation: true;
 }> {
+  const country = (input.country ?? 'ES').toUpperCase();
+  if (country !== 'ES') {
+    throw new Error('unsupported_country');
+  }
+
+  input = { ...input, country };
   const opts      = { deepSearch: input.deepSearch };
   const cacheKey  = makeResolverKey(input);
 

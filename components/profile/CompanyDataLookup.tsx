@@ -27,7 +27,7 @@ interface ResolveResponse {
   suggestions             : CompanySuggestion[];
   bestSuggestion         ?: CompanySuggestion;
   requiresUserConfirmation: boolean;
-  suggestionIds           : string[];
+  suggestionIds           : Array<string | null>;
   taxIdType              ?: string | null;
   note                   ?: string;
   error                  ?: string;
@@ -279,7 +279,7 @@ export function CompanyDataLookup({ company, taxId, onApply }: Props) {
             <SuggestionCard
               key={i}
               sug={sug}
-              suggestionId={response.suggestionIds?.[i]}
+              suggestionId={response.suggestionIds?.[i] ?? undefined}
               onApply={onApply}
             />
           ))}

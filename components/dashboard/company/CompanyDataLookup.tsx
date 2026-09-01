@@ -52,7 +52,7 @@ interface ResolveResponse {
   suggestions             : CompanySuggestion[];
   bestSuggestion         ?: CompanySuggestion;
   requiresUserConfirmation: true;
-  suggestionIds          ?: string[];
+  suggestionIds          ?: Array<string | null>;
   taxIdType              ?: 'nif' | 'nie' | 'cif' | null;
   note                   ?: string;
   meta                   ?: { sources: string[]; elapsedMs: number; queriedAt: string };
@@ -347,7 +347,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
                 <SuggestionCard
                   key={i}
                   suggestion={s}
-                  suggestionId={result.suggestionIds?.[i]}
+                  suggestionId={result.suggestionIds?.[i] ?? undefined}
                   onUse={handleUse}
                 />
               ))}
