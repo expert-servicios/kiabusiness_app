@@ -4,6 +4,49 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 import { trackAcademyEvent } from '@/lib/utils/analytics';
+import { countryDialCodes, DEFAULT_DIAL_CODE } from '@/lib/data/country-dial-codes';
+
+// Combines a selected dial code with the raw phone input into one
+// international-looking string. Handles two cases the naive
+// `${dialCode} ${phone}` concatenation got wrong (flagged in review):
+// - the user pastes an already-international number (starts with the
+//   selected dial code, or any "+") — used as-is instead of duplicating
+//   the prefix;
+// - a domestic number with a leading trunk "0" (common outside Spain,
+//   e.g. UK "07123...") — the leading 0 is dropped before prefixing.
+function composePhoneNumber(dialCode: string, rawPhone: string): string {
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('+')) return trimmed;
+  const digitsOnly = trimmed.replace(/[^\d]/g, '');
+  const withoutTrunkZero = digitsOnly.replace(/^0+/, '');
+  return `${dialCode}${withoutTrunkZero}`;
+}
+
+const STUDIES_OPTIONS = [
+  'Educación secundaria / ESO',
+  'Bachillerato',
+  'Formación Profesional (FP)',
+  'Grado universitario',
+  'Máster / Posgrado',
+  'Doctorado',
+  'Otros',
+];
+
+const JOB_POSITION_OPTIONS = [
+  'Administrativo/a',
+  'Auxiliar administrativo/a',
+  'Responsable de administración',
+  'Office manager',
+  'Recursos Humanos',
+  'Responsable financiero/contable',
+  'Gerente / Director/a',
+  'Autónomo/a',
+  'Empresario/a',
+  'Desempleado/a en búsqueda activa',
+  'Estudiante',
+  'Otro',
+];
 
 export function AcademyLeadForm({
   programSlug,
@@ -17,8 +60,11 @@ export function AcademyLeadForm({
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [countryIso2, setCountryIso2] = useState(DEFAULT_DIAL_CODE.iso2);
   const [phone, setPhone] = useState('');
   const [currentRole, setCurrentRole] = useState('');
+  const [studies, setStudies] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [experience, setExperience] = useState('');
   const [language, setLanguage] = useState<'es' | 'ru'>('es');
   const [certificationInterest, setCertificationInterest] = useState(false);
@@ -33,6 +79,7 @@ export function AcademyLeadForm({
     setError('');
     try {
       const recaptcha_token = await getRecaptchaToken('academy_lead');
+      const dialCode = countryDialCodes.find((c) => c.iso2 === countryIso2)?.dialCode ?? DEFAULT_DIAL_CODE.dialCode;
       const res = await fetch('/api/academy/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -40,8 +87,10 @@ export function AcademyLeadForm({
           programSlug,
           name,
           email,
-          phone,
+          phone: composePhoneNumber(dialCode, phone),
           currentRole,
+          studies,
+          companyName,
           experience,
           language,
           certificationInterest: hasOfficialCertification ? certificationInterest : false,
@@ -122,23 +171,59 @@ export function AcademyLeadForm({
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Teléfono</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+34 600 000 000"
-            aria-label="Teléfono"
-            className="w-full border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] placeholder-[#9CA3AF] focus:border-[#D4A017] focus:outline-none"
-          />
+          <div className="flex gap-2">
+            <select
+              value={countryIso2}
+              onChange={(e) => setCountryIso2(e.target.value)}
+              aria-label="Prefijo del país"
+              className="w-[6.5rem] shrink-0 border border-[#D4A017]/30 bg-white px-2 py-3 text-sm text-[#0D1B2A] focus:border-[#D4A017] focus:outline-none"
+            >
+              {countryDialCodes.map((c) => (
+                <option key={c.iso2} value={c.iso2}>{c.flag} {c.dialCode}</option>
+              ))}
+            </select>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="600 000 000"
+              aria-label="Teléfono"
+              className="w-full min-w-0 border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] placeholder-[#9CA3AF] focus:border-[#D4A017] focus:outline-none"
+            />
+          </div>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Puesto actual</label>
-          <input
-            type="text"
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Puesto de trabajo</label>
+          <select
             value={currentRole}
             onChange={(e) => setCurrentRole(e.target.value)}
-            placeholder="Ej. Administrativo, autónomo..."
-            aria-label="Puesto actual"
+            aria-label="Puesto de trabajo"
+            className="w-full border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] focus:border-[#D4A017] focus:outline-none"
+          >
+            <option value="">Selecciona una opción</option>
+            {JOB_POSITION_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Nivel de estudios</label>
+          <select
+            value={studies}
+            onChange={(e) => setStudies(e.target.value)}
+            aria-label="Nivel de estudios"
+            className="w-full border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] focus:border-[#D4A017] focus:outline-none"
+          >
+            <option value="">Selecciona una opción</option>
+            {STUDIES_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#23364D]">Nombre de empresa (opcional)</label>
+          <input
+            type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="Tu empresa"
+            aria-label="Nombre de empresa"
             className="w-full border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] placeholder-[#9CA3AF] focus:border-[#D4A017] focus:outline-none"
           />
         </div>

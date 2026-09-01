@@ -4,6 +4,7 @@ import { getFirstAdminProfileId, getSupabaseAdmin } from '@/lib/integrations/sup
 import { sendEmail } from '@/lib/email/send';
 import { academyLeadReceivedClient, academyLeadReceivedAdmin } from '@/lib/email/templates';
 import { getAcademyProgram, getAcademyProgramPath } from '@/lib/data/academy-catalog';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
@@ -13,8 +14,10 @@ const academyLeadSchema = z.object({
   programSlug: z.string().min(1),
   name: z.string().min(2).max(100),
   email: z.string().email(),
-  phone: z.string().max(20).optional(),
+  phone: z.string().max(30).optional(),
   currentRole: z.string().max(150).optional(),
+  studies: z.string().max(150).optional(),
+  companyName: z.string().max(150).optional(),
   experience: z.string().max(500).optional(),
   language: z.enum(['es', 'ru']).default('es'),
   certificationInterest: z.boolean().default(false),
@@ -68,7 +71,9 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const messageParts = [
-      validated.currentRole ? `Puesto actual: ${validated.currentRole}` : null,
+      validated.currentRole ? `Puesto de trabajo: ${validated.currentRole}` : null,
+      validated.studies ? `Nivel de estudios: ${validated.studies}` : null,
+      validated.companyName ? `Empresa: ${validated.companyName}` : null,
       validated.experience ? `Experiencia: ${validated.experience}` : null,
       `Idioma preferido: ${validated.language}`,
       `Interés certificación oficial ADGD0210: ${validated.certificationInterest ? 'Sí' : 'No'}`,
@@ -96,7 +101,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al guardar la solicitud' }, { status: 500 });
     }
 
-    const clientTpl = academyLeadReceivedClient(validated.name, program.name, getAcademyProgramPath(program.slug));
+    const clientTpl = academyLeadReceivedClient({
+      name: validated.name,
+      programName: program.name,
+      programPath: getAcademyProgramPath(program.slug),
+      paymentUrl: program.paymentLink ?? undefined,
+      // Prefer the program's own static brochure (downloadHref) when it has
+      // one — e.g. Gestión Laboral Integral's PDF correctly shows 9 modules
+      // + 5 tutoring hours. The generated endpoint always renders the
+      // Programa Superior's 16-module layout, which is wrong for other
+      // programs, so it's only a fallback for ones without a dedicated PDF.
+      programPdfUrl: program.downloadHref
+        ? `${getPublicAppUrl()}${program.downloadHref}`
+        : `${getPublicAppUrl()}/api/academy/programa-pdf?slug=${program.slug}`,
+    });
     await sendEmail({
       to: validated.email,
       eventType: 'academy.lead.received',
@@ -110,6 +128,8 @@ export async function POST(request: NextRequest) {
       phone: validated.phone,
       programName: program.name,
       currentRole: validated.currentRole,
+      studies: validated.studies,
+      companyName: validated.companyName,
       experience: validated.experience,
       language: validated.language,
       certificationInterest: validated.certificationInterest,

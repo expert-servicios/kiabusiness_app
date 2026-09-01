@@ -142,15 +142,24 @@ export function quoteReceivedAdmin(name: string, email: string, services: string
 }
 
 // ── 2b. Academy lead received (client) ───────────────────────────────────────
-export function academyLeadReceivedClient(name: string, programName: string, programPath: string = '/academy') {
+export function academyLeadReceivedClient(input: {
+  name: string;
+  programName: string;
+  programPath?: string;
+  /** External Stripe Payment Link or internal checkout — only set for programs that have one ready. */
+  paymentUrl?: string;
+  programPdfUrl?: string;
+}) {
+  const { name, programName, programPath = '/academy', paymentUrl, programPdfUrl } = input;
   return {
     subject: 'Hemos recibido tu solicitud de información — EXPERT Business Academy',
     html: base('Solicitud recibida', `
       ${heading('¡Gracias por tu interés!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para(`Hemos recibido tu solicitud de información sobre <strong>${escapeHtml(programName)}</strong>. Revisaremos tu perfil y te contactaremos en un plazo de 24 horas hábiles con toda la información sobre modalidad, calendario y requisitos.`)}
-      ${para('Si lo prefieres, también puedes reservar directamente una entrevista de admisión desde nuestra web.')}
-      ${btn('Ver el programa', `${BRAND.appUrl}${programPath}`)}
+      ${para('Mientras tanto, aquí tienes la programación detallada y, si ya lo tienes claro, puedes reservar tu plaza directamente:')}
+      ${programPdfUrl ? btn('Descargar programación (PDF)', programPdfUrl) : ''}
+      ${paymentUrl ? btn('Inscribirme y pagar', paymentUrl) : btn('Ver el programa', `${BRAND.appUrl}${programPath}`)}
     `)
   };
 }
@@ -158,7 +167,8 @@ export function academyLeadReceivedClient(name: string, programName: string, pro
 // ── 2c. Academy lead received (admin) ────────────────────────────────────────
 export function academyLeadReceivedAdmin(input: {
   name: string; email: string; phone?: string | null; programName: string;
-  currentRole?: string | null; experience?: string | null; language: string; certificationInterest: boolean;
+  currentRole?: string | null; studies?: string | null; companyName?: string | null;
+  experience?: string | null; language: string; certificationInterest: boolean;
 }) {
   const safeName = escapeHtml(input.name);
   const safeEmail = escapeHtml(input.email);
@@ -171,7 +181,9 @@ export function academyLeadReceivedAdmin(input: {
         detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
         detail('Teléfono', escapeHtml(input.phone ?? '—')),
         detail('Programa', escapeHtml(input.programName)),
-        detail('Puesto actual', escapeHtml(input.currentRole ?? '—')),
+        detail('Puesto de trabajo', escapeHtml(input.currentRole ?? '—')),
+        detail('Nivel de estudios', escapeHtml(input.studies ?? '—')),
+        detail('Empresa', escapeHtml(input.companyName ?? '—')),
         detail('Experiencia', escapeHtml(input.experience ?? '—')),
         detail('Idioma preferido', escapeHtml(input.language)),
         detail('Interés certificación oficial', input.certificationInterest ? 'Sí' : 'No')
