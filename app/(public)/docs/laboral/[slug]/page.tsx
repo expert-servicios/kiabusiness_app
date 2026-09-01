@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Lock, ShieldCheck } from 'lucide-react';
-import { getAcademyKnowledgeArticle, getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
+import { getAcademyKnowledgeArticles, getAcademyKnowledgeArticleWithStatus, getAcademyKnowledgeArticlesWithStatus } from '@/lib/utils/academy-knowledge';
 import { getActiveEnrollment } from '@/lib/utils/academy-enrollment';
 import { AcademyKnowledgeArticleBody } from '@/components/docs/AcademyKnowledgeArticle';
+import { EventTracker } from '@/components/site/EventTracker';
 
 const PROGRAM_SLUG = 'gestion-laboral-integral';
 
@@ -19,7 +20,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getAcademyKnowledgeArticle(slug);
+  const article = await getAcademyKnowledgeArticleWithStatus(slug);
   if (!article) return {};
 
   const canonicalUrl = `https://expertconsulting.es/docs/laboral/${slug}`;
@@ -37,10 +38,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function AcademyKnowledgeArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = getAcademyKnowledgeArticle(slug);
+  const [article, articles] = await Promise.all([
+    getAcademyKnowledgeArticleWithStatus(slug),
+    getAcademyKnowledgeArticlesWithStatus(),
+  ]);
   if (!article) notFound();
 
-  const articles = getAcademyKnowledgeArticles();
   const articleIndex = articles.findIndex((item) => item.slug === slug);
   const previousArticle = articleIndex > 0 ? articles[articleIndex - 1] : undefined;
   const nextArticle = articleIndex >= 0 && articleIndex < articles.length - 1 ? articles[articleIndex + 1] : undefined;
@@ -53,6 +56,10 @@ export default async function AcademyKnowledgeArticlePage({ params }: { params: 
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
+      <EventTracker
+        event={hasAccess ? 'knowledge_article_view' : 'knowledge_student_gate_view'}
+        eventProps={{ article_slug: article.slug, access_level: article.access }}
+      />
       <section className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-4xl">
           <Link

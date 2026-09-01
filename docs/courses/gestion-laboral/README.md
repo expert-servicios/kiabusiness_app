@@ -55,9 +55,11 @@ Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bl
 - Lista todas las matrículas existentes con selector de `status` (activa/cancelada/completada) y, para el Programa Superior, selector de `certification_status` (sin solicitar → solicitada → en revisión → aprobada/rechazada → pagada) — la base para la Fase E de certificación oficial, aunque el checkout de esa opción sigue sin implementarse.
 - Permite crear una matrícula manual (transferencia, cortesía, etc.) buscando por email de una cuenta ya existente — `/api/admin/academy/enrollments` (POST).
 
-- Eventos de analítica (`course_view`, `course_payment_click`, etc.) — no implementados porque no existe infraestructura de analítica en el repo (`gtag`/`dataLayer`/tracker propio) a la que conectarlos.
-- JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`) en la landing — no implementado en esta fase.
-- Los estados editoriales ya se validan y se muestran. Falta el flujo administrativo para promover un artículo de `review` a `validated`.
+**Fase 2d — cierre de las mejoras pendientes: implementada.**
+
+- JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`, `FAQPage`) en `/academy` y `/academy/[slug]`.
+- Eventos de analítica (`course_view`, `course_payment_click`, `course_contact_click`, `course_meeting_click`, `course_program_download`, `course_lead_submit`, `course_checkout_success`, `knowledge_article_view`, `knowledge_student_gate_view`) — `lib/utils/analytics.ts` empuja al `dataLayer` que ya gestiona el GTM instalado en el sitio (`GTM-MKZ522HP`, ver `app/layout.tsx`). No se añadió un `gtag.js` independiente para no duplicar el tracking. Falta configurar en GTM Dashboard los tags de evento GA4 (Measurement ID `G-NWTGS6DH5E`) disparados por cada nombre de evento — paso manual pendiente en GTM, no en código.
+- Flujo admin de validación editorial: `/admin/academy-conocimiento` (enlace "Conocimiento Academy" en el sidebar) permite cambiar el estado mostrado de cada manual (`draft`/`review`/`validated`/`pending_update`/`outdated`) sin desplegar código. Se implementó vía tabla `academy_knowledge_status` (migración `20260901000001_academy_knowledge_status.sql`) que sobreescribe el `status` del frontmatter del `.md` al leerlo — el contenido versionado en el repositorio no cambia, solo lo que ven los visitantes.
 
 **Fase 2c — ampliación editorial incorporada:**
 

@@ -6,6 +6,8 @@ import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 import { FaqSection } from '@/components/site/FaqSection';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
+import { EventTracker } from '@/components/site/EventTracker';
+import { TrackedAnchor } from '@/components/site/TrackedAnchor';
 
 const program = academyPrograms[0];
 
@@ -86,6 +88,7 @@ export default function AcademyPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      <EventTracker event="course_view" eventProps={{ program_slug: program.slug }} />
       {/* Hero */}
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] sm:py-20">
         <div className="mx-auto max-w-5xl">
@@ -109,27 +112,33 @@ export default function AcademyPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
+            <TrackedAnchor
               href="#solicitar-info"
+              event="course_contact_click"
+              eventProps={{ program_slug: program.slug, cta_location: 'hero' }}
               className="inline-flex items-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               Solicitar información
-            </a>
+            </TrackedAnchor>
             <CalendlyButton
               url={calAcademyUrl}
               fallbackHref="/cita"
+              analyticsEvent="course_meeting_click"
+              analyticsProps={{ program_slug: program.slug, cta_location: 'hero' }}
               className="inline-flex items-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
             >
               <CalendarCheck className="h-4 w-4" />
               Reservar entrevista de admisión
             </CalendlyButton>
-            <a
+            <TrackedAnchor
               href={`/api/academy/programa-pdf?slug=${program.slug}`}
+              event="course_program_download"
+              eventProps={{ program_slug: program.slug }}
               className="inline-flex items-center gap-2 border border-white/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/85 transition hover:border-[#D4A017] hover:text-[#D4A017]"
             >
               <Download className="h-4 w-4" />
               Descargar programación
-            </a>
+            </TrackedAnchor>
           </div>
         </div>
       </section>
@@ -262,6 +271,7 @@ export default function AcademyPage() {
             <div className="mt-10 flex flex-col items-center gap-3">
               <AcademyCheckoutButton
                 programSlug={program.slug}
+                ctaLocation="pricing"
                 className="inline-flex items-center gap-2 bg-[#D4A017] px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
               />
               <p className="text-xs text-[#9CA3AF]">Pago único y seguro con Stripe · Factura con IVA incluida</p>

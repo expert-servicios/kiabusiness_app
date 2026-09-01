@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
+import { trackAcademyEvent } from '@/lib/utils/analytics';
 
 export function AcademyLeadForm({
   programSlug,
@@ -50,6 +51,7 @@ export function AcademyLeadForm({
       });
       if (res.ok) {
         setSubmitted(true);
+        trackAcademyEvent('course_lead_submit', { program_slug: programSlug, locale: language });
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'No se pudo enviar la solicitud. Inténtalo de nuevo.');

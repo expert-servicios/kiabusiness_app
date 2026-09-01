@@ -6,6 +6,7 @@ import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 import { PostPurchaseProfileStep } from '@/components/profile/PostPurchaseProfileStep';
+import { EventTracker } from '@/components/site/EventTracker';
 
 const HOLDED_MIGRATION_SLUGS = ['holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
 
@@ -67,8 +68,11 @@ function HoldedBookingSection() {
 }
 
 export default async function GraciasPagoPage({ searchParams }: Props) {
-  const { service } = await searchParams;
+  const { source, service } = await searchParams;
   const showHoldedBooking = Boolean(service && HOLDED_MIGRATION_SLUGS.includes(service));
+  const academySuccessTracker = source === 'academy'
+    ? <EventTracker event="course_checkout_success" eventProps={{ program_slug: service }} />
+    : null;
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -86,6 +90,7 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
   if (!user) {
     return (
       <>
+        {academySuccessTracker}
         <ThankYou />
         {showHoldedBooking && <HoldedBookingSection />}
       </>
@@ -102,6 +107,7 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
   if (!profile) {
     return (
       <>
+        {academySuccessTracker}
         <ThankYou />
         {showHoldedBooking && <HoldedBookingSection />}
       </>
@@ -113,6 +119,7 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
   if (readiness.billingReady && readiness.habitualAddressReady) {
     return (
       <>
+        {academySuccessTracker}
         <ThankYou />
         {showHoldedBooking && <HoldedBookingSection />}
       </>
@@ -125,6 +132,7 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
         <h1 className="font-serif text-4xl">¡Gracias!</h1>
         <p className="mt-3 text-brand-slate">Pago confirmado.</p>
       </div>
+      {academySuccessTracker}
       <PostPurchaseProfileStep profile={profile} missingBilling={!readiness.billingReady} />
       {showHoldedBooking && <HoldedBookingSection />}
     </main>

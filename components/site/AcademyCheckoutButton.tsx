@@ -3,13 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Loader2 } from 'lucide-react';
+import { trackAcademyEvent } from '@/lib/utils/analytics';
 
-export function AcademyCheckoutButton({ programSlug, className }: { programSlug: string; className?: string }) {
+export function AcademyCheckoutButton({
+  programSlug,
+  className,
+  ctaLocation,
+}: {
+  programSlug: string;
+  className?: string;
+  /** Where on the page this button sits (e.g. 'hero', 'pricing') — see STRIPE_AND_CONVERSION.md. */
+  ctaLocation?: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleClick = async () => {
+    trackAcademyEvent('course_payment_click', { program_slug: programSlug, cta_location: ctaLocation });
     setLoading(true);
     setError('');
     try {

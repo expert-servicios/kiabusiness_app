@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BookOpen, Lock } from 'lucide-react';
-import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
+import { getAcademyKnowledgeArticlesWithStatus } from '@/lib/utils/academy-knowledge';
 import { getActiveEnrollment } from '@/lib/utils/academy-enrollment';
 import { AcademyKnowledgeIndex } from '@/components/docs/AcademyKnowledgeIndex';
 
@@ -16,8 +16,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AcademyKnowledgeIndexPage() {
-  const articles = getAcademyKnowledgeArticles();
-  const { enrolled } = await getActiveEnrollment(PROGRAM_SLUG);
+  const [articles, { enrolled }] = await Promise.all([
+    getAcademyKnowledgeArticlesWithStatus(),
+    getActiveEnrollment(PROGRAM_SLUG),
+  ]);
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">

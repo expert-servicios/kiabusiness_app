@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CalendarCheck, CheckCircle2 } from 'lucide-react';
 import { CalendlyButton } from '@/components/site/CalendlyButton';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
+import { EventTracker } from '@/components/site/EventTracker';
 
 // Success redirect for the external Stripe Payment Link of "Gestión Laboral
 // Integral" (configured in the Stripe Dashboard, not via our own Checkout
@@ -14,6 +15,7 @@ export default function GraciasGestionLaboralPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F6F1] px-6 py-20 text-center">
+      <EventTracker event="course_checkout_success" eventProps={{ program_slug: 'gestion-laboral-integral' }} />
       <div className="mx-auto max-w-md">
         <div className="flex justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#D4A017]/15">
