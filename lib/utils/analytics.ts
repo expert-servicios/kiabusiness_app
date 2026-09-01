@@ -1,10 +1,11 @@
 'use client';
 
-// Pushes a custom event to the dataLayer that Google Tag Manager (GTM-MKZ522HP,
-// see app/layout.tsx) already listens to. Do NOT add a standalone gtag.js —
-// GTM manages GA4 internally, a second gtag.js causes double-tracking.
-// GTM needs a GA4 event tag configured per event name to actually forward
-// these to GA4; this only pushes to the dataLayer.
+// Sends a custom event straight to GA4 via the gtag.js loaded in
+// app/layout.tsx (Measurement ID G-NWTGS6DH5E). Uses window.gtag(), not a
+// raw dataLayer.push of a plain object — gtag.js reads its own
+// arguments-object convention, so pushing a GTM-style {event: name, ...}
+// object directly to the dataLayer is silently ignored by gtag.js and never
+// reaches GA4.
 //
 // No PII: only the fixed property set documented in
 // docs/courses/gestion-laboral/STRIPE_AND_CONVERSION.md
@@ -13,6 +14,7 @@
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -36,7 +38,6 @@ export interface AcademyAnalyticsProps {
 }
 
 export function trackAcademyEvent(event: AcademyAnalyticsEvent, props: AcademyAnalyticsProps = {}) {
-  if (typeof window === 'undefined') return;
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ event, ...props });
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  window.gtag('event', event, props);
 }
