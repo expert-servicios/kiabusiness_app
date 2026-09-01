@@ -6,6 +6,7 @@ import { type ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
 
 const GTM_ID = 'GTM-MKZ522HP';
+const GA4_MEASUREMENT_ID = 'G-NWTGS6DH5E';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -76,7 +77,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             className="gtm-noscript"
           />
         </noscript>
-        {/* GTM — manages GA4 internally; do NOT add standalone gtag.js to avoid double-tracking */}
+        {/* GTM — kept for any non-GA4 tags managed there. GA4 itself is NOT
+            configured inside this GTM container (no GA4 config tag exists
+            there), so it does not double-track with the direct gtag.js
+            below. If a GA4 tag is ever added inside GTM pointing at
+            G-NWTGS6DH5E, remove the standalone gtag.js below first. */}
         <Script
           id="gtm-script"
           strategy="afterInteractive"
@@ -86,6 +91,18 @@ new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`
+          }}
+        />
+        {/* Google Analytics 4 — direct gtag.js, not routed through GTM (see above) */}
+        <Script id="ga4-lib" src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`} strategy="afterInteractive" />
+        <Script
+          id="ga4-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA4_MEASUREMENT_ID}');`
           }}
         />
         <PwaRegister />
