@@ -224,8 +224,14 @@ Hallazgos de la investigación — no todo son bugs, pero documentar para decidi
 - Todos los formularios públicos (quotes, holded-demo, presupuesto-avanzado,
   contacto) usan `sendEmail()` directo (no `enqueueEmail()`), cada uno con
   confirmación al usuario + notificación a admin. Correcto en general.
-- **Gap confirmado:** viabilidad no notifica al equipo, solo al cliente.
-- **Gap confirmado:** reseñas no confirman recepción al cliente.
+- [x] **Gap cerrado:** viabilidad ahora notifica también al equipo
+      (`app/api/services/viabilidad/route.ts`, bloque de email admin).
+- [x] **Gap cerrado:** reseñas ahora confirman recepción al cliente
+      (`app/api/reviews/submit/route.ts`, evento `review.received`). El envío
+      dependía de `profiles.email`, que `handle_new_user()` nunca rellena
+      (solo backfilled hasta la migración de esa columna) — corregido para
+      usar `auth.admin.getUserById()` como fuente fiable, mismo patrón que
+      `getClientEmail()` en el webhook de Stripe.
 - OAuth de usuario (Google/Azure vía Supabase `signInWithOAuth`) es login real de
   cliente — separado correctamente de "Gmail OAuth" (`/api/auth/google-gmail`),
   que es una función solo-staff (admin/owner) para enviar correos desde su propia
@@ -233,8 +239,8 @@ Hallazgos de la investigación — no todo son bugs, pero documentar para decidi
 - Email de bienvenida se envía en `app/auth/callback/route.ts:77-89` tras el
   primer login OAuth (flag `welcome_email_sent`), no en el trigger SQL — permite
   manejo de errores sin bloquear el login. Correcto.
-- **Acción:** cerrar los dos gaps (viabilidad admin email, confirmación de reseña);
-  el resto de la arquitectura de email está bien diseñada, no requiere refactor.
+- **Acción:** ambos gaps cerrados. Resto de la arquitectura de email bien
+  diseñada, no requiere refactor.
 
 ## 5. Kia — arquitectura y configuración (resumen para referencia)
 

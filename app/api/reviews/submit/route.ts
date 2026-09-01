@@ -89,16 +89,21 @@ export async function POST(request: NextRequest) {
     // Invalidate token by deleting the request row
     await admin.from('review_requests').delete().eq('id', req.id);
 
-    // Confirm receipt to the client — best-effort, doesn't block the response
+    // Confirm receipt to the client — best-effort, doesn't block the response.
+    // profiles.email isn't reliably populated (handle_new_user() only sets
+    // id/full_name/role) — Auth is the source of truth for the address to
+    // actually notify, same pattern as the Stripe webhook's getClientEmail().
     try {
       const { data: profile } = await admin
         .from('profiles')
-        .select('full_name,email')
+        .select('full_name')
         .eq('id', req.client_id)
         .maybeSingle();
-      if (profile?.email) {
-        const tpl = reviewReceived(profile.full_name ?? 'cliente');
-        await sendEmail({ to: profile.email, eventType: 'review.received', ...tpl });
+      const { data: authUser } = await admin.auth.admin.getUserById(req.client_id);
+      const email = authUser?.user?.email;
+      if (email) {
+        const tpl = reviewReceived(profile?.full_name ?? 'cliente');
+        await sendEmail({ to: email, eventType: 'review.received', ...tpl });
       }
     } catch (emailErr) {
       console.error('[reviews/submit] confirmation email failed:', emailErr);
