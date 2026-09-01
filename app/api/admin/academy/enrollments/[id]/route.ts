@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getAcademyProgram } from '@/lib/data/academy-catalog';
 import { sendEmail } from '@/lib/email/send';
 import { academyCertificationApproved } from '@/lib/email/templates';
-
-async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
-}
+import { requireAdminClient } from '@/lib/auth/require-admin';
 
 const patchSchema = z.object({
   status: z.enum(['active', 'cancelled', 'completed']).optional(),
@@ -21,7 +12,7 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdmin(request);
+  const admin = await requireAdminClient(request);
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { id } = await params;
