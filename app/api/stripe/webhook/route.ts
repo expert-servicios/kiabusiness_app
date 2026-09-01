@@ -7,6 +7,7 @@ import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
+import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -248,40 +249,11 @@ async function fulfillAcademyCertification(supabaseAdmin: SupabaseAdmin, session
     customerEmail?.split('@')[0] ??
     'Cliente';
 
-  const { data: existingOrder } = await supabaseAdmin
-    .from('orders')
-    .select('id')
-    .eq('stripe_payment_id', paymentId)
-    .maybeSingle();
-
-  if (existingOrder) return;
-
-  // Update the enrollment FIRST and verify it actually succeeded before
-  // recording the order — this endpoint always returns 200 to Stripe, so
-  // the only way a failed update gets retried is if inserting the order
-  // (our idempotency check above) never happens when the update failed.
-  const { error: enrollError } = await supabaseAdmin
-    .from('academy_enrollments')
-    .update({ certification_status: 'paid', updated_at: new Date().toISOString() })
-    .eq('id', enrollmentId);
-
-  if (enrollError) {
-    console.error('[webhook] CRITICAL: failed to mark certification paid, will retry on next Stripe delivery:', enrollError.message, 'enrollment:', enrollmentId, 'payment:', paymentId);
-    return;
-  }
-
-  await supabaseAdmin.from('orders').insert({
-    source            : 'academy',
-    client_id         : clientId,
-    stripe_payment_id : paymentId,
-    amount_eur        : amountEur,
-    currency          : session.currency?.toUpperCase() ?? 'EUR',
-    status            : 'paid',
-    service_slugs     : `${programSlug}-certification`,
-    metadata          : {
-      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: 'academy_certification' },
-    },
+  const persisted = await persistAcademyCertificationPayment(supabaseAdmin, {
+    paymentId, sessionId: session.id, enrollmentId, clientId, customerEmail: customerEmail ?? null,
+    programSlug, amountEur, currency: session.currency?.toUpperCase() ?? 'EUR',
   });
+  if (!persisted.created) return;
 
   if (customerEmail) {
     const tpl = academyCertificationPaid(customerName, programName, amountEur);
@@ -344,40 +316,13 @@ async function fulfillAcademyProgram(supabaseAdmin: SupabaseAdmin, session: Stri
     clientId = matchedProfile?.id ?? null;
   }
 
-  // Idempotency is checked against `orders`, not `academy_enrollments`,
-  // because the unmatched-buyer branch below has no client_id to put in
-  // an enrollment row — without this, a Stripe webhook retry would
-  // re-send the "create an account" email every time.
-  const { data: existingOrder } = await supabaseAdmin
-    .from('orders')
-    .select('id')
-    .eq('stripe_payment_id', paymentId)
-    .maybeSingle();
-
-  if (existingOrder) return;
-
-  await supabaseAdmin.from('orders').insert({
-    source            : 'academy',
-    client_id         : clientId,
-    stripe_payment_id : paymentId,
-    amount_eur        : amountEur,
-    currency          : session.currency?.toUpperCase() ?? 'EUR',
-    status            : 'paid',
-    service_slugs     : programSlug,
-    metadata          : {
-      checkout_session: { id: session.id, payment_intent: session.payment_intent, customer_email: customerEmail ?? null, product_type: 'academy_program' },
-    },
+  const persisted = await persistAcademyProgramPayment(supabaseAdmin, {
+    paymentId, sessionId: session.id, clientId, customerEmail: customerEmail ?? null,
+    programSlug, programName, amountEur, currency: session.currency?.toUpperCase() ?? 'EUR',
   });
+  if (!persisted.created) return;
 
   if (clientId) {
-    await supabaseAdmin.from('academy_enrollments').insert({
-      client_id         : clientId,
-      program_slug      : programSlug,
-      program_name      : programName,
-      amount_eur        : amountEur,
-      stripe_payment_id : paymentId,
-      status            : 'active',
-    });
 
     if (customerEmail) {
       const tpl = academyEnrollmentConfirmed(customerName, programName, amountEur);
@@ -460,23 +405,16 @@ export async function POST(req: NextRequest) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  // ── IMP-004: Event-level idempotency guard ────────────────────────────────
-  // Stripe retries webhooks for up to 3 days. We record the event_id before
-  // any processing so that concurrent or repeated deliveries are rejected
-  // atomically (unique constraint → code 23505 → return 200 immediately).
-  const { error: dedupError } = await supabaseAdmin
-    .from('stripe_processed_events')
-    .insert({ event_id: event.id, event_type: event.type });
-
-  if (dedupError) {
-    if (dedupError.code === '23505') {
-      console.log('[stripe webhook] duplicate event', event.id, '— already processed, skipping');
-      return NextResponse.json({ received: true });
-    }
-    // Log but don't block: dedup failure is non-fatal (better to process twice
-    // than to silently drop a payment event)
-    console.error('[stripe webhook] event dedup insert failed:', dedupError.message);
+  const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_stripe_event', {
+    p_event_id: event.id, p_event_type: event.type, p_lease_seconds: 300,
+  });
+  if (claimError) {
+    console.error('[stripe webhook] event claim failed:', claimError.message);
+    return NextResponse.json({ error: 'Webhook persistence unavailable' }, { status: 500 });
   }
+  if (!claimed) return NextResponse.json({ received: true });
+
+  try {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -1076,5 +1014,13 @@ export async function POST(req: NextRequest) {
       .eq('stripe_subscription_id', sub.id);
   }
 
-  return NextResponse.json({ received: true });
+    const { error: completeError } = await supabaseAdmin.rpc('complete_stripe_event', { p_event_id: event.id });
+    if (completeError) throw new Error(`Could not complete Stripe event: ${completeError.message}`);
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[stripe webhook] processing failed:', event.id, message);
+    await supabaseAdmin.rpc('fail_stripe_event', { p_event_id: event.id, p_error: message });
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+  }
 }

@@ -4,6 +4,7 @@ import { getAcademyProgram } from '@/lib/data/academy-catalog';
 import { sendEmail } from '@/lib/email/send';
 import { academyEnrollmentConfirmed } from '@/lib/email/templates';
 import { requireAdminClient } from '@/lib/auth/require-admin';
+import { linkAcademyOrderToClient } from '@/lib/payments/academy-fulfillment';
 
 const schema = z.object({
   orderId: z.string().uuid(),
@@ -43,27 +44,17 @@ export async function POST(request: NextRequest) {
   const program = order.service_slugs ? getAcademyProgram(order.service_slugs) : undefined;
   if (!program) return NextResponse.json({ error: 'Programa del pedido no reconocido' }, { status: 400 });
 
-  // Idempotency: another enrollment might already exist for this payment
-  // (e.g. double-click, or the buyer's account got created and this ran twice).
-  const { data: existingEnrollment } = await admin
-    .from('academy_enrollments')
-    .select('id')
-    .eq('stripe_payment_id', order.stripe_payment_id)
-    .maybeSingle();
-
-  if (!existingEnrollment) {
-    const { error: enrollError } = await admin.from('academy_enrollments').insert({
-      client_id: matchedProfile.id,
-      program_slug: program.slug,
-      program_name: program.name,
-      amount_eur: order.amount_eur,
-      stripe_payment_id: order.stripe_payment_id,
-      status: 'active',
-    });
-    if (enrollError) return NextResponse.json({ error: enrollError.message }, { status: 500 });
+  let linkResult: { enrollmentId: string; created: boolean };
+  try {
+    linkResult = await linkAcademyOrderToClient(admin, order.id, matchedProfile.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo vincular el pedido';
+    const ownershipConflict = /belongs|match|owned|another/i.test(message);
+    return NextResponse.json({ error: message }, { status: ownershipConflict ? 409 : 500 });
   }
 
-  await admin.from('orders').update({ client_id: matchedProfile.id }).eq('id', order.id);
+  // A repeated admin request is successful but must not send a second email.
+  if (!linkResult.created) return NextResponse.json({ ok: true, alreadyLinked: true });
 
   const tpl = academyEnrollmentConfirmed(matchedProfile.full_name ?? email.split('@')[0], program.name, order.amount_eur);
   await sendEmail({
