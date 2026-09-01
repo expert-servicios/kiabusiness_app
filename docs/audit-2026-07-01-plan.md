@@ -227,7 +227,11 @@ Hallazgos de la investigación — no todo son bugs, pero documentar para decidi
 - [x] **Gap cerrado:** viabilidad ahora notifica también al equipo
       (`app/api/services/viabilidad/route.ts`, bloque de email admin).
 - [x] **Gap cerrado:** reseñas ahora confirman recepción al cliente
-      (`app/api/reviews/submit/route.ts`, evento `review.received`).
+      (`app/api/reviews/submit/route.ts`, evento `review.received`). El envío
+      dependía de `profiles.email`, que `handle_new_user()` nunca rellena
+      (solo backfilled hasta la migración de esa columna) — corregido para
+      usar `auth.admin.getUserById()` como fuente fiable, mismo patrón que
+      `getClientEmail()` en el webhook de Stripe.
 - OAuth de usuario (Google/Azure vía Supabase `signInWithOAuth`) es login real de
   cliente — separado correctamente de "Gmail OAuth" (`/api/auth/google-gmail`),
   que es una función solo-staff (admin/owner) para enviar correos desde su propia
