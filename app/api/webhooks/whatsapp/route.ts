@@ -30,6 +30,16 @@ import {
   type KiaSideEffects,
   SERVICES,
 } from '@/lib/integrations/kia-engine';
+import {
+  acceptPendingCompanyData,
+  buildPendingCompanyData,
+  clearPendingCompanyData,
+  COMPANY_CONFIRM_BUTTON,
+  COMPANY_REJECT_BUTTON,
+  PENDING_COMPANY_DATA_KEY,
+  readPendingCompanyData,
+  serializePendingCompanyData,
+} from '@/lib/integrations/kia-company-confirmation';
 
 // Numbers used internally for testing — keep conversational memory, skip business side effects.
 const TEST_PHONE_NUMBERS = new Set(['34669045528']);
@@ -1609,6 +1619,36 @@ async function _disabledPost(request: NextRequest) {
         ? (contactCtx.name ?? profiles?.find((p) => p.id === clientId)?.full_name ?? null)
         : (session.name ?? null);
 
+      // Public registry data remains a pending proposal until the user presses
+      // an explicit confirm/reject button. It must not silently become declared
+      // profile data merely because a CIF was entered.
+      const pendingCompanyData = readPendingCompanyData(session.data);
+      if (pendingCompanyData && buttonId === COMPANY_CONFIRM_BUTTON) {
+        const confirmedData = acceptPendingCompanyData(session.data);
+        if (confirmedData) {
+          await persistSessionUpdates(admin, from, { data: confirmedData });
+          const body = session.lang === 'ru'
+            ? '✅ Данные компании подтверждены и сохранены.'
+            : '✅ Datos de la empresa confirmados y guardados.';
+          await sendKiaReply({ type: 'text', body }, from, clientId, admin, {
+            currentUserMessage: msgBody,
+            lang: inboundLang,
+          });
+        }
+        continue;
+      }
+      if (pendingCompanyData && buttonId === COMPANY_REJECT_BUTTON) {
+        await persistSessionUpdates(admin, from, { data: clearPendingCompanyData(session.data) });
+        const body = session.lang === 'ru'
+          ? 'Поняла. Я не сохранила предложенные данные. Укажите правильные данные вручную.'
+          : 'Entendido. No he guardado los datos propuestos. Indícame los datos correctos manualmente.';
+        await sendKiaReply({ type: 'text', body }, from, clientId, admin, {
+          currentUserMessage: msgBody,
+          lang: inboundLang,
+        });
+        continue;
+      }
+
       // ── identify_for_doc flow — keep lightweight memory; formal follow-up goes through login ──
       if (session.flow === 'identify_for_doc') {
         if (session.step === 'awaiting_name') {
@@ -1761,31 +1801,43 @@ async function _disabledPost(request: NextRequest) {
           const resolved = await resolveCompanyData({ taxId: newNif.trim().toUpperCase(), country: 'ES' });
           const best = resolved.bestSuggestion;
           if (best) {
-            const scrapedData: Record<string, string> = {};
-            if (best.name && !updatedSession.data.prof_nombre_empresa) {
-              scrapedData.prof_nombre_empresa = best.name;
-            }
-            const fullAddress = [best.registeredAddress, best.city, best.province].filter(Boolean).join(', ');
-            if (fullAddress && !updatedSession.data.prof_direccion_fiscal) {
-              scrapedData.prof_direccion_fiscal = fullAddress;
-            }
-            if (best.incorporationDate && !updatedSession.data.prof_fecha_inicio) {
-              scrapedData.prof_fecha_inicio = best.incorporationDate;
-            }
-            if (Object.keys(scrapedData).length > 0) {
-              await persistSessionUpdates(admin, from, { data: { ...updatedSession.data, ...scrapedData } });
+            const pending = buildPendingCompanyData(best, newNif.trim().toUpperCase(), updatedSession.data);
+            if (pending) {
+              const proposed = pending.proposed;
+              const fullAddress = proposed.prof_direccion_fiscal;
+              await persistSessionUpdates(admin, from, {
+                ...updatesWithLanguage,
+                data: {
+                  ...updatedSession.data,
+                  [PENDING_COMPANY_DATA_KEY]: serializePendingCompanyData(pending),
+                },
+              });
               const infoLines = [
-                best.name            ? `🏢 *Empresa:* ${best.name}` : null,
+                proposed.prof_nombre_empresa ? `🏢 *Empresa:* ${proposed.prof_nombre_empresa}` : null,
                 fullAddress          ? `📍 *Dirección:* ${fullAddress}` : null,
-                best.incorporationDate ? `📅 *Constitución:* ${best.incorporationDate}` : null,
+                proposed.prof_fecha_inicio ? `📅 *Constitución:* ${proposed.prof_fecha_inicio}` : null,
               ].filter(Boolean).join('\n');
               const infoBody = updatedSession.lang === 'ru'
-                ? `✅ Данные из публичных источников для CIF *${newNif}*:\n\n${infoLines}\n\nПроверьте, всё ли верно, и сообщите если что-то изменилось.`
-                : `✅ He encontrado datos públicos para el CIF *${newNif}*:\n\n${infoLines}\n\nConfirma que son correctos o dime si algo ha cambiado.`;
-              await sendKiaReply({ type: 'text', body: infoBody }, from, clientId, admin, {
+                ? `Я нашла эти данные в публичных источниках для CIF *${newNif}*:\n\n${infoLines}\n\nСохранить их?`
+                : `He encontrado estos datos públicos para el CIF *${newNif}*:\n\n${infoLines}\n\n¿Quieres guardarlos?`;
+              await sendKiaReply({
+                type: 'buttons',
+                body: infoBody,
+                footer: 'EXPERT 💼',
+                buttons: updatedSession.lang === 'ru'
+                  ? [
+                      { id: COMPANY_CONFIRM_BUTTON, title: 'Подтвердить' },
+                      { id: COMPANY_REJECT_BUTTON, title: 'Отклонить' },
+                    ]
+                  : [
+                      { id: COMPANY_CONFIRM_BUTTON, title: 'Confirmar' },
+                      { id: COMPANY_REJECT_BUTTON, title: 'Rechazar' },
+                    ],
+              }, from, clientId, admin, {
                 currentUserMessage: msgBody,
                 lang: inboundLang,
               });
+              continue;
             }
           }
         } catch (e) {

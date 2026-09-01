@@ -11,7 +11,7 @@ import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limit';
 const bodySchema = z.object({
   name  : z.string().min(2).max(200).optional(),
   taxId : z.string().min(7).max(20).optional(),
-  country: z.string().length(2).default('ES'),
+  country: z.literal('ES').default('ES'),
 }).refine((d) => d.name || d.taxId, { message: 'name o taxId requerido' });
 
 export async function POST(request: NextRequest) {
@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Persist each suggestion for audit + future user confirmation
-  const savedIds: string[] = [];
+  // Keep one slot per suggestion. A failed audit insert must not shift the ID
+  // of every later suggestion and make the UI confirm the wrong company.
+  const savedIds: Array<string | null> = [];
   for (const sug of result.suggestions) {
     const { data } = await admin
       .from('company_data_suggestions')
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
       })
       .select('id')
       .single();
-    if (data?.id) savedIds.push(data.id);
+    savedIds.push(data?.id ?? null);
   }
 
   // Audit log — best-effort, never fails the request
@@ -144,17 +146,20 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
   }
 
-  const { suggestionId } = body as { suggestionId?: string };
-  if (!suggestionId) {
-    return NextResponse.json({ error: 'suggestionId requerido' }, { status: 400 });
+  const parsed = z.object({ suggestionId: z.string().uuid() }).safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'suggestionId inválido' }, { status: 400 });
   }
 
-  const { error } = await getSupabaseAdmin()
+  const { data, error } = await getSupabaseAdmin()
     .from('company_data_suggestions')
     .update({ selected_by_user: true, selected_at: new Date().toISOString() })
-    .eq('id', suggestionId)
-    .eq('profile_id', user.id);
+    .eq('id', parsed.data.suggestionId)
+    .eq('profile_id', user.id)
+    .select('id')
+    .maybeSingle();
 
   if (error) return NextResponse.json({ error: 'Error al actualizar sugerencia' }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Sugerencia no encontrada' }, { status: 404 });
   return NextResponse.json({ ok: true });
 }
