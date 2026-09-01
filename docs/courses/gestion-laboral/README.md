@@ -28,7 +28,7 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - Kia (`kia-academy-knowledge.ts`) actualizada: sabe que solo el índice es público y nunca debe insinuar que alguien sin matrícula puede ver los manuales completos.
 - `app/sitemap.ts` — incorpora dinámicamente solo los dos artículos públicos; el índice de categoría y los manuales privados quedan fuera del sitemap.
 
-**Fase 2b — webhook de matrícula: implementada, con un paso manual pendiente en Stripe.**
+**Fase 2b — webhook de matrícula: implementada.**
 
 `app/api/stripe/webhook/route.ts` (bloque `product_type === 'academy_program'`) ya reacciona a pagos del Payment Link externo, no solo a los de `/api/academy/checkout`:
 
@@ -36,16 +36,7 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - Si no (compra por Payment Link, que deliberadamente no exige login antes de pagar), se busca un `profiles` existente por el email de la compra. Si hay coincidencia, se crea la fila `academy_enrollments` automáticamente — el comprador recibe acceso a los manuales sin intervención manual.
 - Si no hay ninguna cuenta con ese email, se registra igualmente el pago en `orders` (para no perder trazabilidad ni duplicar el email en reintentos del webhook de Stripe) y se envían dos emails nuevos: al comprador (`academyEnrollmentPendingLink`, pidiéndole crear cuenta/iniciar sesión con el mismo email) y a admin (`academyEnrollmentPendingLinkAdmin`, con instrucción de vincular manualmente la matrícula cuando esa persona tenga cuenta).
 
-⚠️ **Paso manual pendiente — configurar el Payment Link en el Dashboard de Stripe:**
-Para que el webhook identifique la compra como `academy_program`/`gestion-laboral-integral`, el Payment Link (`https://buy.stripe.com/6oU00kftqgMs9jU5gJ8EM0i`) necesita metadata configurada en Stripe Dashboard → Payment Links → editar este enlace → Metadata:
-
-| Key | Value |
-|---|---|
-| `product_type` | `academy_program` |
-| `program_slug` | `gestion-laboral-integral` |
-| `program_name` | `Programa personalizado de Gestión Laboral Integral` |
-
-Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bloque completo del webhook se salta silenciosamente (mismo comportamiento que hoy, antes de este cambio).
+✅ **Metadata del Payment Link configurada en Stripe Dashboard** (`product_type: academy_program`, `program_slug: gestion-laboral-integral`, `program_name`) — confirmado.
 
 **Limitación conocida, aceptada por ahora:** si un comprador de Payment Link no tiene cuenta EXPERT con el mismo email de compra, la vinculación de su matrícula sigue siendo manual. Auto-vincular por email en el primer login futuro requeriría hacer `academy_enrollments.client_id` nullable + añadir una columna `client_email` — se ha dejado fuera de esta fase para no depender de otra migración de Supabase en esta sesión.
 
@@ -58,8 +49,14 @@ Sin esta metadata, `checkout.session.completed` llega sin `product_type` y el bl
 **Fase 2d — cierre de las mejoras pendientes: implementada.**
 
 - JSON-LD (`Course`, `Offer`, `Organization`, `BreadcrumbList`, `FAQPage`) en `/academy` y `/academy/[slug]`.
-- Eventos de analítica (`course_view`, `course_payment_click`, `course_contact_click`, `course_meeting_click`, `course_program_download`, `course_lead_submit`, `course_checkout_success`, `knowledge_article_view`, `knowledge_student_gate_view`) — `lib/utils/analytics.ts` empuja al `dataLayer` que ya gestiona el GTM instalado en el sitio (`GTM-MKZ522HP`, ver `app/layout.tsx`). No se añadió un `gtag.js` independiente para no duplicar el tracking. Falta configurar en GTM Dashboard los tags de evento GA4 (Measurement ID `G-NWTGS6DH5E`) disparados por cada nombre de evento — paso manual pendiente en GTM, no en código.
+- Eventos de analítica (`course_view`, `course_payment_click`, `course_contact_click`, `course_meeting_click`, `course_program_download`, `course_lead_submit`, `course_checkout_success`, `knowledge_article_view`, `knowledge_student_gate_view`) — `lib/utils/analytics.ts` (`trackAcademyEvent`).
 - Flujo admin de validación editorial: `/admin/academy-conocimiento` (enlace "Conocimiento Academy" en el sidebar) permite cambiar el estado mostrado de cada manual (`draft`/`review`/`validated`/`pending_update`/`outdated`) sin desplegar código. Se implementó vía tabla `academy_knowledge_status` (migración `20260901000001_academy_knowledge_status.sql`) que sobreescribe el `status` del frontmatter del `.md` al leerlo — el contenido versionado en el repositorio no cambia, solo lo que ven los visitantes.
+
+**Fase 2e — ajustes tras despliegue: implementada.**
+
+- GA4 instalado vía `gtag.js` directo (Measurement ID `G-NWTGS6DH5E`, `app/layout.tsx`), en paralelo al GTM existente (`GTM-MKZ522HP`) que no tiene tag de GA4 configurado — sin duplicar tracking. `trackAcademyEvent()` llama a `window.gtag('event', ...)`. Confirmado en producción vía GA4 → Tiempo real.
+- Verificación anti-spam (reCAPTCHA v3): claves rotadas y reconfiguradas en Vercel tras un fallo detectado en producción — confirmado funcionando.
+- `AcademyLeadForm`: selector de país para el teléfono (indicativo + bandera, claves únicas por `iso2`), campos de nivel de estudios, puesto de trabajo y empresa (opcional); email de confirmación al lead ahora incluye el PDF del programa correcto (`downloadHref` del catálogo cuando existe) y el enlace de pago.
 
 **Fase 2c — ampliación editorial incorporada:**
 
