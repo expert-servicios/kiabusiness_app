@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 // This module only loads and validates content. Student access must always be
 // enforced by the server-side route before an article body is rendered.
@@ -139,4 +140,61 @@ export function getAcademyKnowledgeArticles(): AcademyKnowledgeArticle[] {
 
 export function getAcademyKnowledgeArticle(slug: string): AcademyKnowledgeArticle | undefined {
   return getAcademyKnowledgeArticles().find((article) => article.slug === slug);
+}
+
+/**
+ * Admin-managed status overrides (academy_knowledge_status table) — lets an
+ * admin promote/demote an article's *displayed* status (e.g. review ->
+ * validated once operational validation is done) without a code deploy.
+ * The Markdown frontmatter status stays the versioned baseline; a row here,
+ * when present, wins. See supabase/migrations/20260901000001_*.
+ */
+async function getKnowledgeStatusOverrides(): Promise<Map<string, (typeof academyKnowledgeStatuses)[number]>> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from('academy_knowledge_status')
+      .select('slug, status');
+
+    if (error) {
+      console.error('[academy-knowledge] failed to load status overrides:', error.message);
+      return new Map();
+    }
+
+    return new Map((data ?? []).map((row) => [row.slug, row.status as (typeof academyKnowledgeStatuses)[number]]));
+  } catch (err) {
+    // getSupabaseAdmin() throws synchronously if env vars are missing (e.g. a
+    // build environment without Supabase configured) — fall back to the
+    // frontmatter status rather than failing static generation entirely.
+    console.error('[academy-knowledge] status override lookup unavailable:', err instanceof Error ? err.message : err);
+    return new Map();
+  }
+}
+
+function applyStatusOverrides(
+  articles: AcademyKnowledgeArticle[],
+  overrides: Map<string, (typeof academyKnowledgeStatuses)[number]>
+): AcademyKnowledgeArticle[] {
+  if (overrides.size === 0) return articles;
+  return articles.map((article) => {
+    const override = overrides.get(article.slug);
+    return override ? { ...article, status: override } : article;
+  });
+}
+
+/** Server-only: articles with admin status overrides applied. Use this (not getAcademyKnowledgeArticles) wherever the displayed status matters. */
+export async function getAcademyKnowledgeArticlesWithStatus(): Promise<AcademyKnowledgeArticle[]> {
+  const [articles, overrides] = await Promise.all([
+    getAcademyKnowledgeArticles(),
+    getKnowledgeStatusOverrides(),
+  ]);
+  return applyStatusOverrides(articles, overrides);
+}
+
+/** Server-only: single article with its admin status override applied, if any. */
+export async function getAcademyKnowledgeArticleWithStatus(slug: string): Promise<AcademyKnowledgeArticle | undefined> {
+  const article = getAcademyKnowledgeArticle(slug);
+  if (!article) return undefined;
+  const overrides = await getKnowledgeStatusOverrides();
+  const override = overrides.get(slug);
+  return override ? { ...article, status: override } : article;
 }
