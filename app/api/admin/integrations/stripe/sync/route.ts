@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     const plans: Array<{ customer: Stripe.Customer; profileId: string | null; conflict: string | null }> = [];
     for (const customer of customers) {
-      let profileId = customer.metadata?.user_id ?? null;
+      let profileId: string | null = customer.metadata?.user_id ?? null;
       if (!profileId && customer.email) profileId = authEmailToId.get(customer.email.toLowerCase()) ?? null;
 
       let conflict: string | null = null;
