@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { RefreshCw, CheckCircle2, TriangleAlert, CreditCard } from 'lucide-react';
 
 interface SyncStats {
-  customers : { total: number; linked: number; lead_created: number; skipped: number; errors: number };
+  customers : { total: number; linked: number; lead_created: number; skipped: number; conflicts: number; errors: number };
   invoices  : { total: number; created: number; skipped: number; errors: number };
   subs      : { total: number; created: number; updated: number; skipped: number; errors: number };
 }
@@ -12,6 +12,8 @@ interface SyncStats {
 interface SyncResult {
   dryRun: boolean;
   stats: SyncStats;
+  problems?: Array<{ scope: string; external_id: string; message: string }>;
+  error?: string;
 }
 
 export function StripeSyncPanel() {
@@ -21,6 +23,7 @@ export function StripeSyncPanel() {
   const [dryRun, setDryRun]     = useState(true);
 
   async function runSync() {
+    if (!dryRun && !window.confirm('Esta acción importará el historial de Stripe en EXPERT. Solo continúa después de revisar una previsualización sin conflictos.')) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -28,9 +31,14 @@ export function StripeSyncPanel() {
       const res = await fetch('/api/admin/integrations/stripe/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dryRun, limit: 500 }),
+        body: JSON.stringify({
+          dryRun,
+          limit: 500,
+          confirmation: dryRun ? undefined : 'IMPORTAR_HISTORIAL_STRIPE',
+        }),
       });
       const data = await res.json();
+      if (data.stats) setResult(data as SyncResult);
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setResult(data as SyncResult);
     } catch (err) {
@@ -108,7 +116,9 @@ export function StripeSyncPanel() {
               <div className="mt-2 space-y-0.5 text-xs text-[#29384a]">
                 <p>🔗 Vinculados al perfil: <strong>{result.stats.customers.linked}</strong></p>
                 <p>👤 Leads creados: <strong>{result.stats.customers.lead_created}</strong></p>
-                <p>⚠️ Sin email / omitidos: <strong>{result.stats.customers.skipped}</strong></p>
+                <p>⚠️ Omitidos: <strong>{result.stats.customers.skipped}</strong></p>
+                <p>🚫 Conflictos: <strong>{result.stats.customers.conflicts}</strong></p>
+                <p>❌ Errores: <strong>{result.stats.customers.errors}</strong></p>
               </div>
             </div>
 
@@ -119,6 +129,7 @@ export function StripeSyncPanel() {
               <div className="mt-2 space-y-0.5 text-xs text-[#29384a]">
                 <p>✅ Órdenes creadas: <strong>{result.stats.invoices.created}</strong></p>
                 <p>⏭ Ya existían: <strong>{result.stats.invoices.skipped}</strong></p>
+                <p>❌ Errores: <strong>{result.stats.invoices.errors}</strong></p>
               </div>
             </div>
 
@@ -129,10 +140,24 @@ export function StripeSyncPanel() {
               <div className="mt-2 space-y-0.5 text-xs text-[#29384a]">
                 <p>✅ Creadas: <strong>{result.stats.subs.created}</strong></p>
                 <p>♻️ Actualizadas: <strong>{result.stats.subs.updated}</strong></p>
-                <p>⏭ Ya existían: <strong>{result.stats.subs.skipped}</strong></p>
+                <p>⏭ Omitidas: <strong>{result.stats.subs.skipped}</strong></p>
+                <p>❌ Errores: <strong>{result.stats.subs.errors}</strong></p>
               </div>
             </div>
           </div>
+
+          {result.problems && result.problems.length > 0 && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-sm font-semibold text-red-800">Revisión manual necesaria</p>
+              <ul className="mt-2 max-h-40 space-y-1 overflow-auto text-xs text-red-700">
+                {result.problems.map((problem, index) => (
+                  <li key={`${problem.scope}-${problem.external_id}-${index}`}>
+                    <strong>{problem.scope}</strong> · {problem.external_id}: {problem.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {!result.dryRun && result.stats.customers.linked + result.stats.invoices.created + result.stats.subs.created > 0 && (
             <p className="text-xs text-[#29384a]">
