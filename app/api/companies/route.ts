@@ -5,18 +5,18 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 const FORMA_JURIDICA = ['autonomo','sl','sa','slne','cb','cooperativa','fundacion','otra'] as const;
 
 const companySchema = z.object({
-  razon_social:     z.string().min(2).max(200),
+  razon_social: z.string().min(2).max(200),
   nombre_comercial: z.string().max(200).optional().nullable(),
-  cif_nif:          z.string().max(20).optional().nullable(),
-  forma_juridica:   z.enum(FORMA_JURIDICA),
-  direccion:        z.string().max(300).optional().nullable(),
-  ciudad:           z.string().max(100).optional().nullable(),
-  provincia:        z.string().max(100).optional().nullable(),
-  codigo_postal:    z.string().max(10).optional().nullable(),
-  pais:             z.string().length(2).default('ES'),
-  telefono:         z.string().max(25).optional().nullable(),
-  email:            z.string().email().optional().nullable().or(z.literal('')).transform(v => v || null),
-  web:              z.string().max(200).optional().nullable()
+  cif_nif: z.string().max(20).optional().nullable(),
+  forma_juridica: z.enum(FORMA_JURIDICA),
+  direccion: z.string().max(300).optional().nullable(),
+  ciudad: z.string().max(100).optional().nullable(),
+  provincia: z.string().max(100).optional().nullable(),
+  codigo_postal: z.string().max(10).optional().nullable(),
+  pais: z.string().length(2).default('ES'),
+  telefono: z.string().max(25).optional().nullable(),
+  email: z.string().email().optional().nullable().or(z.literal('')).transform(v => v || null),
+  web: z.string().max(200).optional().nullable()
 });
 
 type CompanyMembershipRow = {
@@ -31,7 +31,6 @@ async function getUser(request: NextRequest) {
   return user;
 }
 
-// GET /api/companies — list user's companies
 export async function GET(request: NextRequest) {
   try {
     const user = await getUser(request);
@@ -63,39 +62,64 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/companies — create a company
 export async function POST(request: NextRequest) {
   try {
     const user = await getUser(request);
     if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-    const body = await request.json();
-    const parse = companySchema.safeParse(body);
+    const parse = companySchema.safeParse(await request.json());
     if (!parse.success) {
       return NextResponse.json({ error: parse.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
     const admin = getSupabaseAdmin();
-
     const d = parse.data;
+    const normalizedTaxId = d.cif_nif?.trim().toUpperCase() || null;
 
-    // Create company — map form field names to actual DB column names
+    if (normalizedTaxId) {
+      const { data: ownedRows } = await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', user.id);
+      const ownedIds = (ownedRows ?? []).map((row) => row.company_id).filter(Boolean);
+
+      if (ownedIds.length) {
+        const { data: duplicate } = await admin
+          .from('companies')
+          .select('id')
+          .in('id', ownedIds)
+          .eq('cif_nif', normalizedTaxId)
+          .maybeSingle();
+        if (duplicate) {
+          return NextResponse.json({ error: 'Ya tienes una entidad con este CIF/NIF' }, { status: 409 });
+        }
+      }
+    }
+
     const { data: company, error: createError } = await admin
       .from('companies')
       .insert({
-        razon_social:    d.razon_social,
-        nombre_comercial:d.nombre_comercial,
-        cif_nif:         d.cif_nif,
-        forma_juridica:  d.forma_juridica,
-        direccion:       d.direccion,
-        ciudad:          d.ciudad,
-        provincia:       d.provincia,
-        codigo_postal:   d.codigo_postal,
-        pais:            d.pais ?? 'ES',
-        telefono:        d.telefono,
-        email:           d.email,
-        web:             d.web,
-        created_by:      user.id,
+        user_id: user.id,
+        name: d.razon_social,
+        company_name: d.razon_social,
+        razon_social: d.razon_social,
+        nombre_comercial: d.nombre_comercial,
+        cif_nif: normalizedTaxId,
+        vat_id: normalizedTaxId,
+        forma_juridica: d.forma_juridica,
+        direccion: d.direccion,
+        address: d.direccion,
+        ciudad: d.ciudad,
+        city: d.ciudad,
+        provincia: d.provincia,
+        codigo_postal: d.codigo_postal,
+        pais: d.pais ?? 'ES',
+        country: d.pais ?? 'ES',
+        telefono: d.telefono,
+        phone: d.telefono,
+        email: d.email,
+        web: d.web,
+        status: 'active',
       })
       .select('*')
       .single();
@@ -105,18 +129,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al crear la empresa' }, { status: 500 });
     }
 
-    // Link profile as owner
-    await admin.from('profile_companies').insert({
+    const { error: membershipError } = await admin.from('profile_companies').insert({
       profile_id: user.id,
       company_id: company.id,
       role: 'owner'
     });
 
-    // Set as active company
-    await admin
+    if (membershipError) {
+      console.error('[companies POST] membership', membershipError);
+      return NextResponse.json({ error: 'Empresa creada, pero no se pudo vincular al usuario' }, { status: 500 });
+    }
+
+    const { error: activateError } = await admin
       .from('profiles')
       .update({ active_company_id: company.id })
       .eq('id', user.id);
+
+    if (activateError) {
+      console.error('[companies POST] active company', activateError);
+      return NextResponse.json({ error: 'Empresa creada, pero no se pudo establecer como activa' }, { status: 500 });
+    }
 
     return NextResponse.json({ company }, { status: 201 });
   } catch (err) {
