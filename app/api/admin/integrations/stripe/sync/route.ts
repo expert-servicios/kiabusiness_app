@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     const customers: Stripe.Customer[] = [];
     for await (const customer of stripe.customers.list({ limit: 100 })) {
       if (customers.length >= maxCustomers) break;
-      if (!customer.deleted) customers.push(customer);
+      customers.push(customer);
     }
     stats.customers.total = customers.length;
 
