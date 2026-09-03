@@ -101,15 +101,20 @@ export function StripeSyncPanel() {
       {result && (
         <div className="mt-5 space-y-3">
           <div className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold
-            ${result.dryRun
-              ? 'border-amber-200 bg-amber-50 text-amber-800'
-              : 'border-green-200 bg-green-50 text-green-800'}`}>
-            <CheckCircle2 className="h-4 w-4" />
-            {result.dryRun ? 'Previsualización completada — sin cambios escritos' : 'Sincronización aplicada correctamente'}
+            ${result.error
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : result.dryRun
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                : 'border-green-200 bg-green-50 text-green-800'}`}>
+            {result.error ? <TriangleAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+            {result.error
+              ? 'Proceso detenido — revisión manual necesaria'
+              : result.dryRun
+                ? 'Previsualización completada — sin cambios escritos'
+                : 'Sincronización aplicada correctamente'}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {/* Customers */}
             <div className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-[#8899aa]">Clientes</p>
               <p className="mt-1 text-2xl font-bold text-[#07111d]">{result.stats.customers.total}</p>
@@ -122,7 +127,6 @@ export function StripeSyncPanel() {
               </div>
             </div>
 
-            {/* Invoices */}
             <div className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-[#8899aa]">Facturas pagadas</p>
               <p className="mt-1 text-2xl font-bold text-[#07111d]">{result.stats.invoices.total}</p>
@@ -133,7 +137,6 @@ export function StripeSyncPanel() {
               </div>
             </div>
 
-            {/* Subscriptions */}
             <div className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-[#8899aa]">Suscripciones</p>
               <p className="mt-1 text-2xl font-bold text-[#07111d]">{result.stats.subs.total}</p>
@@ -159,7 +162,7 @@ export function StripeSyncPanel() {
             </div>
           )}
 
-          {!result.dryRun && result.stats.customers.linked + result.stats.invoices.created + result.stats.subs.created > 0 && (
+          {!result.error && !result.dryRun && result.stats.customers.linked + result.stats.invoices.created + result.stats.subs.created > 0 && (
             <p className="text-xs text-[#29384a]">
               💡 Recarga la página de clientes para ver los perfiles vinculados.
             </p>
