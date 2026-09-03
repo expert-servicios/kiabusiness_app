@@ -5,27 +5,26 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const bodySchema = z.object({
-  priceId: z.string().min(1)
+  priceId: z.string().min(1),
+  companyId: z.string().uuid().optional()
 });
 
 type BillingInterval = 'month' | 'year';
 
 interface PlanConfig {
-  priceId  : string;
-  name     : string;
+  priceId: string;
+  name: string;
   amountEur: number;
-  interval : BillingInterval;
+  interval: BillingInterval;
 }
 
 const PLAN_CHECKOUTS: PlanConfig[] = [
-  // Planes mensuales
-  { priceId: process.env.STRIPE_PLAN_MONTHLY_49  ?? '', name: 'Plan Supervisión',  amountEur: 49,   interval: 'month' },
-  { priceId: process.env.STRIPE_PLAN_MONTHLY_99  ?? '', name: 'Plan Avanzado',     amountEur: 99,   interval: 'month' },
-  { priceId: process.env.STRIPE_PLAN_MONTHLY_199 ?? '', name: 'Plan Colaborativo', amountEur: 199,  interval: 'month' },
-  // Planes anuales (2 meses gratis = 10 mensualidades)
-  { priceId: process.env.STRIPE_PLAN_ANNUAL_49   ?? '', name: 'Plan Supervisión',  amountEur: 490,  interval: 'year' },
-  { priceId: process.env.STRIPE_PLAN_ANNUAL_99   ?? '', name: 'Plan Avanzado',     amountEur: 990,  interval: 'year' },
-  { priceId: process.env.STRIPE_PLAN_ANNUAL_199  ?? '', name: 'Plan Colaborativo', amountEur: 1990, interval: 'year' },
+  { priceId: process.env.STRIPE_PLAN_MONTHLY_49 ?? '', name: 'Plan Supervisión', amountEur: 49, interval: 'month' },
+  { priceId: process.env.STRIPE_PLAN_MONTHLY_99 ?? '', name: 'Plan Avanzado', amountEur: 99, interval: 'month' },
+  { priceId: process.env.STRIPE_PLAN_MONTHLY_199 ?? '', name: 'Plan Colaborativo', amountEur: 199, interval: 'month' },
+  { priceId: process.env.STRIPE_PLAN_ANNUAL_49 ?? '', name: 'Plan Supervisión', amountEur: 490, interval: 'year' },
+  { priceId: process.env.STRIPE_PLAN_ANNUAL_99 ?? '', name: 'Plan Avanzado', amountEur: 990, interval: 'year' },
+  { priceId: process.env.STRIPE_PLAN_ANNUAL_199 ?? '', name: 'Plan Colaborativo', amountEur: 1990, interval: 'year' },
 ].filter((plan): plan is PlanConfig => Boolean(plan.priceId));
 
 const VALID_PLAN_IDS = PLAN_CHECKOUTS.map((plan) => plan.priceId);
@@ -39,19 +38,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const parseResult = bodySchema.safeParse(body);
+    const parseResult = bodySchema.safeParse(await request.json());
     if (!parseResult.success) {
-      return NextResponse.json({ error: 'priceId requerido' }, { status: 400 });
+      return NextResponse.json({ error: 'priceId requerido y companyId debe ser UUID si se indica' }, { status: 400 });
     }
 
-    const { priceId } = parseResult.data;
-
-    if (VALID_PLAN_IDS.length === 0) {
-      console.error('[subscriptions/checkout] no STRIPE_PLAN_MONTHLY_* price IDs configured');
-      return NextResponse.json({ error: 'Planes de suscripcion no configurados' }, { status: 500 });
-    }
-
+    const { priceId, companyId: requestedCompanyId } = parseResult.data;
     if (!VALID_PLAN_IDS.includes(priceId)) {
       return NextResponse.json({ error: 'Plan no valido' }, { status: 400 });
     }
@@ -61,8 +53,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan no valido' }, { status: 400 });
     }
 
-    const adminSupabase = getSupabaseAdmin();
-    const { data: profile } = await adminSupabase
+    const admin = getSupabaseAdmin();
+    const { data: profile } = await admin
       .from('profiles')
       .select('stripe_customer_id, profile_completed, active_company_id')
       .eq('id', user.id)
@@ -75,68 +67,110 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let holdedQuery = adminSupabase
+    const companyId = requestedCompanyId ?? profile.active_company_id ?? null;
+    let companyStripeCustomerId: string | null = null;
+
+    if (companyId) {
+      const { data: membership } = await admin
+        .from('profile_companies')
+        .select('role')
+        .eq('profile_id', user.id)
+        .eq('company_id', companyId)
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario', code: 'company_forbidden' }, { status: 403 });
+      }
+
+      const { data: company } = await admin
+        .from('companies')
+        .select('stripe_customer_id')
+        .eq('id', companyId)
+        .maybeSingle();
+      companyStripeCustomerId = company?.stripe_customer_id ?? null;
+    }
+
+    let holdedQuery = admin
       .from('client_integrations')
-      .select('id, status')
+      .select('id,status')
       .eq('provider', 'holded')
       .eq('status', 'active')
       .limit(1);
 
-    if (profile?.active_company_id) {
-      holdedQuery = holdedQuery.or(`client_id.eq.${user.id},company_id.eq.${profile.active_company_id}`);
-    } else {
-      holdedQuery = holdedQuery.eq('client_id', user.id);
-    }
+    holdedQuery = companyId
+      ? holdedQuery.or(`company_id.eq.${companyId},and(company_id.is.null,client_id.eq.${user.id})`)
+      : holdedQuery.eq('client_id', user.id);
 
     const { data: holdedIntegrations } = await holdedQuery;
-    const holdedIntegration = holdedIntegrations?.[0] ?? null;
-
-    if (!holdedIntegration) {
+    if (!holdedIntegrations?.[0]) {
       return NextResponse.json(
-        { error: 'Conecta Holded desde el Panel Cliente antes de contratar un plan mensual.', code: 'holded_required' },
+        { error: 'Conecta Holded para esta entidad antes de contratar un plan mensual.', code: 'holded_required' },
         { status: 409 }
       );
     }
 
+    const stripeCustomerId = companyStripeCustomerId ?? (!companyId ? profile.stripe_customer_id : null);
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
+    const entityMetadata = {
+      user_id: user.id,
+      company_id: companyId ?? '',
+      plan_name: configuredPlan.name,
+      billing: configuredPlan.interval,
+      product_type: 'suscripcion'
+    };
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      customer: profile?.stripe_customer_id ?? undefined,
-      customer_email: profile?.stripe_customer_id ? undefined : user.email,
+      customer: stripeCustomerId ?? undefined,
+      customer_email: stripeCustomerId ? undefined : user.email,
       client_reference_id: user.id,
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true, required: 'if_supported' },
-      ...(profile?.stripe_customer_id ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
-      metadata: { user_id: user.id, plan_name: configuredPlan.name, billing: configuredPlan.interval },
+      ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
+      metadata: entityMetadata,
       subscription_data: {
         metadata: {
-          user_id            : user.id,
-          plan_name          : configuredPlan.name,
+          ...entityMetadata,
           configured_price_id: priceId,
-          billing            : configuredPlan.interval,
         }
       },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency    : 'eur',
-            unit_amount : Math.round(configuredPlan.amountEur * 100),
-            recurring   : { interval: configuredPlan.interval },
-            product_data: {
-              name    : toStripeAscii(configuredPlan.name),
-              metadata: { configured_price_id: priceId, billing: configuredPlan.interval },
-            },
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(configuredPlan.amountEur * 100),
+          recurring: { interval: configuredPlan.interval },
+          product_data: {
+            name: toStripeAscii(configuredPlan.name),
+            metadata: { configured_price_id: priceId, billing: configuredPlan.interval },
           },
-        }
-      ],
+        },
+      }],
       success_url: `${appUrl}/dashboard/post-compra?origin=subscription`,
       cancel_url: `${appUrl}/dashboard/suscripciones`
     });
 
-    return NextResponse.json({ url: session.url });
+    const { error: persistError } = await admin.from('checkout_sessions').insert({
+      stripe_session_id: session.id,
+      user_id: user.id,
+      company_id: companyId,
+      status: 'open',
+      metadata: {
+        product_type: 'subscription',
+        plan_name: configuredPlan.name,
+        plan_price_id: priceId,
+        billing: configuredPlan.interval,
+        amount_eur: configuredPlan.amountEur,
+      }
+    });
+
+    if (persistError) {
+      console.error('[subscriptions/checkout] checkout persistence failed:', persistError);
+      return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de contratación' }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: session.url, sessionId: session.id, companyId });
   } catch (error) {
     console.error('Subscription checkout error:', error);
     return NextResponse.json({ error: 'Error al crear la sesion de pago' }, { status: 500 });
