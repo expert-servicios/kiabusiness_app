@@ -8,6 +8,7 @@ import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
+import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -461,18 +462,18 @@ export async function POST(req: NextRequest) {
             };
 
             const { data: newOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
+              source: 'quote',
               quote_id: quoteId,
               client_id: quote.client_id,
               stripe_payment_id: paymentId,
               amount_eur: amountEur,
+              ...legacyOrderFields(amountEur, quote.title),
               currency,
               status: 'paid',
               metadata: orderMetadata
             }).select('id').single();
 
-            if (orderError) {
-              console.error('[webhook] order insert failed:', orderError);
-            }
+            const newOrderId = requireCreatedOrderId('quote', orderError, newOrder?.id);
 
             if (quote.client_id) {
               const { data: existingCase } = await supabaseAdmin
@@ -538,7 +539,7 @@ export async function POST(req: NextRequest) {
               const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
                 clientName, clientEmail,
                 description: quote.title ?? 'Servicio EXPERT',
-                amountEur, orderId: newOrder?.id, localEntity: 'orders',
+                amountEur, orderId: newOrderId, localEntity: 'orders',
               });
               await startHoldedJob(supabaseAdmin, quoteJobId);
               syncOrderToHolded({
@@ -546,11 +547,11 @@ export async function POST(req: NextRequest) {
                 clientEmail,
                 description: quote.title ?? 'Servicio EXPERT',
                 amountEur,
-                orderId: newOrder?.id,
+                orderId: newOrderId,
                 localEntity: 'orders'
               }).then((result) => {
                 void resolveHoldedJob(supabaseAdmin, quoteJobId, result.error ? 'failed' : 'success', result.error);
-                updateOrderHoldedResult(supabaseAdmin, newOrder?.id, result, orderMetadata).catch((err) => {
+                updateOrderHoldedResult(supabaseAdmin, newOrderId, result, orderMetadata).catch((err) => {
                   console.error('[webhook] holded trace update failed:', err);
                 });
               }).catch((err) => {
@@ -558,7 +559,7 @@ export async function POST(req: NextRequest) {
                 void resolveHoldedJob(supabaseAdmin, quoteJobId, 'failed', err instanceof Error ? err.message : String(err));
                 updateOrderHoldedResult(
                   supabaseAdmin,
-                  newOrder?.id,
+                  newOrderId,
                   { contactId: null, invoiceId: null, syncEventId: null, error: err instanceof Error ? err.message : String(err) },
                   orderMetadata
                 ).catch(() => {});
@@ -616,6 +617,7 @@ export async function POST(req: NextRequest) {
             client_id       : session.client_reference_id ?? null,
             stripe_payment_id: paymentId,
             amount_eur      : amountEur,
+            ...legacyOrderFields(amountEur, serviceName),
             currency        : session.currency?.toUpperCase() ?? 'EUR',
             status          : 'paid',
             service_slugs   : session.metadata?.service_slugs ?? session.metadata?.service_slug ?? null,
@@ -624,11 +626,7 @@ export async function POST(req: NextRequest) {
           .select('id')
           .single();
 
-        if (catalogOrderError) {
-          console.error('[webhook] catalog order insert failed:', catalogOrderError);
-        } else {
-          catalogOrderId = newCatalogOrder?.id;
-        }
+        catalogOrderId = requireCreatedOrderId('catalog', catalogOrderError, newCatalogOrder?.id);
       } else {
         catalogOrderId = existingCatalogOrder.id;
         catalogOrderMetadata = (existingCatalogOrder.metadata ?? catalogOrderMetadata) as Record<string, unknown>;
