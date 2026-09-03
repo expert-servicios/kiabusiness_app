@@ -141,6 +141,19 @@ export async function POST(request: NextRequest) {
           profileId = null;
         } else if (profile.stripe_customer_id && profile.stripe_customer_id !== customer.id) {
           conflict = 'El perfil ya está vinculado a otro cliente Stripe';
+        } else {
+          const { data: linkedElsewhere, error: reverseLookupError } = await admin
+            .from('profiles')
+            .select('id')
+            .eq('stripe_customer_id', customer.id)
+            .neq('id', profileId)
+            .limit(1);
+          if (reverseLookupError) {
+            problems.push({ scope: 'customer', external_id: customer.id, message: reverseLookupError.message });
+            stats.customers.errors++;
+          } else if ((linkedElsewhere?.length ?? 0) > 0) {
+            conflict = 'El cliente Stripe ya está vinculado a otro perfil';
+          }
         }
       }
 
@@ -148,14 +161,17 @@ export async function POST(request: NextRequest) {
       plans.push({ customer, profileId, conflict });
     }
 
-    if (!dryRun && stats.customers.conflicts > 0) {
+    if (!dryRun && (stats.customers.conflicts > 0 || stats.customers.errors > 0)) {
       return NextResponse.json({
         dryRun,
         stats,
-        problems: plans
-          .filter((plan) => plan.conflict)
-          .map((plan) => ({ scope: 'customer', external_id: plan.customer.id, message: plan.conflict })),
-        error: 'Importación detenida: hay posibles duplicados o vinculaciones conflictivas. Revisión manual obligatoria.',
+        problems: [
+          ...problems,
+          ...plans
+            .filter((plan) => plan.conflict)
+            .map((plan) => ({ scope: 'customer' as const, external_id: plan.customer.id, message: plan.conflict ?? 'Conflicto de vinculación' })),
+        ].slice(0, 100),
+        error: 'Importación detenida: el preflight detectó conflictos o errores. Revisión manual obligatoria.',
       }, { status: 409 });
     }
 
