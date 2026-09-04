@@ -1,9 +1,18 @@
-export const NEW_SIGNUP_ADMIN_RECIPIENTS = [
+export const REQUIRED_ADMIN_NOTIFICATION_RECIPIENTS = [
   'info@expertservicios.es',
   'soy@kseniailicheva.com',
 ] as const;
 
 const SIGNATURE_MARKER = 'data-expert-signature="v1"';
+
+export function getAdminNotificationRecipients(): string[] {
+  const configured = (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([...REQUIRED_ADMIN_NOTIFICATION_RECIPIENTS, ...configured]));
+}
 
 function escapeHtml(value: string): string {
   return value
