@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight, Building2, CheckCircle2, Plug, User,
-  Loader2, ChevronRight, ChevronLeft, Zap,
+  ArrowRight, Building2, CheckCircle2, User,
+  Loader2, ChevronRight, ChevronLeft,
 } from 'lucide-react';
 
 interface ProfileStep {
@@ -19,14 +19,13 @@ interface CompanyStep {
   forma_juridica: 'autonomo' | 'sl' | 'sa' | 'otra';
 }
 
-type Step = 'profile' | 'company' | 'holded' | 'done';
+type Step = 'profile' | 'company' | 'done';
 
-const STEPS: Step[] = ['profile', 'company', 'holded', 'done'];
+const STEPS: Step[] = ['profile', 'company', 'done'];
 
 const STEP_LABELS: Record<Step, string> = {
   profile: 'Tu perfil',
   company: 'Tu empresa',
-  holded: 'Conectar Holded',
   done: '¡Listo!',
 };
 
@@ -43,17 +42,17 @@ function StepDot({ step, current, completed }: { step: number; current: number; 
 
 function StepBar({ currentStep }: { currentStep: number }) {
   return (
-    <div className="flex items-center gap-2 mb-8">
+    <div className="mb-8 flex items-center gap-2">
       {STEPS.map((step, i) => (
-        <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">
+        <div key={step} className="flex flex-1 items-center gap-2 last:flex-none">
           <div className="flex flex-col items-center gap-1">
             <StepDot step={i} current={currentStep} completed={i < currentStep} />
-            <span className={`text-[10px] font-semibold hidden sm:block ${i === currentStep ? 'text-[#07111d]' : 'text-[#29384a]/40'}`}>
+            <span className={`hidden text-[10px] font-semibold sm:block ${i === currentStep ? 'text-[#07111d]' : 'text-[#29384a]/40'}`}>
               {STEP_LABELS[step]}
             </span>
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`flex-1 h-px mb-4 transition ${i < currentStep ? 'bg-[#d7a33a]' : 'bg-[#d8cbb5]'}`} />
+            <div className={`mb-4 h-px flex-1 transition ${i < currentStep ? 'bg-[#d7a33a]' : 'bg-[#d8cbb5]'}`} />
           )}
         </div>
       ))}
@@ -67,7 +66,7 @@ function ProfileStepForm({ value, onChange }: {
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
           <User className="h-5 w-5 text-[#d7a33a]" />
         </div>
@@ -77,7 +76,7 @@ function ProfileStepForm({ value, onChange }: {
         </div>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Nombre completo *</label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Nombre completo *</label>
         <input
           type="text"
           value={value.full_name}
@@ -87,7 +86,7 @@ function ProfileStepForm({ value, onChange }: {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono *</label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Teléfono *</label>
         <input
           type="tel"
           value={value.phone}
@@ -107,7 +106,7 @@ function CompanyStepForm({ value, onChange }: {
   if (value.skip) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
             <Building2 className="h-5 w-5 text-[#d7a33a]" />
           </div>
@@ -116,7 +115,7 @@ function CompanyStepForm({ value, onChange }: {
             <p className="text-xs text-[#29384a]/60">Puedes hacerlo más tarde desde el panel</p>
           </div>
         </div>
-        <div className="rounded-2xl border border-dashed border-[#d8cbb5] bg-[#f8f4eb] p-8 text-center space-y-3">
+        <div className="space-y-3 rounded-2xl border border-dashed border-[#d8cbb5] bg-[#f8f4eb] p-8 text-center">
           <Building2 className="mx-auto h-8 w-8 text-[#d8cbb5]" />
           <p className="text-sm text-[#29384a]/60">Omitido — podrás añadir tu empresa más tarde</p>
           <button
@@ -133,7 +132,7 @@ function CompanyStepForm({ value, onChange }: {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a33a]/15">
             <Building2 className="h-5 w-5 text-[#d7a33a]" />
@@ -146,14 +145,14 @@ function CompanyStepForm({ value, onChange }: {
         <button
           type="button"
           onClick={() => onChange({ ...value, skip: true })}
-          className="text-xs text-[#29384a]/50 hover:text-[#29384a] transition"
+          className="text-xs text-[#29384a]/50 transition hover:text-[#29384a]"
         >
           Omitir
         </button>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Forma jurídica *</label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Forma jurídica *</label>
         <div className="grid grid-cols-2 gap-2">
           {([['autonomo', 'Autónomo'], ['sl', 'S.L.'], ['sa', 'S.A.'], ['otra', 'Otra']] as const).map(([v, l]) => (
             <button
@@ -173,7 +172,7 @@ function CompanyStepForm({ value, onChange }: {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Razón social / Nombre *</label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Razón social / Nombre *</label>
         <input
           type="text"
           value={value.razon_social}
@@ -184,7 +183,7 @@ function CompanyStepForm({ value, onChange }: {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">
           NIF / CIF <span className="font-normal text-[#29384a]/50">(opcional)</span>
         </label>
         <input
@@ -199,60 +198,9 @@ function CompanyStepForm({ value, onChange }: {
   );
 }
 
-function HoldedStep({ onSkip, onConnect }: { onSkip: () => void; onConnect: () => void }) {
+function DoneStep({ onGo, loading, companySkipped }: { onGo: () => void; loading: boolean; companySkipped: boolean }) {
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
-          <Plug className="h-5 w-5 text-purple-600" />
-        </div>
-        <div>
-          <h2 className="font-serif text-lg font-bold text-[#07111d]">Conectar Holded</h2>
-          <p className="text-xs text-[#29384a]/60">Obligatorio para contratar un plan mensual</p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5 space-y-3">
-        <p className="text-sm font-semibold text-[#07111d]">¿Por qué conectar Holded?</p>
-        <ul className="space-y-1.5 text-xs text-[#29384a]">
-          {[
-            'Kia puede consultarte el estado de tu tesorería en tiempo real',
-            'Sincronizamos automáticamente facturas y contactos',
-            'Recibe alertas de anomalías contables antes de las revisiones',
-          ].map((b) => (
-            <li key={b} className="flex items-start gap-2">
-              <Zap className="h-3.5 w-3.5 shrink-0 text-purple-500 mt-0.5" />
-              {b}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="grid gap-2">
-        <button
-          type="button"
-          onClick={onConnect}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#07111d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#0d1f30]"
-        >
-          <Plug className="h-4 w-4" />
-          Conectar Holded ahora
-          <ArrowRight className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onSkip}
-          className="rounded-xl border border-[#d8cbb5] px-5 py-3 text-sm font-semibold text-[#29384a] transition hover:bg-[#f8f4eb]"
-        >
-          Omitir por ahora
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DoneStep({ onGo, loading }: { onGo: () => void; loading: boolean }) {
-  return (
-    <div className="py-4 text-center space-y-5">
+    <div className="space-y-5 py-4 text-center">
       <div className="flex justify-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#d7a33a]/15">
           <CheckCircle2 className="h-9 w-9 text-[#d7a33a]" />
@@ -261,8 +209,9 @@ function DoneStep({ onGo, loading }: { onGo: () => void; loading: boolean }) {
       <div>
         <h2 className="font-serif text-2xl font-bold text-[#07111d]">Configuración inicial completada</h2>
         <p className="mt-2 text-sm text-[#29384a]/70">
-          Ya puedes usar tu panel. Si has omitido empresa o Holded, podrás completarlos después;
-          los planes mensuales seguirán bloqueados hasta cumplir esos requisitos.
+          {companySkipped
+            ? 'Ya puedes entrar en tu panel. Para contratar una suscripción mensual deberás añadir primero la entidad fiscal que contratará el plan.'
+            : 'Tu perfil y tu entidad están preparados. Puedes contratar el plan desde Suscripciones; después del pago te guiaremos para reservar el onboarding y conectar Holded.'}
         </p>
       </div>
       <button
@@ -377,14 +326,6 @@ export default function OnboardingPage() {
     setCurrentStep((s) => Math.max(0, s - 1));
   }
 
-  function handleHoldedConnect() {
-    router.push('/dashboard/integraciones/holded');
-  }
-
-  function handleHoldedSkip() {
-    setCurrentStep((s) => s + 1);
-  }
-
   async function handleDone() {
     setLoading(true);
     setError(null);
@@ -409,7 +350,7 @@ export default function OnboardingPage() {
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#d7a33a]">Bienvenido</p>
           <h1 className="mt-1 font-serif text-2xl font-bold text-[#07111d]">Configura tu cuenta</h1>
-          <p className="mt-1 text-xs text-[#29384a]/60">Solo te llevará 2 minutos</p>
+          <p className="mt-1 text-xs text-[#29384a]/60">Perfil y entidad fiscal antes de contratar</p>
         </div>
 
         <StepBar currentStep={currentStep} />
@@ -443,7 +384,7 @@ export default function OnboardingPage() {
             <>
               <CompanyStepForm value={companyData} onChange={setCompanyData} />
               <div className="mt-6 flex items-center justify-between">
-                <button type="button" onClick={handleBack} className="flex items-center gap-1 text-sm text-[#29384a]/60 hover:text-[#29384a] transition">
+                <button type="button" onClick={handleBack} className="flex items-center gap-1 text-sm text-[#29384a]/60 transition hover:text-[#29384a]">
                   <ChevronLeft className="h-4 w-4" /> Atrás
                 </button>
                 <button
@@ -460,11 +401,7 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {step === 'holded' && (
-            <HoldedStep onSkip={handleHoldedSkip} onConnect={handleHoldedConnect} />
-          )}
-
-          {step === 'done' && <DoneStep onGo={handleDone} loading={loading} />}
+          {step === 'done' && <DoneStep onGo={handleDone} loading={loading} companySkipped={companyData.skip} />}
         </div>
 
         {step !== 'done' && (
@@ -472,7 +409,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="text-xs text-[#29384a]/40 hover:text-[#29384a]/70 transition"
+              className="text-xs text-[#29384a]/40 transition hover:text-[#29384a]/70"
             >
               Completar más tarde →
             </button>
