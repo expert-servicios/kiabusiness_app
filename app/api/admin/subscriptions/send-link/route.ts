@@ -163,8 +163,8 @@ export async function POST(request: NextRequest) {
       }],
       metadata,
       subscription_data: { metadata },
-      success_url: `${appUrl}/dashboard/suscripciones?activada=ok`,
-      cancel_url: `${appUrl}/dashboard?suscripcion=cancelada`
+      success_url: `${appUrl}/dashboard/post-compra?origin=subscription`,
+      cancel_url: `${appUrl}/dashboard/suscripciones`
     });
 
     const { error: checkoutError } = await admin.from('checkout_sessions').insert({
