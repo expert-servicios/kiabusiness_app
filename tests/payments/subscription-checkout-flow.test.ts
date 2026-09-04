@@ -18,11 +18,11 @@ describe('subscription checkout flow', () => {
     expect(cards).not.toContain('getReadinessCheck');
   });
 
-  it('keeps authoritative prerequisites on the server instead of the commercial questionnaire', () => {
+  it('keeps authoritative pre-payment prerequisites on the server without requiring Holded', () => {
     expect(checkout).toContain("code: 'profile_required'");
     expect(checkout).toContain("code: 'billing_required'");
     expect(checkout).toContain("code: 'company_required'");
-    expect(checkout).toContain("code: 'holded_required'");
+    expect(checkout).not.toContain("code: 'holded_required'");
     expect(checkout).toContain("mode: 'subscription'");
   });
 
@@ -30,5 +30,6 @@ describe('subscription checkout flow', () => {
     expect(checkout).toContain("success_url: `${appUrl}/dashboard/post-compra?origin=subscription`");
     expect(postPurchase).toContain("s.status === 'active' || s.status === 'trialing'");
     expect(postPurchase).toContain('!s.post_purchase_onboarding_at');
+    expect(postPurchase).toContain('subscriptionId={pendingSub!.id}');
   });
 });
