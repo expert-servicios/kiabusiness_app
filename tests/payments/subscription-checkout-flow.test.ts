@@ -46,6 +46,13 @@ describe('subscription checkout flow', () => {
     expect(adminCheckout).toContain("code: 'checkout_exists'");
   });
 
+  it('locks admin subscription amounts to the configured fixed plan tariff', () => {
+    expect(adminCheckout).toContain('PLAN_AMOUNT_ALLOWLIST');
+    expect(adminCheckout).toContain('STRIPE_PLAN_MONTHLY_99: 99');
+    expect(adminCheckout).toContain("code: 'plan_amount_mismatch'");
+    expect(adminCheckout).toContain('unit_amount: Math.round(expectedAmountEur * 100)');
+  });
+
   it('only enters post-purchase onboarding after Stripe has created an active or trialing subscription', () => {
     expect(checkout).toContain("success_url: `${appUrl}/dashboard/post-compra?origin=subscription`");
     expect(postPurchase).toContain("s.status === 'active' || s.status === 'trialing'");
