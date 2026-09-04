@@ -1,5 +1,3 @@
-import { BRAND } from './templates';
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -71,6 +69,5 @@ export function customSubscriptionInvite(input: {
 </td></tr>
 </table>
 </body></html>`,
-    from: BRAND.from,
   };
 }
