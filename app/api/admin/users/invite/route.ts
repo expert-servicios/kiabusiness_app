@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '
 import { sendEmail } from '@/lib/email/send';
 import { newUserRegisteredAdmin } from '@/lib/email/templates';
 import { isStaffRole } from '@/lib/auth/roles';
+import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -89,6 +90,24 @@ export async function POST(request: NextRequest) {
       if (city) profileData.city = city;
       if (postalCode) profileData.postal_code = postalCode;
       if (entityType) profileData.client_type = entityType;
+
+      // Keep the same readiness rules used by the self-service profile flow.
+      // Without this, a complete admin-filled profile remains artificially
+      // blocked by the subscription guard until the client edits it again.
+      const readiness = computeProfileReadiness({
+        full_name: fullName ?? null,
+        phone: phone ?? null,
+        client_type: entityType ?? null,
+        tax_id: normalizedTaxId,
+        address: address ?? null,
+        city: city ?? null,
+        postal_code: postalCode ?? null,
+      });
+      profileData.profile_completed = readiness.profileCompleted;
+      profileData.billing_ready = readiness.billingReady;
+      profileData.habitual_address_ready = readiness.habitualAddressReady;
+      if (readiness.profileCompleted) profileData.profile_completed_at = new Date().toISOString();
+      if (readiness.billingReady) profileData.billing_ready_at = new Date().toISOString();
     }
 
     const { error: upsertErr } = await admin.from('profiles').upsert(profileData, { onConflict: 'id' });
