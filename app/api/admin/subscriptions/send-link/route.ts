@@ -20,7 +20,8 @@ const schema = z.object({
   companyId: z.string().uuid().nullable().optional(),
   planName: z.string().min(2),
   amountEur: z.number().positive(),
-  stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_49', 'STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199'])
+  stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_49', 'STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199']),
+  sendEmail: z.boolean().optional().default(true),
 });
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
-    const { clientEmail, planName, amountEur, stripePriceEnvKey } = parsed.data;
+    const { clientEmail, planName, amountEur, stripePriceEnvKey, sendEmail: shouldSendEmail } = parsed.data;
     const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
     if (!configuredPriceId) {
       return NextResponse.json({ error: 'El plan Stripe seleccionado no está configurado' }, { status: 503 });
@@ -104,6 +105,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
     }
 
+    const { data: existingSubscription } = await admin
+      .from('subscriptions')
+      .select('id,status,stripe_subscription_id')
+      .eq('client_id', clientId)
+      .eq('company_id', companyId)
+      .in('status', ['active', 'trialing'])
+      .maybeSingle();
+    if (existingSubscription) {
+      return NextResponse.json({
+        error: 'El cliente ya tiene una suscripción activa para esta entidad. Revisa el estado antes de crear otro checkout.',
+        code: 'subscription_exists',
+        subscriptionId: existingSubscription.id,
+      }, { status: 409 });
+    }
+
+    const { data: existingCheckout } = await admin
+      .from('checkout_sessions')
+      .select('stripe_session_id,status,metadata')
+      .eq('user_id', clientId)
+      .eq('company_id', companyId)
+      .eq('status', 'open')
+      .contains('metadata', { product_type: 'subscription' })
+      .maybeSingle();
+    if (existingCheckout) {
+      return NextResponse.json({
+        error: 'Ya existe una sesión de contratación abierta para esta entidad. Verifícala o expírala antes de crear otra.',
+        code: 'checkout_exists',
+        sessionId: existingCheckout.stripe_session_id,
+      }, { status: 409 });
+    }
+
     const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
     const contractingName = company.razon_social ?? clientProfile.company ?? null;
     const contractingTaxId = company.cif_nif ?? clientProfile.tax_id ?? null;
@@ -130,12 +162,16 @@ export async function POST(request: NextRequest) {
       client_reference_id: clientId,
       customer: stripeCustomerId ?? undefined,
       customer_email: stripeCustomerId ? undefined : clientEmail,
+      billing_address_collection: 'required',
+      tax_id_collection: { enabled: true, required: 'if_supported' },
+      automatic_tax: { enabled: true },
       ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
       line_items: [{
         quantity: 1,
         price_data: {
           currency: 'eur',
           unit_amount: Math.round(amountEur * 100),
+          tax_behavior: 'exclusive',
           recurring: { interval: 'month' },
           product_data: {
             name: toStripeAscii(planName),
@@ -160,6 +196,9 @@ export async function POST(request: NextRequest) {
         amount_eur: amountEur,
         stripe_price_env_key: stripePriceEnvKey,
         created_by_admin: actorId,
+        automatic_tax: true,
+        tax_behavior: 'exclusive',
+        email_sent: false,
       }
     });
     if (checkoutError) {
@@ -170,6 +209,24 @@ export async function POST(request: NextRequest) {
         console.error('[admin/subscriptions/send-link] failed to expire orphan Stripe session:', expireError);
       }
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la invitación de contratación.' }, { status: 500 });
+    }
+
+    if (!shouldSendEmail) {
+      await admin.from('audit_logs').insert({
+        actor_id: actorId,
+        action: 'subscription.checkout_generated',
+        entity: 'companies',
+        entity_id: companyId,
+        metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
+      }).then(() => {});
+
+      return NextResponse.json({
+        ok: true,
+        stripeUrl: session.url,
+        sessionId: session.id,
+        companyId,
+        emailSent: false,
+      });
     }
 
     const contractDate = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -220,6 +277,8 @@ export async function POST(request: NextRequest) {
             amount_eur: amountEur,
             stripe_price_env_key: stripePriceEnvKey,
             created_by_admin: actorId,
+            automatic_tax: true,
+            tax_behavior: 'exclusive',
             email_delivery_failed: true,
             stripe_expire_failed: expireFailed,
           },
@@ -239,6 +298,23 @@ export async function POST(request: NextRequest) {
       }, { status: 502 });
     }
 
+    await admin
+      .from('checkout_sessions')
+      .update({
+        metadata: {
+          product_type: 'subscription',
+          plan_name: planName,
+          amount_eur: amountEur,
+          stripe_price_env_key: stripePriceEnvKey,
+          created_by_admin: actorId,
+          automatic_tax: true,
+          tax_behavior: 'exclusive',
+          email_sent: true,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('stripe_session_id', session.id);
+
     await admin.from('audit_logs').insert({
       actor_id: actorId,
       action: 'subscription.invite_sent',
@@ -247,7 +323,7 @@ export async function POST(request: NextRequest) {
       metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
     }).then(() => {});
 
-    return NextResponse.json({ ok: true, stripeUrl: session.url, sessionId: session.id, companyId });
+    return NextResponse.json({ ok: true, stripeUrl: session.url, sessionId: session.id, companyId, emailSent: true });
   } catch (err) {
     console.error('[admin/subscriptions/send-link] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
