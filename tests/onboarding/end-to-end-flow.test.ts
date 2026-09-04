@@ -22,6 +22,16 @@ describe('end-to-end onboarding safeguards', () => {
     expect(route).toContain("{ status: 500 }");
   });
 
+  it('requires the same profile fields in the wizard and waits for completion persistence', () => {
+    const wizard = source('app/(protected)/dashboard/onboarding/page.tsx');
+
+    expect(wizard).toContain('Teléfono *');
+    expect(wizard).toContain("if (!profileData.phone.trim())");
+    expect(wizard).toContain("const res = await fetch('/api/dashboard/onboarding/complete'");
+    expect(wizard).toContain('if (!res.ok)');
+    expect(wizard).toContain('Obligatorio para contratar un plan mensual');
+  });
+
   it('uses canonical readiness rules for newly admin-created clients', () => {
     const invite = source('app/api/admin/users/invite/route.ts');
 
