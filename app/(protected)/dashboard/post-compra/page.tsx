@@ -3,6 +3,7 @@ import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import PostCompraWizard from '@/components/dashboard/PostCompraWizard';
 import PostCompraWaiting from '@/components/dashboard/PostCompraWaiting';
 import { getCalOnboardingUrl } from '@/lib/utils/cal';
+import { getHoldedMcpBaseUrl } from '@/lib/utils/holded-urls';
 
 interface SubscriptionRecord {
   id: string;
@@ -16,15 +17,16 @@ interface Appointment {
   status: string;
 }
 
-interface HoldedStatus {
+interface ConnectionStatus {
   connected: boolean;
 }
 
 export default async function PostCompraPage() {
-  const [subsData, appointmentsData, holdedData] = await Promise.all([
+  const [subsData, appointmentsData, holdedData, mcpData] = await Promise.all([
     fetchWithCookies('/api/subscriptions'),
     fetchWithCookies('/api/dashboard/citas'),
     fetchWithCookies('/api/integrations/holded/status'),
+    fetchWithCookies('/api/integrations/holded/mcp-status'),
   ]);
 
   const subscriptions: SubscriptionRecord[] = subsData?.subscriptions ?? [];
@@ -42,7 +44,9 @@ export default async function PostCompraPage() {
   const onboardingMeetingScheduled = appointments.some((appointment) =>
     appointment.status !== 'cancelled' && appointment.service.toLowerCase().includes('onboarding')
   );
-  const holdedConnected = !!(holdedData as HoldedStatus | null)?.connected;
+  const directHoldedConnected = !!(holdedData as ConnectionStatus | null)?.connected;
+  const authorizedHoldedConnected = !!(mcpData as ConnectionStatus | null)?.connected;
+  const holdedConnected = directHoldedConnected || authorizedHoldedConnected;
 
   return (
     <PostCompraWizard
@@ -50,6 +54,9 @@ export default async function PostCompraPage() {
       onboardingMeetingScheduled={onboardingMeetingScheduled}
       onboardingUrl={getCalOnboardingUrl() ?? '/cita'}
       holdedConnected={holdedConnected}
+      directHoldedConnected={directHoldedConnected}
+      authorizedHoldedConnected={authorizedHoldedConnected}
+      holdedAuthorizationUrl={`${getHoldedMcpBaseUrl()}/launch`}
     />
   );
 }
