@@ -54,15 +54,26 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
-    const { data: profile } = await admin
+    const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('stripe_customer_id, profile_completed, active_company_id')
+      .select('stripe_customer_id, profile_completed, billing_ready, active_company_id')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.profile_completed) {
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'No se pudo resolver tu perfil de contratación' }, { status: 500 });
+    }
+
+    if (!profile.profile_completed) {
       return NextResponse.json(
         { error: 'Completa tu perfil antes de suscribirte.', code: 'profile_required' },
+        { status: 409 }
+      );
+    }
+
+    if (!profile.billing_ready) {
+      return NextResponse.json(
+        { error: 'Completa tus datos de facturación antes de suscribirte.', code: 'billing_required' },
         { status: 409 }
       );
     }
@@ -71,25 +82,34 @@ export async function POST(request: NextRequest) {
     let companyStripeCustomerId: string | null = null;
 
     if (companyId) {
-      const { data: membership } = await admin
+      const { data: membership, error: membershipError } = await admin
         .from('profile_companies')
         .select('role')
         .eq('profile_id', user.id)
         .eq('company_id', companyId)
         .maybeSingle();
 
+      if (membershipError) {
+        return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada' }, { status: 500 });
+      }
       if (!membership) {
         return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario', code: 'company_forbidden' }, { status: 403 });
       }
 
-      const { data: company } = await admin
+      const { data: company, error: companyError } = await admin
         .from('companies')
         .select('stripe_customer_id')
         .eq('id', companyId)
         .maybeSingle();
-      companyStripeCustomerId = company?.stripe_customer_id ?? null;
+      if (companyError || !company) {
+        return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada' }, { status: 500 });
+      }
+      companyStripeCustomerId = company.stripe_customer_id ?? null;
     }
 
+    // New multi-entity subscriptions require an active Holded integration for
+    // the exact contracting entity. Legacy client-level integration remains only
+    // for the no-company compatibility path.
     let holdedQuery = admin
       .from('client_integrations')
       .select('id,status')
@@ -98,10 +118,13 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     holdedQuery = companyId
-      ? holdedQuery.or(`company_id.eq.${companyId},and(company_id.is.null,client_id.eq.${user.id})`)
-      : holdedQuery.eq('client_id', user.id);
+      ? holdedQuery.eq('company_id', companyId)
+      : holdedQuery.eq('client_id', user.id).is('company_id', null);
 
-    const { data: holdedIntegrations } = await holdedQuery;
+    const { data: holdedIntegrations, error: holdedError } = await holdedQuery;
+    if (holdedError) {
+      return NextResponse.json({ error: 'No se pudo comprobar la conexión con Holded', code: 'holded_error' }, { status: 500 });
+    }
     if (!holdedIntegrations?.[0]) {
       return NextResponse.json(
         { error: 'Conecta Holded para esta entidad antes de contratar un plan mensual.', code: 'holded_required' },
@@ -167,6 +190,11 @@ export async function POST(request: NextRequest) {
 
     if (persistError) {
       console.error('[subscriptions/checkout] checkout persistence failed:', persistError);
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        console.error('[subscriptions/checkout] failed to expire orphan Stripe session:', expireError);
+      }
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de contratación' }, { status: 500 });
     }
 
