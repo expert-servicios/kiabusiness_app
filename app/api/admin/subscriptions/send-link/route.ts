@@ -15,6 +15,12 @@ const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
   STRIPE_PLAN_MONTHLY_199: process.env.STRIPE_PLAN_MONTHLY_199,
 };
 
+const PLAN_AMOUNT_ALLOWLIST = {
+  STRIPE_PLAN_MONTHLY_49: 49,
+  STRIPE_PLAN_MONTHLY_99: 99,
+  STRIPE_PLAN_MONTHLY_199: 199,
+} as const;
+
 const schema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
   companyId: z.string().uuid().nullable().optional(),
@@ -49,6 +55,14 @@ export async function POST(request: NextRequest) {
     const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
     if (!configuredPriceId) {
       return NextResponse.json({ error: 'El plan Stripe seleccionado no está configurado' }, { status: 503 });
+    }
+
+    const expectedAmountEur = PLAN_AMOUNT_ALLOWLIST[stripePriceEnvKey];
+    if (amountEur !== expectedAmountEur) {
+      return NextResponse.json({
+        error: `El importe del plan no coincide con la tarifa configurada (${expectedAmountEur} €).`,
+        code: 'plan_amount_mismatch',
+      }, { status: 400 });
     }
 
     const admin = getSupabaseAdmin();
@@ -105,13 +119,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
     }
 
-    const { data: existingSubscription } = await admin
+    const { data: existingSubscription, error: subscriptionLookupError } = await admin
       .from('subscriptions')
       .select('id,status,stripe_subscription_id')
       .eq('client_id', clientId)
       .eq('company_id', companyId)
       .in('status', ['active', 'trialing'])
+      .limit(1)
       .maybeSingle();
+    if (subscriptionLookupError) {
+      return NextResponse.json({ error: 'No se pudo validar el estado actual de la suscripción.' }, { status: 500 });
+    }
     if (existingSubscription) {
       return NextResponse.json({
         error: 'El cliente ya tiene una suscripción activa para esta entidad. Revisa el estado antes de crear otro checkout.',
@@ -120,14 +138,18 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    const { data: existingCheckout } = await admin
+    const { data: existingCheckout, error: checkoutLookupError } = await admin
       .from('checkout_sessions')
       .select('stripe_session_id,status,metadata')
       .eq('user_id', clientId)
       .eq('company_id', companyId)
       .eq('status', 'open')
       .contains('metadata', { product_type: 'subscription' })
+      .limit(1)
       .maybeSingle();
+    if (checkoutLookupError) {
+      return NextResponse.json({ error: 'No se pudo validar si existe una sesión de contratación abierta.' }, { status: 500 });
+    }
     if (existingCheckout) {
       return NextResponse.json({
         error: 'Ya existe una sesión de contratación abierta para esta entidad. Verifícala o expírala antes de crear otra.',
@@ -170,7 +192,7 @@ export async function POST(request: NextRequest) {
         quantity: 1,
         price_data: {
           currency: 'eur',
-          unit_amount: Math.round(amountEur * 100),
+          unit_amount: Math.round(expectedAmountEur * 100),
           tax_behavior: 'exclusive',
           recurring: { interval: 'month' },
           product_data: {
@@ -193,7 +215,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         product_type: 'subscription',
         plan_name: planName,
-        amount_eur: amountEur,
+        amount_eur: expectedAmountEur,
         stripe_price_env_key: stripePriceEnvKey,
         created_by_admin: actorId,
         automatic_tax: true,
@@ -238,13 +260,13 @@ export async function POST(request: NextRequest) {
       clientAddress: contractingAddress,
       serviceTitle: planName,
       serviceDescription: `Suscripción mensual al ${planName} de EXPERT Estudios Profesionales. Gestión fiscal, contable y administrativa continua.`,
-      amountEur,
+      amountEur: expectedAmountEur,
       contractDate,
       contractType: 'subscription',
       planName
     });
 
-    const tpl = subscriptionInvite(clientName, planName, amountEur, session.url!, getRandomFunFact());
+    const tpl = subscriptionInvite(clientName, planName, expectedAmountEur, session.url!, getRandomFunFact());
     try {
       await sendEmail({
         to: clientEmail,
@@ -274,7 +296,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             product_type: 'subscription',
             plan_name: planName,
-            amount_eur: amountEur,
+            amount_eur: expectedAmountEur,
             stripe_price_env_key: stripePriceEnvKey,
             created_by_admin: actorId,
             automatic_tax: true,
@@ -304,7 +326,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           product_type: 'subscription',
           plan_name: planName,
-          amount_eur: amountEur,
+          amount_eur: expectedAmountEur,
           stripe_price_env_key: stripePriceEnvKey,
           created_by_admin: actorId,
           automatic_tax: true,
