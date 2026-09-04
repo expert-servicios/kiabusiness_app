@@ -47,7 +47,7 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? 'Error verificando la clave');
+        setError(data.error ?? 'Error verificando el token');
         return null;
       }
       const result = data as TestResult;
@@ -61,13 +61,11 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
     }
   }
 
-  /** "Verificar conexión" — solo testea, no abre el modal */
   async function handleTest() {
     if (!canSubmit) return;
     await runTest(trimmedKey);
   }
 
-  /** "Conectar" — testea (si no está hecho) y abre el modal de consentimiento */
   async function handleOpenConsent() {
     if (!canSubmit) return;
 
@@ -75,7 +73,7 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
     if (!result) {
       result = await runTest(trimmedKey);
     }
-    if (!result?.ok) return; // test failed — error already shown
+    if (!result?.ok) return;
 
     setShowConsent(true);
   }
@@ -93,10 +91,9 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
   return (
     <>
       <div className="space-y-5">
-        {/* API key input */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-[#3d3528]">
-            API key de Holded
+            API Token de Holded
           </label>
           <div className="relative">
             <input
@@ -104,7 +101,7 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
               type={showKey ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => { setApiKey(e.target.value); setTestResult(null); setError(''); }}
-              placeholder="Pega aquí tu API key de Holded"
+              placeholder="Pega aquí tu API Token de Holded"
               autoComplete="off"
               spellCheck={false}
               className="w-full rounded-xl border border-[#e8dfc8] bg-white px-4 py-3 pr-11 text-sm text-[#3d3528] placeholder:text-[#c8b89a] focus:border-[#c88b25] focus:outline-none focus:ring-2 focus:ring-[#c88b25]/20"
@@ -113,17 +110,16 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
               type="button"
               onClick={() => setShowKey((v) => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a89880] hover:text-[#3d3528]"
-              aria-label={showKey ? 'Ocultar clave' : 'Mostrar clave'}
+              aria-label={showKey ? 'Ocultar token' : 'Mostrar token'}
             >
               {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
           <p className="mt-1 text-xs text-[#a89880]">
-            La clave se cifra en el servidor antes de guardarse. No se muestra completa después.
+            En Holded: Configuración → Desarrolladores → Credenciales → Agregar API Token. La credencial se cifra en el servidor antes de guardarse y no vuelve a mostrarse completa.
           </p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -131,7 +127,6 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
           </div>
         )}
 
-        {/* Test result preview */}
         {testResult && (
           <div className={`rounded-xl border px-4 py-4 ${testResult.ok ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
             {testResult.ok && (
@@ -144,7 +139,6 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
@@ -176,7 +170,6 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
         </div>
       </div>
 
-      {/* Consent modal — rendered outside the form container */}
       {showConsent && testResult && (
         <HoldedConsentModal
           detectedPermissions={testResult.permissions}
