@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminRightPanel } from '@/components/admin/AdminRightPanel';
+import { AdminBackBar } from '@/components/admin/AdminBackBar';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
@@ -25,52 +26,31 @@ async function fetchJson(path: string, cookieHeader: string) {
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
-
-  // Read session directly from Supabase (avoids HTTP round-trip that can fail on cold starts)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {}
-      }
-    }
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) redirect('/auth/login');
 
-  const { data: profile } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const { data: profile } = await admin
     .from('profiles')
     .select('id,role,status,full_name')
     .eq('id', user.id)
     .single();
 
-  if (profile?.status === 'inactive') {
-    redirect('/auth/login?error=inactive');
-  }
-
-  if (profile?.role === 'tenant_admin') {
-    redirect('/tenant/dashboard');
-  }
-
-  if (profile?.role !== 'admin' && profile?.role !== 'owner') {
-    redirect('/dashboard');
-  }
+  if (profile?.status === 'inactive') redirect('/auth/login?error=inactive');
+  if (profile?.role === 'tenant_admin') redirect('/tenant/dashboard');
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') redirect('/dashboard');
 
   const enrichedProfile = { ...profile, email: user.email ?? '' };
-
   const [obligationsData, emailUnreadRaw] = await Promise.all([
     fetchJson(`/api/admin/fiscal-calendar?year=${new Date().getFullYear()}`, cookieHeader),
-    getSupabaseAdmin()
-      .from('system_kv')
-      .select('value')
-      .eq('key', 'email_unread_count')
-      .maybeSingle(),
+    admin.from('system_kv').select('value').eq('key', 'email_unread_count').maybeSingle(),
   ]);
 
-  // Count urgent (overdue or ≤7 days) pending obligations across all clients
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const urgentCount = (obligationsData?.obligations ?? []).filter((o: { status: string; deadline: string }) => {
@@ -78,17 +58,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     const diff = Math.ceil((new Date(o.deadline).getTime() - today.getTime()) / 86400000);
     return diff <= 7;
   }).length;
-
   const emailUnreadCount = Number(emailUnreadRaw?.data?.value ?? 0);
 
   return (
     <div className="flex min-h-screen bg-[#f8f4eb]">
-      <AdminSidebar
-        userName={enrichedProfile.full_name ?? null}
-        userEmail={enrichedProfile.email}
-        urgentCount={urgentCount}
-      />
+      <AdminSidebar userName={enrichedProfile.full_name ?? null} userEmail={enrichedProfile.email} urgentCount={urgentCount} />
       <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
+        <AdminBackBar />
         {children}
       </div>
       <AdminRightPanel emailUnreadCount={emailUnreadCount} />
