@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Calendar, CheckCircle2, ExternalLink, KeyRound, Loader2, Plug, RefreshCw, Zap } from 'lucide-react';
 
 interface Props {
+  subscriptionId: string;
   planName: string;
   onboardingMeetingScheduled: boolean;
   onboardingUrl: string;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function PostCompraWizard({
+  subscriptionId,
   planName,
   onboardingMeetingScheduled,
   onboardingUrl,
@@ -34,7 +36,11 @@ export default function PostCompraWizard({
     setCompleting(true);
     setCompleteError(null);
     try {
-      const res = await fetch('/api/dashboard/post-compra/complete', { method: 'POST' });
+      const res = await fetch('/api/dashboard/post-compra/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId }),
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error ?? `HTTP ${res.status}`);
