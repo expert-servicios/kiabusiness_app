@@ -1,7 +1,7 @@
 ﻿import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { sendEmail } from '@/lib/email/send';
+import { sendEmailOnce } from '@/lib/email/send';
 import { welcomeEmail } from '@/lib/email/templates';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 
@@ -76,16 +76,23 @@ export async function GET(request: NextRequest) {
 
         if (profile && !profile.welcome_email_sent) {
           const tpl = welcomeEmail(displayName);
-          await sendEmail({
+          await sendEmailOnce({
             to: user.email,
             eventType: 'user.welcome',
             ...tpl,
-            metadata: { user_id: user.id }
+            metadata: { user_id: user.id },
+            idempotencyKey: `user-welcome/${user.id}`,
           });
-          await admin
+
+          const { error: welcomeFlagError } = await admin
             .from('profiles')
             .update({ welcome_email_sent: true })
             .eq('id', user.id);
+          if (welcomeFlagError) {
+            // Do not resend on a later login: sendEmailOnce will recover from
+            // the durable email_events intent even if this flag update failed.
+            console.error('[auth/callback] welcome flag update failed:', welcomeFlagError.message);
+          }
         }
       }
     }
