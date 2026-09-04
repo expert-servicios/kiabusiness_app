@@ -13,7 +13,8 @@ alter table public.profiles
   on delete set null;
 
 -- Stripe customer identity belongs to the contracting entity. Keep the legacy
--- profiles.stripe_customer_id for backward compatibility with older checkouts.
+-- profiles.stripe_customer_id read-only for backward compatibility with older
+-- data, but new subscription flows are always company-scoped.
 alter table public.companies
   add column if not exists stripe_customer_id text;
 
@@ -66,3 +67,31 @@ alter table public.subscriptions
 
 create index if not exists subscriptions_company_id_idx
   on public.subscriptions(company_id);
+
+-- Stripe subscription ownership is immutable. A retry/update may change plan,
+-- period or status, but it must never silently move the same Stripe subscription
+-- to a different EXPERT client, company or Stripe Customer.
+create or replace function public.guard_stripe_subscription_ownership()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if old.stripe_subscription_id is not null
+     and new.stripe_subscription_id = old.stripe_subscription_id
+     and (
+       new.client_id is distinct from old.client_id
+       or new.company_id is distinct from old.company_id
+       or new.stripe_customer_id is distinct from old.stripe_customer_id
+     ) then
+    raise exception 'Stripe subscription ownership conflict; manual review required';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists subscriptions_guard_stripe_ownership on public.subscriptions;
+create trigger subscriptions_guard_stripe_ownership
+before update on public.subscriptions
+for each row
+execute function public.guard_stripe_subscription_ownership();
