@@ -77,22 +77,35 @@ export async function POST(request: NextRequest) {
     const normalizedTaxId = d.cif_nif?.trim().toUpperCase() || null;
 
     if (normalizedTaxId) {
-      const { data: ownedRows } = await admin
+      const { data: ownedRows, error: ownedError } = await admin
         .from('profile_companies')
         .select('company_id')
         .eq('profile_id', user.id);
-      const ownedIds = (ownedRows ?? []).map((row) => row.company_id).filter(Boolean);
+      if (ownedError) {
+        return NextResponse.json({ error: 'No se pudieron comprobar tus entidades actuales' }, { status: 500 });
+      }
+      const ownedIds = new Set((ownedRows ?? []).map((row) => row.company_id).filter(Boolean));
 
-      if (ownedIds.length) {
-        const { data: duplicate } = await admin
-          .from('companies')
-          .select('id')
-          .in('id', ownedIds)
-          .eq('cif_nif', normalizedTaxId)
-          .maybeSingle();
-        if (duplicate) {
-          return NextResponse.json({ error: 'Ya tienes una entidad con este CIF/NIF' }, { status: 409 });
-        }
+      const { data: matches, error: duplicateError } = await admin
+        .from('companies')
+        .select('id,razon_social,cif_nif')
+        .eq('cif_nif', normalizedTaxId)
+        .limit(10);
+      if (duplicateError) {
+        return NextResponse.json({ error: 'No se pudo verificar el CIF/NIF' }, { status: 500 });
+      }
+
+      const ownMatch = (matches ?? []).find((row) => ownedIds.has(row.id));
+      if (ownMatch) {
+        return NextResponse.json({ error: 'Ya tienes una entidad con este CIF/NIF', code: 'tax_id_duplicate' }, { status: 409 });
+      }
+
+      if ((matches ?? []).length > 0) {
+        return NextResponse.json({
+          error: 'Ya existe una entidad con este CIF/NIF vinculada a otra cuenta. Revisión manual necesaria.',
+          code: 'tax_id_conflict',
+          existingCompanyIds: (matches ?? []).map((row) => row.id)
+        }, { status: 409 });
       }
     }
 
@@ -137,7 +150,8 @@ export async function POST(request: NextRequest) {
 
     if (membershipError) {
       console.error('[companies POST] membership', membershipError);
-      return NextResponse.json({ error: 'Empresa creada, pero no se pudo vincular al usuario' }, { status: 500 });
+      await admin.from('companies').delete().eq('id', company.id);
+      return NextResponse.json({ error: 'No se pudo vincular la nueva entidad; no se ha conservado el alta parcial.' }, { status: 500 });
     }
 
     const { error: activateError } = await admin
@@ -147,7 +161,9 @@ export async function POST(request: NextRequest) {
 
     if (activateError) {
       console.error('[companies POST] active company', activateError);
-      return NextResponse.json({ error: 'Empresa creada, pero no se pudo establecer como activa' }, { status: 500 });
+      await admin.from('profile_companies').delete().eq('profile_id', user.id).eq('company_id', company.id);
+      await admin.from('companies').delete().eq('id', company.id);
+      return NextResponse.json({ error: 'No se pudo activar la nueva entidad; no se ha conservado el alta parcial.' }, { status: 500 });
     }
 
     return NextResponse.json({ company }, { status: 201 });
