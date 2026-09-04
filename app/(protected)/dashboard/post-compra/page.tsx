@@ -50,6 +50,7 @@ export default async function PostCompraPage() {
 
   return (
     <PostCompraWizard
+      subscriptionId={pendingSub!.id}
       planName={pendingSub!.plan_name}
       onboardingMeetingScheduled={onboardingMeetingScheduled}
       onboardingUrl={getCalOnboardingUrl() ?? '/cita'}
