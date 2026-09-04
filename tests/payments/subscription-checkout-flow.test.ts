@@ -10,6 +10,7 @@ describe('subscription checkout flow', () => {
   const cards = source('components/subscriptions/SubscriptionPlanCards.tsx');
   const checkout = source('app/api/subscriptions/checkout/route.ts');
   const postPurchase = source('app/(protected)/dashboard/post-compra/page.tsx');
+  const publicPlans = source('app/(public)/planes/page.tsx');
 
   it('sends standard monthly plan CTAs directly to the subscription checkout endpoint', () => {
     expect(cards).toContain("fetch('/api/subscriptions/checkout'");
@@ -31,5 +32,13 @@ describe('subscription checkout flow', () => {
     expect(postPurchase).toContain("s.status === 'active' || s.status === 'trialing'");
     expect(postPurchase).toContain('!s.post_purchase_onboarding_at');
     expect(postPurchase).toContain('subscriptionId={pendingSub!.id}');
+  });
+
+  it('keeps public plan copy aligned with the post-purchase Holded flow', () => {
+    expect(publicPlans).toContain('no necesitas tenerlo conectado antes de pagar');
+    expect(publicPlans).toContain('después reservas la reunión de onboarding y conectas Holded');
+    expect(publicPlans).not.toContain('Holded conectado desde el Panel Cliente antes de contratar');
+    expect(publicPlans).not.toContain('Todos los planes pasan por readiness antes de contratar');
+    expect(publicPlans).not.toContain('El checkout mensual se bloquea si no tienes perfil completo, datos fiscales listos y Holded conectado');
   });
 });
