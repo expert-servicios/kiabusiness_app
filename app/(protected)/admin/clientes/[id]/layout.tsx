@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ClientCommunicationsShortcut } from './ClientCommunicationsShortcut';
+import { Client360ContextBar } from './Client360ContextBar';
 
 export default async function ClientLayout({
   children,
@@ -12,6 +13,7 @@ export default async function ClientLayout({
 
   return (
     <>
+      <Client360ContextBar clientId={id} />
       {children}
       <ClientCommunicationsShortcut clientId={id} />
     </>
