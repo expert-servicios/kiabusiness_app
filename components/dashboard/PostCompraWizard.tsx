@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Calendar, CheckCircle2, ExternalLink, Loader2, Plug, RefreshCw, Zap } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle2, ExternalLink, KeyRound, Loader2, Plug, RefreshCw, Zap } from 'lucide-react';
 
 interface Props {
   planName: string;
   onboardingMeetingScheduled: boolean;
   onboardingUrl: string;
   holdedConnected: boolean;
+  directHoldedConnected: boolean;
+  authorizedHoldedConnected: boolean;
+  holdedAuthorizationUrl: string;
 }
 
 export default function PostCompraWizard({
@@ -16,6 +19,9 @@ export default function PostCompraWizard({
   onboardingMeetingScheduled,
   onboardingUrl,
   holdedConnected,
+  directHoldedConnected,
+  authorizedHoldedConnected,
+  holdedAuthorizationUrl,
 }: Props) {
   const router = useRouter();
   const [completing, setCompleting] = useState(false);
@@ -71,21 +77,12 @@ export default function PostCompraWizard({
               </p>
               {!onboardingMeetingScheduled && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <a
-                    href={onboardingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#07111d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a2e45]"
-                  >
+                  <a href={onboardingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#07111d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a2e45]">
                     <Calendar className="h-4 w-4" />
                     Reservar onboarding
                     <ExternalLink className="h-3.5 w-3.5 opacity-60" />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => router.refresh()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#d8cbb5] px-4 py-2.5 text-sm font-semibold text-[#29384a]"
-                  >
+                  <button type="button" onClick={() => router.refresh()} className="inline-flex items-center gap-2 rounded-lg border border-[#d8cbb5] px-4 py-2.5 text-sm font-semibold text-[#29384a]">
                     <RefreshCw className="h-4 w-4" />
                     Ya he reservado
                   </button>
@@ -105,46 +102,50 @@ export default function PostCompraWizard({
                 Conectar Holded
               </p>
               <p className="mt-1 text-xs leading-5 text-[#29384a]/65">
-                La conexión se realiza desde tu área privada mediante credencial de acceso de Holded. EXPERT valida los permisos antes de activar la sincronización.
+                Puedes conectar Holded mediante API directa o mediante autorización segura con token de acceso. EXPERT valida la conexión antes de cerrar el onboarding.
               </p>
+
+              {holdedConnected && (
+                <p className="mt-2 text-xs font-medium text-green-700">
+                  {directHoldedConnected ? 'API directa conectada.' : 'Conexión autorizada con token de acceso detectada.'}
+                  {directHoldedConnected && authorizedHoldedConnected ? ' También hay una conexión autorizada activa.' : ''}
+                </p>
+              )}
+
               {!holdedConnected && onboardingMeetingScheduled && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <a
-                    href="/dashboard/integraciones/holded"
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#07111d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a2e45]"
-                  >
-                    <Plug className="h-4 w-4" />
-                    Conectar Holded
-                    <ArrowRight className="h-4 w-4" />
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <a href="/dashboard/integraciones/holded" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#07111d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a2e45]">
+                    <KeyRound className="h-4 w-4" />
+                    Conectar por API
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => router.refresh()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#d8cbb5] px-4 py-2.5 text-sm font-semibold text-[#29384a]"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Volver a comprobar
-                  </button>
+                  <a href={holdedAuthorizationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#d8cbb5] bg-white px-4 py-2.5 text-sm font-semibold text-[#29384a] hover:border-[#c88b25]">
+                    <Plug className="h-4 w-4" />
+                    Autorizar Holded
+                    <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
                 </div>
+              )}
+
+              {!holdedConnected && onboardingMeetingScheduled && (
+                <button type="button" onClick={() => router.refresh()} className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#c88b25]">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Volver a comprobar conexión
+                </button>
               )}
             </div>
           </div>
         </div>
 
         <div className="mt-5 rounded-xl border border-[#e8dfc8] bg-white px-4 py-3 text-xs leading-5 text-[#6f6254]">
-          Holded puede cambiar sus métodos de autenticación y permisos. EXPERT no solicita credenciales por email o WhatsApp: la conexión se realiza únicamente desde el área privada.
+          No envíes API tokens ni credenciales por email o WhatsApp. La conexión se realiza únicamente desde el área privada o desde la autorización segura de Holded.
         </div>
 
         {completeError && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{completeError}</p>}
 
-        <button
-          type="button"
-          onClick={handleFinish}
-          disabled={!allDone || completing}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d7a33a] px-6 py-3 text-sm font-bold text-[#061321] transition hover:bg-[#f0bf54] disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="button" onClick={handleFinish} disabled={!allDone || completing} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d7a33a] px-6 py-3 text-sm font-bold text-[#061321] transition hover:bg-[#f0bf54] disabled:cursor-not-allowed disabled:opacity-50">
           {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           Finalizar onboarding
+          {!completing && <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
     </div>
