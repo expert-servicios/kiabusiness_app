@@ -29,7 +29,7 @@ const authCallback = fs.readFileSync(
 
 describe('critical payment-link email compensation', () => {
   it('expires a new subscription checkout when invite delivery fails', () => {
-    expect(subscriptionRoute).toContain("await stripe.checkout.sessions.expire(session.id)");
+    expect(subscriptionRoute).toContain('await stripe.checkout.sessions.expire(session.id)');
     expect(subscriptionRoute).toContain('email_delivery_failed: true');
     expect(subscriptionRoute).toContain('email_failed_manual_review');
     expect(subscriptionRoute).toContain('email_failed_safe_retry');
@@ -87,15 +87,16 @@ describe('Resend delivery attribution', () => {
 });
 
 describe('durable email idempotency', () => {
-  it('passes the idempotency key to Resend and records it in email_events', () => {
-    expect(emailSend).toContain('await resend.emails.send(payload, { idempotencyKey })');
+  it('passes the effective idempotency key to Resend and records it in email_events', () => {
+    expect(emailSend).toContain('await resend.emails.send(payload, { idempotencyKey: effectiveIdempotencyKey })');
     expect(emailSend).toContain('idempotency_key: idempotencyKey');
   });
 
   it('suppresses a logical retry once Resend previously accepted the intent', () => {
-    expect(emailSend).toContain(".contains('metadata', { idempotency_key: key })");
+    expect(emailSend).toContain(".contains('metadata', { idempotency_key: idempotencyKey })");
     expect(emailSend).toContain(".not('resend_id', 'is', null)");
-    expect(emailSend).toContain('return { sent: false, resendId: existing.resend_id }');
+    expect(emailSend).toContain('if (existingResendId)');
+    expect(emailSend).toContain('return { sent: false, resendId: existingResendId }');
   });
 
   it('uses one deterministic welcome intent per user', () => {
