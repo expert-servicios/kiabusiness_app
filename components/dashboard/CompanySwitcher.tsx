@@ -31,6 +31,7 @@ const FORMA_LABELS: Record<string, string> = {
 export function CompanySwitcher({ companies, activeCompanyId }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -47,14 +48,22 @@ export function CompanySwitcher({ companies, activeCompanyId }: Props) {
   const switchCompany = async (companyId: string) => {
     if (companyId === activeCompanyId) { setOpen(false); return; }
     setLoading(companyId);
+    setError('');
     try {
-      await fetch('/api/profile', {
+      const response = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active_company_id: companyId })
       });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { error?: string } | null;
+        setError(data?.error ?? 'No se pudo cambiar la entidad activa.');
+        return;
+      }
       setOpen(false);
       router.refresh();
+    } catch {
+      setError('No se pudo cambiar la entidad activa.');
     } finally {
       setLoading(null);
     }
@@ -64,7 +73,7 @@ export function CompanySwitcher({ companies, activeCompanyId }: Props) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); setError(''); }}
         className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#d7a33a]/60 hover:bg-white/10"
       >
         <Building2 className="h-3.5 w-3.5 text-[#d7a33a]" />
@@ -75,7 +84,10 @@ export function CompanySwitcher({ companies, activeCompanyId }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[220px] rounded-xl border border-white/10 bg-[#07111d] py-1.5 shadow-2xl">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[240px] rounded-xl border border-white/10 bg-[#07111d] py-1.5 shadow-2xl">
+          {error && (
+            <p className="mx-2 mb-1 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-200">{error}</p>
+          )}
           {companies.length > 0 ? (
             <>
               <p className="px-3 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-widest text-white/40">
