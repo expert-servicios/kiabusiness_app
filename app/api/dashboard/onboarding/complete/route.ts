@@ -9,12 +9,17 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-  // Use .is('onboarding_completed_at', null) to make this a true no-op on repeat calls
-  await getSupabaseAdmin()
+  // Use .is('onboarding_completed_at', null) to make this a true no-op on repeat calls.
+  const { error: updateError } = await getSupabaseAdmin()
     .from('profiles')
     .update({ onboarding_completed_at: new Date().toISOString() })
     .eq('id', user.id)
     .is('onboarding_completed_at', null);
+
+  if (updateError) {
+    console.error('[dashboard/onboarding/complete] update failed:', updateError);
+    return NextResponse.json({ error: 'No se pudo guardar la finalización del onboarding' }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
