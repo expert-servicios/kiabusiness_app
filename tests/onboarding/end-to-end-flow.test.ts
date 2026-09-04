@@ -14,7 +14,7 @@ describe('end-to-end onboarding safeguards', () => {
     expect(sql).not.toMatch(/\b(insert|update|delete)\b/i);
   });
 
-  it('fails onboarding completion when persistence fails', () => {
+  it('fails initial onboarding completion when persistence fails', () => {
     const route = source('app/api/dashboard/onboarding/complete/route.ts');
 
     expect(route).toContain('const { error: updateError } = await getSupabaseAdmin()');
@@ -22,14 +22,15 @@ describe('end-to-end onboarding safeguards', () => {
     expect(route).toContain("{ status: 500 }");
   });
 
-  it('requires the same profile fields in the wizard and waits for completion persistence', () => {
+  it('requires profile fields before contracting and keeps Holded out of initial onboarding', () => {
     const wizard = source('app/(protected)/dashboard/onboarding/page.tsx');
 
     expect(wizard).toContain('Teléfono *');
     expect(wizard).toContain("if (!profileData.phone.trim())");
     expect(wizard).toContain("const res = await fetch('/api/dashboard/onboarding/complete'");
-    expect(wizard).toContain('if (!res.ok)');
-    expect(wizard).toContain('Obligatorio para contratar un plan mensual');
+    expect(wizard).toContain('después del pago te guiaremos para reservar el onboarding y conectar Holded');
+    expect(wizard).not.toContain("type Step = 'profile' | 'company' | 'holded'");
+    expect(wizard).not.toContain('Obligatorio para contratar un plan mensual');
   });
 
   it('uses canonical readiness rules for newly admin-created clients', () => {
@@ -42,24 +43,33 @@ describe('end-to-end onboarding safeguards', () => {
     expect(invite).toContain("if (isNewUser) {");
   });
 
-  it('keeps monthly checkout gated by profile, billing, company membership and Holded', () => {
+  it('keeps monthly checkout gated by profile, billing and company membership, not Holded', () => {
     const checkout = source('app/api/subscriptions/checkout/route.ts');
 
     expect(checkout).toContain('profile.profile_completed');
     expect(checkout).toContain('profile.billing_ready');
     expect(checkout).toContain(".from('profile_companies')");
-    expect(checkout).toContain(".eq('provider', 'holded')");
-    expect(checkout).toContain(".eq('company_id', companyId)");
+    expect(checkout).not.toContain("code: 'holded_required'");
     expect(checkout).toContain('await stripe.checkout.sessions.expire(session.id)');
   });
 
-  it('keeps admin subscription links scoped to the selected entity and Holded integration', () => {
+  it('keeps admin subscription links scoped to the selected entity without pre-payment Holded gate', () => {
     const sendLink = source('app/api/admin/subscriptions/send-link/route.ts');
 
     expect(sendLink).toContain("code: 'company_required'");
-    expect(sendLink).toContain("code: 'holded_required'");
-    expect(sendLink).toContain(".eq('company_id', companyId)");
+    expect(sendLink).not.toContain("code: 'holded_required'");
     expect(sendLink).toContain('company_id: companyId');
     expect(sendLink).toContain('await stripe.checkout.sessions.expire(session.id)');
+  });
+
+  it('re-validates meeting and Holded server-side before completing one exact subscription', () => {
+    const complete = source('app/api/dashboard/post-compra/complete/route.ts');
+    const wizard = source('components/dashboard/PostCompraWizard.tsx');
+
+    expect(complete).toContain('onboarding_meeting_required');
+    expect(complete).toContain("code: 'holded_required'");
+    expect(complete).toContain(".eq('id', parsed.data.subscriptionId)");
+    expect(complete).toContain(".eq('client_id', user.id)");
+    expect(wizard).toContain('JSON.stringify({ subscriptionId })');
   });
 });
