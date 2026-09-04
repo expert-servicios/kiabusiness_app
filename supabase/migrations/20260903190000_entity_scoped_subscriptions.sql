@@ -95,3 +95,52 @@ create trigger subscriptions_guard_stripe_ownership
 before update on public.subscriptions
 for each row
 execute function public.guard_stripe_subscription_ownership();
+
+-- One-off services/quotes use the same contracting-entity model. Historical
+-- quotes stay NULL: this migration does not infer or backfill old ownership.
+alter table public.quotes
+  add column if not exists company_id uuid;
+
+alter table public.quotes
+  drop constraint if exists quotes_company_id_fkey;
+
+alter table public.quotes
+  add constraint quotes_company_id_fkey
+  foreign key (company_id)
+  references public.companies(id)
+  on delete set null;
+
+create index if not exists quotes_company_id_idx
+  on public.quotes(company_id);
+
+-- Derived cases/orders created from a quote inherit its company automatically.
+-- This keeps legacy webhook paths safe without guessing historical ownership.
+create or replace function public.inherit_quote_company_id()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+  resolved_company_id uuid;
+begin
+  if new.quote_id is not null and new.company_id is null then
+    select q.company_id into resolved_company_id
+    from public.quotes q
+    where q.id = new.quote_id;
+    new.company_id := resolved_company_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_inherit_quote_company on public.orders;
+create trigger orders_inherit_quote_company
+before insert or update of quote_id, company_id on public.orders
+for each row
+execute function public.inherit_quote_company_id();
+
+drop trigger if exists cases_inherit_quote_company on public.cases;
+create trigger cases_inherit_quote_company
+before insert or update of quote_id, company_id on public.cases
+for each row
+execute function public.inherit_quote_company_id();
