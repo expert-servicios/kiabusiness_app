@@ -169,8 +169,7 @@ async function upsertSubscriptionFromStripe(
   );
 
   if (subscriptionError) {
-    console.error('[webhook] subscription upsert failed:', subscriptionError);
-    return null;
+    throw new Error(`Could not persist Stripe subscription ${sub.id}: ${subscriptionError.message}`);
   }
 
   return { clientId, companyId, planName, periodEnd };
@@ -1062,7 +1061,7 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription;
-    await supabaseAdmin
+    const { error: deleteUpdateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'canceled',
@@ -1070,6 +1069,9 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', sub.id);
+    if (deleteUpdateError) {
+      throw new Error(`Could not persist canceled Stripe subscription ${sub.id}: ${deleteUpdateError.message}`);
+    }
   }
 
     const { error: completeError } = await supabaseAdmin.rpc('complete_stripe_event', { p_event_id: event.id });
