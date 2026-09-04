@@ -8,6 +8,7 @@ import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { syncQuoteAsEstimate } from '@/lib/integrations/holded';
+import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 
 const quoteSchema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const { data: clientProfile, error: profileError } = await adminSupabase
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code,active_company_id')
+      .select('full_name')
       .eq('id', clientId)
       .single();
     if (profileError || !clientProfile) {
@@ -64,13 +65,16 @@ export async function POST(request: NextRequest) {
 
     const { data: memberships, error: membershipsError } = await adminSupabase
       .from('profile_companies')
-      .select('company_id,company:companies(id,razon_social,cif_nif,forma_juridica,direccion,ciudad,codigo_postal,email,telefono)')
+      .select('company_id,company:companies(id,razon_social,cif_nif,forma_juridica,direccion,ciudad,codigo_postal,pais,email,telefono)')
       .eq('profile_id', clientId);
     if (membershipsError) {
       return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
     }
 
-    let companyId = parsed.data.companyId ?? clientProfile.active_company_id ?? null;
+    // Admin actions must not silently inherit the client's current dashboard
+    // selection. One entity is unambiguous; multiple entities require an
+    // explicit companyId from the admin UI.
+    let companyId = parsed.data.companyId ?? null;
     if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
     if (!companyId) {
       return NextResponse.json({
@@ -91,12 +95,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
     }
 
+    if (!isCompanyBillingReady(contractingCompany)) {
+      return NextResponse.json({
+        error: 'Completa los datos fiscales de la entidad seleccionada antes de crear el presupuesto.',
+        code: 'billing_required',
+        companyId,
+        missingFields: missingCompanyBillingFields(contractingCompany),
+      }, { status: 409 });
+    }
+
     const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
-    const contractingName = contractingCompany.razon_social ?? clientName;
-    const contractingTaxId = contractingCompany.cif_nif ?? null;
-    const contractingAddress = contractingCompany.ciudad
-      ? `${contractingCompany.direccion ?? ''}, ${contractingCompany.ciudad}`.trim().replace(/^,\s*/, '')
-      : contractingCompany.direccion ?? null;
+    const contractingName = contractingCompany.razon_social!;
+    const contractingTaxId = contractingCompany.cif_nif!;
+    const contractingAddress = `${contractingCompany.direccion}, ${contractingCompany.ciudad}, ${contractingCompany.codigo_postal}`;
 
     // Rows created below belong exclusively to this request and can be safely
     // compensated if Stripe/email setup fails before the quote is delivered.

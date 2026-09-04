@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 
 const bodySchema = z.object({
   priceId: z.string().min(1),
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('profile_completed,billing_ready,active_company_id')
+      .select('profile_completed,active_company_id')
       .eq('id', user.id)
       .single();
 
@@ -71,13 +72,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!profile.billing_ready) {
-      return NextResponse.json(
-        { error: 'Completa tus datos de facturación antes de suscribirte.', code: 'billing_required' },
-        { status: 409 }
-      );
-    }
-
+    // In self-service flows active_company_id is an explicit user-selected
+    // dashboard context, so it is safe to use when companyId is not supplied.
     const companyId = requestedCompanyId ?? profile.active_company_id ?? null;
     if (!companyId) {
       return NextResponse.json(
@@ -102,11 +98,38 @@ export async function POST(request: NextRequest) {
 
     const { data: company, error: companyError } = await admin
       .from('companies')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')
       .eq('id', companyId)
       .maybeSingle();
     if (companyError || !company) {
       return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada' }, { status: 500 });
+    }
+
+    if (!isCompanyBillingReady(company)) {
+      return NextResponse.json({
+        error: 'Completa los datos fiscales de la entidad seleccionada antes de suscribirte.',
+        code: 'billing_required',
+        missingFields: missingCompanyBillingFields(company),
+        companyId,
+      }, { status: 409 });
+    }
+
+    const { data: existingSubscriptions, error: existingSubscriptionError } = await admin
+      .from('subscriptions')
+      .select('id,status,plan_name')
+      .eq('client_id', user.id)
+      .eq('company_id', companyId)
+      .in('status', ['active', 'trialing', 'past_due', 'unpaid'])
+      .limit(1);
+    if (existingSubscriptionError) {
+      return NextResponse.json({ error: 'No se pudo comprobar la suscripción actual' }, { status: 500 });
+    }
+    if (existingSubscriptions?.[0]) {
+      return NextResponse.json({
+        error: 'Esta entidad ya tiene una suscripción vigente o pendiente de regularizar.',
+        code: 'subscription_exists',
+        subscriptionId: existingSubscriptions[0].id,
+      }, { status: 409 });
     }
 
     const { data: holdedIntegrations, error: holdedError } = await admin
