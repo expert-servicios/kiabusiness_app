@@ -60,6 +60,14 @@ describe('entity-scoped billing', () => {
     expect(onboarding).toContain("action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.entity_onboarded'");
   });
 
+  it('self-service company creation blocks global tax id conflicts and compensates partial writes', () => {
+    const companies = source('app/api/companies/route.ts');
+    expect(companies).toContain("code: 'tax_id_conflict'");
+    expect(companies).toContain('Revisión manual necesaria');
+    expect(companies).toContain("await admin.from('companies').delete().eq('id', company.id)");
+    expect(companies).toContain("await admin.from('profile_companies').delete().eq('profile_id', user.id).eq('company_id', company.id)");
+  });
+
   it('one-off quotes carry company context and derived records inherit it', () => {
     const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
     const quotes = source('app/api/admin/quotes/route.ts');
@@ -69,6 +77,13 @@ describe('entity-scoped billing', () => {
     expect(migration).toContain('cases_inherit_quote_company');
     expect(quotes).toContain('company_id: companyId');
     expect(quotes).toContain("metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' }");
+  });
+
+  it('Holded retry keeps contracting company context', () => {
+    const cron = source('app/api/cron/holded-sync/route.ts');
+    expect(cron).toContain('companyId?: string | null');
+    expect(cron).toContain(".select('razon_social,email')");
+    expect(cron).toContain('manual review required');
   });
 
   it('company switcher checks PATCH response before refreshing', () => {
