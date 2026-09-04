@@ -46,8 +46,11 @@ export async function POST(request: NextRequest) {
 
     const { clientEmail, planName, amountEur, stripePriceEnvKey } = parsed.data;
     const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
-    const admin = getSupabaseAdmin();
+    if (!configuredPriceId) {
+      return NextResponse.json({ error: 'El plan Stripe seleccionado no está configurado' }, { status: 503 });
+    }
 
+    const admin = getSupabaseAdmin();
     const listData = await listAllAuthUsers();
     const authUser = listData.find((u) => u.email?.toLowerCase() === clientEmail.toLowerCase());
     if (!authUser) {
@@ -55,16 +58,29 @@ export async function POST(request: NextRequest) {
     }
     const clientId = authUser.id;
 
-    const { data: clientProfile } = await admin
+    const { data: clientProfile, error: profileError } = await admin
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code,stripe_customer_id')
+      .select('full_name,company,tax_id,address,city,postal_code,stripe_customer_id,profile_completed,billing_ready')
       .eq('id', clientId)
       .single();
 
-    const { data: memberships } = await admin
+    if (profileError || !clientProfile) {
+      return NextResponse.json({ error: 'No se pudo cargar el perfil del cliente' }, { status: 500 });
+    }
+    if (!clientProfile.profile_completed) {
+      return NextResponse.json({ error: 'El cliente debe completar su perfil antes de contratar.', code: 'profile_required' }, { status: 409 });
+    }
+    if (!clientProfile.billing_ready) {
+      return NextResponse.json({ error: 'El cliente debe completar sus datos de facturación antes de contratar.', code: 'billing_required' }, { status: 409 });
+    }
+
+    const { data: memberships, error: membershipsError } = await admin
       .from('profile_companies')
       .select('company_id,role,company:companies(id,razon_social,cif_nif,direccion,ciudad,codigo_postal,stripe_customer_id)')
       .eq('profile_id', clientId);
+    if (membershipsError) {
+      return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
+    }
 
     let companyId = parsed.data.companyId ?? null;
     if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
@@ -72,25 +88,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El cliente tiene varias entidades. Selecciona cuál contrata el plan.', code: 'company_required' }, { status: 409 });
     }
 
-    const selectedMembership = companyId
-      ? memberships?.find((m) => m.company_id === companyId)
-      : null;
+    const selectedMembership = companyId ? memberships?.find((m) => m.company_id === companyId) : null;
     if (companyId && !selectedMembership) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
 
+    let holdedQuery = admin
+      .from('client_integrations')
+      .select('id,status')
+      .eq('provider', 'holded')
+      .eq('status', 'active')
+      .limit(1);
+    holdedQuery = companyId
+      ? holdedQuery.eq('company_id', companyId)
+      : holdedQuery.eq('client_id', clientId).is('company_id', null);
+
+    const { data: holdedIntegrations, error: holdedError } = await holdedQuery;
+    if (holdedError) {
+      return NextResponse.json({ error: 'No se pudo comprobar Holded para la entidad seleccionada' }, { status: 500 });
+    }
+    if (!holdedIntegrations?.[0]) {
+      return NextResponse.json({
+        error: companyId
+          ? 'Conecta Holded para esta entidad antes de enviar el enlace de suscripción.'
+          : 'Conecta Holded para el cliente antes de enviar el enlace de suscripción.',
+        code: 'holded_required'
+      }, { status: 409 });
+    }
+
     const companyRaw = selectedMembership?.company;
     const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
-    const clientName = clientProfile?.full_name ?? clientEmail.split('@')[0];
-    const contractingName = company?.razon_social ?? clientProfile?.company ?? null;
-    const contractingTaxId = company?.cif_nif ?? clientProfile?.tax_id ?? null;
+    const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
+    const contractingName = company?.razon_social ?? clientProfile.company ?? null;
+    const contractingTaxId = company?.cif_nif ?? clientProfile.tax_id ?? null;
     const contractingAddress = company?.ciudad
       ? `${company.direccion ?? ''}, ${company.ciudad}`.trim().replace(/^,\s*/, '')
-      : company?.direccion ?? (clientProfile?.city
+      : company?.direccion ?? (clientProfile.city
         ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
-        : clientProfile?.address ?? null);
+        : clientProfile.address ?? null);
 
-    const stripeCustomerId = company?.stripe_customer_id ?? (!companyId ? clientProfile?.stripe_customer_id : null);
+    const stripeCustomerId = company?.stripe_customer_id ?? (!companyId ? clientProfile.stripe_customer_id : null);
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
     const metadata = {
@@ -99,7 +136,7 @@ export async function POST(request: NextRequest) {
       plan_name: planName,
       product_type: 'suscripcion',
       configured_price_key: stripePriceEnvKey,
-      configured_price_id: configuredPriceId ?? '',
+      configured_price_id: configuredPriceId,
     };
 
     const session = await stripe.checkout.sessions.create({
@@ -116,7 +153,7 @@ export async function POST(request: NextRequest) {
           recurring: { interval: 'month' },
           product_data: {
             name: toStripeAscii(planName),
-            metadata: { configured_price_key: stripePriceEnvKey, configured_price_id: configuredPriceId ?? '' },
+            metadata: { configured_price_key: stripePriceEnvKey, configured_price_id: configuredPriceId },
           },
         },
       }],
@@ -141,6 +178,11 @@ export async function POST(request: NextRequest) {
     });
     if (checkoutError) {
       console.error('[admin/subscriptions/send-link] checkout persistence failed:', checkoutError);
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        console.error('[admin/subscriptions/send-link] failed to expire orphan Stripe session:', expireError);
+      }
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la invitación de contratación.' }, { status: 500 });
     }
 
