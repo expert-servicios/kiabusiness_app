@@ -365,18 +365,22 @@ interface HoldedContactList {
   contacts?: HoldedContact[];
 }
 
-export async function findContactByEmail(email: string): Promise<HoldedContact | null> {
+export async function findContactsByEmail(email: string): Promise<HoldedContact[]> {
   try {
     const data = await holdedFetch<HoldedContact[] | HoldedContactList>(
       'GET',
       `/contacts?email=${encodeURIComponent(email)}`
     );
 
-    if (Array.isArray(data)) return data[0] ?? null;
-    return data.contacts?.[0] ?? null;
+    return Array.isArray(data) ? data : (data.contacts ?? []);
   } catch {
-    return null;
+    return [];
   }
+}
+
+export async function findContactByEmail(email: string): Promise<HoldedContact | null> {
+  const contacts = await findContactsByEmail(email);
+  return contacts[0] ?? null;
 }
 
 export async function createContact(params: {
@@ -404,6 +408,96 @@ export async function upsertContact(params: {
   const existing = await findContactByEmail(params.email);
   if (existing?.id) return existing.id;
   return createContact(params);
+}
+
+async function resolveSubscriptionCompany(subscriptionId?: string): Promise<{
+  companyId: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}> {
+  if (!subscriptionId) return { companyId: null, name: null, email: null, phone: null };
+
+  const admin = getSupabaseAdmin();
+  const { data: subscription, error } = await admin
+    .from('subscriptions')
+    .select('company_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Could not resolve subscription company: ${error.message}`);
+  if (!subscription?.company_id) return { companyId: null, name: null, email: null, phone: null };
+
+  const { data: company, error: companyError } = await admin
+    .from('companies')
+    .select('razon_social,email,telefono')
+    .eq('id', subscription.company_id)
+    .maybeSingle();
+
+  if (companyError) throw new Error(`Could not load subscription company: ${companyError.message}`);
+  if (!company) throw new Error(`Subscription company ${subscription.company_id} not found; manual review required`);
+
+  return {
+    companyId: subscription.company_id,
+    name: company.razon_social ?? null,
+    email: company.email ?? null,
+    phone: company.telefono ?? null,
+  };
+}
+
+async function resolveCompanyBillingContact(params: {
+  companyId: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+}): Promise<string> {
+  const admin = getSupabaseAdmin();
+  const { data: mapping, error: mappingError } = await admin
+    .from('external_mappings')
+    .select('external_id')
+    .eq('provider', 'holded')
+    .eq('local_entity', 'companies')
+    .eq('local_id', params.companyId)
+    .eq('external_entity', 'holded_contact')
+    .maybeSingle();
+
+  if (mappingError) throw new Error(`Could not resolve company Holded mapping: ${mappingError.message}`);
+  if (mapping?.external_id) return mapping.external_id;
+
+  const existingContacts = await findContactsByEmail(params.email);
+  if (existingContacts.length > 0) {
+    throw new Error(
+      `Holded contact for company ${params.companyId} requires manual review; ` +
+      `email ${params.email} already exists without an entity mapping`
+    );
+  }
+
+  const contactId = await createContact({ name: params.name, email: params.email, phone: params.phone });
+  const { error: insertError } = await admin.from('external_mappings').insert({
+    provider: 'holded',
+    local_entity: 'companies',
+    local_id: params.companyId,
+    external_entity: 'holded_contact',
+    external_id: contactId,
+    company_id: params.companyId,
+    metadata: { source: 'subscription_billing' },
+  });
+
+  if (insertError) {
+    const { data: concurrentMapping } = await admin
+      .from('external_mappings')
+      .select('external_id')
+      .eq('provider', 'holded')
+      .eq('local_entity', 'companies')
+      .eq('local_id', params.companyId)
+      .eq('external_entity', 'holded_contact')
+      .maybeSingle();
+
+    if (concurrentMapping?.external_id === contactId) return contactId;
+    throw new Error(`Could not persist company Holded mapping; manual review required: ${insertError.message}`);
+  }
+
+  return contactId;
 }
 
 interface HoldedInvoiceItem {
@@ -454,6 +548,26 @@ export async function syncSubscriptionToHolded(params: {
   subscriptionId?: string;
   localEntity?: string;
 }): Promise<HoldedSyncResult> {
+  const createInvoices = process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true';
+  let companyContext: Awaited<ReturnType<typeof resolveSubscriptionCompany>> = {
+    companyId: null,
+    name: null,
+    email: null,
+    phone: null,
+  };
+
+  try {
+    companyContext = await resolveSubscriptionCompany(params.subscriptionId);
+  } catch (error) {
+    const msg = errorMessage(error);
+    console.error('[holded] subscription company resolution failed:', msg);
+    return { contactId: null, invoiceId: null, syncEventId: null, error: msg };
+  }
+
+  const billingName = companyContext.name ?? params.clientName;
+  const billingEmail = companyContext.email ?? params.clientEmail;
+  const billingPhone = companyContext.phone ?? params.clientPhone;
+
   const syncEventId = await createSyncEvent({
     direction: 'to_external',
     operation: 'sync_subscription_invoice',
@@ -461,7 +575,8 @@ export async function syncSubscriptionToHolded(params: {
     localId: params.subscriptionId ?? null,
     externalEntity: 'holded_invoice',
     requestPayload: {
-      clientEmail: params.clientEmail,
+      clientEmail: billingEmail,
+      companyId: companyContext.companyId,
       planName: params.planName,
       amountEur: params.amountEur,
       subscriptionId: params.subscriptionId
@@ -474,25 +589,32 @@ export async function syncSubscriptionToHolded(params: {
     return { contactId: null, invoiceId: null, syncEventId, error };
   }
 
-  // Guard: Holded may already receive Stripe invoices via its native Stripe integration.
-  // Creating invoices here would duplicate them. Default HOLDED_CREATE_INVOICES_FROM_STRIPE=false.
-  const createInvoices = process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true';
+  // Do not even create/reuse a Holded contact unless EXPERT explicitly enables
+  // invoice creation from Stripe. This keeps the default path side-effect free.
+  if (!createInvoices) {
+    await updateSyncEvent(syncEventId, {
+      status: 'skipped',
+      responsePayload: {
+        contactId: null,
+        invoiceId: null,
+        companyId: companyContext.companyId,
+        reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false'
+      }
+    });
+    return { contactId: null, invoiceId: null, syncEventId };
+  }
 
   try {
-    const contactId = await upsertContact({
-      name: params.clientName,
-      email: params.clientEmail,
-      phone: params.clientPhone
-    });
+    if (!billingEmail) throw new Error('Billing email is required for Holded contact sync');
 
-    if (!createInvoices) {
-      await updateSyncEvent(syncEventId, {
-        status: 'skipped',
-        externalId: undefined,
-        responsePayload: { contactId, invoiceId: null, reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false' }
-      });
-      return { contactId, invoiceId: null, syncEventId };
-    }
+    const contactId = companyContext.companyId
+      ? await resolveCompanyBillingContact({
+          companyId: companyContext.companyId,
+          name: billingName,
+          email: billingEmail,
+          phone: billingPhone,
+        })
+      : await upsertContact({ name: billingName, email: billingEmail, phone: billingPhone });
 
     const invoiceId = await createInvoice({
       contactId,
@@ -504,7 +626,7 @@ export async function syncSubscriptionToHolded(params: {
     await updateSyncEvent(syncEventId, {
       status: 'success',
       externalId: invoiceId,
-      responsePayload: { contactId, invoiceId }
+      responsePayload: { contactId, invoiceId, companyId: companyContext.companyId }
     });
 
     return { contactId, invoiceId, syncEventId };
