@@ -12,23 +12,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const adminSupabase = getSupabaseAdmin();
-    const { data: profile, error: profileError } = await adminSupabase
+    const admin = getSupabaseAdmin();
+    const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('stripe_customer_id')
+      .select('active_company_id,stripe_customer_id')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.stripe_customer_id) {
+    if (profileError) {
+      return NextResponse.json({ error: 'No se pudo resolver tu perfil de facturación' }, { status: 500 });
+    }
+
+    let stripeCustomerId = profile?.stripe_customer_id ?? null;
+    if (profile?.active_company_id) {
+      const { data: membership } = await admin
+        .from('profile_companies')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('company_id', profile.active_company_id)
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json({ error: 'La entidad activa no pertenece a tu cuenta' }, { status: 403 });
+      }
+
+      const { data: company } = await admin
+        .from('companies')
+        .select('stripe_customer_id')
+        .eq('id', profile.active_company_id)
+        .maybeSingle();
+      stripeCustomerId = company?.stripe_customer_id ?? null;
+    }
+
+    if (!stripeCustomerId) {
       return NextResponse.json(
-        { error: 'No tienes una suscripción activa para gestionar' },
+        { error: 'Esta entidad no tiene una suscripción de Stripe para gestionar' },
         { status: 400 }
       );
     }
 
     const stripe = getStripeClient();
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
+      customer: stripeCustomerId,
       return_url: absoluteAppUrl('/dashboard/suscripciones')
     });
 

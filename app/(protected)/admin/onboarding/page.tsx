@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2,
+  ArrowLeft, ArrowRight, Building2, Check, CheckCircle2,
   Loader2, Mail, User, UserPlus
 } from 'lucide-react';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
@@ -13,6 +13,7 @@ import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
 interface ClientForm {
   email: string;
   fullName: string;
+  entityType: 'empresa' | 'autonomo';
   company: string;
   phone: string;
   taxId: string;
@@ -30,6 +31,19 @@ interface ServiceForm {
   expiresInDays: string;
   docsChecklist: string;
 }
+
+const EMPTY_CLIENT: ClientForm = {
+  email: '',
+  fullName: '',
+  entityType: 'empresa',
+  company: '',
+  phone: '',
+  taxId: '',
+  address: '',
+  city: '',
+  postalCode: '',
+  mode: 'invite_email'
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -177,18 +191,9 @@ export default function AdminOnboardingPage() {
   const [error, setError] = useState('');
 
   // Step 1 state
-  const [client, setClient] = useState<ClientForm>({
-    email: '',
-    fullName: '',
-    company: '',
-    phone: '',
-    taxId: '',
-    address: '',
-    city: '',
-    postalCode: '',
-    mode: 'invite_email'
-  });
+  const [client, setClient] = useState<ClientForm>(EMPTY_CLIENT);
   const [, setCreatedUserId] = useState('');
+  const [createdCompanyId, setCreatedCompanyId] = useState('');
   const [userIsNew, setUserIsNew] = useState(false);
 
   // Step 2 state
@@ -226,6 +231,15 @@ export default function AdminOnboardingPage() {
 
   async function handleStep1() {
     if (!client.email) { setError('El email es obligatorio.'); return; }
+    if (client.entityType === 'autonomo' && !client.fullName && !client.company) {
+      setError('Indica el nombre del empresario individual.');
+      return;
+    }
+    if (client.entityType === 'empresa' && client.mode === 'admin_fill' && !client.company) {
+      setError('Indica la razón social de la empresa.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -235,7 +249,8 @@ export default function AdminOnboardingPage() {
         body: JSON.stringify({
           email: client.email,
           fullName: client.fullName || undefined,
-          company: client.company || undefined,
+          entityType: client.entityType,
+          company: client.company || (client.entityType === 'autonomo' ? client.fullName || undefined : undefined),
           phone: client.phone || undefined,
           taxId: client.taxId || undefined,
           address: client.address || undefined,
@@ -247,6 +262,7 @@ export default function AdminOnboardingPage() {
       const data = await res.json();
       if (!res.ok || !data.ok) { setError(data.error ?? 'Error al crear usuario'); return; }
       setCreatedUserId(data.userId);
+      setCreatedCompanyId(data.companyId ?? '');
       setUserIsNew(data.isNewUser);
       setStep(1);
     } finally {
@@ -273,12 +289,13 @@ export default function AdminOnboardingPage() {
       const isPlan = item?.mode === 'subscription';
 
       if (isPlan && item?.stripePriceEnvKey) {
-        // Send subscription invite
+        // Send subscription invite for the entity created/reused in step 1.
         const res = await fetch('/api/admin/subscriptions/send-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             clientEmail: client.email,
+            companyId: createdCompanyId || undefined,
             planName: service.title,
             amountEur: Number(service.amountEur),
             stripePriceEnvKey: item.stripePriceEnvKey
@@ -320,6 +337,10 @@ export default function AdminOnboardingPage() {
 
   if (step === 3 && result) {
     const isPlan = service.selectedItem?.mode === 'subscription';
+    const entityLabel = client.entityType === 'autonomo'
+      ? (client.company || client.fullName || 'Empresario individual')
+      : (client.company || 'Empresa');
+
     return (
       <main className="min-h-screen bg-[#f8f4eb]">
         <div className="border-b border-[#d8cbb5] bg-white px-6 py-5">
@@ -338,7 +359,10 @@ export default function AdminOnboardingPage() {
 
           <div className="mt-6 rounded-xl border border-[#d8cbb5] bg-white p-5 text-left text-sm">
             <p className="font-semibold text-[#07111d]">{client.fullName || client.email}</p>
-            {client.company && <p className="text-[#29384a]">{client.company}</p>}
+            <p className="text-[#29384a]">{entityLabel}</p>
+            <p className="text-xs text-[#8a9aab]">
+              {client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
+            </p>
             <p className="mt-2 text-xs text-[#8a9aab]">
               Servicio: <span className="font-semibold text-[#07111d]">{service.title}</span>
             </p>
@@ -361,7 +385,14 @@ export default function AdminOnboardingPage() {
 
           <div className="mt-8 flex flex-col gap-3">
             <button
-              onClick={() => { setStep(0); setResult(null); setClient({ email: '', fullName: '', company: '', phone: '', taxId: '', address: '', city: '', postalCode: '', mode: 'invite_email' }); setService({ selectedItem: null, title: '', description: '', amountEur: '', expiresInDays: '14', docsChecklist: '' }); setCreatedUserId(''); }}
+              onClick={() => {
+                setStep(0);
+                setResult(null);
+                setClient(EMPTY_CLIENT);
+                setService({ selectedItem: null, title: '', description: '', amountEur: '', expiresInDays: '14', docsChecklist: '' });
+                setCreatedUserId('');
+                setCreatedCompanyId('');
+              }}
               className="w-full rounded-lg bg-[#d7a33a] py-3 text-sm font-bold text-[#07111d] transition hover:bg-[#f2c14e]"
             >
               Nuevo onboarding
@@ -392,7 +423,7 @@ export default function AdminOnboardingPage() {
             </button>
             <div>
               <h1 className="font-serif text-xl font-bold text-[#07111d]">Nuevo cliente — Onboarding</h1>
-              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta manual + presupuesto + envío automático</p>
+              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta manual + entidad fiscal + presupuesto + envío automático</p>
             </div>
           </div>
           <div className="mt-5">
@@ -447,6 +478,33 @@ export default function AdminOnboardingPage() {
                 </p>
               )}
 
+              <div className="mt-5">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#07111d]">Entidad que contrata</p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  {([
+                    { value: 'empresa', label: 'Sociedad / entidad', detail: 'S.L., S.A., asociación u otra persona jurídica', icon: Building2 },
+                    { value: 'autonomo', label: 'Empresario individual', detail: 'Autónomo / persona física con actividad económica', icon: User },
+                  ] as const).map(({ value, label, detail, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setClientField('entityType', value)}
+                      className={`rounded-xl border p-4 text-left transition ${
+                        client.entityType === value
+                          ? 'border-[#d7a33a] bg-[#d7a33a]/5'
+                          : 'border-[#d8cbb5] hover:border-[#d7a33a]/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-[#d7a33a]" />
+                        <span className="text-sm font-semibold text-[#07111d]">{label}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-[#8a9aab]">{detail}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <FieldRow label="Email" required>
                   <input
@@ -459,7 +517,7 @@ export default function AdminOnboardingPage() {
                   />
                 </FieldRow>
 
-                <FieldRow label="Nombre completo" required={client.mode === 'admin_fill'}>
+                <FieldRow label="Nombre completo" required={client.mode === 'admin_fill' || client.entityType === 'autonomo'}>
                   <input
                     type="text"
                     value={client.fullName}
@@ -469,22 +527,22 @@ export default function AdminOnboardingPage() {
                   />
                 </FieldRow>
 
-                <FieldRow label="Empresa / Razón social">
+                <FieldRow label={client.entityType === 'autonomo' ? 'Nombre de actividad / nombre fiscal' : 'Empresa / Razón social'} required={client.entityType === 'empresa' && client.mode === 'admin_fill'}>
                   <input
                     type="text"
                     value={client.company}
                     onChange={(e) => setClientField('company', e.target.value)}
-                    placeholder="Empresa Demo, S.L."
+                    placeholder={client.entityType === 'autonomo' ? 'María García / nombre comercial' : 'Empresa Demo, S.L.'}
                     className={inputCls}
                   />
                 </FieldRow>
 
-                <FieldRow label="CIF / NIF / NIE">
+                <FieldRow label={client.entityType === 'autonomo' ? 'NIF / NIE' : 'CIF / NIF'}>
                   <input
                     type="text"
                     value={client.taxId}
                     onChange={(e) => setClientField('taxId', e.target.value)}
-                    placeholder="B12345678"
+                    placeholder={client.entityType === 'autonomo' ? '12345678Z' : 'B12345678'}
                     className={inputCls}
                   />
                 </FieldRow>
@@ -557,7 +615,9 @@ export default function AdminOnboardingPage() {
                     </span>
                   )}
                 </p>
-                {client.company && <p className="text-xs text-[#8a9aab]">{client.company}</p>}
+                <p className="text-xs text-[#8a9aab]">
+                  {client.entityType === 'autonomo' ? 'Autónomo' : 'Empresa'} · {client.company || client.fullName || 'Entidad sin nombre'}
+                </p>
                 <p className="text-xs text-[#8a9aab]">{client.email}</p>
               </div>
             </div>
@@ -666,10 +726,11 @@ export default function AdminOnboardingPage() {
 
               <div className="mt-5 divide-y divide-[#f0e9da]">
                 <div className="pb-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#8a9aab]">Cliente</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#8a9aab]">Cliente y entidad</p>
                   <p className="mt-1 font-semibold text-[#07111d]">{client.fullName || '—'}</p>
-                  {client.company && <p className="text-sm text-[#29384a]">{client.company}</p>}
-                  {client.taxId && <p className="text-xs text-[#8a9aab]">CIF/NIF: {client.taxId}</p>}
+                  <p className="text-sm text-[#29384a]">{client.company || client.fullName || '—'}</p>
+                  <p className="text-xs text-[#8a9aab]">{client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}</p>
+                  {client.taxId && <p className="text-xs text-[#8a9aab]">NIF/CIF: {client.taxId}</p>}
                   <p className="text-sm text-[#29384a]">{client.email}</p>
                   {client.phone && <p className="text-xs text-[#8a9aab]">{client.phone}</p>}
                   {userIsNew && (
@@ -712,7 +773,7 @@ export default function AdminOnboardingPage() {
               <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
                 📧 Se enviará un email a <strong>{client.email}</strong> con{' '}
                 {service.selectedItem?.mode === 'subscription'
-                  ? 'el enlace para activar la suscripción mensual'
+                  ? 'el enlace para activar la suscripción de esta entidad'
                   : 'el presupuesto, el enlace de pago y el contrato adjunto'}
                 .
               </div>

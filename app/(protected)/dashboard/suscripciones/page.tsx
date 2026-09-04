@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertCircle, RefreshCw, Building2 } from 'lucide-react';
 import { CustomerPortalButton } from '@/components/subscriptions/CustomerPortalButton';
 import { SubscriptionPlanCards } from '@/components/subscriptions/SubscriptionPlanCards';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
@@ -14,6 +14,12 @@ interface SubscriptionRecord {
   created_at: string;
 }
 
+interface CompanyContext {
+  id: string;
+  razon_social: string;
+  forma_juridica: string;
+}
+
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   active: { label: 'Activa', icon: <CheckCircle2 className="h-4 w-4" />, color: 'bg-green-100 text-green-800' },
   trialing: { label: 'Prueba', icon: <RefreshCw className="h-4 w-4" />, color: 'bg-blue-100 text-blue-800' },
@@ -22,9 +28,9 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; color
   unpaid: { label: 'Sin pagar', icon: <AlertCircle className="h-4 w-4" />, color: 'bg-red-100 text-red-800' }
 };
 
-async function getSubscriptions(): Promise<SubscriptionRecord[]> {
-  const data = await fetchWithCookies<{ subscriptions: SubscriptionRecord[] }>('/api/subscriptions');
-  return data?.subscriptions ?? [];
+async function getSubscriptions(): Promise<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null }> {
+  const data = await fetchWithCookies<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null }>('/api/subscriptions');
+  return { subscriptions: data?.subscriptions ?? [], company: data?.company ?? null };
 }
 
 interface PageProps {
@@ -32,10 +38,10 @@ interface PageProps {
 }
 
 export default async function SubscriptionsPage({ searchParams }: PageProps) {
-  const params        = await searchParams;
+  const params = await searchParams;
   const initialBilling: 'mensual' | 'anual' = params.billing === 'anual' ? 'anual' : 'mensual';
 
-  const subscriptions = await getSubscriptions();
+  const { subscriptions, company } = await getSubscriptions();
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
   const hasActive = activeSubscriptions.length > 0;
 
@@ -48,13 +54,32 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
         </div>
 
         <div className="rounded-3xl border border-[#d8cbb5] bg-white p-8 shadow-lg">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.28em] text-[#c88b25]">Suscripciones</p>
               <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">Tus suscripciones</h1>
             </div>
             {hasActive ? <CustomerPortalButton /> : null}
           </div>
+
+          {company ? (
+            <div className="mb-8 flex items-center gap-3 rounded-2xl border border-[#e7dcc7] bg-[#f8f4eb] px-4 py-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d7a33a]/15 text-[#a86f16]">
+                <Building2 className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a7963]">Entidad activa</p>
+                <p className="text-sm font-semibold text-[#07111d]">{company.razon_social}</p>
+                <p className="text-xs text-[#6f6254]">
+                  {company.forma_juridica === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Selecciona o crea una entidad fiscal antes de contratar una suscripción.
+            </div>
+          )}
 
           {subscriptions.length > 0 ? (
             <div className="mb-10 space-y-4">
@@ -91,20 +116,20 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
             </div>
           ) : null}
 
-          {!hasActive ? (
+          {!hasActive && company ? (
             <div>
               <p className="mb-8 text-[#29384a]">
                 {subscriptions.length > 0
-                  ? 'Tu suscripción ha finalizado. Elige un plan para retomar el servicio.'
-                  : 'Elige un plan mensual y deja que nos ocupemos de tus trámites.'}
+                  ? 'La suscripción de esta entidad ha finalizado. Elige un plan para retomar el servicio.'
+                  : `Elige el plan que contratará ${company.razon_social}.`}
               </p>
               <SubscriptionPlanCards
-                planSupervisionMonthlyId={process.env.STRIPE_PLAN_MONTHLY_49  ?? ''}
-                planAvanzadoMonthlyId   ={process.env.STRIPE_PLAN_MONTHLY_99  ?? ''}
+                planSupervisionMonthlyId={process.env.STRIPE_PLAN_MONTHLY_49 ?? ''}
+                planAvanzadoMonthlyId={process.env.STRIPE_PLAN_MONTHLY_99 ?? ''}
                 planColaborativoMonthlyId={process.env.STRIPE_PLAN_MONTHLY_199 ?? ''}
-                planSupervisionAnnualId ={process.env.STRIPE_PLAN_ANNUAL_49   ?? ''}
-                planAvanzadoAnnualId    ={process.env.STRIPE_PLAN_ANNUAL_99   ?? ''}
-                planColaborativoAnnualId ={process.env.STRIPE_PLAN_ANNUAL_199  ?? ''}
+                planSupervisionAnnualId={process.env.STRIPE_PLAN_ANNUAL_49 ?? ''}
+                planAvanzadoAnnualId={process.env.STRIPE_PLAN_ANNUAL_99 ?? ''}
+                planColaborativoAnnualId={process.env.STRIPE_PLAN_ANNUAL_199 ?? ''}
                 initialBilling={initialBilling}
               />
             </div>

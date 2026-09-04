@@ -8,6 +8,7 @@ import { isStaffRole } from '@/lib/auth/roles';
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
   fullName: z.string().min(2, 'Nombre demasiado corto').optional(),
+  entityType: z.enum(['empresa', 'autonomo']).optional(),
   company: z.string().optional(),
   phone: z.string().optional(),
   taxId: z.string().optional(),
@@ -23,9 +24,7 @@ async function requireAdmin(request: NextRequest) {
   if (error || !user) return null;
 
   const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles').select('role,status').eq('id', user.id).single();
-
+  const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive') return null;
   return isStaffRole(profile?.role) ? user.id : null;
 }
@@ -33,22 +32,20 @@ async function requireAdmin(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireAdmin(request);
-    if (!actorId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    if (!actorId) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-    const body = await request.json();
-    const parsed = inviteSchema.safeParse(body);
+    const parsed = inviteSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
-    const { email, fullName, company, phone, taxId, address, city, postalCode, mode } = parsed.data;
-    const adminSupabase = getSupabaseAdmin();
+    const { email, fullName, entityType, company, phone, taxId, address, city, postalCode, mode } = parsed.data;
+    const admin = getSupabaseAdmin();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedTaxId = taxId?.trim().toUpperCase() || null;
 
-    // Check if user already exists in auth
     const listData = await listAllAuthUsers();
-    const existing = listData.find((u) => u.email === email);
+    const existing = listData.find((u) => u.email?.toLowerCase() === normalizedEmail);
 
     let userId: string;
     let isNewUser = false;
@@ -58,7 +55,7 @@ export async function POST(request: NextRequest) {
     } else {
       isNewUser = true;
       if (mode === 'invite_email') {
-        const { data: invited, error: inviteErr } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
+        const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
           data: { full_name: fullName ?? '' }
         });
         if (inviteErr || !invited.user) {
@@ -66,7 +63,7 @@ export async function POST(request: NextRequest) {
         }
         userId = invited.user.id;
       } else {
-        const { data: created, error: createErr } = await adminSupabase.auth.admin.createUser({
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
           email,
           email_confirm: true,
           user_metadata: { full_name: fullName ?? '' }
@@ -78,34 +75,145 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upsert profile with provided fields (never downgrade role for existing users)
-    const profileData: Record<string, unknown> = {
-      id: userId,
-      updated_at: new Date().toISOString()
-    };
+    // The profile is the person/login. Entity-specific fiscal data belongs to
+    // public.companies. Keep legacy billing fields only as initial compatibility
+    // data for brand-new users; never overwrite them when adding another entity.
+    const profileData: Record<string, unknown> = { id: userId, updated_at: new Date().toISOString() };
     if (isNewUser) profileData.role = 'client';
     if (fullName) profileData.full_name = fullName;
     if (phone) profileData.phone = phone;
-    if (company) profileData.company = company;
-    if (taxId) profileData.tax_id = taxId;
-    if (address) profileData.address = address;
-    if (city) profileData.city = city;
-    if (postalCode) profileData.postal_code = postalCode;
-
-    const { error: upsertErr } = await adminSupabase.from('profiles').upsert(profileData, { onConflict: 'id' });
-    if (upsertErr) {
-      console.error('[admin/users/invite] profile upsert error:', upsertErr);
+    if (isNewUser) {
+      if (company) profileData.company = company;
+      if (normalizedTaxId) profileData.tax_id = normalizedTaxId;
+      if (address) profileData.address = address;
+      if (city) profileData.city = city;
+      if (postalCode) profileData.postal_code = postalCode;
+      if (entityType) profileData.client_type = entityType;
     }
 
-    await adminSupabase.from('audit_logs').insert({
+    const { error: upsertErr } = await admin.from('profiles').upsert(profileData, { onConflict: 'id' });
+    if (upsertErr) {
+      console.error('[admin/users/invite] profile upsert error:', upsertErr);
+      return NextResponse.json({ error: 'No se pudo guardar el perfil del cliente' }, { status: 500 });
+    }
+
+    let companyId: string | null = null;
+    let createdCompanyId: string | null = null;
+    const shouldCreateEntity = Boolean(company || normalizedTaxId || entityType === 'autonomo');
+
+    if (shouldCreateEntity) {
+      const { data: memberships, error: membershipsError } = await admin
+        .from('profile_companies')
+        .select('company_id,company:companies(id,cif_nif,razon_social,forma_juridica)')
+        .eq('profile_id', userId);
+      if (membershipsError) {
+        return NextResponse.json({ error: 'No se pudieron consultar las entidades actuales del cliente' }, { status: 500 });
+      }
+
+      const ownedIds = new Set((memberships ?? []).map((m) => m.company_id));
+
+      if (normalizedTaxId) {
+        // First reuse the same entity if it is already linked to this user.
+        for (const membership of memberships ?? []) {
+          const rawCompany = membership.company;
+          const ownedCompany = Array.isArray(rawCompany) ? rawCompany[0] : rawCompany;
+          if (ownedCompany?.cif_nif?.toUpperCase() === normalizedTaxId) {
+            companyId = membership.company_id;
+            break;
+          }
+        }
+
+        // If the tax ID exists globally under another profile/entity, stop. Do
+        // not auto-link, merge, delete or create another historical duplicate.
+        const { data: globalMatches, error: globalError } = await admin
+          .from('companies')
+          .select('id,cif_nif,razon_social')
+          .eq('cif_nif', normalizedTaxId)
+          .limit(10);
+        if (globalError) {
+          return NextResponse.json({ error: 'No se pudo verificar el CIF/NIF de la entidad' }, { status: 500 });
+        }
+        const foreignMatches = (globalMatches ?? []).filter((row) => !ownedIds.has(row.id));
+        if (!companyId && foreignMatches.length > 0) {
+          return NextResponse.json({
+            error: 'Ya existe una entidad con este CIF/NIF vinculada a otra cuenta. Revisión manual necesaria.',
+            code: 'tax_id_conflict',
+            existingCompanyIds: foreignMatches.map((row) => row.id)
+          }, { status: 409 });
+        }
+      }
+
+      if (!companyId) {
+        const razonSocial = company?.trim() || fullName?.trim() || email.split('@')[0];
+        const formaJuridica = entityType === 'autonomo' ? 'autonomo' : 'sl';
+        const { data: createdCompany, error: companyError } = await admin
+          .from('companies')
+          .insert({
+            user_id: userId,
+            name: razonSocial,
+            company_name: razonSocial,
+            razon_social: razonSocial,
+            cif_nif: normalizedTaxId,
+            vat_id: normalizedTaxId,
+            forma_juridica: formaJuridica,
+            direccion: address ?? null,
+            address: address ?? null,
+            ciudad: city ?? null,
+            city: city ?? null,
+            codigo_postal: postalCode ?? null,
+            pais: 'ES',
+            country: 'ES',
+            telefono: phone ?? null,
+            phone: phone ?? null,
+            email,
+            status: 'active',
+          })
+          .select('id')
+          .single();
+
+        if (companyError || !createdCompany) {
+          console.error('[admin/users/invite] company create error:', companyError);
+          return NextResponse.json({ error: 'Usuario preparado, pero no se pudo crear su entidad fiscal' }, { status: 500 });
+        }
+        companyId = createdCompany.id;
+        createdCompanyId = companyId;
+
+        const { error: membershipError } = await admin.from('profile_companies').insert({
+          profile_id: userId,
+          company_id: companyId,
+          role: 'owner'
+        });
+        if (membershipError) {
+          console.error('[admin/users/invite] membership error:', membershipError);
+          // Safe compensation: only remove the entity created in this request;
+          // never touch pre-existing entities or financial history.
+          await admin.from('companies').delete().eq('id', companyId);
+          return NextResponse.json({ error: 'No se pudo vincular la nueva entidad al usuario; no se ha conservado el alta parcial.' }, { status: 500 });
+        }
+      }
+
+      const { error: activeCompanyError } = await admin
+        .from('profiles')
+        .update({ active_company_id: companyId })
+        .eq('id', userId);
+      if (activeCompanyError) {
+        console.error('[admin/users/invite] active company error:', activeCompanyError);
+        if (createdCompanyId) {
+          await admin.from('profile_companies').delete().eq('profile_id', userId).eq('company_id', createdCompanyId);
+          await admin.from('companies').delete().eq('id', createdCompanyId);
+        }
+        return NextResponse.json({ error: 'No se pudo establecer la entidad activa del cliente' }, { status: 500 });
+      }
+    }
+
+    await admin.from('audit_logs').insert({
       actor_id: actorId,
-      action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.profile_updated',
+      action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.entity_onboarded',
       entity: 'profiles',
       entity_id: userId,
-      metadata: { email, mode, isNewUser }
+      metadata: { email, mode, isNewUser, company_id: companyId, entity_type: entityType ?? null }
     }).then(() => {});
 
-    // Notify admin when a new user is created
     if (isNewUser) {
       const adminEmail = process.env.ADMIN_EMAIL ?? 'info@expertconsulting.es';
       const tpl = newUserRegisteredAdmin({
@@ -117,7 +225,7 @@ export async function POST(request: NextRequest) {
       void sendEmail({ to: adminEmail, eventType: 'new_user_admin_alert', subject: tpl.subject, html: tpl.html });
     }
 
-    return NextResponse.json({ ok: true, userId, isNewUser, email });
+    return NextResponse.json({ ok: true, userId, companyId, isNewUser, email });
   } catch (err) {
     console.error('[admin/users/invite] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

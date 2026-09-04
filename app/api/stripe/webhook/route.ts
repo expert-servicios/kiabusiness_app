@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -55,11 +55,57 @@ function getAllowedSubscriptionStatus(status: Stripe.Subscription.Status) {
   return allowed.includes(status as (typeof allowed)[number]) ? status : null;
 }
 
+async function linkStripeCustomer(
+  supabaseAdmin: SupabaseAdmin,
+  clientId: string,
+  customerId: string,
+  companyId?: string | null,
+): Promise<void> {
+  if (!companyId) {
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ stripe_customer_id: customerId })
+      .eq('id', clientId);
+    if (profileError) throw new Error(`Could not persist legacy Stripe customer: ${profileError.message}`);
+    return;
+  }
+
+  const { data: membership, error: membershipError } = await supabaseAdmin
+    .from('profile_companies')
+    .select('company_id')
+    .eq('profile_id', clientId)
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (membershipError) throw new Error(`Could not verify subscription company membership: ${membershipError.message}`);
+  if (!membership) throw new Error(`Stripe subscription company ${companyId} does not belong to client ${clientId}`);
+
+  const { data: company, error: companyError } = await supabaseAdmin
+    .from('companies')
+    .select('id,stripe_customer_id')
+    .eq('id', companyId)
+    .maybeSingle();
+  if (companyError) throw new Error(`Could not load subscription company: ${companyError.message}`);
+  if (!company) throw new Error(`Stripe subscription company ${companyId} was not found`);
+
+  if (company.stripe_customer_id && company.stripe_customer_id !== customerId) {
+    throw new Error(`Stripe customer conflict for company ${companyId}; manual review required`);
+  }
+
+  if (!company.stripe_customer_id) {
+    const { error: updateError } = await supabaseAdmin
+      .from('companies')
+      .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+      .eq('id', companyId);
+    if (updateError) throw new Error(`Could not persist company Stripe customer: ${updateError.message}`);
+  }
+}
+
 async function upsertSubscriptionFromStripe(
   supabaseAdmin: SupabaseAdmin,
   sub: Stripe.Subscription,
-  userIdHint?: string | null
-): Promise<{ clientId: string; planName: string; periodEnd: string | null } | null> {
+  userIdHint?: string | null,
+  companyIdHint?: string | null,
+): Promise<{ clientId: string; companyId: string | null; planName: string; periodEnd: string | null } | null> {
   const customerId = getStripeCustomerId(sub.customer);
   const priceId = sub.items.data[0]?.price.id ?? '';
   const status = getAllowedSubscriptionStatus(sub.status);
@@ -75,7 +121,9 @@ async function upsertSubscriptionFromStripe(
   }
 
   let clientId = userIdHint ?? sub.metadata?.user_id ?? null;
-  if (!clientId) {
+  const companyId = companyIdHint ?? sub.metadata?.company_id ?? null;
+
+  if (!clientId && !companyId) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -87,7 +135,8 @@ async function upsertSubscriptionFromStripe(
   if (!clientId) {
     console.error('[webhook] subscription has no resolvable EXPERT user', {
       subscription: sub.id,
-      customer: customerId
+      customer: customerId,
+      company: companyId
     });
     return null;
   }
@@ -101,17 +150,12 @@ async function upsertSubscriptionFromStripe(
     : null;
   const planName = getPlanName(priceId, sub.metadata?.plan_name);
 
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .update({ stripe_customer_id: customerId })
-    .eq('id', clientId);
-  if (profileError) {
-    console.error('[webhook] profile stripe_customer_id update failed:', profileError);
-  }
+  await linkStripeCustomer(supabaseAdmin, clientId, customerId, companyId);
 
   const { error: subscriptionError } = await supabaseAdmin.from('subscriptions').upsert(
     {
       client_id: clientId,
+      company_id: companyId,
       stripe_subscription_id: sub.id,
       stripe_customer_id: customerId,
       stripe_price_id: priceId,
@@ -129,7 +173,7 @@ async function upsertSubscriptionFromStripe(
     return null;
   }
 
-  return { clientId, planName, periodEnd };
+  return { clientId, companyId, planName, periodEnd };
 }
 
 async function getClientEmail(userId: string): Promise<{ email: string; name: string } | null> {
@@ -831,21 +875,36 @@ export async function POST(req: NextRequest) {
     }
 
     if (session.mode === 'subscription') {
-      const userId = session.client_reference_id ?? session.metadata?.user_id;
+      const userId = session.client_reference_id ?? session.metadata?.user_id ?? null;
+      const companyId = session.metadata?.company_id ?? null;
       const subscriptionId =
         typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
 
+      const { error: checkoutStatusError } = await supabaseAdmin
+        .from('checkout_sessions')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('stripe_session_id', session.id);
+      if (checkoutStatusError) throw new Error(`Could not mark checkout ${session.id} completed: ${checkoutStatusError.message}`);
+
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        await upsertSubscriptionFromStripe(supabaseAdmin, subscription, userId);
+        await upsertSubscriptionFromStripe(supabaseAdmin, subscription, userId, companyId);
       } else if (userId && session.customer) {
         const customerId =
           typeof session.customer === 'string' ? session.customer : session.customer.id;
-        await supabaseAdmin
-          .from('profiles')
-          .update({ stripe_customer_id: customerId })
-          .eq('id', userId);
+        await linkStripeCustomer(supabaseAdmin, userId, customerId, companyId);
       }
+    }
+  }
+
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode === 'subscription') {
+      const { error: checkoutStatusError } = await supabaseAdmin
+        .from('checkout_sessions')
+        .update({ status: 'expired', updated_at: new Date().toISOString() })
+        .eq('stripe_session_id', session.id);
+      if (checkoutStatusError) throw new Error(`Could not mark checkout ${session.id} expired: ${checkoutStatusError.message}`);
     }
   }
 
@@ -874,7 +933,7 @@ export async function POST(req: NextRequest) {
           to: clientInfo.email,
           eventType: 'subscription.created',
           ...tpl,
-          metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName }
+          metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId }
         });
 
         notifyAdmins({
@@ -896,7 +955,7 @@ export async function POST(req: NextRequest) {
               to: adminEmails,
               eventType: 'subscription.created.admin',
               ...adminTpl,
-              metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName }
+              metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId }
             }).catch((err) => {
               console.error('[webhook] admin payment email failed (subscription):', err);
             });
@@ -906,7 +965,8 @@ export async function POST(req: NextRequest) {
         const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
           clientName: clientInfo.name, clientEmail: clientInfo.email,
           planName: subscriptionRecord.planName, amountEur: monthlyAmount,
-          subscriptionId: sub.id, localEntity: 'stripe_subscriptions',
+          subscriptionId: sub.id, companyId: subscriptionRecord.companyId,
+          localEntity: 'stripe_subscriptions',
         });
         await startHoldedJob(supabaseAdmin, subJobId);
         syncSubscriptionToHolded({
@@ -962,7 +1022,7 @@ export async function POST(req: NextRequest) {
             to: clientInfo.email,
             eventType: 'subscription.payment_failed',
             ...tpl,
-            metadata: { subscription_id: sub.id }
+            metadata: { subscription_id: sub.id, company_id: subscriptionRecord?.companyId ?? null }
           });
         }
       }
@@ -981,7 +1041,7 @@ export async function POST(req: NextRequest) {
     if (subscriptionId) {
       const { data: dbSub } = await supabaseAdmin
         .from('subscriptions')
-        .select('client_id,plan_name')
+        .select('client_id,plan_name,company_id')
         .eq('stripe_subscription_id', subscriptionId)
         .maybeSingle();
 
@@ -993,7 +1053,7 @@ export async function POST(req: NextRequest) {
             to: clientInfo.email,
             eventType: 'subscription.payment_failed',
             ...tpl,
-            metadata: { subscription_id: subscriptionId, invoice_id: invoice.id }
+            metadata: { subscription_id: subscriptionId, invoice_id: invoice.id, company_id: dbSub.company_id ?? null }
           });
         }
       }

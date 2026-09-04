@@ -10,13 +10,14 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isStaffRole } from '@/lib/auth/roles';
 
 const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
-  STRIPE_PLAN_MONTHLY_49:  process.env.STRIPE_PLAN_MONTHLY_49,
-  STRIPE_PLAN_MONTHLY_99:  process.env.STRIPE_PLAN_MONTHLY_99,
+  STRIPE_PLAN_MONTHLY_49: process.env.STRIPE_PLAN_MONTHLY_49,
+  STRIPE_PLAN_MONTHLY_99: process.env.STRIPE_PLAN_MONTHLY_99,
   STRIPE_PLAN_MONTHLY_199: process.env.STRIPE_PLAN_MONTHLY_199,
 };
 
 const schema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
+  companyId: z.string().uuid().nullable().optional(),
   planName: z.string().min(2),
   amountEur: z.number().positive(),
   stripePriceEnvKey: z.enum(['STRIPE_PLAN_MONTHLY_49', 'STRIPE_PLAN_MONTHLY_99', 'STRIPE_PLAN_MONTHLY_199'])
@@ -28,8 +29,7 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
   if (error || !user) return null;
 
   const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles').select('role,status').eq('id', user.id).single();
+  const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive') return null;
   return isStaffRole(profile?.role) ? user.id : null;
 }
@@ -37,87 +37,166 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireAdmin(request);
-    if (!actorId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    if (!actorId) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-    const body = await request.json();
-    const parsed = schema.safeParse(body);
+    const parsed = schema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
     const { clientEmail, planName, amountEur, stripePriceEnvKey } = parsed.data;
-
     const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
+    if (!configuredPriceId) {
+      return NextResponse.json({ error: 'El plan Stripe seleccionado no está configurado' }, { status: 503 });
+    }
 
-    const adminSupabase = getSupabaseAdmin();
-
-    // Resolve client
+    const admin = getSupabaseAdmin();
     const listData = await listAllAuthUsers();
-    const authUser = listData.find((u) => u.email === clientEmail);
+    const authUser = listData.find((u) => u.email?.toLowerCase() === clientEmail.toLowerCase());
     if (!authUser) {
       return NextResponse.json({ error: 'No existe ningún usuario con ese email. Crea el usuario primero.' }, { status: 404 });
     }
     const clientId = authUser.id;
 
-    const { data: clientProfile } = await adminSupabase
+    const { data: clientProfile, error: profileError } = await admin
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code')
+      .select('full_name,company,tax_id,address,city,postal_code,profile_completed,billing_ready')
       .eq('id', clientId)
       .single();
 
-    const clientName = clientProfile?.full_name ?? clientEmail.split('@')[0];
-    const appUrl = getPublicAppUrl();
+    if (profileError || !clientProfile) {
+      return NextResponse.json({ error: 'No se pudo cargar el perfil del cliente' }, { status: 500 });
+    }
+    if (!clientProfile.profile_completed) {
+      return NextResponse.json({ error: 'El cliente debe completar su perfil antes de contratar.', code: 'profile_required' }, { status: 409 });
+    }
+    if (!clientProfile.billing_ready) {
+      return NextResponse.json({ error: 'El cliente debe completar sus datos de facturación antes de contratar.', code: 'billing_required' }, { status: 409 });
+    }
 
-    // Create Stripe subscription checkout session
+    const { data: memberships, error: membershipsError } = await admin
+      .from('profile_companies')
+      .select('company_id,role,company:companies(id,razon_social,cif_nif,direccion,ciudad,codigo_postal,stripe_customer_id)')
+      .eq('profile_id', clientId);
+    if (membershipsError) {
+      return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
+    }
+
+    let companyId = parsed.data.companyId ?? null;
+    if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
+    if (!companyId) {
+      return NextResponse.json({
+        error: (memberships?.length ?? 0) > 1
+          ? 'El cliente tiene varias entidades. Selecciona cuál contrata el plan.'
+          : 'El cliente necesita una entidad fiscal antes de contratar el plan.',
+        code: 'company_required'
+      }, { status: 409 });
+    }
+
+    const selectedMembership = memberships?.find((m) => m.company_id === companyId) ?? null;
+    if (!selectedMembership) {
+      return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
+    }
+
+    const { data: holdedIntegrations, error: holdedError } = await admin
+      .from('client_integrations')
+      .select('id,status')
+      .eq('provider', 'holded')
+      .eq('status', 'active')
+      .eq('company_id', companyId)
+      .limit(1);
+
+    if (holdedError) {
+      return NextResponse.json({ error: 'No se pudo comprobar Holded para la entidad seleccionada' }, { status: 500 });
+    }
+    if (!holdedIntegrations?.[0]) {
+      return NextResponse.json({
+        error: 'Conecta Holded para esta entidad antes de enviar el enlace de suscripción.',
+        code: 'holded_required'
+      }, { status: 409 });
+    }
+
+    const companyRaw = selectedMembership.company;
+    const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
+    if (!company) {
+      return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
+    }
+
+    const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
+    const contractingName = company.razon_social ?? clientProfile.company ?? null;
+    const contractingTaxId = company.cif_nif ?? clientProfile.tax_id ?? null;
+    const contractingAddress = company.ciudad
+      ? `${company.direccion ?? ''}, ${company.ciudad}`.trim().replace(/^,\s*/, '')
+      : company.direccion ?? (clientProfile.city
+        ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
+        : clientProfile.address ?? null);
+
+    const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
+    const appUrl = getPublicAppUrl();
+    const metadata = {
+      user_id: clientId,
+      company_id: companyId,
+      plan_name: planName,
+      product_type: 'suscripcion',
+      configured_price_key: stripePriceEnvKey,
+      configured_price_id: configuredPriceId,
+    };
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       client_reference_id: clientId,
-      customer_email: clientEmail,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'eur',
-            unit_amount: Math.round(amountEur * 100),
-            recurring: { interval: 'month' },
-            product_data: {
-              name: toStripeAscii(planName),
-              metadata: {
-                configured_price_key: stripePriceEnvKey,
-                configured_price_id: configuredPriceId ?? '',
-              },
-            },
+      customer: stripeCustomerId ?? undefined,
+      customer_email: stripeCustomerId ? undefined : clientEmail,
+      ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(amountEur * 100),
+          recurring: { interval: 'month' },
+          product_data: {
+            name: toStripeAscii(planName),
+            metadata: { configured_price_key: stripePriceEnvKey, configured_price_id: configuredPriceId },
           },
         },
-      ],
-      metadata: { user_id: clientId, plan_name: planName, product_type: 'suscripcion' },
-      subscription_data: {
-        metadata: {
-          user_id: clientId,
-          plan_name: planName,
-          configured_price_key: stripePriceEnvKey,
-          configured_price_id: configuredPriceId ?? '',
-        }
-      },
+      }],
+      metadata,
+      subscription_data: { metadata },
       success_url: `${appUrl}/dashboard/suscripciones?activada=ok`,
       cancel_url: `${appUrl}/dashboard?suscripcion=cancelada`
     });
 
-    // Generate contract
-    const contractDate = new Date().toLocaleDateString('es-ES', {
-      day: 'numeric', month: 'long', year: 'numeric'
+    const { error: checkoutError } = await admin.from('checkout_sessions').insert({
+      stripe_session_id: session.id,
+      user_id: clientId,
+      company_id: companyId,
+      status: 'open',
+      metadata: {
+        product_type: 'subscription',
+        plan_name: planName,
+        amount_eur: amountEur,
+        stripe_price_env_key: stripePriceEnvKey,
+        created_by_admin: actorId,
+      }
     });
+    if (checkoutError) {
+      console.error('[admin/subscriptions/send-link] checkout persistence failed:', checkoutError);
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        console.error('[admin/subscriptions/send-link] failed to expire orphan Stripe session:', expireError);
+      }
+      return NextResponse.json({ error: 'No se pudo registrar de forma segura la invitación de contratación.' }, { status: 500 });
+    }
+
+    const contractDate = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
     const contractHtml = generateContractHtml({
       clientName,
       clientEmail,
-      clientCompany: clientProfile?.company ?? null,
-      clientTaxId: clientProfile?.tax_id ?? null,
-      clientAddress: clientProfile?.city
-        ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
-        : clientProfile?.address ?? null,
+      clientCompany: contractingName,
+      clientTaxId: contractingTaxId,
+      clientAddress: contractingAddress,
       serviceTitle: planName,
       serviceDescription: `Suscripción mensual al ${planName} de EXPERT Estudios Profesionales. Gestión fiscal, contable y administrativa continua.`,
       amountEur,
@@ -125,35 +204,29 @@ export async function POST(request: NextRequest) {
       contractType: 'subscription',
       planName
     });
-    const contractBase64 = contractToBuffer(contractHtml);
 
-    // Send invitation email with contract attached
-    const funFact = getRandomFunFact();
-    const tpl = subscriptionInvite(clientName, planName, amountEur, session.url!, funFact);
-
+    const tpl = subscriptionInvite(clientName, planName, amountEur, session.url!, getRandomFunFact());
     await sendEmail({
       to: clientEmail,
       eventType: 'subscription.invite_sent',
       ...tpl,
-      metadata: { client_id: clientId, plan_name: planName, session_id: session.id },
-      attachments: [
-        {
-          filename: `Contrato_Suscripcion_${planName.replace(/\s+/g, '_')}.html`,
-          content: contractBase64,
-          type: 'text/html'
-        }
-      ]
+      metadata: { client_id: clientId, company_id: companyId, plan_name: planName, session_id: session.id },
+      attachments: [{
+        filename: `Contrato_Suscripcion_${planName.replace(/\s+/g, '_')}.html`,
+        content: contractToBuffer(contractHtml),
+        type: 'text/html'
+      }]
     });
 
-    await adminSupabase.from('audit_logs').insert({
+    await admin.from('audit_logs').insert({
       actor_id: actorId,
       action: 'subscription.invite_sent',
-      entity: 'profiles',
-      entity_id: clientId,
-      metadata: { client_email: clientEmail, plan_name: planName, session_id: session.id }
+      entity: 'companies',
+      entity_id: companyId,
+      metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
     }).then(() => {});
 
-    return NextResponse.json({ ok: true, stripeUrl: session.url });
+    return NextResponse.json({ ok: true, stripeUrl: session.url, sessionId: session.id, companyId });
   } catch (err) {
     console.error('[admin/subscriptions/send-link] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

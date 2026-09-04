@@ -64,6 +64,24 @@ export async function PATCH(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+
+    if (parseResult.data.active_company_id) {
+      const { data: membership, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('company_id', parseResult.data.active_company_id)
+        .maybeSingle();
+
+      if (membershipError) {
+        console.error('[profile PATCH] active company ownership check failed:', membershipError);
+        return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada' }, { status: 500 });
+      }
+      if (!membership) {
+        return NextResponse.json({ error: 'La entidad seleccionada no pertenece a tu cuenta' }, { status: 403 });
+      }
+    }
+
     const { data: currentProfile } = await admin
       .from('profiles')
       .select('full_name,phone,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed_at,billing_ready_at')
@@ -103,7 +121,7 @@ export async function PATCH(request: NextRequest) {
       .from('profiles')
       .update(updates)
       .eq('id', user.id)
-      .select('id,full_name,phone,whatsapp_number,whatsapp_consent,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed,billing_ready,habitual_address_ready')
+      .select('id,full_name,phone,whatsapp_number,whatsapp_consent,client_type,company,tax_id,address,city,postal_code,province,billing_country,habitual_address,habitual_city,habitual_postal_code,habitual_province,habitual_country,profile_completed,billing_ready,habitual_address_ready,active_company_id')
       .single();
 
     if (updateError) {
