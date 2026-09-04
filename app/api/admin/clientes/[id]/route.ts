@@ -21,30 +21,36 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
 
-    const [profileRes, authRes, casesRes, subsRes, quotesRes, waRes, companiesRes] = await Promise.all([
+    const [profileRes, authRes, casesRes, subsRes, quotesRes, waRes, companiesRes, checkoutRes] = await Promise.all([
       admin
         .from('profiles')
         .select('id,email,full_name,phone,whatsapp_number,role,status,created_at,updated_at,stripe_customer_id,profile_completed,billing_ready,habitual_address_ready,active_company_id,tax_id,address,city,postal_code,province,billing_country')
         .eq('id', id)
         .single(),
       admin.auth.admin.getUserById(id),
-      admin.from('cases').select('id,service,category,state,opened_at,closed_at,admin_note').eq('client_id', id).order('opened_at', { ascending: false }),
+      admin.from('cases').select('id,service,category,state,status,priority,opened_at,closed_at,admin_note,next_action,company_id,quote_id').eq('client_id', id).order('opened_at', { ascending: false }),
       admin.from('subscriptions').select('id,plan_name,status,current_period_start,current_period_end,canceled_at,stripe_subscription_id,stripe_customer_id,stripe_price_id,company_id,created_at').eq('client_id', id).order('created_at', { ascending: false }),
-      admin.from('quotes').select('id,title,status,amount_eur,created_at').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
-      admin.from('whatsapp_conversations').select('id,direction,body,created_at,needs_review,ai_responded,media_type').eq('client_id', id).order('created_at', { ascending: false }).limit(8),
+      admin.from('quotes').select('id,title,status,amount_eur,created_at,company_id,stripe_checkout_id,expires_at').eq('client_id', id).order('created_at', { ascending: false }).limit(20),
+      admin.from('whatsapp_conversations').select('id,direction,body,created_at,needs_review,ai_responded,media_type').eq('client_id', id).order('created_at', { ascending: false }).limit(20),
       admin
         .from('profile_companies')
         .select('role,company:companies(id,razon_social,nombre_comercial,cif_nif,forma_juridica,direccion,ciudad,provincia,codigo_postal,pais,email,telefono,stripe_customer_id,status,created_at,updated_at)')
         .eq('profile_id', id)
         .order('created_at', { ascending: false }),
+      admin
+        .from('checkout_sessions')
+        .select('id,stripe_session_id,status,company_id,metadata,created_at,updated_at')
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+        .limit(30),
     ]);
 
     const ordersRes = await admin
       .from('orders')
-      .select('id,quote_id,amount_eur,currency,status,stripe_payment_id,holded_invoice_id,holded_sync_error,source,service_slugs,metadata,created_at,company_id')
-      .eq('client_id', id)
+      .select('id,quote_id,amount_eur,currency,status,stripe_session_id,stripe_payment_id,holded_invoice_id,holded_sync_error,source,service_slugs,metadata,created_at,company_id')
+      .or(`client_id.eq.${id},user_id.eq.${id}`)
       .order('created_at', { ascending: false })
-      .limit(12);
+      .limit(30);
 
     if (profileRes.error || !profileRes.data) {
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
@@ -65,8 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const integrationQuery = admin
       .from('client_integrations')
-      .select('id,client_id,company_id,provider,mode,api_version,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at')
-      .eq('provider', 'holded')
+      .select('id,client_id,company_id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at,channel')
       .order('created_at', { ascending: false });
 
     const { data: integrations, error: integrationsError } = companyIds.length
@@ -76,6 +81,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (integrationsError) {
       return NextResponse.json({ error: integrationsError.message }, { status: 500 });
     }
+
+    const profileEmail = authRes.data.user?.email ?? profileRes.data.email ?? '';
+    const emailEventsRes = profileEmail
+      ? await admin
+          .from('email_events')
+          .select('id,event_type,recipient_email,subject,status,metadata,created_at,updated_at,last_error')
+          .ilike('recipient_email', profileEmail)
+          .order('created_at', { ascending: false })
+          .limit(50)
+      : { data: [] };
 
     const [{ data: directMappings }, { data: companyMappings }, { data: directEvents }, { data: companyEvents }] = await Promise.all([
       admin
@@ -97,14 +112,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .select('id,provider,direction,operation,local_entity,local_id,external_entity,external_id,status,attempt_count,error,metadata,created_at,updated_at,company_id,client_id,integration_id')
         .eq('client_id', id)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(30),
       companyIds.length
         ? admin
             .from('integration_sync_events')
             .select('id,provider,direction,operation,local_entity,local_id,external_entity,external_id,status,attempt_count,error,metadata,created_at,updated_at,company_id,client_id,integration_id')
             .in('company_id', companyIds)
             .order('created_at', { ascending: false })
-            .limit(20)
+            .limit(30)
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -117,20 +132,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       eventById.set(String(event.id), event);
     }
 
-    const profileEmail = authRes.data.user?.email ?? profileRes.data.email ?? '';
     return NextResponse.json({
       profile:   { ...profileRes.data, email: profileEmail },
       cases:     casesRes.data    ?? [],
       subs:      (subsRes.data ?? []).map((sub) => ({ ...sub, plan: sub.plan_name })),
       quotes:    (quotesRes.data ?? []).map((quote) => ({ ...quote, service: quote.title })),
       orders:    ordersRes.data    ?? [],
+      checkoutSessions: checkoutRes.data ?? [],
+      emailEvents: emailEventsRes.data ?? [],
       messages:  waRes.data       ?? [],
       companies,
       integrations: integrations ?? [],
       mappings: Array.from(mappingById.values()),
       syncEvents: Array.from(eventById.values())
         .sort((a, b) => new Date((b as { created_at: string }).created_at).getTime() - new Date((a as { created_at: string }).created_at).getTime())
-        .slice(0, 25),
+        .slice(0, 40),
     });
   } catch (err) {
     console.error('[admin/clientes/[id]]', err);
@@ -146,13 +162,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
     const { id } = await params;
 
-    // Guard: do not delete other admins
     const { data: target } = await adminClient.from('profiles').select('role').eq('id', id).single();
     if (target?.role === 'admin') {
       return NextResponse.json({ error: 'No puedes eliminar un administrador' }, { status: 403 });
     }
 
-    // Soft-delete: set status to inactive and clear sensitive fields
     const { error } = await adminClient
       .from('profiles')
       .update({ status: 'inactive', updated_at: new Date().toISOString() })
@@ -238,13 +252,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Background: sync contact changes to Holded and Stripe
     const contactFields = ['full_name', 'email', 'phone'];
     const contactChanged = contactFields.some((f) => f in (parsed.data as Record<string, unknown>));
     if (contactChanged) {
       const email = parsed.data.email ?? data.email ?? '';
       if (email) {
-        // Holded contact upsert
         syncClientToHolded({
           profileId: id,
           name: data.full_name ?? email.split('@')[0],
@@ -252,7 +264,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           phone: data.phone ?? undefined,
         }).catch((e) => console.error('[clientes PATCH] holded sync:', e));
 
-        // Stripe customer upsert — create if missing, update name/phone if changed
         upsertStripeCustomer({
           profileId: id,
           name: data.full_name ?? null,
@@ -261,7 +272,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           existingCustomerId: data.stripe_customer_id ?? undefined,
         }).then(async (customerId) => {
           if (customerId && !data.stripe_customer_id) {
-            // Save newly created Stripe customer ID to profile
             await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', id);
           }
         }).catch((e) => console.error('[clientes PATCH] stripe sync:', e));
@@ -271,6 +281,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ profile: data });
   } catch (err) {
     console.error('[admin/clientes/[id] PATCH]', err);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
