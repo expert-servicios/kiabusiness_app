@@ -206,17 +206,56 @@ export async function POST(request: NextRequest) {
     });
 
     const tpl = subscriptionInvite(clientName, planName, amountEur, session.url!, getRandomFunFact());
-    await sendEmail({
-      to: clientEmail,
-      eventType: 'subscription.invite_sent',
-      ...tpl,
-      metadata: { client_id: clientId, company_id: companyId, plan_name: planName, session_id: session.id },
-      attachments: [{
-        filename: `Contrato_Suscripcion_${planName.replace(/\s+/g, '_')}.html`,
-        content: contractToBuffer(contractHtml),
-        type: 'text/html'
-      }]
-    });
+    try {
+      await sendEmail({
+        to: clientEmail,
+        eventType: 'subscription.invite_sent',
+        ...tpl,
+        metadata: { client_id: clientId, company_id: companyId, plan_name: planName, session_id: session.id },
+        attachments: [{
+          filename: `Contrato_Suscripcion_${planName.replace(/\s+/g, '_')}.html`,
+          content: contractToBuffer(contractHtml),
+          type: 'text/html'
+        }]
+      });
+    } catch (emailError) {
+      console.error('[admin/subscriptions/send-link] invite email failed:', emailError);
+      let expireFailed = false;
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        expireFailed = true;
+        console.error('[admin/subscriptions/send-link] failed to expire checkout after email failure:', expireError);
+      }
+
+      const { error: statusError } = await admin
+        .from('checkout_sessions')
+        .update({
+          status: expireFailed ? 'open' : 'expired',
+          metadata: {
+            product_type: 'subscription',
+            plan_name: planName,
+            amount_eur: amountEur,
+            stripe_price_env_key: stripePriceEnvKey,
+            created_by_admin: actorId,
+            email_delivery_failed: true,
+            stripe_expire_failed: expireFailed,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_session_id', session.id);
+
+      if (statusError) {
+        console.error('[admin/subscriptions/send-link] failed to persist email compensation:', statusError);
+      }
+
+      return NextResponse.json({
+        error: expireFailed
+          ? 'El email no pudo enviarse y no se pudo invalidar automáticamente el enlace. Revisa la sesión Stripe antes de reintentar.'
+          : 'El email no pudo enviarse. El enlace de contratación se ha invalidado de forma segura; puedes reintentar el envío.',
+        code: expireFailed ? 'email_failed_manual_review' : 'email_failed_safe_retry'
+      }, { status: 502 });
+    }
 
     await admin.from('audit_logs').insert({
       actor_id: actorId,
