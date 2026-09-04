@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Zap, FileText, Gift } from 'lucide-react';
-import { getReadinessCheck } from '@/lib/data/service-readiness-checks';
-import type { ReadinessCheck } from '@/lib/data/service-readiness-checks';
-
-const ReadinessModal = lazy(() =>
-  import('@/components/services/ReadinessModal').then(m => ({ default: m.ReadinessModal }))
-);
 
 type BillingMode = 'mensual' | 'anual';
 
@@ -36,23 +30,33 @@ interface Props {
   initialBilling            : BillingMode;
 }
 
-async function goToCheckout(priceId: string) {
-  const res  = await fetch('/api/subscriptions/checkout', {
-    method : 'POST',
+async function goToCheckout(priceId: string): Promise<void> {
+  if (!priceId) throw new Error('Este plan no tiene un precio de Stripe configurado.');
+
+  const res = await fetch('/api/subscriptions/checkout', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body   : JSON.stringify({ priceId }),
+    body: JSON.stringify({ priceId }),
   });
+
   const data = await res.json() as { url?: string; code?: string; error?: string };
+
   if (res.status === 409) {
-    window.location.href =
-      data.code === 'billing_required'
-        ? '/dashboard/perfil?section=billing'
-        : data.code === 'holded_required'
-        ? '/dashboard/integraciones/holded'
-        : '/dashboard/perfil';
+    const redirectByCode: Record<string, string> = {
+      profile_required: '/dashboard/perfil',
+      billing_required: '/dashboard/perfil?section=billing',
+      company_required: '/dashboard/perfil?section=entities',
+      holded_required: '/dashboard/integraciones/holded',
+    };
+    window.location.href = redirectByCode[data.code ?? ''] ?? '/dashboard/perfil';
     return;
   }
-  if (data.url) window.location.href = data.url;
+
+  if (!res.ok || !data.url) {
+    throw new Error(data.error ?? 'No se pudo iniciar el pago.');
+  }
+
+  window.location.href = data.url;
 }
 
 const FEATURES_SUPERVISION = [
@@ -99,23 +103,21 @@ const FEATURES_PERSONALIZADO = [
   'Precio ajustado a tu volumen real',
 ];
 
-function PlanCard({
-  plan, billing, onReadiness,
-}: {
-  plan        : PlanData;
-  billing     : BillingMode;
-  onReadiness : (check: ReadinessCheck, slug: string, priceId: string) => void;
-}) {
-  const check   = !plan.isQuote ? getReadinessCheck(`plan-${plan.slug}`) : null;
+function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const priceId = billing === 'anual' ? plan.annualPriceId : plan.monthlyPriceId;
   const isAnnual = billing === 'anual';
 
-  function handleCta() {
-    if (plan.isQuote) return;
-    if (check) {
-      onReadiness(check, `plan-${plan.slug}`, priceId);
-    } else {
-      void goToCheckout(priceId);
+  async function handleCta() {
+    if (plan.isQuote || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await goToCheckout(priceId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar el pago.');
+      setLoading(false);
     }
   }
 
@@ -174,12 +176,15 @@ function PlanCard({
           <button
             type="button"
             onClick={handleCta}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e]"
+            disabled={loading || !priceId}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Zap className="h-4 w-4" />
-            {isAnnual ? 'Contratar anual' : 'Configurar plan'}
+            {loading ? 'Abriendo pago…' : isAnnual ? 'Contratar anual' : 'Contratar plan'}
           </button>
         )}
+
+        {error ? <p className="mt-2 text-center text-xs text-red-600">{error}</p> : null}
 
         {!plan.isQuote && (
           <Link
@@ -204,12 +209,7 @@ export function SubscriptionPlanCards({
   planColaborativoAnnualId,
   initialBilling,
 }: Props) {
-  const [billing, setBilling]           = useState<BillingMode>(initialBilling);
-  const [readinessState, setReadinessState] = useState<{
-    check  : ReadinessCheck;
-    slug   : string;
-    priceId: string;
-  } | null>(null);
+  const [billing, setBilling] = useState<BillingMode>(initialBilling);
 
   const plans: PlanData[] = [
     {
@@ -238,27 +238,8 @@ export function SubscriptionPlanCards({
     },
   ];
 
-  function handleApproved() {
-    if (!readinessState) return;
-    const { priceId } = readinessState;
-    setReadinessState(null);
-    void goToCheckout(priceId);
-  }
-
   return (
     <>
-      {readinessState && (
-        <Suspense fallback={null}>
-          <ReadinessModal
-            check={readinessState.check}
-            serviceSlug={readinessState.slug}
-            onApproved={handleApproved}
-            onClose={() => setReadinessState(null)}
-          />
-        </Suspense>
-      )}
-
-      {/* Billing toggle */}
       <div className="mb-8 flex justify-center">
         <div className="flex items-center gap-1 rounded-full border border-[#d8cbb5] bg-[#f8f4eb] p-1">
           <button
@@ -295,14 +276,7 @@ export function SubscriptionPlanCards({
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
-          <PlanCard
-            key={plan.slug}
-            plan={plan}
-            billing={billing}
-            onReadiness={(check, slug, priceId) =>
-              setReadinessState({ check, slug, priceId })
-            }
-          />
+          <PlanCard key={plan.slug} plan={plan} billing={billing} />
         ))}
       </div>
     </>
