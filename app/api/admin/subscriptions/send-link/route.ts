@@ -8,6 +8,7 @@ import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isStaffRole } from '@/lib/auth/roles';
+import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 
 const STRIPE_PRICE_ALLOWLIST: Record<string, string | undefined> = {
   STRIPE_PLAN_MONTHLY_49: process.env.STRIPE_PLAN_MONTHLY_49,
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const { data: clientProfile, error: profileError } = await admin
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code,profile_completed,billing_ready')
+      .select('full_name,profile_completed')
       .eq('id', clientId)
       .single();
 
@@ -70,13 +71,10 @@ export async function POST(request: NextRequest) {
     if (!clientProfile.profile_completed) {
       return NextResponse.json({ error: 'El cliente debe completar su perfil antes de contratar.', code: 'profile_required' }, { status: 409 });
     }
-    if (!clientProfile.billing_ready) {
-      return NextResponse.json({ error: 'El cliente debe completar sus datos de facturación antes de contratar.', code: 'billing_required' }, { status: 409 });
-    }
 
     const { data: memberships, error: membershipsError } = await admin
       .from('profile_companies')
-      .select('company_id,role,company:companies(id,razon_social,cif_nif,direccion,ciudad,codigo_postal,stripe_customer_id)')
+      .select('company_id,role,company:companies(id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais,email,telefono,stripe_customer_id)')
       .eq('profile_id', clientId);
     if (membershipsError) {
       return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
@@ -98,6 +96,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
 
+    const companyRaw = selectedMembership.company;
+    const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
+    if (!company) {
+      return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
+    }
+
+    if (!isCompanyBillingReady(company)) {
+      return NextResponse.json({
+        error: 'Completa los datos fiscales de la entidad seleccionada antes de enviar la suscripción.',
+        code: 'billing_required',
+        missingFields: missingCompanyBillingFields(company),
+        companyId,
+      }, { status: 409 });
+    }
+
+    const { data: existingSubscriptions, error: existingSubscriptionError } = await admin
+      .from('subscriptions')
+      .select('id,status,plan_name')
+      .eq('client_id', clientId)
+      .eq('company_id', companyId)
+      .in('status', ['active', 'trialing', 'past_due', 'unpaid'])
+      .limit(1);
+    if (existingSubscriptionError) {
+      return NextResponse.json({ error: 'No se pudo comprobar la suscripción actual del cliente' }, { status: 500 });
+    }
+    if (existingSubscriptions?.[0]) {
+      return NextResponse.json({
+        error: 'La entidad seleccionada ya tiene una suscripción vigente o pendiente de regularizar.',
+        code: 'subscription_exists',
+        subscriptionId: existingSubscriptions[0].id,
+      }, { status: 409 });
+    }
+
     const { data: holdedIntegrations, error: holdedError } = await admin
       .from('client_integrations')
       .select('id,status')
@@ -116,20 +147,10 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    const companyRaw = selectedMembership.company;
-    const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
-    if (!company) {
-      return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
-    }
-
     const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
-    const contractingName = company.razon_social ?? clientProfile.company ?? null;
-    const contractingTaxId = company.cif_nif ?? clientProfile.tax_id ?? null;
-    const contractingAddress = company.ciudad
-      ? `${company.direccion ?? ''}, ${company.ciudad}`.trim().replace(/^,\s*/, '')
-      : company.direccion ?? (clientProfile.city
-        ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
-        : clientProfile.address ?? null);
+    const contractingName = company.razon_social;
+    const contractingTaxId = company.cif_nif;
+    const contractingAddress = `${company.direccion}, ${company.ciudad}, ${company.codigo_postal}`;
 
     const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
