@@ -182,7 +182,7 @@ const faqItems = [
   },
   {
     q: '¿Necesito conectar Holded?',
-    a: 'Sí. Todos los planes mensuales requieren Holded conectado desde el Panel Cliente antes de contratar.'
+    a: 'Sí. Todos los planes mensuales trabajan con Holded, pero no necesitas tenerlo conectado antes de pagar. Tras activar la suscripción, el onboarding te guía para reservar la reunión y conectar Holded desde el Panel Cliente antes de finalizar el alta.'
   },
   {
     q: '¿La licencia Holded está incluida?',
@@ -257,10 +257,10 @@ export default async function PlanesPage({ searchParams }: Props) {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Paso previo</p>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Durante el onboarding</p>
               <h2 className="mt-3 font-serif text-3xl font-bold">¿Todavía no tienes Holded?</h2>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-[#23364D]">
-                Todos los planes mensuales de EXPERT trabajan con Holded. Si todavía no tienes cuenta, puedes empezar con la prueba gratuita de Holded y después elegir el plan de gestión que encaje contigo.
+                Todos los planes mensuales de EXPERT trabajan con Holded, pero no necesitas tenerlo conectado antes de pagar. Tras activar la suscripción, reservamos la reunión de onboarding y te guiamos para dejar Holded conectado antes de finalizar el alta.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
@@ -336,10 +336,10 @@ export default async function PlanesPage({ searchParams }: Props) {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Precios</p>
             <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Planes EXPERT. Holded obligatorio.
+              Planes EXPERT con Holded.
             </h2>
             <p className="mt-4 text-sm leading-7 text-[#23364D]">
-              Precios sin IVA. La licencia de Holded se contrata aparte. Todos los planes pasan por readiness antes de contratar.
+              Precios sin IVA. La licencia de Holded se contrata aparte. Antes del pago validamos perfil, facturación y entidad; después de activar la suscripción completas la reunión de onboarding y la conexión con Holded.
             </p>
             <div className="mt-8 flex justify-center">
               <BillingToggle isAnnual={isAnnual} />
@@ -534,17 +534,17 @@ export default async function PlanesPage({ searchParams }: Props) {
               <Image src="/Holded-Logotype-Red_Light.svg" alt="Holded" width={120} height={30} className="h-8 w-auto opacity-90" />
             </div>
             <h2 className="font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Holded no es opcional en los planes mensuales.
+              Holded forma parte del servicio, después del pago.
             </h2>
             <p className="mt-5 text-base leading-8 text-[#C9D1D9]">
-              El checkout mensual se bloquea si no tienes perfil completo, datos fiscales listos y Holded conectado desde el Panel Cliente. No pedimos API keys por WhatsApp ni por email.
+              El checkout valida que tengas perfil, datos de facturación y entidad contratante preparados. Primero activas la suscripción; después reservas la reunión de onboarding y conectas Holded desde el Panel Cliente antes de cerrar el alta. No pedimos API tokens por WhatsApp ni por email.
             </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {[
               { icon: Database, title: 'Software aparte', text: 'La licencia Holded no está incluida en la cuota EXPERT.' },
-              { icon: HelpCircle, title: 'Sin API por chat', text: 'La conexión se realiza en el Panel Cliente seguro.' },
-              { icon: MonitorCheck, title: 'Readiness primero', text: 'Antes de pagar validamos si el plan encaja y si Holded está preparado.' },
+              { icon: HelpCircle, title: 'Sin API por chat', text: 'La conexión se realiza en el Panel Cliente seguro durante el onboarding.' },
+              { icon: MonitorCheck, title: 'Onboarding tras el pago', text: 'Después de activar el plan reservas la reunión y conectas Holded antes de finalizar el alta.' },
             ].map(({ icon: Icon, title, text }) => (
               <div key={title} className="border border-[#D4A017]/25 bg-[#23364D]/50 p-6">
                 <Icon className="h-6 w-6 text-[#D4A017]" />
