@@ -7,8 +7,6 @@ import {
   Loader2, ChevronRight, ChevronLeft, Zap,
 } from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
 interface ProfileStep {
   full_name: string;
   phone: string;
@@ -31,8 +29,6 @@ const STEP_LABELS: Record<Step, string> = {
   holded: 'Conectar Holded',
   done: '¡Listo!',
 };
-
-// ── Step indicators ────────────────────────────────────────────────────────────
 
 function StepDot({ step, current, completed }: { step: number; current: number; completed: boolean }) {
   const active = step === current;
@@ -65,8 +61,6 @@ function StepBar({ currentStep }: { currentStep: number }) {
   );
 }
 
-// ── Step 1: Profile ────────────────────────────────────────────────────────────
-
 function ProfileStepForm({ value, onChange }: {
   value: ProfileStep;
   onChange: (v: ProfileStep) => void;
@@ -93,7 +87,7 @@ function ProfileStepForm({ value, onChange }: {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono</label>
+        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Teléfono *</label>
         <input
           type="tel"
           value={value.phone}
@@ -105,8 +99,6 @@ function ProfileStepForm({ value, onChange }: {
     </div>
   );
 }
-
-// ── Step 2: Company ────────────────────────────────────────────────────────────
 
 function CompanyStepForm({ value, onChange }: {
   value: CompanyStep;
@@ -181,9 +173,7 @@ function CompanyStepForm({ value, onChange }: {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">
-          Razón social / Nombre *
-        </label>
+        <label className="block text-xs font-semibold text-[#29384a] mb-1.5">Razón social / Nombre *</label>
         <input
           type="text"
           value={value.razon_social}
@@ -209,8 +199,6 @@ function CompanyStepForm({ value, onChange }: {
   );
 }
 
-// ── Step 3: Holded ────────────────────────────────────────────────────────────
-
 function HoldedStep({ onSkip, onConnect }: { onSkip: () => void; onConnect: () => void }) {
   return (
     <div className="space-y-5">
@@ -220,7 +208,7 @@ function HoldedStep({ onSkip, onConnect }: { onSkip: () => void; onConnect: () =
         </div>
         <div>
           <h2 className="font-serif text-lg font-bold text-[#07111d]">Conectar Holded</h2>
-          <p className="text-xs text-[#29384a]/60">Sincroniza tu contabilidad y facturación</p>
+          <p className="text-xs text-[#29384a]/60">Obligatorio para contratar un plan mensual</p>
         </div>
       </div>
 
@@ -262,9 +250,7 @@ function HoldedStep({ onSkip, onConnect }: { onSkip: () => void; onConnect: () =
   );
 }
 
-// ── Step 4: Done ──────────────────────────────────────────────────────────────
-
-function DoneStep({ onGo }: { onGo: () => void }) {
+function DoneStep({ onGo, loading }: { onGo: () => void; loading: boolean }) {
   return (
     <div className="py-4 text-center space-y-5">
       <div className="flex justify-center">
@@ -273,25 +259,25 @@ function DoneStep({ onGo }: { onGo: () => void }) {
         </div>
       </div>
       <div>
-        <h2 className="font-serif text-2xl font-bold text-[#07111d]">¡Todo listo!</h2>
+        <h2 className="font-serif text-2xl font-bold text-[#07111d]">Configuración inicial completada</h2>
         <p className="mt-2 text-sm text-[#29384a]/70">
-          Tu cuenta está configurada. Ahora puedes consultar el estado de tus trámites,
-          subir documentos y hablar con Kia, tu copiloto.
+          Ya puedes usar tu panel. Si has omitido empresa o Holded, podrás completarlos después;
+          los planes mensuales seguirán bloqueados hasta cumplir esos requisitos.
         </p>
       </div>
       <button
         type="button"
         onClick={onGo}
-        className="mx-auto flex items-center gap-2 rounded-xl bg-[#d7a33a] px-6 py-3 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25]"
+        disabled={loading}
+        className="mx-auto flex items-center gap-2 rounded-xl bg-[#d7a33a] px-6 py-3 text-sm font-bold text-[#061321] transition hover:bg-[#c88b25] disabled:opacity-50"
       >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Ir a mi panel
         <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
 }
-
-// ── Main wizard ───────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -314,6 +300,10 @@ export default function OnboardingPage() {
       setError('El nombre completo es obligatorio.');
       return false;
     }
+    if (!profileData.phone.trim()) {
+      setError('El teléfono es obligatorio para completar tu perfil.');
+      return false;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -322,7 +312,7 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: profileData.full_name.trim(),
-          ...(profileData.phone.trim() ? { phone: profileData.phone.trim() } : {}),
+          phone: profileData.phone.trim(),
         }),
       });
       if (!res.ok) {
@@ -396,15 +386,26 @@ export default function OnboardingPage() {
   }
 
   async function handleDone() {
-    // Mark onboarding as completed (non-blocking — best effort)
-    fetch('/api/dashboard/onboarding/complete', { method: 'POST' }).catch(() => {});
-    router.push('/dashboard');
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/dashboard/onboarding/complete', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? 'No se pudo finalizar la configuración. Inténtalo de nuevo.');
+        return;
+      }
+      router.push('/dashboard');
+    } catch {
+      setError('Error de conexión al finalizar la configuración.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[#f8f4eb] px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#d7a33a]">Bienvenido</p>
           <h1 className="mt-1 font-serif text-2xl font-bold text-[#07111d]">Configura tu cuenta</h1>
@@ -414,7 +415,6 @@ export default function OnboardingPage() {
         <StepBar currentStep={currentStep} />
 
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-          {/* Error */}
           {error && (
             <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-700">
               {error}
@@ -464,10 +464,9 @@ export default function OnboardingPage() {
             <HoldedStep onSkip={handleHoldedSkip} onConnect={handleHoldedConnect} />
           )}
 
-          {step === 'done' && <DoneStep onGo={handleDone} />}
+          {step === 'done' && <DoneStep onGo={handleDone} loading={loading} />}
         </div>
 
-        {/* Skip all */}
         {step !== 'done' && (
           <div className="mt-4 text-center">
             <button
