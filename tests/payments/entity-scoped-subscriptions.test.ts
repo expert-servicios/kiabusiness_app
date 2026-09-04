@@ -75,6 +75,7 @@ describe('entity-scoped billing', () => {
     expect(migration).toContain('add column if not exists company_id uuid');
     expect(migration).toContain('orders_inherit_quote_company');
     expect(migration).toContain('cases_inherit_quote_company');
+    expect(migration).toContain('cases_company_id_fkey');
     expect(quotes).toContain('company_id: companyId');
     expect(quotes).toContain("metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' }");
   });
