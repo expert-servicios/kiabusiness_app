@@ -113,6 +113,20 @@ alter table public.quotes
 create index if not exists quotes_company_id_idx
   on public.quotes(company_id);
 
+-- cases.company_id existed without referential integrity. Add the FK without
+-- changing any existing case row.
+alter table public.cases
+  drop constraint if exists cases_company_id_fkey;
+
+alter table public.cases
+  add constraint cases_company_id_fkey
+  foreign key (company_id)
+  references public.companies(id)
+  on delete set null;
+
+create index if not exists cases_company_id_idx
+  on public.cases(company_id);
+
 -- Derived cases/orders created from a quote inherit its company automatically.
 -- This keeps legacy webhook paths safe without guessing historical ownership.
 create or replace function public.inherit_quote_company_id()
