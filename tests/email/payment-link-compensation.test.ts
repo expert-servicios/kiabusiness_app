@@ -18,6 +18,14 @@ const resendWebhook = fs.readFileSync(
   path.join(process.cwd(), 'app/api/resend/webhook/route.ts'),
   'utf8',
 );
+const emailSend = fs.readFileSync(
+  path.join(process.cwd(), 'lib/email/send.ts'),
+  'utf8',
+);
+const authCallback = fs.readFileSync(
+  path.join(process.cwd(), 'app/auth/callback/route.ts'),
+  'utf8',
+);
 
 describe('critical payment-link email compensation', () => {
   it('expires a new subscription checkout when invite delivery fails', () => {
@@ -75,5 +83,23 @@ describe('Resend delivery attribution', () => {
 
   it('fails the webhook when status persistence fails so Resend can retry it', () => {
     expect(resendWebhook).toContain("return NextResponse.json({ error: 'Webhook persistence failed' }, { status: 500 });");
+  });
+});
+
+describe('durable email idempotency', () => {
+  it('passes the idempotency key to Resend and records it in email_events', () => {
+    expect(emailSend).toContain('await resend.emails.send(payload, { idempotencyKey })');
+    expect(emailSend).toContain('idempotency_key: idempotencyKey');
+  });
+
+  it('suppresses a logical retry once Resend previously accepted the intent', () => {
+    expect(emailSend).toContain(".contains('metadata', { idempotency_key: key })");
+    expect(emailSend).toContain(".not('resend_id', 'is', null)");
+    expect(emailSend).toContain('return { sent: false, resendId: existing.resend_id }');
+  });
+
+  it('uses one deterministic welcome intent per user', () => {
+    expect(authCallback).toContain('sendEmailOnce({');
+    expect(authCallback).toContain('idempotencyKey: `user-welcome/${user.id}`');
   });
 });
