@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('stripe_customer_id, profile_completed, billing_ready, active_company_id')
+      .select('profile_completed,billing_ready,active_company_id')
       .eq('id', user.id)
       .single();
 
@@ -79,49 +79,44 @@ export async function POST(request: NextRequest) {
     }
 
     const companyId = requestedCompanyId ?? profile.active_company_id ?? null;
-    let companyStripeCustomerId: string | null = null;
-
-    if (companyId) {
-      const { data: membership, error: membershipError } = await admin
-        .from('profile_companies')
-        .select('role')
-        .eq('profile_id', user.id)
-        .eq('company_id', companyId)
-        .maybeSingle();
-
-      if (membershipError) {
-        return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada' }, { status: 500 });
-      }
-      if (!membership) {
-        return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario', code: 'company_forbidden' }, { status: 403 });
-      }
-
-      const { data: company, error: companyError } = await admin
-        .from('companies')
-        .select('stripe_customer_id')
-        .eq('id', companyId)
-        .maybeSingle();
-      if (companyError || !company) {
-        return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada' }, { status: 500 });
-      }
-      companyStripeCustomerId = company.stripe_customer_id ?? null;
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Selecciona o crea la entidad fiscal que va a contratar el plan.', code: 'company_required' },
+        { status: 409 }
+      );
     }
 
-    // New multi-entity subscriptions require an active Holded integration for
-    // the exact contracting entity. Legacy client-level integration remains only
-    // for the no-company compatibility path.
-    let holdedQuery = admin
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('role')
+      .eq('profile_id', user.id)
+      .eq('company_id', companyId)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada' }, { status: 500 });
+    }
+    if (!membership) {
+      return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario', code: 'company_forbidden' }, { status: 403 });
+    }
+
+    const { data: company, error: companyError } = await admin
+      .from('companies')
+      .select('stripe_customer_id')
+      .eq('id', companyId)
+      .maybeSingle();
+    if (companyError || !company) {
+      return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada' }, { status: 500 });
+    }
+
+    const { data: holdedIntegrations, error: holdedError } = await admin
       .from('client_integrations')
       .select('id,status')
       .eq('provider', 'holded')
       .eq('status', 'active')
+      .eq('company_id', companyId)
       .limit(1);
 
-    holdedQuery = companyId
-      ? holdedQuery.eq('company_id', companyId)
-      : holdedQuery.eq('client_id', user.id).is('company_id', null);
-
-    const { data: holdedIntegrations, error: holdedError } = await holdedQuery;
     if (holdedError) {
       return NextResponse.json({ error: 'No se pudo comprobar la conexión con Holded', code: 'holded_error' }, { status: 500 });
     }
@@ -132,12 +127,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripeCustomerId = companyStripeCustomerId ?? (!companyId ? profile.stripe_customer_id : null);
+    const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
     const entityMetadata = {
       user_id: user.id,
-      company_id: companyId ?? '',
+      company_id: companyId,
       plan_name: configuredPlan.name,
       billing: configuredPlan.interval,
       product_type: 'suscripcion'
