@@ -34,7 +34,6 @@ async function requireAdmin(request: NextRequest): Promise<string | null> {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
-
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive') return null;
@@ -52,6 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { clientEmail, planName, amountEur, stripePriceEnvKey, sendEmail: shouldSendEmail } = parsed.data;
+    const normalizedEmail = clientEmail.trim().toLowerCase();
     const configuredPriceId = STRIPE_PRICE_ALLOWLIST[stripePriceEnvKey];
     if (!configuredPriceId) {
       return NextResponse.json({ error: 'El plan Stripe seleccionado no está configurado' }, { status: 503 });
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const listData = await listAllAuthUsers();
-    const authUser = listData.find((u) => u.email?.toLowerCase() === clientEmail.toLowerCase());
+    const authUser = listData.find((u) => u.email?.toLowerCase() === normalizedEmail);
     if (!authUser) {
       return NextResponse.json({ error: 'No existe ningún usuario con ese email. Crea el usuario primero.' }, { status: 404 });
     }
@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
       .select('full_name,company,tax_id,address,city,postal_code,profile_completed,billing_ready')
       .eq('id', clientId)
       .single();
-
     if (profileError || !clientProfile) {
       return NextResponse.json({ error: 'No se pudo cargar el perfil del cliente' }, { status: 500 });
     }
@@ -108,16 +107,13 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    const selectedMembership = memberships?.find((m) => m.company_id === companyId) ?? null;
+    const selectedMembership = memberships?.find((membership) => membership.company_id === companyId) ?? null;
     if (!selectedMembership) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
-
     const companyRaw = selectedMembership.company;
     const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
-    if (!company) {
-      return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
-    }
+    if (!company) return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
 
     const { data: existingSubscription, error: subscriptionLookupError } = await admin
       .from('subscriptions')
@@ -158,7 +154,7 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
+    const clientName = clientProfile.full_name ?? normalizedEmail.split('@')[0];
     const contractingName = company.razon_social ?? clientProfile.company ?? null;
     const contractingTaxId = company.cif_nif ?? clientProfile.tax_id ?? null;
     const contractingAddress = company.ciudad
@@ -166,6 +162,122 @@ export async function POST(request: NextRequest) {
       : company.direccion ?? (clientProfile.city
         ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
         : clientProfile.address ?? null);
+
+    // Canonical commercial trace: lead -> quote -> onboarding case -> checkout.
+    // Reuse current records so retries never create duplicate proposals.
+    let leadId: string;
+    const { data: existingLead, error: leadLookupError } = await admin
+      .from('leads')
+      .select('id,state')
+      .ilike('email', normalizedEmail)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (leadLookupError) return NextResponse.json({ error: 'No se pudo validar el lead comercial.' }, { status: 500 });
+    if (existingLead) {
+      leadId = existingLead.id;
+    } else {
+      const { data: createdLead, error: leadCreateError } = await admin
+        .from('leads')
+        .insert({
+          name: clientName,
+          email: normalizedEmail,
+          client_type: 'client',
+          category: 'subscription',
+          service: planName,
+          country: 'ES',
+          state: 'converted',
+          source: 'admin_subscription',
+          notes: `Lead creado automáticamente para mantener trazabilidad comercial de ${planName}.`,
+        })
+        .select('id')
+        .single();
+      if (leadCreateError || !createdLead) {
+        return NextResponse.json({ error: 'No se pudo crear la trazabilidad comercial del cliente.' }, { status: 500 });
+      }
+      leadId = createdLead.id;
+    }
+
+    let quoteId: string;
+    const { data: existingQuote, error: quoteLookupError } = await admin
+      .from('quotes')
+      .select('id,status,amount_eur,stripe_checkout_id')
+      .eq('client_id', clientId)
+      .eq('company_id', companyId)
+      .eq('title', planName)
+      .in('status', ['draft', 'sent', 'accepted'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (quoteLookupError) return NextResponse.json({ error: 'No se pudo validar el presupuesto comercial.' }, { status: 500 });
+    if (existingQuote) {
+      if (Number(existingQuote.amount_eur) !== expectedAmountEur) {
+        return NextResponse.json({
+          error: 'Existe un presupuesto abierto del mismo plan con un importe diferente. Revisión manual necesaria.',
+          code: 'quote_amount_conflict',
+          quoteId: existingQuote.id,
+        }, { status: 409 });
+      }
+      quoteId = existingQuote.id;
+    } else {
+      const { data: createdQuote, error: quoteCreateError } = await admin
+        .from('quotes')
+        .insert({
+          lead_id: leadId,
+          client_id: clientId,
+          company_id: companyId,
+          title: planName,
+          description: `Suscripción mensual ${planName}. Importe base ${expectedAmountEur} EUR + impuestos aplicables.`,
+          amount_eur: expectedAmountEur,
+          status: 'draft',
+          created_by: actorId,
+          docs_checklist: [],
+        })
+        .select('id')
+        .single();
+      if (quoteCreateError || !createdQuote) {
+        return NextResponse.json({ error: 'No se pudo crear el presupuesto de suscripción.' }, { status: 500 });
+      }
+      quoteId = createdQuote.id;
+    }
+
+    let onboardingCaseId: string | null = null;
+    const { data: existingOnboarding, error: onboardingLookupError } = await admin
+      .from('cases')
+      .select('id,quote_id,company_id')
+      .eq('client_id', clientId)
+      .eq('service', 'Alta de usuario')
+      .neq('state', 'finalizado')
+      .limit(1)
+      .maybeSingle();
+    if (!onboardingLookupError && existingOnboarding) {
+      onboardingCaseId = existingOnboarding.id;
+      await admin.from('cases').update({
+        quote_id: existingOnboarding.quote_id ?? quoteId,
+        company_id: existingOnboarding.company_id ?? companyId,
+        next_action: 'Finalizar contratación de la suscripción',
+        updated_at: new Date().toISOString(),
+      }).eq('id', existingOnboarding.id);
+    } else if (!existingOnboarding) {
+      const { data: createdCase, error: caseCreateError } = await admin
+        .from('cases')
+        .insert({
+          client_id: clientId,
+          company_id: companyId,
+          quote_id: quoteId,
+          category: 'onboarding',
+          service: 'Alta de usuario',
+          state: 'en_proceso',
+          status: 'nuevo',
+          priority: 'media',
+          next_action: 'Finalizar contratación de la suscripción',
+          admin_note: 'Expediente creado automáticamente desde la preparación de suscripción Admin.',
+        })
+        .select('id')
+        .single();
+      if (caseCreateError) console.error('[admin/subscriptions/send-link] onboarding case error:', caseCreateError);
+      else onboardingCaseId = createdCase.id;
+    }
 
     const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
@@ -177,13 +289,16 @@ export async function POST(request: NextRequest) {
       product_type: 'suscripcion',
       configured_price_key: stripePriceEnvKey,
       configured_price_id: configuredPriceId,
+      quote_id: quoteId,
+      lead_id: leadId,
+      onboarding_case_id: onboardingCaseId ?? '',
     };
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       client_reference_id: clientId,
       customer: stripeCustomerId ?? undefined,
-      customer_email: stripeCustomerId ? undefined : clientEmail,
+      customer_email: stripeCustomerId ? undefined : normalizedEmail,
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true, required: 'if_supported' },
       automatic_tax: { enabled: true },
@@ -221,16 +336,40 @@ export async function POST(request: NextRequest) {
         automatic_tax: true,
         tax_behavior: 'exclusive',
         email_sent: false,
+        quote_id: quoteId,
+        lead_id: leadId,
+        onboarding_case_id: onboardingCaseId,
       }
     });
     if (checkoutError) {
       console.error('[admin/subscriptions/send-link] checkout persistence failed:', checkoutError);
-      try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (expireError) {
+      try { await stripe.checkout.sessions.expire(session.id); } catch (expireError) {
         console.error('[admin/subscriptions/send-link] failed to expire orphan Stripe session:', expireError);
       }
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la invitación de contratación.' }, { status: 500 });
+    }
+
+    const quoteStatus = shouldSendEmail ? 'sent' : 'draft';
+    const { error: quoteLinkError } = await admin
+      .from('quotes')
+      .update({ stripe_checkout_id: session.id, status: quoteStatus })
+      .eq('id', quoteId);
+    if (quoteLinkError) {
+      console.error('[admin/subscriptions/send-link] quote link failed:', quoteLinkError);
+      let expired = false;
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+        expired = true;
+      } catch (expireError) {
+        console.error('[admin/subscriptions/send-link] failed to expire checkout after quote link failure:', expireError);
+      }
+      if (expired) await admin.from('checkout_sessions').update({ status: 'expired', updated_at: new Date().toISOString() }).eq('stripe_session_id', session.id);
+      return NextResponse.json({
+        error: expired
+          ? 'No se pudo vincular el checkout al presupuesto. La sesión se ha invalidado de forma segura.'
+          : 'No se pudo vincular el checkout al presupuesto y la sesión requiere revisión manual.',
+        code: expired ? 'quote_link_failed_safe_retry' : 'quote_link_failed_manual_review',
+      }, { status: 500 });
     }
 
     if (!shouldSendEmail) {
@@ -239,7 +378,7 @@ export async function POST(request: NextRequest) {
         action: 'subscription.checkout_generated',
         entity: 'companies',
         entity_id: companyId,
-        metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
+        metadata: { client_id: clientId, client_email: normalizedEmail, company_id: companyId, plan_name: planName, session_id: session.id, lead_id: leadId, quote_id: quoteId, onboarding_case_id: onboardingCaseId }
       }).then(() => {});
 
       return NextResponse.json({
@@ -247,6 +386,9 @@ export async function POST(request: NextRequest) {
         stripeUrl: session.url,
         sessionId: session.id,
         companyId,
+        leadId,
+        quoteId,
+        onboardingCaseId,
         emailSent: false,
       });
     }
@@ -254,7 +396,7 @@ export async function POST(request: NextRequest) {
     const contractDate = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
     const contractHtml = generateContractHtml({
       clientName,
-      clientEmail,
+      clientEmail: normalizedEmail,
       clientCompany: contractingName,
       clientTaxId: contractingTaxId,
       clientAddress: contractingAddress,
@@ -269,10 +411,10 @@ export async function POST(request: NextRequest) {
     const tpl = subscriptionInvite(clientName, planName, expectedAmountEur, session.url!, getRandomFunFact());
     try {
       await sendEmail({
-        to: clientEmail,
+        to: normalizedEmail,
         eventType: 'subscription.invite_sent',
         ...tpl,
-        metadata: { client_id: clientId, company_id: companyId, plan_name: planName, session_id: session.id },
+        metadata: { client_id: clientId, company_id: companyId, plan_name: planName, session_id: session.id, quote_id: quoteId, case_id: onboardingCaseId },
         attachments: [{
           filename: `Contrato_Suscripcion_${planName.replace(/\s+/g, '_')}.html`,
           content: contractToBuffer(contractHtml),
@@ -282,9 +424,7 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error('[admin/subscriptions/send-link] invite email failed:', emailError);
       let expireFailed = false;
-      try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (expireError) {
+      try { await stripe.checkout.sessions.expire(session.id); } catch (expireError) {
         expireFailed = true;
         console.error('[admin/subscriptions/send-link] failed to expire checkout after email failure:', expireError);
       }
@@ -303,14 +443,15 @@ export async function POST(request: NextRequest) {
             tax_behavior: 'exclusive',
             email_delivery_failed: true,
             stripe_expire_failed: expireFailed,
+            quote_id: quoteId,
+            lead_id: leadId,
+            onboarding_case_id: onboardingCaseId,
           },
           updated_at: new Date().toISOString(),
         })
         .eq('stripe_session_id', session.id);
-
-      if (statusError) {
-        console.error('[admin/subscriptions/send-link] failed to persist email compensation:', statusError);
-      }
+      if (!expireFailed) await admin.from('quotes').update({ status: 'draft' }).eq('id', quoteId);
+      if (statusError) console.error('[admin/subscriptions/send-link] failed to persist email compensation:', statusError);
 
       return NextResponse.json({
         error: expireFailed
@@ -332,6 +473,9 @@ export async function POST(request: NextRequest) {
           automatic_tax: true,
           tax_behavior: 'exclusive',
           email_sent: true,
+          quote_id: quoteId,
+          lead_id: leadId,
+          onboarding_case_id: onboardingCaseId,
         },
         updated_at: new Date().toISOString(),
       })
@@ -342,10 +486,10 @@ export async function POST(request: NextRequest) {
       action: 'subscription.invite_sent',
       entity: 'companies',
       entity_id: companyId,
-      metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
+      metadata: { client_id: clientId, client_email: normalizedEmail, company_id: companyId, plan_name: planName, session_id: session.id, lead_id: leadId, quote_id: quoteId, onboarding_case_id: onboardingCaseId }
     }).then(() => {});
 
-    return NextResponse.json({ ok: true, stripeUrl: session.url, sessionId: session.id, companyId, emailSent: true });
+    return NextResponse.json({ ok: true, stripeUrl: session.url, sessionId: session.id, companyId, leadId, quoteId, onboardingCaseId, emailSent: true });
   } catch (err) {
     console.error('[admin/subscriptions/send-link] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
