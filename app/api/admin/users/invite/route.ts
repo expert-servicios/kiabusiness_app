@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     const { email, fullName, entityType, company, phone, taxId, address, city, postalCode, mode } = parsed.data;
     const admin = getSupabaseAdmin();
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
     const normalizedTaxId = taxId?.trim().toUpperCase() || null;
 
     const listData = await listAllAuthUsers();
@@ -75,16 +75,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // The profile is the person/login. Entity-specific fiscal data belongs to
+    // public.companies. Keep legacy billing fields only as initial compatibility
+    // data for brand-new users; never overwrite them when adding another entity.
     const profileData: Record<string, unknown> = { id: userId, updated_at: new Date().toISOString() };
     if (isNewUser) profileData.role = 'client';
     if (fullName) profileData.full_name = fullName;
     if (phone) profileData.phone = phone;
-    if (company) profileData.company = company;
-    if (normalizedTaxId) profileData.tax_id = normalizedTaxId;
-    if (address) profileData.address = address;
-    if (city) profileData.city = city;
-    if (postalCode) profileData.postal_code = postalCode;
-    if (entityType) profileData.client_type = entityType;
+    if (isNewUser) {
+      if (company) profileData.company = company;
+      if (normalizedTaxId) profileData.tax_id = normalizedTaxId;
+      if (address) profileData.address = address;
+      if (city) profileData.city = city;
+      if (postalCode) profileData.postal_code = postalCode;
+      if (entityType) profileData.client_type = entityType;
+    }
 
     const { error: upsertErr } = await admin.from('profiles').upsert(profileData, { onConflict: 'id' });
     if (upsertErr) {
@@ -93,15 +98,22 @@ export async function POST(request: NextRequest) {
     }
 
     let companyId: string | null = null;
+    let createdCompanyId: string | null = null;
     const shouldCreateEntity = Boolean(company || normalizedTaxId || entityType === 'autonomo');
 
     if (shouldCreateEntity) {
-      const { data: memberships } = await admin
+      const { data: memberships, error: membershipsError } = await admin
         .from('profile_companies')
         .select('company_id,company:companies(id,cif_nif,razon_social,forma_juridica)')
         .eq('profile_id', userId);
+      if (membershipsError) {
+        return NextResponse.json({ error: 'No se pudieron consultar las entidades actuales del cliente' }, { status: 500 });
+      }
+
+      const ownedIds = new Set((memberships ?? []).map((m) => m.company_id));
 
       if (normalizedTaxId) {
+        // First reuse the same entity if it is already linked to this user.
         for (const membership of memberships ?? []) {
           const rawCompany = membership.company;
           const ownedCompany = Array.isArray(rawCompany) ? rawCompany[0] : rawCompany;
@@ -109,6 +121,25 @@ export async function POST(request: NextRequest) {
             companyId = membership.company_id;
             break;
           }
+        }
+
+        // If the tax ID exists globally under another profile/entity, stop. Do
+        // not auto-link, merge, delete or create another historical duplicate.
+        const { data: globalMatches, error: globalError } = await admin
+          .from('companies')
+          .select('id,cif_nif,razon_social')
+          .eq('cif_nif', normalizedTaxId)
+          .limit(10);
+        if (globalError) {
+          return NextResponse.json({ error: 'No se pudo verificar el CIF/NIF de la entidad' }, { status: 500 });
+        }
+        const foreignMatches = (globalMatches ?? []).filter((row) => !ownedIds.has(row.id));
+        if (!companyId && foreignMatches.length > 0) {
+          return NextResponse.json({
+            error: 'Ya existe una entidad con este CIF/NIF vinculada a otra cuenta. Revisión manual necesaria.',
+            code: 'tax_id_conflict',
+            existingCompanyIds: foreignMatches.map((row) => row.id)
+          }, { status: 409 });
         }
       }
 
@@ -142,9 +173,10 @@ export async function POST(request: NextRequest) {
 
         if (companyError || !createdCompany) {
           console.error('[admin/users/invite] company create error:', companyError);
-          return NextResponse.json({ error: 'Usuario creado, pero no se pudo crear su entidad fiscal' }, { status: 500 });
+          return NextResponse.json({ error: 'Usuario preparado, pero no se pudo crear su entidad fiscal' }, { status: 500 });
         }
         companyId = createdCompany.id;
+        createdCompanyId = companyId;
 
         const { error: membershipError } = await admin.from('profile_companies').insert({
           profile_id: userId,
@@ -153,7 +185,10 @@ export async function POST(request: NextRequest) {
         });
         if (membershipError) {
           console.error('[admin/users/invite] membership error:', membershipError);
-          return NextResponse.json({ error: 'Entidad creada, pero no se pudo vincular al usuario' }, { status: 500 });
+          // Safe compensation: only remove the entity created in this request;
+          // never touch pre-existing entities or financial history.
+          await admin.from('companies').delete().eq('id', companyId);
+          return NextResponse.json({ error: 'No se pudo vincular la nueva entidad al usuario; no se ha conservado el alta parcial.' }, { status: 500 });
         }
       }
 
@@ -163,13 +198,17 @@ export async function POST(request: NextRequest) {
         .eq('id', userId);
       if (activeCompanyError) {
         console.error('[admin/users/invite] active company error:', activeCompanyError);
+        if (createdCompanyId) {
+          await admin.from('profile_companies').delete().eq('profile_id', userId).eq('company_id', createdCompanyId);
+          await admin.from('companies').delete().eq('id', createdCompanyId);
+        }
         return NextResponse.json({ error: 'No se pudo establecer la entidad activa del cliente' }, { status: 500 });
       }
     }
 
     await admin.from('audit_logs').insert({
       actor_id: actorId,
-      action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.profile_updated',
+      action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.entity_onboarded',
       entity: 'profiles',
       entity_id: userId,
       metadata: { email, mode, isNewUser, company_id: companyId, entity_type: entityType ?? null }
