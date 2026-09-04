@@ -46,7 +46,7 @@ describe('end-to-end onboarding safeguards', () => {
     const checkout = source('app/api/subscriptions/checkout/route.ts');
 
     expect(checkout).toContain('profile.profile_completed');
-    expect(checkout).toContain('profile.billing_ready');
+    expect(checkout).toContain('isCompanyBillingReady(company)');
     expect(checkout).toContain(".from('profile_companies')");
     expect(checkout).toContain(".eq('provider', 'holded')");
     expect(checkout).toContain(".eq('company_id', companyId)");
