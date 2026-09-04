@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, FileText, Mail, MessageCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Building2, ExternalLink, FileText, Mail, MessageCircle, RefreshCw } from 'lucide-react';
 
 type Communication = {
   id: string;
@@ -18,15 +18,33 @@ type Communication = {
   unread?: boolean;
   hasAttachment?: boolean;
   caseId?: string | null;
+  companyId?: string | null;
+  companyName?: string | null;
   provider?: string | null;
   source: string;
 };
 
+type Company = {
+  id: string;
+  name: string;
+};
+
 type Payload = {
   client: { id: string; name: string; email: string };
+  companies: Company[];
+  selectedCompanyId: string | null;
   communications: Communication[];
-  counts: { total: number; email: number; whatsapp: number; caseMessages: number; unread: number };
+  counts: {
+    total: number;
+    email: number;
+    whatsapp: number;
+    caseMessages: number;
+    unread: number;
+    unassigned: number;
+  };
 };
+
+type CompanyFilter = 'all' | 'unassigned' | string;
 
 export default function ClientCommunicationsPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,31 +53,34 @@ export default function ClientCommunicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [channel, setChannel] = useState<'all' | Communication['channel']>('all');
+  const [companyFilter, setCompanyFilter] = useState<CompanyFilter>('all');
   const [selected, setSelected] = useState<Communication | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/admin/clientes/${id}/communications`);
+      const params = new URLSearchParams();
+      if (companyFilter !== 'all') params.set('companyId', companyFilter);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const response = await fetch(`/api/admin/clientes/${id}/communications${query}`);
       const json = await response.json();
       if (!response.ok) {
         setError(json.error ?? 'No se pudieron cargar las comunicaciones');
         return;
       }
       setData(json);
-      setSelected((current) => current ?? json.communications?.[0] ?? null);
+      setSelected(json.communications?.[0] ?? null);
     } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
     }
-  }
+  }, [companyFilter, id]);
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -67,6 +88,12 @@ export default function ClientCommunicationsPage() {
       ? data.communications
       : data.communications.filter((item) => item.channel === channel);
   }, [data, channel]);
+
+  useEffect(() => {
+    if (selected && !filtered.some((item) => item.id === selected.id)) {
+      setSelected(filtered[0] ?? null);
+    }
+  }, [filtered, selected]);
 
   const channelLabel = (item: Communication) => {
     if (item.channel === 'email') return item.direction === 'out' ? 'Email enviado' : 'Email recibido';
@@ -119,6 +146,29 @@ export default function ClientCommunicationsPage() {
           <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
+        <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-[#d8cbb5] bg-white p-4">
+          <div className="min-w-[260px] flex-1">
+            <label htmlFor="company-filter" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8a9aab]">
+              <Building2 className="h-3.5 w-3.5" /> Entidad
+            </label>
+            <select
+              id="company-filter"
+              value={companyFilter}
+              onChange={(event) => setCompanyFilter(event.target.value)}
+              className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#29384a] outline-none focus:border-[#c88b25]"
+            >
+              <option value="all">Todas las comunicaciones</option>
+              {(data?.companies ?? []).map((company) => (
+                <option key={company.id} value={company.id}>{company.name}</option>
+              ))}
+              <option value="unassigned">Sin entidad ({data?.counts.unassigned ?? 0})</option>
+            </select>
+          </div>
+          <p className="max-w-xl text-xs leading-5 text-[#8a9aab]">
+            Solo se atribuye una comunicación a una entidad cuando existe un `company_id` explícito o un expediente vinculado. El resto permanece como “Sin entidad”.
+          </p>
+        </div>
+
         {data && (
           <div className="mb-5 grid gap-3 sm:grid-cols-5">
             {[
@@ -165,7 +215,7 @@ export default function ClientCommunicationsPage() {
               {loading && !data ? (
                 <div className="flex justify-center py-14"><RefreshCw className="h-5 w-5 animate-spin text-[#c88b25]" /></div>
               ) : filtered.length === 0 ? (
-                <p className="px-4 py-10 text-center text-sm text-[#8a9aab]">No hay comunicaciones en este canal.</p>
+                <p className="px-4 py-10 text-center text-sm text-[#8a9aab]">No hay comunicaciones para estos filtros.</p>
               ) : (
                 filtered.map((item) => (
                   <button
@@ -188,6 +238,9 @@ export default function ClientCommunicationsPage() {
                         <p className="mt-0.5 truncate text-sm font-semibold text-[#29384a]">{item.title}</p>
                         <p className="mt-1 line-clamp-2 text-xs text-[#8a9aab]">{item.preview}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.companyId ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                            {item.companyName ?? 'Sin entidad'}
+                          </span>
                           {item.unread && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">Sin leer</span>}
                           {item.hasAttachment && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">Adjunto</span>}
                           {item.status && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{item.status}</span>}
@@ -211,6 +264,9 @@ export default function ClientCommunicationsPage() {
                     <h2 className="mt-1 font-serif text-xl font-bold text-[#07111d]">{selected.title}</h2>
                     <p className="mt-1 text-xs text-[#8a9aab]">
                       {new Date(selected.date).toLocaleString('es-ES')} · fuente {selected.source}{selected.provider ? ` · ${selected.provider}` : ''}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-[#8a9aab]">
+                      <Building2 className="h-3 w-3" /> {selected.companyName ?? 'Sin entidad atribuida'}
                     </p>
                   </div>
                   {selected.caseId && (
