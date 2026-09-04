@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     const { data: clientProfile, error: profileError } = await admin
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code,stripe_customer_id,profile_completed,billing_ready')
+      .select('full_name,company,tax_id,address,city,postal_code,profile_completed,billing_ready')
       .eq('id', clientId)
       .single();
 
@@ -84,55 +84,59 @@ export async function POST(request: NextRequest) {
 
     let companyId = parsed.data.companyId ?? null;
     if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
-    if (!companyId && (memberships?.length ?? 0) > 1) {
-      return NextResponse.json({ error: 'El cliente tiene varias entidades. Selecciona cuál contrata el plan.', code: 'company_required' }, { status: 409 });
+    if (!companyId) {
+      return NextResponse.json({
+        error: (memberships?.length ?? 0) > 1
+          ? 'El cliente tiene varias entidades. Selecciona cuál contrata el plan.'
+          : 'El cliente necesita una entidad fiscal antes de contratar el plan.',
+        code: 'company_required'
+      }, { status: 409 });
     }
 
-    const selectedMembership = companyId ? memberships?.find((m) => m.company_id === companyId) : null;
-    if (companyId && !selectedMembership) {
+    const selectedMembership = memberships?.find((m) => m.company_id === companyId) ?? null;
+    if (!selectedMembership) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
 
-    let holdedQuery = admin
+    const { data: holdedIntegrations, error: holdedError } = await admin
       .from('client_integrations')
       .select('id,status')
       .eq('provider', 'holded')
       .eq('status', 'active')
+      .eq('company_id', companyId)
       .limit(1);
-    holdedQuery = companyId
-      ? holdedQuery.eq('company_id', companyId)
-      : holdedQuery.eq('client_id', clientId).is('company_id', null);
 
-    const { data: holdedIntegrations, error: holdedError } = await holdedQuery;
     if (holdedError) {
       return NextResponse.json({ error: 'No se pudo comprobar Holded para la entidad seleccionada' }, { status: 500 });
     }
     if (!holdedIntegrations?.[0]) {
       return NextResponse.json({
-        error: companyId
-          ? 'Conecta Holded para esta entidad antes de enviar el enlace de suscripción.'
-          : 'Conecta Holded para el cliente antes de enviar el enlace de suscripción.',
+        error: 'Conecta Holded para esta entidad antes de enviar el enlace de suscripción.',
         code: 'holded_required'
       }, { status: 409 });
     }
 
-    const companyRaw = selectedMembership?.company;
+    const companyRaw = selectedMembership.company;
     const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
+    if (!company) {
+      return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
+    }
+
     const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
-    const contractingName = company?.razon_social ?? clientProfile.company ?? null;
-    const contractingTaxId = company?.cif_nif ?? clientProfile.tax_id ?? null;
-    const contractingAddress = company?.ciudad
+    const contractingName = company.razon_social ?? clientProfile.company ?? null;
+    const contractingTaxId = company.cif_nif ?? clientProfile.tax_id ?? null;
+    const contractingAddress = company.ciudad
       ? `${company.direccion ?? ''}, ${company.ciudad}`.trim().replace(/^,\s*/, '')
-      : company?.direccion ?? (clientProfile.city
+      : company.direccion ?? (clientProfile.city
         ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
         : clientProfile.address ?? null);
 
-    const stripeCustomerId = company?.stripe_customer_id ?? (!companyId ? clientProfile.stripe_customer_id : null);
+    const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
     const metadata = {
       user_id: clientId,
-      company_id: companyId ?? '',
+      company_id: companyId,
       plan_name: planName,
       product_type: 'suscripcion',
       configured_price_key: stripePriceEnvKey,
@@ -217,8 +221,8 @@ export async function POST(request: NextRequest) {
     await admin.from('audit_logs').insert({
       actor_id: actorId,
       action: 'subscription.invite_sent',
-      entity: companyId ? 'companies' : 'profiles',
-      entity_id: companyId ?? clientId,
+      entity: 'companies',
+      entity_id: companyId,
       metadata: { client_id: clientId, client_email: clientEmail, company_id: companyId, plan_name: planName, session_id: session.id }
     }).then(() => {});
 
