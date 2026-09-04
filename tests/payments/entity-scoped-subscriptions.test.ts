@@ -6,7 +6,7 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
-describe('entity-scoped subscriptions', () => {
+describe('entity-scoped billing', () => {
   it('rewires checkout_sessions.user_id to canonical profiles', () => {
     const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
     expect(migration).toContain('drop constraint if exists checkout_sessions_user_id_fkey');
@@ -45,11 +45,35 @@ describe('entity-scoped subscriptions', () => {
     expect(adminInvite).not.toContain("company_id: companyId ?? ''");
   });
 
+  it('monthly plan guard requires exact active company Holded integration', () => {
+    const guard = source('lib/checkout/plan-mensual-guard.ts');
+    expect(guard).toContain("reason: 'no_company'");
+    expect(guard).toContain(".eq('company_id', profile.active_company_id)");
+    expect(guard).not.toContain('client_id.eq.${userId},company_id.eq.');
+  });
+
   it('adding a second entity does not overwrite legacy fiscal profile fields', () => {
     const onboarding = source('app/api/admin/users/invite/route.ts');
     expect(onboarding).toContain('if (isNewUser) {');
     expect(onboarding).toContain("code: 'tax_id_conflict'");
     expect(onboarding).toContain('Revisión manual necesaria');
     expect(onboarding).toContain("action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.entity_onboarded'");
+  });
+
+  it('one-off quotes carry company context and derived records inherit it', () => {
+    const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
+    const quotes = source('app/api/admin/quotes/route.ts');
+    expect(migration).toContain('alter table public.quotes');
+    expect(migration).toContain('add column if not exists company_id uuid');
+    expect(migration).toContain('orders_inherit_quote_company');
+    expect(migration).toContain('cases_inherit_quote_company');
+    expect(quotes).toContain('company_id: companyId');
+    expect(quotes).toContain("metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' }");
+  });
+
+  it('company switcher checks PATCH response before refreshing', () => {
+    const switcher = source('components/dashboard/CompanySwitcher.tsx');
+    expect(switcher).toContain('if (!response.ok)');
+    expect(switcher).toContain("setError(data?.error ?? 'No se pudo cambiar la entidad activa.')");
   });
 });
