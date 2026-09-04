@@ -98,24 +98,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
 
-    const { data: holdedIntegrations, error: holdedError } = await admin
-      .from('client_integrations')
-      .select('id,status')
-      .eq('provider', 'holded')
-      .eq('status', 'active')
-      .eq('company_id', companyId)
-      .limit(1);
-
-    if (holdedError) {
-      return NextResponse.json({ error: 'No se pudo comprobar Holded para la entidad seleccionada' }, { status: 500 });
-    }
-    if (!holdedIntegrations?.[0]) {
-      return NextResponse.json({
-        error: 'Conecta Holded para esta entidad antes de enviar el enlace de suscripción.',
-        code: 'holded_required'
-      }, { status: 409 });
-    }
-
     const companyRaw = selectedMembership.company;
     const company = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
     if (!company) {

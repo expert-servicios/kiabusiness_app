@@ -5,13 +5,13 @@ import { createServerClient } from '@supabase/ssr';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { MobileNav } from '@/components/dashboard/MobileNav';
 import { KiaCopilotPanel } from '@/components/dashboard/KiaCopilotPanel';
+import { SubscriptionOnboardingStatus } from '@/components/dashboard/SubscriptionOnboardingStatus';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
 
-  // Read session directly — avoids HTTP round-trip failures on cold starts
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -48,8 +48,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         userEmail={user.email ?? ''}
         isAdmin={profileRow?.role === 'admin' || profileRow?.role === 'owner'}
       />
-      {/* pt-[53px] offsets the fixed mobile top bar; lg:pt-0 removes it on desktop */}
       <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
+        <SubscriptionOnboardingStatus />
         {children}
       </div>
       <MobileNav />

@@ -32,24 +32,26 @@ describe('entity-scoped billing', () => {
     expect(checkout).toContain('await stripe.checkout.sessions.expire(session.id)');
     expect(checkout).toContain('company_id: companyId');
     expect(checkout).not.toContain("company_id: companyId ?? ''");
+    expect(checkout).not.toContain("code: 'holded_required'");
   });
 
   it('admin subscription invite applies the same entity prerequisites', () => {
     const adminInvite = source('app/api/admin/subscriptions/send-link/route.ts');
     expect(adminInvite).toContain("code: 'billing_required'");
     expect(adminInvite).toContain("code: 'company_required'");
-    expect(adminInvite).toContain("code: 'holded_required'");
-    expect(adminInvite).toContain(".eq('company_id', companyId)");
+    expect(adminInvite).not.toContain("code: 'holded_required'");
     expect(adminInvite).toContain('await stripe.checkout.sessions.expire(session.id)');
     expect(adminInvite).toContain('company_id: companyId');
     expect(adminInvite).not.toContain("company_id: companyId ?? ''");
   });
 
-  it('monthly plan guard requires exact active company Holded integration', () => {
+  it('monthly plan guard scopes the contracting entity without requiring Holded', () => {
     const guard = source('lib/checkout/plan-mensual-guard.ts');
     expect(guard).toContain("reason: 'no_company'");
     expect(guard).toContain(".eq('company_id', profile.active_company_id)");
-    expect(guard).not.toContain('client_id.eq.${userId},company_id.eq.');
+    expect(guard).not.toContain(".eq('provider', 'holded')");
+    expect(guard).not.toContain("'no_holded'");
+    expect(guard).not.toContain("'holded_error'");
   });
 
   it('adding a second entity does not overwrite legacy fiscal profile fields', () => {
