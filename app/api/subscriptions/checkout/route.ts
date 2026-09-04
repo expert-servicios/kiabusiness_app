@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       client_reference_id: user.id,
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true, required: 'if_supported' },
+      automatic_tax: { enabled: true },
       ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
       metadata: entityMetadata,
       subscription_data: {
@@ -140,6 +141,7 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'eur',
           unit_amount: Math.round(configuredPlan.amountEur * 100),
+          tax_behavior: 'exclusive',
           recurring: { interval: configuredPlan.interval },
           product_data: {
             name: toStripeAscii(configuredPlan.name),
@@ -162,6 +164,8 @@ export async function POST(request: NextRequest) {
         plan_price_id: priceId,
         billing: configuredPlan.interval,
         amount_eur: configuredPlan.amountEur,
+        automatic_tax: true,
+        tax_behavior: 'exclusive',
       }
     });
 

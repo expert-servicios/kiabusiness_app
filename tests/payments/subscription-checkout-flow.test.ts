@@ -9,6 +9,7 @@ function source(path: string): string {
 describe('subscription checkout flow', () => {
   const cards = source('components/subscriptions/SubscriptionPlanCards.tsx');
   const checkout = source('app/api/subscriptions/checkout/route.ts');
+  const adminCheckout = source('app/api/admin/subscriptions/send-link/route.ts');
   const postPurchase = source('app/(protected)/dashboard/post-compra/page.tsx');
   const publicPlans = source('app/(public)/planes/page.tsx');
 
@@ -25,6 +26,31 @@ describe('subscription checkout flow', () => {
     expect(checkout).toContain("code: 'company_required'");
     expect(checkout).not.toContain("code: 'holded_required'");
     expect(checkout).toContain("mode: 'subscription'");
+  });
+
+  it('treats advertised plan prices as tax-exclusive amounts in customer and admin checkouts', () => {
+    for (const route of [checkout, adminCheckout]) {
+      expect(route).toContain("billing_address_collection: 'required'");
+      expect(route).toContain("tax_id_collection: { enabled: true, required: 'if_supported' }");
+      expect(route).toContain("automatic_tax: { enabled: true }");
+      expect(route).toContain("tax_behavior: 'exclusive'");
+    }
+  });
+
+  it('allows staff to generate one persisted checkout without automatically sending email', () => {
+    expect(adminCheckout).toContain("sendEmail: z.boolean().optional().default(true)");
+    expect(adminCheckout).toContain('if (!shouldSendEmail)');
+    expect(adminCheckout).toContain("action: 'subscription.checkout_generated'");
+    expect(adminCheckout).toContain('emailSent: false');
+    expect(adminCheckout).toContain("code: 'subscription_exists'");
+    expect(adminCheckout).toContain("code: 'checkout_exists'");
+  });
+
+  it('locks admin subscription amounts to the configured fixed plan tariff', () => {
+    expect(adminCheckout).toContain('PLAN_AMOUNT_ALLOWLIST');
+    expect(adminCheckout).toContain('STRIPE_PLAN_MONTHLY_99: 99');
+    expect(adminCheckout).toContain("code: 'plan_amount_mismatch'");
+    expect(adminCheckout).toContain('unit_amount: Math.round(expectedAmountEur * 100)');
   });
 
   it('only enters post-purchase onboarding after Stripe has created an active or trialing subscription', () => {
