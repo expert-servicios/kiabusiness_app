@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
       ? `${contractingCompany.direccion ?? ''}, ${contractingCompany.ciudad}`.trim().replace(/^,\s*/, '')
       : contractingCompany.direccion ?? null;
 
-    // 1. Create lead (required FK for quotes). The lead remains a commercial
-    // contact record; fiscal identity is held on quotes.company_id.
+    // Rows created below belong exclusively to this request and can be safely
+    // compensated if Stripe/email setup fails before the quote is delivered.
     const { data: lead, error: leadErr } = await adminSupabase
       .from('leads')
       .insert({
@@ -120,7 +120,6 @@ export async function POST(request: NextRequest) {
 
     const expiresAt = new Date(Date.now() + expiresInDays * 86_400_000).toISOString();
 
-    // 2. Create entity-scoped quote (without Stripe ID yet)
     const { data: quote, error: quoteErr } = await adminSupabase
       .from('quotes')
       .insert({
@@ -140,44 +139,50 @@ export async function POST(request: NextRequest) {
 
     if (quoteErr || !quote) {
       console.error('[admin/quotes] quote insert error:', quoteErr);
+      await adminSupabase.from('leads').delete().eq('id', lead.id).then(() => {});
       return NextResponse.json({ error: 'Error al crear presupuesto' }, { status: 500 });
     }
 
-    // 3. Generate Stripe checkout session with explicit entity context.
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      client_reference_id: quote.id,
-      customer_email: clientEmail,
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            unit_amount: Math.round(amountEur * 100),
-            product_data: { name: toStripeAscii(title), description: toStripeAscii(description) }
-          },
-          quantity: 1
-        }
-      ],
-      metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' },
-      success_url: `${appUrl}/dashboard/expedientes?pago=ok`,
-      cancel_url: `${appUrl}/dashboard?pago=cancelado`,
-      expires_at: Math.floor(Date.now() / 1000) + expiresInDays * 86400
-    });
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        client_reference_id: quote.id,
+        customer_email: clientEmail,
+        line_items: [
+          {
+            price_data: {
+              currency: 'eur',
+              unit_amount: Math.round(amountEur * 100),
+              product_data: { name: toStripeAscii(title), description: toStripeAscii(description) }
+            },
+            quantity: 1
+          }
+        ],
+        metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' },
+        success_url: `${appUrl}/dashboard/expedientes?pago=ok`,
+        cancel_url: `${appUrl}/dashboard?pago=cancelado`,
+        expires_at: Math.floor(Date.now() / 1000) + expiresInDays * 86400
+      });
+    } catch (stripeCreateError) {
+      console.error('[admin/quotes] Stripe checkout creation failed:', stripeCreateError);
+      await adminSupabase.from('leads').delete().eq('id', lead.id).then(() => {});
+      return NextResponse.json({ error: 'No se pudo crear el enlace de pago' }, { status: 502 });
+    }
 
-    // 4. Update quote with Stripe checkout ID
     const { error: quoteStripeError } = await adminSupabase
       .from('quotes')
       .update({ stripe_checkout_id: session.id })
       .eq('id', quote.id);
     if (quoteStripeError) {
       try { await stripe.checkout.sessions.expire(session.id); } catch {}
+      await adminSupabase.from('leads').delete().eq('id', lead.id).then(() => {});
       return NextResponse.json({ error: 'No se pudo registrar de forma segura el enlace de pago' }, { status: 500 });
     }
 
-    // 5. Generate contract with fiscal data from the contracting entity.
     const contractDate = new Date().toLocaleDateString('es-ES', {
       day: 'numeric', month: 'long', year: 'numeric'
     });
@@ -195,23 +200,56 @@ export async function POST(request: NextRequest) {
     });
     const contractBase64 = contractToBuffer(contractHtml);
 
-    // 6. Send email with contract attachment
     const funFact = getRandomFunFact();
     const tpl = quoteWithPaymentLink(clientName, amountEur, title, session.url!, expiresAt, funFact);
 
-    await sendEmail({
-      to: clientEmail,
-      eventType: 'quote.payment_link_sent',
-      ...tpl,
-      metadata: { quote_id: quote.id, company_id: companyId, session_id: session.id },
-      attachments: [
-        {
-          filename: `Contrato_EXPERT_${title.replace(/\s+/g, '_').slice(0, 40)}.html`,
-          content: contractBase64,
-          type: 'text/html'
+    try {
+      await sendEmail({
+        to: clientEmail,
+        eventType: 'quote.payment_link_sent',
+        ...tpl,
+        metadata: { quote_id: quote.id, company_id: companyId, session_id: session.id },
+        attachments: [
+          {
+            filename: `Contrato_EXPERT_${title.replace(/\s+/g, '_').slice(0, 40)}.html`,
+            content: contractBase64,
+            type: 'text/html'
+          }
+        ]
+      });
+    } catch (emailError) {
+      console.error('[admin/quotes] delivery email failed:', emailError);
+      let expireFailed = false;
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        expireFailed = true;
+        console.error('[admin/quotes] failed to expire checkout after email failure:', expireError);
+      }
+
+      if (!expireFailed) {
+        // lead -> quotes is ON DELETE CASCADE. Both rows were created by this request,
+        // and no downstream work has started yet, so this compensation is isolated.
+        const { error: cleanupError } = await adminSupabase.from('leads').delete().eq('id', lead.id);
+        if (cleanupError) {
+          console.error('[admin/quotes] failed to clean request-created quote after email failure:', cleanupError);
+          return NextResponse.json({
+            error: 'El email falló y el enlace fue invalidado, pero no se pudo limpiar el presupuesto creado. Revisión manual necesaria.',
+            code: 'email_failed_cleanup_manual_review'
+          }, { status: 409 });
         }
-      ]
-    });
+        return NextResponse.json({
+          error: 'El email no pudo enviarse. El enlace fue invalidado y el presupuesto de esta petición se revirtió de forma segura.',
+          code: 'email_failed_safe_retry'
+        }, { status: 502 });
+      }
+
+      return NextResponse.json({
+        error: 'El email falló y no se pudo invalidar automáticamente el enlace Stripe. No reintentes hasta revisar esta sesión.',
+        code: 'email_failed_manual_review',
+        quoteId: quote.id
+      }, { status: 409 });
+    }
 
     await adminSupabase.from('audit_logs').insert({
       actor_id: actorId,
@@ -221,8 +259,6 @@ export async function POST(request: NextRequest) {
       metadata: { client_email: clientEmail, company_id: companyId, amount_eur: amountEur, stripe_session: session.id }
     }).then(() => {});
 
-    // EXPERT's own Holded remains the seller accounting destination. Use the
-    // contracting fiscal name while preserving the customer's delivery email.
     syncQuoteAsEstimate({
       quoteId: quote.id,
       clientName: contractingName,
