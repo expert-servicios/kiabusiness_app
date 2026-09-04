@@ -8,6 +8,21 @@ const STATUS_MAP: Record<string, string> = {
   'email.complained': 'failed'
 };
 
+type ResendWebhookPayload = {
+  type: string;
+  data?: {
+    email_id?: string;
+    to?: string[] | string;
+  };
+};
+
+function getRecipients(payload: ResendWebhookPayload): string[] {
+  const value = payload.data?.to;
+  if (!value) return [];
+  const recipients = Array.isArray(value) ? value : [value];
+  return recipients.map((email) => email.trim().toLowerCase()).filter(Boolean);
+}
+
 export async function POST(req: NextRequest) {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
   if (!secret) {
@@ -30,7 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  let payload: { type: string; data?: { email_id?: string } };
+  let payload: ResendWebhookPayload;
   try {
     payload = JSON.parse(rawBody);
   } catch {
@@ -39,13 +54,36 @@ export async function POST(req: NextRequest) {
 
   const newStatus = STATUS_MAP[payload.type];
   const resendId = payload.data?.email_id;
+  const recipients = getRecipients(payload);
 
   if (newStatus && resendId) {
     const supabase = getSupabaseAdmin();
-    await supabase
-      .from('email_events')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq('resend_id', resendId);
+    const updatePayload = { status: newStatus, updated_at: new Date().toISOString() };
+
+    if (recipients.length) {
+      for (const recipient of recipients) {
+        const { error } = await supabase
+          .from('email_events')
+          .update(updatePayload)
+          .eq('resend_id', resendId)
+          .ilike('recipient_email', recipient);
+        if (error) {
+          console.error('[resend/webhook] recipient status update failed:', resendId, recipient, error.message);
+          return NextResponse.json({ error: 'Webhook persistence failed' }, { status: 500 });
+        }
+      }
+    } else {
+      // Backwards-compatible fallback for old/partial payloads that do not
+      // include the recipient. New Resend webhook events include data.to.
+      const { error } = await supabase
+        .from('email_events')
+        .update(updatePayload)
+        .eq('resend_id', resendId);
+      if (error) {
+        console.error('[resend/webhook] status update failed:', resendId, error.message);
+        return NextResponse.json({ error: 'Webhook persistence failed' }, { status: 500 });
+      }
+    }
   }
 
   return NextResponse.json({ received: true });
