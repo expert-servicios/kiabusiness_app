@@ -26,11 +26,11 @@ const includes = [
   'Calendario fiscal',
   'Alertas Kia',
   'Portal de cliente EXPERT',
-  'Soporte por email y WhatsApp — 48 h',
-  'Renta anual del titular autónomo en casos sencillos, o condiciones especiales según complejidad'
+  'Soporte por email y WhatsApp — 48 h'
 ];
 
 const notIncludes = [
+  'Declaración anual de la Renta (IRPF) del titular — servicio aparte',
   'Gestión laboral y nóminas',
   'Alto volumen de facturas sin presupuesto previo',
   'Inventario, e-commerce u operaciones internacionales complejas',
@@ -46,7 +46,6 @@ export default function PlanAvanzadoPage() {
         <Breadcrumb items={[{ label: 'Planes', href: '/planes' }, { label: 'Plan Avanzado' }]} />
       </div>
 
-      {/* Hero */}
       <div className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Planes de suscripción</p>
@@ -73,7 +72,6 @@ export default function PlanAvanzadoPage() {
         </div>
       </div>
 
-      {/* Details */}
       <section className="mx-auto max-w-4xl px-6 py-14">
         <div className="grid gap-10 md:grid-cols-2">
           <div>
@@ -121,7 +119,7 @@ export default function PlanAvanzadoPage() {
             {[
               { n: '01', title: 'Te registras', text: 'Creas tu cuenta en el portal EXPERT y seleccionas el Plan Avanzado.' },
               { n: '02', title: 'Conectas Holded', text: 'Nos das acceso a tu cuenta de Holded para revisar la contabilidad mensualmente.' },
-              { n: '03', title: 'Nosotros gestionamos', text: 'Tu asesora se encarga de todos los vencimientos fiscales sin que tengas que recordar nada.' }
+              { n: '03', title: 'Nosotros gestionamos', text: 'Tu asesora se encarga de los vencimientos fiscales incluidos en el plan sin que tengas que recordar nada.' }
             ].map(({ n, title, text }) => (
               <div key={n} className="border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_20px_rgba(13,27,42,0.07)]">
                 <span className="font-serif text-3xl font-bold text-[#D4A017]">{n}</span>
@@ -133,10 +131,8 @@ export default function PlanAvanzadoPage() {
         </div>
       </section>
 
-      {/* Plan comparison */}
       <PlanComparison current="avanzado" />
 
-      {/* CTA */}
       <section className="brand-blue-bg px-6 py-12 text-center text-[#F8F6F1]">
         <div className="mx-auto max-w-2xl">
           <h2 className="font-serif text-2xl font-bold md:text-3xl">¿Listo para empezar?</h2>
