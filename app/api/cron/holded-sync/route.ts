@@ -9,19 +9,13 @@ export const maxDuration = 60;
 
 const MAX_ATTEMPTS    = 3;
 const BATCH_SIZE      = 10;
-// Exponential back-off: attempt 1→5 min, attempt 2→15 min, attempt 3→stop
 const RETRY_DELAY_MIN = [5, 15];
 
 function nextRunAt(attempts: number): string {
-  // attempts is 1-indexed (attempts already includes the failure just recorded),
-  // so the Nth failure's delay lives at index N-1: attempt 1 -> 5min, attempt 2 -> 15min.
   const delayMin = RETRY_DELAY_MIN[attempts - 1] ?? 60;
   return new Date(Date.now() + delayMin * 60 * 1000).toISOString();
 }
 
-// A job stuck in 'running' past this window means the process died mid-execution
-// (crash, timeout, deploy) after marking it running but before recording the
-// result — reclaim it so it isn't orphaned forever.
 const STALE_RUNNING_MIN = 10;
 
 type SyncJobRow = {
@@ -40,6 +34,7 @@ async function executeJob(job: SyncJobRow): Promise<{ ok: boolean; error?: strin
     amountEur?: number;
     orderId?: string;
     subscriptionId?: string;
+    companyId?: string | null;
     localEntity?: string;
   };
 
@@ -61,11 +56,30 @@ async function executeJob(job: SyncJobRow): Promise<{ ok: boolean; error?: strin
     }
 
     if (job.job_type === 'sync_subscription_holded') {
+      let clientName = m.clientName ?? 'Cliente';
+      let clientEmail = m.clientEmail ?? '';
+
+      // Preserve the contracting entity on retries. The webhook already stores
+      // companyId in job metadata; use that company as the billing identity
+      // instead of silently falling back to the person's display name.
+      if (m.companyId) {
+        const admin = getSupabaseAdmin();
+        const { data: company, error: companyError } = await admin
+          .from('companies')
+          .select('razon_social,email')
+          .eq('id', m.companyId)
+          .maybeSingle();
+        if (companyError) throw new Error(`Could not resolve Holded retry company: ${companyError.message}`);
+        if (!company) throw new Error(`Holded retry company ${m.companyId} not found; manual review required`);
+        clientName = company.razon_social ?? clientName;
+        clientEmail = company.email ?? clientEmail;
+      }
+
       await syncSubscriptionToHolded({
-        clientName    : m.clientName  ?? 'Cliente',
-        clientEmail   : m.clientEmail ?? '',
-        planName      : m.planName    ?? 'Plan EXPERT',
-        amountEur     : m.amountEur   ?? 0,
+        clientName,
+        clientEmail,
+        planName      : m.planName ?? 'Plan EXPERT',
+        amountEur     : m.amountEur ?? 0,
         subscriptionId: m.subscriptionId ?? '',
         localEntity   : (m.localEntity as 'stripe_subscriptions') ?? 'stripe_subscriptions',
       });
@@ -88,10 +102,8 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const now   = new Date().toISOString();
+  const now = new Date().toISOString();
 
-  // Reclaim jobs orphaned by a mid-execution crash: stuck in 'running' past the
-  // stale window. Put them back in the normal queued/failed retry pool.
   const staleThreshold = new Date(Date.now() - STALE_RUNNING_MIN * 60 * 1000).toISOString();
   const { data: staleJobs } = await admin
     .from('holded_sync_jobs')
@@ -109,7 +121,6 @@ export async function GET(request: NextRequest) {
     }).eq('id', stale.id);
   }
 
-  // Pick up jobs that need processing: queued, or failed/retrying with retries remaining
   const { data: jobs, error: fetchError } = await admin
     .from('holded_sync_jobs')
     .select('id, job_type, attempts, metadata')
@@ -129,12 +140,11 @@ export async function GET(request: NextRequest) {
   }
 
   let succeeded = 0;
-  let failed    = 0;
+  let failed = 0;
 
   for (const job of jobs as SyncJobRow[]) {
-    // Mark as running
     await admin.from('holded_sync_jobs').update({
-      status    : 'running',
+      status: 'running',
       started_at: new Date().toISOString(),
     }).eq('id', job.id);
 
@@ -143,20 +153,20 @@ export async function GET(request: NextRequest) {
 
     if (result.ok) {
       await admin.from('holded_sync_jobs').update({
-        status     : 'success',
+        status: 'success',
         finished_at: new Date().toISOString(),
-        attempts   : newAttempts,
-        error      : null,
+        attempts: newAttempts,
+        error: null,
       }).eq('id', job.id);
       succeeded++;
     } else {
       const isLastAttempt = newAttempts >= MAX_ATTEMPTS;
       await admin.from('holded_sync_jobs').update({
-        status      : isLastAttempt ? 'failed' : 'retrying',
-        finished_at : new Date().toISOString(),
-        attempts    : newAttempts,
-        error       : result.error ?? null,
-        next_run_at : isLastAttempt ? null : nextRunAt(newAttempts),
+        status: isLastAttempt ? 'failed' : 'retrying',
+        finished_at: new Date().toISOString(),
+        attempts: newAttempts,
+        error: result.error ?? null,
+        next_run_at: isLastAttempt ? null : nextRunAt(newAttempts),
       }).eq('id', job.id);
       failed++;
       console.error(`[cron/holded-sync] job ${job.id} (${job.job_type}) failed (attempt ${newAttempts}/${MAX_ATTEMPTS}):`, result.error);
