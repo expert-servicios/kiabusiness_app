@@ -18,6 +18,32 @@ interface SendEmailOptions {
   idempotencyKey?: string;
 }
 
+function stringMetadata(metadata: Record<string, unknown> | undefined, key: string): string | null {
+  const value = metadata?.[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function deriveIdempotencyKey(
+  eventType: string,
+  metadata: Record<string, unknown> | undefined,
+): string | undefined {
+  const sessionId = stringMetadata(metadata, 'session_id');
+  if (sessionId) return `email/${eventType}/session/${sessionId}`.slice(0, 256);
+
+  const invoiceId = stringMetadata(metadata, 'invoice_id');
+  if (invoiceId) return `email/${eventType}/invoice/${invoiceId}`.slice(0, 256);
+
+  // A subscription is created only once. Do not apply this fallback to
+  // subscription.payment_failed because the same subscription can fail again
+  // legitimately in a later billing cycle; those notifications use invoice_id.
+  const subscriptionId = stringMetadata(metadata, 'subscription_id');
+  if (subscriptionId && (eventType === 'subscription.created' || eventType === 'subscription.created.admin')) {
+    return `email/${eventType}/subscription/${subscriptionId}`.slice(0, 256);
+  }
+
+  return undefined;
+}
+
 function withIntentMetadata(
   metadata: Record<string, unknown> | undefined,
   idempotencyKey: string | undefined,
@@ -27,6 +53,21 @@ function withIntentMetadata(
     ...(metadata ?? {}),
     ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
   };
+}
+
+async function findAcceptedIntent(idempotencyKey: string): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error } = await supabase
+    .from('email_events')
+    .select('resend_id')
+    .contains('metadata', { idempotency_key: idempotencyKey })
+    .not('resend_id', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(`[email] idempotency lookup failed: ${error.message}`);
+  return existing?.resend_id ?? null;
 }
 
 export async function sendEmail({
@@ -40,8 +81,17 @@ export async function sendEmail({
 }: SendEmailOptions): Promise<string> {
   const recipients = Array.isArray(to) ? to : [to];
   const supabase = getSupabaseAdmin();
-  const eventMetadata = withIntentMetadata(metadata, idempotencyKey);
+  const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
 
+  if (effectiveIdempotencyKey) {
+    if (effectiveIdempotencyKey.length > 256) {
+      throw new Error('Email idempotency key must contain 1-256 characters');
+    }
+    const acceptedResendId = await findAcceptedIntent(effectiveIdempotencyKey);
+    if (acceptedResendId) return acceptedResendId;
+  }
+
+  const eventMetadata = withIntentMetadata(metadata, effectiveIdempotencyKey);
   const resend = getResendClient();
   const payload = {
     from: BRAND.from,
@@ -59,8 +109,8 @@ export async function sendEmail({
       : {})
   };
 
-  const { data, error } = idempotencyKey
-    ? await resend.emails.send(payload, { idempotencyKey })
+  const { data, error } = effectiveIdempotencyKey
+    ? await resend.emails.send(payload, { idempotencyKey: effectiveIdempotencyKey })
     : await resend.emails.send(payload);
 
   if (error) {
@@ -119,21 +169,9 @@ export async function sendEmailOnce(
     throw new Error('Email idempotency key must contain 1-256 characters');
   }
 
-  const supabase = getSupabaseAdmin();
-  const { data: existing, error: lookupError } = await supabase
-    .from('email_events')
-    .select('resend_id')
-    .contains('metadata', { idempotency_key: key })
-    .not('resend_id', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (lookupError) {
-    throw new Error(`[email] idempotency lookup failed: ${lookupError.message}`);
-  }
-  if (existing?.resend_id) {
-    return { sent: false, resendId: existing.resend_id };
+  const existingResendId = await findAcceptedIntent(key);
+  if (existingResendId) {
+    return { sent: false, resendId: existingResendId };
   }
 
   const resendId = await sendEmail({ ...options, idempotencyKey: key });
