@@ -76,9 +76,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // The profile is the person/login. Entity-specific fiscal data belongs to
-    // public.companies. Keep legacy billing fields only as initial compatibility
-    // data for brand-new users; never overwrite them when adding another entity.
     const profileData: Record<string, unknown> = { id: userId, updated_at: new Date().toISOString() };
     if (isNewUser) profileData.role = 'client';
     if (fullName) profileData.full_name = fullName;
@@ -91,9 +88,6 @@ export async function POST(request: NextRequest) {
       if (postalCode) profileData.postal_code = postalCode;
       if (entityType) profileData.client_type = entityType;
 
-      // Keep the same readiness rules used by the self-service profile flow.
-      // Without this, a complete admin-filled profile remains artificially
-      // blocked by the subscription guard until the client edits it again.
       const readiness = computeProfileReadiness({
         full_name: fullName ?? null,
         phone: phone ?? null,
@@ -132,7 +126,6 @@ export async function POST(request: NextRequest) {
       const ownedIds = new Set((memberships ?? []).map((m) => m.company_id));
 
       if (normalizedTaxId) {
-        // First reuse the same entity if it is already linked to this user.
         for (const membership of memberships ?? []) {
           const rawCompany = membership.company;
           const ownedCompany = Array.isArray(rawCompany) ? rawCompany[0] : rawCompany;
@@ -142,8 +135,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // If the tax ID exists globally under another profile/entity, stop. Do
-        // not auto-link, merge, delete or create another historical duplicate.
         const { data: globalMatches, error: globalError } = await admin
           .from('companies')
           .select('id,cif_nif,razon_social')
@@ -204,8 +195,6 @@ export async function POST(request: NextRequest) {
         });
         if (membershipError) {
           console.error('[admin/users/invite] membership error:', membershipError);
-          // Safe compensation: only remove the entity created in this request;
-          // never touch pre-existing entities or financial history.
           await admin.from('companies').delete().eq('id', companyId);
           return NextResponse.json({ error: 'No se pudo vincular la nueva entidad al usuario; no se ha conservado el alta parcial.' }, { status: 500 });
         }
@@ -225,12 +214,50 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Every client onboarding must be visible in the 360 view. Reuse an open
+    // onboarding case rather than creating duplicates when admin retries the flow.
+    let onboardingCaseId: string | null = null;
+    const { data: existingOnboarding, error: onboardingLookupError } = await admin
+      .from('cases')
+      .select('id,state,status,company_id')
+      .eq('client_id', userId)
+      .eq('service', 'Alta de usuario')
+      .neq('state', 'finalizado')
+      .limit(1)
+      .maybeSingle();
+    if (onboardingLookupError) {
+      console.error('[admin/users/invite] onboarding lookup error:', onboardingLookupError);
+    } else if (existingOnboarding) {
+      onboardingCaseId = existingOnboarding.id;
+      if (companyId && !existingOnboarding.company_id) {
+        await admin.from('cases').update({ company_id: companyId, updated_at: new Date().toISOString() }).eq('id', existingOnboarding.id);
+      }
+    } else {
+      const { data: createdCase, error: caseError } = await admin
+        .from('cases')
+        .insert({
+          client_id: userId,
+          company_id: companyId,
+          category: 'onboarding',
+          service: 'Alta de usuario',
+          state: 'en_proceso',
+          status: 'nuevo',
+          priority: 'media',
+          next_action: 'Completar contratación y onboarding',
+          admin_note: 'Expediente creado automáticamente por el flujo de alta Admin.',
+        })
+        .select('id')
+        .single();
+      if (caseError) console.error('[admin/users/invite] onboarding case create error:', caseError);
+      else onboardingCaseId = createdCase.id;
+    }
+
     await admin.from('audit_logs').insert({
       actor_id: actorId,
       action: isNewUser ? (mode === 'invite_email' ? 'user.invited' : 'user.created') : 'user.entity_onboarded',
       entity: 'profiles',
       entity_id: userId,
-      metadata: { email, mode, isNewUser, company_id: companyId, entity_type: entityType ?? null }
+      metadata: { email, mode, isNewUser, company_id: companyId, entity_type: entityType ?? null, onboarding_case_id: onboardingCaseId }
     }).then(() => {});
 
     if (isNewUser) {
@@ -244,7 +271,7 @@ export async function POST(request: NextRequest) {
       void sendEmail({ to: adminEmail, eventType: 'new_user_admin_alert', subject: tpl.subject, html: tpl.html });
     }
 
-    return NextResponse.json({ ok: true, userId, companyId, isNewUser, email });
+    return NextResponse.json({ ok: true, userId, companyId, onboardingCaseId, isNewUser, email });
   } catch (err) {
     console.error('[admin/users/invite] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
