@@ -21,6 +21,19 @@ create unique index if not exists companies_stripe_customer_id_unique
   on public.companies(stripe_customer_id)
   where stripe_customer_id is not null;
 
+-- checkout_sessions.user_id historically referenced public.users, but the
+-- authenticated application uses auth.users/profile IDs and public.users is no
+-- longer the canonical identity table. Point the FK at public.profiles instead.
+-- This changes referential metadata only; it does not rewrite checkout history.
+alter table public.checkout_sessions
+  drop constraint if exists checkout_sessions_user_id_fkey;
+
+alter table public.checkout_sessions
+  add constraint checkout_sessions_user_id_fkey
+  foreign key (user_id)
+  references public.profiles(id)
+  on delete set null;
+
 -- Persist subscription checkouts immediately so abandoned/expired checkouts
 -- are visible before a subscription exists.
 alter table public.checkout_sessions
