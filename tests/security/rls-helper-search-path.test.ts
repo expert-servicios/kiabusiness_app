@@ -6,6 +6,7 @@ const migration = readFileSync(
   resolve(process.cwd(), 'supabase/migrations/20260904084000_harden_rls_helper_search_paths.sql'),
   'utf8',
 );
+const sqlWithoutComments = migration.replace(/^\s*--.*$/gm, '');
 
 describe('RLS helper search-path hardening', () => {
   it('fixes app helper search paths', () => {
@@ -26,9 +27,9 @@ describe('RLS helper search-path hardening', () => {
   });
 
   it('does not change grants, function security mode, policies or data', () => {
-    expect(migration).not.toMatch(/\b(grant|revoke)\b/i);
-    expect(migration).not.toMatch(/security\s+(definer|invoker)/i);
-    expect(migration).not.toMatch(/\b(create|drop|alter)\s+policy\b/i);
-    expect(migration).not.toMatch(/\b(insert|update|delete)\s+(into|from|public\.|app\.)/i);
+    expect(sqlWithoutComments).not.toMatch(/\b(grant|revoke)\b/i);
+    expect(sqlWithoutComments).not.toMatch(/security\s+(definer|invoker)/i);
+    expect(sqlWithoutComments).not.toMatch(/\b(create|drop|alter)\s+policy\b/i);
+    expect(sqlWithoutComments).not.toMatch(/\b(insert|update|delete)\s+(into|from|public\.|app\.)/i);
   });
 });
