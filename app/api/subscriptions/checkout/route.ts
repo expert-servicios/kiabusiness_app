@@ -109,24 +109,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada' }, { status: 500 });
     }
 
-    const { data: holdedIntegrations, error: holdedError } = await admin
-      .from('client_integrations')
-      .select('id,status')
-      .eq('provider', 'holded')
-      .eq('status', 'active')
-      .eq('company_id', companyId)
-      .limit(1);
-
-    if (holdedError) {
-      return NextResponse.json({ error: 'No se pudo comprobar la conexión con Holded', code: 'holded_error' }, { status: 500 });
-    }
-    if (!holdedIntegrations?.[0]) {
-      return NextResponse.json(
-        { error: 'Conecta Holded para esta entidad antes de contratar un plan mensual.', code: 'holded_required' },
-        { status: 409 }
-      );
-    }
-
     const stripeCustomerId = company.stripe_customer_id ?? null;
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
