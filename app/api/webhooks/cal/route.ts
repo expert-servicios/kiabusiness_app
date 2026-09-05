@@ -4,7 +4,8 @@ import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase'
 import { sendEmail } from '@/lib/email/send';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { deleteCalendarEventSA, hasCalendarSA, upsertCalendarEventSA } from '@/lib/integrations/google-calendar';
-import { ensureOnboardingTask, findOpenOnboardingCase, getAdminEmails } from '@/lib/admin/onboarding-followup';
+import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
+import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 
 function verifySignature(body: string, header: string | null): boolean {
   const secret = process.env.CAL_WEBHOOK_SECRET;
@@ -126,7 +127,7 @@ async function ensureCaseForBooking(
 }
 
 async function notifyAdminBooking(attendee: CalAttendee, payload: CalPayload, slug: string) {
-  const adminEmails = getAdminEmails();
+  const adminEmails = await getAdminNotificationEmails();
   if (!adminEmails.length) return;
   const service = payload.eventType?.title ?? payload.title;
   const meeting = payload.videoCallUrl ? `<p><strong>Reunión:</strong> ${payload.videoCallUrl}</p>` : '';
