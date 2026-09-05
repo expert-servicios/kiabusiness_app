@@ -50,7 +50,8 @@ describe('confirmed fiscal template activation', () => {
   it('exposes templates in Client 360 while preserving manual exceptional deadlines', () => {
     expect(page).toContain('<FiscalTemplatePanel');
     expect(page).toContain('Obligación manual / caso especial');
-    expect(page).toContain('EXPERT no asigna modelos automáticamente');
+    expect(page).toContain('EXPERT no asigna modelos fiscales automáticamente');
+    expect(page).toContain('Tampoco los deduce por tipo de cliente');
   });
 
   it('adds an Admin-only activation table without mutating existing fiscal history', () => {
