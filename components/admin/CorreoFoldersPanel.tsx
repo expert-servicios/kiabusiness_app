@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Folder, FolderPlus, Inbox, Pencil, RefreshCw, Send, Trash2, X, Check } from 'lucide-react';
 
 interface FolderRow {
@@ -126,31 +127,43 @@ export function CorreoFoldersPanel() {
         {folders.map((folder) => {
           const Icon = folder.system_key === 'inbox' ? Inbox : folder.system_key === 'sent' ? Send : Folder;
           const editing = editingId === folder.id;
+          const label = (
+            <>
+              <Icon className={`h-4 w-4 shrink-0 ${folder.is_system ? 'text-[#c88b25]' : 'text-[#29384a]/60'}`} />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#07111d]">{folder.name}</span>
+              <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#29384a]/60">{folder.count}</span>
+            </>
+          );
+
+          if (folder.is_system) {
+            return (
+              <div key={folder.id} className="flex min-h-10 items-center gap-2 rounded-xl px-2.5 py-2">
+                {label}
+              </div>
+            );
+          }
+
           return (
             <div key={folder.id} className="group flex min-h-10 items-center gap-2 rounded-xl px-2.5 py-2 hover:bg-white">
-              <Icon className={`h-4 w-4 shrink-0 ${folder.is_system ? 'text-[#c88b25]' : 'text-[#29384a]/60'}`} />
               {editing ? (
-                <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void renameFolder(folder.id); if (e.key === 'Escape') setEditingId(null); }}
-                  className="min-w-0 flex-1 rounded border border-[#d8cbb5] bg-white px-2 py-1 text-xs outline-none focus:border-[#c88b25]" />
+                <>
+                  <Icon className="h-4 w-4 shrink-0 text-[#29384a]/60" />
+                  <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void renameFolder(folder.id); if (e.key === 'Escape') setEditingId(null); }}
+                    className="min-w-0 flex-1 rounded border border-[#d8cbb5] bg-white px-2 py-1 text-xs outline-none focus:border-[#c88b25]" />
+                  <button type="button" disabled={busyId === folder.id} onClick={() => void renameFolder(folder.id)} className="rounded p-1 text-green-700 hover:bg-green-50"><Check className="h-3 w-3" /></button>
+                  <button type="button" onClick={() => setEditingId(null)} className="rounded p-1 text-[#29384a]/60 hover:bg-gray-100"><X className="h-3 w-3" /></button>
+                </>
               ) : (
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#07111d]">{folder.name}</span>
-              )}
-              <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#29384a]/60">{folder.count}</span>
-              {!folder.is_system && (
-                <div className="hidden items-center gap-0.5 group-hover:flex">
-                  {editing ? (
-                    <>
-                      <button type="button" disabled={busyId === folder.id} onClick={() => void renameFolder(folder.id)} className="rounded p-1 text-green-700 hover:bg-green-50"><Check className="h-3 w-3" /></button>
-                      <button type="button" onClick={() => setEditingId(null)} className="rounded p-1 text-[#29384a]/60 hover:bg-gray-100"><X className="h-3 w-3" /></button>
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" onClick={() => { setEditingId(folder.id); setEditingName(folder.name); }} className="rounded p-1 text-[#29384a]/60 hover:bg-gray-100"><Pencil className="h-3 w-3" /></button>
-                      <button type="button" disabled={busyId === folder.id} onClick={() => void deleteFolder(folder)} className="rounded p-1 text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /></button>
-                    </>
-                  )}
-                </div>
+                <>
+                  <Link href={`/admin/correo/carpetas/${folder.id}`} className="flex min-w-0 flex-1 items-center gap-2" title={`Abrir ${folder.name}`}>
+                    {label}
+                  </Link>
+                  <div className="hidden items-center gap-0.5 group-hover:flex">
+                    <button type="button" onClick={() => { setEditingId(folder.id); setEditingName(folder.name); }} className="rounded p-1 text-[#29384a]/60 hover:bg-gray-100" title="Renombrar"><Pencil className="h-3 w-3" /></button>
+                    <button type="button" disabled={busyId === folder.id} onClick={() => void deleteFolder(folder)} className="rounded p-1 text-red-600 hover:bg-red-50" title="Eliminar"><Trash2 className="h-3 w-3" /></button>
+                  </div>
+                </>
               )}
             </div>
           );
@@ -171,7 +184,7 @@ export function CorreoFoldersPanel() {
       </div>
 
       <p className="px-4 pb-4 text-[10px] leading-4 text-[#29384a]/50">
-        Entrantes y Enviados son carpetas del sistema. Las carpetas personalizadas se pueden crear, renombrar y eliminar sin borrar los correos originales.
+        Entrantes y Enviados son carpetas del sistema. Abre una carpeta personalizada para consultar sus hilos sin salir de EXPERT.
       </p>
     </aside>
   );
