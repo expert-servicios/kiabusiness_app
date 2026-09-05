@@ -5,13 +5,18 @@ import {
   GMAIL_SA_IMPERSONATE_EMAIL,
   getGmailAttachment,
   getGmailAttachmentSA,
+  getGmailThread,
+  getGmailThreadSA,
   hasGmailSA,
   type GmailAttachmentData,
+  type GmailMessage,
   type GmailTokens,
 } from '@/lib/integrations/gmail';
 import {
+  getConversation,
   getMailAttachment,
   type MailAttachmentData,
+  type MailMessage,
   type Ms365StoredTokens,
 } from '@/lib/integrations/microsoft365';
 import {
@@ -23,10 +28,16 @@ import {
 type Provider = 'gmail' | 'ms365';
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 type ProviderAttachment = GmailAttachmentData | MailAttachmentData;
+type ProviderMessage = GmailMessage | MailMessage;
 
 type ProviderContext = {
   accountEmail: string;
   attachment: ProviderAttachment;
+};
+
+type MessageContext = {
+  accountEmail: string;
+  message: ProviderMessage;
 };
 
 async function requireAdmin(request: NextRequest) {
@@ -59,6 +70,69 @@ async function saveMs365Refresh(admin: AdminClient, refreshed: Ms365StoredTokens
   }).eq('id', 'admin');
 }
 
+async function getGmailStored(admin: AdminClient) {
+  const { data: gmailRow } = await admin.from('gmail_tokens').select('*').eq('id', 'admin').single();
+  if (!gmailRow) throw new Error('Gmail no conectado');
+  const stored: GmailTokens = {
+    access_token: gmailRow.access_token,
+    refresh_token: gmailRow.refresh_token,
+    expiry_date: gmailRow.expiry_date,
+    email: gmailRow.email,
+  };
+  return { gmailRow, stored };
+}
+
+async function getMs365Stored(admin: AdminClient) {
+  const { data: ms365Row } = await admin.from('ms365_tokens').select('*').eq('id', 'admin').single();
+  if (!ms365Row) throw new Error('MS365 no conectado');
+  const stored: Ms365StoredTokens = {
+    access_token: ms365Row.access_token,
+    refresh_token: ms365Row.refresh_token,
+    expires_at: ms365Row.expires_at,
+  };
+  return { ms365Row, stored };
+}
+
+async function fetchProviderMessageContext(
+  admin: AdminClient,
+  provider: Provider,
+  conversationId: string,
+  messageId: string,
+  attachmentId: string
+): Promise<MessageContext> {
+  let messages: ProviderMessage[] = [];
+  let accountEmail = '';
+
+  if (provider === 'gmail') {
+    if (hasGmailSA()) {
+      messages = await getGmailThreadSA(conversationId);
+      accountEmail = GMAIL_SA_IMPERSONATE_EMAIL.toLowerCase();
+    } else {
+      const { gmailRow, stored } = await getGmailStored(admin);
+      const result = await getGmailThread(stored, conversationId);
+      await saveGmailRefresh(admin, result.refreshed);
+      messages = result.messages;
+      accountEmail = String(gmailRow.email ?? '').trim().toLowerCase();
+    }
+  } else {
+    const { ms365Row, stored } = await getMs365Stored(admin);
+    const result = await getConversation(stored, conversationId);
+    await saveMs365Refresh(admin, result.refreshed);
+    messages = result.messages;
+    accountEmail = String(ms365Row.email ?? '').trim().toLowerCase();
+  }
+
+  const message = messages.find((item) => item.id === messageId);
+  if (!message || message.conversationId !== conversationId) {
+    throw new Error('El mensaje no pertenece al hilo indicado');
+  }
+  if (!(message.attachments ?? []).some((attachment) => attachment.id === attachmentId)) {
+    throw new Error('El adjunto no pertenece al mensaje indicado');
+  }
+
+  return { accountEmail, message };
+}
+
 async function fetchProviderAttachment(
   admin: AdminClient,
   provider: Provider,
@@ -71,26 +145,13 @@ async function fetchProviderAttachment(
       return { accountEmail: GMAIL_SA_IMPERSONATE_EMAIL.toLowerCase(), attachment };
     }
 
-    const { data: gmailRow } = await admin.from('gmail_tokens').select('*').eq('id', 'admin').single();
-    if (!gmailRow) throw new Error('Gmail no conectado');
-    const stored: GmailTokens = {
-      access_token: gmailRow.access_token,
-      refresh_token: gmailRow.refresh_token,
-      expiry_date: gmailRow.expiry_date,
-      email: gmailRow.email,
-    };
+    const { gmailRow, stored } = await getGmailStored(admin);
     const result = await getGmailAttachment(stored, messageId, attachmentId);
     await saveGmailRefresh(admin, result.refreshed);
     return { accountEmail: String(gmailRow.email ?? '').trim().toLowerCase(), attachment: result.attachment };
   }
 
-  const { data: ms365Row } = await admin.from('ms365_tokens').select('*').eq('id', 'admin').single();
-  if (!ms365Row) throw new Error('MS365 no conectado');
-  const stored: Ms365StoredTokens = {
-    access_token: ms365Row.access_token,
-    refresh_token: ms365Row.refresh_token,
-    expires_at: ms365Row.expires_at,
-  };
+  const { ms365Row, stored } = await getMs365Stored(admin);
   const result = await getMailAttachment(stored, messageId, attachmentId);
   await saveMs365Refresh(admin, result.refreshed);
   return { accountEmail: String(ms365Row.email ?? '').trim().toLowerCase(), attachment: result.attachment };
@@ -139,6 +200,7 @@ export async function GET(request: NextRequest) {
 
 const saveSchema = z.object({
   provider: z.enum(['gmail', 'ms365']),
+  conversationId: z.string().min(1),
   messageId: z.string().min(1),
   attachmentId: z.string().min(1),
   clientId: z.string().uuid(),
@@ -154,13 +216,13 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
   const { admin } = ctx;
-  const { provider, messageId, attachmentId, clientId, caseId } = parsed.data;
+  const { provider, conversationId, messageId, attachmentId, clientId, caseId } = parsed.data;
 
-  const { data: caseRow, error: caseError } = await admin
-    .from('cases')
-    .select('id,client_id,company_id,service')
-    .eq('id', caseId)
-    .single();
+  const [{ data: caseRow, error: caseError }, { data: linkedThread, error: threadError }] = await Promise.all([
+    admin.from('cases').select('id,client_id,company_id,service').eq('id', caseId).single(),
+    admin.from('email_threads').select('id,case_id,thread_id').eq('thread_id', conversationId).maybeSingle(),
+  ]);
+
   if (caseError || !caseRow) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
   if (caseRow.client_id !== clientId) {
     return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
@@ -169,6 +231,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       error: 'Asigna una entidad al expediente antes de guardar adjuntos. No se infiere una entidad automáticamente.',
       code: 'case_company_required',
+    }, { status: 409 });
+  }
+  if (threadError || !linkedThread || linkedThread.case_id !== caseId) {
+    return NextResponse.json({
+      error: 'El hilo de correo no está vinculado a este expediente. Vuelve a vincularlo desde Comunicaciones antes de guardar el adjunto.',
+      code: 'thread_case_mismatch',
     }, { status: 409 });
   }
 
@@ -182,6 +250,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'La entidad del expediente no está vinculada al cliente' }, { status: 409 });
   }
 
+  let messageContext: MessageContext;
+  try {
+    messageContext = await fetchProviderMessageContext(admin, provider, conversationId, messageId, attachmentId);
+  } catch (error) {
+    console.error('[correo attachments] provenance validation failed', error);
+    return NextResponse.json({ error: 'No se pudo validar que el adjunto pertenece al hilo indicado' }, { status: 409 });
+  }
+
   let providerContext: ProviderContext;
   try {
     providerContext = await fetchProviderAttachment(admin, provider, messageId, attachmentId);
@@ -191,7 +267,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { accountEmail, attachment } = providerContext;
-  if (!accountEmail) return NextResponse.json({ error: 'No se pudo identificar la cuenta de correo' }, { status: 409 });
+  if (!accountEmail || accountEmail !== messageContext.accountEmail) {
+    return NextResponse.json({ error: 'No se pudo validar la cuenta de correo de origen' }, { status: 409 });
+  }
 
   const { data: existing } = await admin
     .from('email_attachment_documents')
@@ -253,6 +331,7 @@ export async function POST(request: NextRequest) {
   const { error: sourceError } = await admin.from('email_attachment_documents').insert({
     provider,
     account_email: accountEmail,
+    conversation_id: conversationId,
     message_id: messageId,
     attachment_id: attachmentId,
     document_id: document.id,
@@ -262,6 +341,9 @@ export async function POST(request: NextRequest) {
     original_name: attachment.name,
     mime_type: validation.contentType,
     size_bytes: attachment.data.length,
+    subject: messageContext.message.subject || null,
+    from_email: messageContext.message.fromEmail || null,
+    message_date: messageContext.message.date || null,
   });
 
   if (sourceError) {
