@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, Gauge, ListTodo, Plug } from 'lucide-react';
+import { CalendarClock, FileText, Gauge, ListTodo, Plug } from 'lucide-react';
 
 export function ClientOperationsNav({ clientId }: { clientId: string }) {
   return (
@@ -9,6 +9,9 @@ export function ClientOperationsNav({ clientId }: { clientId: string }) {
       <div className="mx-auto flex max-w-7xl flex-wrap gap-2 px-6 py-2.5">
         <Link href={`/admin/clientes/${clientId}/operaciones`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
           <Gauge className="h-3.5 w-3.5" /> Operaciones
+        </Link>
+        <Link href={`/admin/clientes/${clientId}/obligaciones`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
+          <CalendarClock className="h-3.5 w-3.5" /> Fiscal
         </Link>
         <Link href={`/admin/clientes/${clientId}/documentos`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
           <FileText className="h-3.5 w-3.5" /> Documentos
