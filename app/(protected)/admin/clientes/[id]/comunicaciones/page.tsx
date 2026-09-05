@@ -161,9 +161,14 @@ export default function ClientCommunicationsPage() {
   };
 
   const selectedCase = selected?.caseId ? data?.cases.find((item) => item.id === selected.caseId) ?? null : null;
-  const selectedCanLinkEmail = Boolean(selected?.channel === 'email' && selected.direction === 'in' && selected.conversationId);
+  const selectedCanLinkEmail = Boolean(
+    selected?.channel === 'email' &&
+    selected.direction === 'in' &&
+    selected.conversationId &&
+    (selected.provider === 'gmail' || selected.provider === 'ms365')
+  );
   const openCorreoHref = selectedCanLinkEmail
-    ? `/admin/correo?provider=${encodeURIComponent(selected?.provider ?? '')}&conversationId=${encodeURIComponent(selected?.conversationId ?? '')}`
+    ? `/admin/correo/hilo?provider=${encodeURIComponent(selected?.provider ?? '')}&conversationId=${encodeURIComponent(selected?.conversationId ?? '')}&clientId=${encodeURIComponent(id)}`
     : '/admin/correo';
 
   return (
