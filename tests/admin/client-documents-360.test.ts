@@ -21,15 +21,15 @@ describe('Admin client documents 360', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain("allMatched.filter((doc) => doc.kind === 'internal')");
     expect(route).toContain("allMatched.filter((doc) => doc.kind !== 'internal')");
+    expect(route).toContain("if (doc.kind === 'internal') return false");
     expect(route).toContain('technicalExcluded');
   });
 
-  it('uses temporary signed urls and does not mutate document rows', () => {
+  it('uses temporary signed urls for stored client files', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain(".from('client-documents')");
     expect(route).toContain('createSignedUrl(doc.file_path, 3600)');
     expect(route).not.toContain(".from('documents').delete(");
-    expect(route).not.toContain(".from('documents').update(");
   });
 
   it('supports entity and unassigned filters without inferred ownership', () => {
@@ -49,10 +49,40 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('conversation_id,message_id,attachment_id,subject,from_email,message_date');
     expect(route).toContain('providerLabel');
     expect(route).toContain('/admin/correo/hilo?provider=');
-    expect(page).toContain('Recibido por {doc.provenance.providerLabel}');
     expect(page).toContain('Abrir correo de origen');
     expect(page).toContain('doc.provenance?.subject');
     expect(page).toContain('doc.provenance?.fromEmail');
+  });
+
+  it('allows only controlled admin mutations for status, classification, title and case', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+
+    expect(route).toContain('export async function PATCH');
+    expect(route).toContain("z.enum(['pendiente', 'revisado', 'rechazado'])");
+    expect(route).toContain('docType: z.string().trim().min(1).max(80)');
+    expect(route).toContain('title: z.string().trim().min(1).max(160)');
+    expect(route).toContain('caseId: z.string().uuid().nullable().optional()');
+    expect(page).toContain("method: 'PATCH'");
+    expect(page).toContain('Guardar cambios');
+    expect(page).toContain('Gestionar');
+  });
+
+  it('blocks cross-entity case assignment and never changes company automatically', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain("code: 'case_company_mismatch'");
+    expect(route).toContain('targetCase.company_id !== current.company_id');
+    expect(route).toContain('No se cambia la entidad automáticamente.');
+    expect(route).not.toContain('updates.company_id');
+  });
+
+  it('writes an audit event with previous and next document values', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain(".from('audit_logs').insert");
+    expect(route).toContain("action: 'document.admin_updated'");
+    expect(route).toContain("entity: 'documents'");
+    expect(route).toContain('previous: {');
+    expect(route).toContain('next: {');
   });
 
   it('surfaces a documents shortcut from Client 360', () => {
