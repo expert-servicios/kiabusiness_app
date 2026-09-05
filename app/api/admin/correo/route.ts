@@ -91,6 +91,28 @@ async function syncInboxCache(admin: AdminClient, provider: Provider, mails: Inb
   if (error) console.error('[correo] email_inbox_cache sync failed', { provider, error });
 }
 
+async function hideMovedInboxItems(admin: AdminClient, provider: Provider, mails: InboxMail[]) {
+  const keys = mails.map((mail) => mail.conversationId).filter(Boolean);
+  if (!keys.length) return mails;
+
+  const { data, error } = await admin
+    .from('admin_email_item_state')
+    .select('source_key')
+    .eq('source_kind', 'inbox_thread')
+    .eq('provider', provider)
+    .eq('is_archived', false)
+    .not('folder_id', 'is', null)
+    .in('source_key', keys);
+
+  if (error) {
+    console.error('[correo] moved inbox filter failed', { provider, error });
+    return mails;
+  }
+
+  const moved = new Set((data ?? []).map((row) => row.source_key));
+  return mails.filter((mail) => !moved.has(mail.conversationId));
+}
+
 export async function GET(request: NextRequest) {
   const ctx = await assertAdmin(request);
   if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
@@ -123,7 +145,8 @@ export async function GET(request: NextRequest) {
         try {
           const mails = await listGmailMailsSA({ query: q, maxResults: 50 });
           await syncInboxCache(admin, provider, mails as InboxMail[]);
-          return NextResponse.json({ mails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
+          const visibleMails = await hideMovedInboxItems(admin, provider, mails as InboxMail[]);
+          return NextResponse.json({ mails: visibleMails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
         } catch (err) {
           console.error('[Gmail SA list]', err);
           return NextResponse.json({ mails: [], providerEmail: GMAIL_SA_IMPERSONATE_EMAIL, saError: true });
@@ -140,7 +163,8 @@ export async function GET(request: NextRequest) {
       const { mails, refreshed } = await listGmailMails(stored, { query: q, maxResults: 50 });
       await saveGmailRefresh(admin, refreshed);
       await syncInboxCache(admin, provider, mails as InboxMail[]);
-      return NextResponse.json({ mails, providerEmail: gmailRow.email });
+      const visibleMails = await hideMovedInboxItems(admin, provider, mails as InboxMail[]);
+      return NextResponse.json({ mails: visibleMails, providerEmail: gmailRow.email });
     }
 
     const ms365Row = await getMs365Tokens(admin);
@@ -149,7 +173,8 @@ export async function GET(request: NextRequest) {
     const { mails, refreshed } = await listMails(stored, { query: q, maxResults: 50 });
     await saveMs365Refresh(admin, refreshed);
     await syncInboxCache(admin, provider, mails as InboxMail[]);
-    return NextResponse.json({ mails, providerEmail: ms365Row.email });
+    const visibleMails = await hideMovedInboxItems(admin, provider, mails as InboxMail[]);
+    return NextResponse.json({ mails: visibleMails, providerEmail: ms365Row.email });
   }
 
   if (action === 'conversation') {
