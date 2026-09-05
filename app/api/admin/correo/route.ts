@@ -10,6 +10,17 @@ import type { GmailTokens } from '@/lib/integrations/gmail';
 import { z } from 'zod';
 
 type Provider = 'ms365' | 'gmail';
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+type InboxMail = {
+  conversationId: string;
+  subject: string;
+  from: string;
+  fromEmail: string;
+  snippet: string;
+  date: string;
+  unread: boolean;
+  hasAttachment: boolean;
+};
 
 function getProvider(searchParams: URLSearchParams): Provider {
   return searchParams.get('provider') === 'gmail' ? 'gmail' : 'ms365';
@@ -25,40 +36,59 @@ async function assertAdmin(request: NextRequest) {
   return { admin };
 }
 
-async function getMs365Tokens(admin: ReturnType<typeof getSupabaseAdmin>) {
+async function getMs365Tokens(admin: AdminClient) {
   const { data } = await admin.from('ms365_tokens').select('*').eq('id', 'admin').single();
   return data ?? null;
 }
 
-async function getGmailTokens(admin: ReturnType<typeof getSupabaseAdmin>) {
+async function getGmailTokens(admin: AdminClient) {
   const { data } = await admin.from('gmail_tokens').select('*').eq('id', 'admin').single();
   return data ?? null;
 }
 
-async function saveGmailRefresh(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  refreshed: GmailTokens | null
-) {
+async function saveGmailRefresh(admin: AdminClient, refreshed: GmailTokens | null) {
   if (!refreshed) return;
   await admin.from('gmail_tokens').update({
-    access_token:  refreshed.access_token,
+    access_token: refreshed.access_token,
     refresh_token: refreshed.refresh_token,
-    expiry_date:   refreshed.expiry_date,
-    updated_at:    new Date().toISOString(),
+    expiry_date: refreshed.expiry_date,
+    updated_at: new Date().toISOString(),
   }).eq('id', 'admin');
 }
 
 async function saveMs365Refresh(
-  admin: ReturnType<typeof getSupabaseAdmin>,
+  admin: AdminClient,
   refreshed: { access_token: string; refresh_token: string; expires_at: number } | null
 ) {
   if (!refreshed) return;
   await admin.from('ms365_tokens').update({
-    access_token:  refreshed.access_token,
+    access_token: refreshed.access_token,
     refresh_token: refreshed.refresh_token,
-    expires_at:    refreshed.expires_at,
-    updated_at:    new Date().toISOString(),
+    expires_at: refreshed.expires_at,
+    updated_at: new Date().toISOString(),
   }).eq('id', 'admin');
+}
+
+async function syncInboxCache(admin: AdminClient, provider: Provider, mails: InboxMail[]) {
+  if (!mails.length) return;
+  const syncedAt = new Date().toISOString();
+  const rows = mails
+    .filter((mail) => Boolean(mail.conversationId))
+    .map((mail) => ({
+      thread_id: mail.conversationId,
+      provider,
+      subject: mail.subject || '(Sin asunto)',
+      from_name: mail.from || mail.fromEmail || 'Desconocido',
+      from_email: mail.fromEmail || '',
+      snippet: mail.snippet || '',
+      date: mail.date,
+      unread: Boolean(mail.unread),
+      has_attachment: Boolean(mail.hasAttachment),
+      synced_at: syncedAt,
+    }));
+  if (!rows.length) return;
+  const { error } = await admin.from('email_inbox_cache').upsert(rows, { onConflict: 'thread_id' });
+  if (error) console.error('[correo] email_inbox_cache sync failed', { provider, error });
 }
 
 // GET ?action=list|conversation|status  &provider=ms365|gmail
@@ -67,7 +97,7 @@ export async function GET(request: NextRequest) {
   if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
-  const action   = searchParams.get('action') ?? 'list';
+  const action = searchParams.get('action') ?? 'list';
   const provider = getProvider(searchParams);
   const { admin } = ctx;
 
@@ -78,11 +108,11 @@ export async function GET(request: NextRequest) {
       saActive ? Promise.resolve(null) : getGmailTokens(admin),
     ]);
     return NextResponse.json({
-      ms365Connected:  !!ms365Row,
-      ms365Email:      ms365Row?.email ?? null,
-      gmailConnected:  saActive || !!gmailRow,
-      gmailEmail:      saActive ? GMAIL_SA_IMPERSONATE_EMAIL : (gmailRow?.email ?? null),
-      gmailSA:         saActive,
+      ms365Connected: !!ms365Row,
+      ms365Email: ms365Row?.email ?? null,
+      gmailConnected: saActive || !!gmailRow,
+      gmailEmail: saActive ? GMAIL_SA_IMPERSONATE_EMAIL : (gmailRow?.email ?? null),
+      gmailSA: saActive,
     });
   }
 
@@ -92,7 +122,8 @@ export async function GET(request: NextRequest) {
     if (provider === 'gmail') {
       if (hasGmailSA()) {
         try {
-          const mails = await listGmailMailsSA({ query: q, maxResults: 25 });
+          const mails = await listGmailMailsSA({ query: q, maxResults: 50 });
+          await syncInboxCache(admin, provider, mails as InboxMail[]);
           return NextResponse.json({ mails, providerEmail: GMAIL_SA_IMPERSONATE_EMAIL });
         } catch (err) {
           console.error('[Gmail SA list]', err);
@@ -102,21 +133,23 @@ export async function GET(request: NextRequest) {
       const gmailRow = await getGmailTokens(admin);
       if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
       const stored: GmailTokens = {
-        access_token:  gmailRow.access_token,
+        access_token: gmailRow.access_token,
         refresh_token: gmailRow.refresh_token,
-        expiry_date:   gmailRow.expiry_date,
-        email:         gmailRow.email,
+        expiry_date: gmailRow.expiry_date,
+        email: gmailRow.email,
       };
-      const { mails, refreshed } = await listGmailMails(stored, { query: q, maxResults: 25 });
+      const { mails, refreshed } = await listGmailMails(stored, { query: q, maxResults: 50 });
       await saveGmailRefresh(admin, refreshed);
+      await syncInboxCache(admin, provider, mails as InboxMail[]);
       return NextResponse.json({ mails, providerEmail: gmailRow.email });
     }
 
     const ms365Row = await getMs365Tokens(admin);
     if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
     const stored = { access_token: ms365Row.access_token, refresh_token: ms365Row.refresh_token, expires_at: ms365Row.expires_at };
-    const { mails, refreshed } = await listMails(stored, { query: q, maxResults: 25 });
+    const { mails, refreshed } = await listMails(stored, { query: q, maxResults: 50 });
     await saveMs365Refresh(admin, refreshed);
+    await syncInboxCache(admin, provider, mails as InboxMail[]);
     return NextResponse.json({ mails, providerEmail: ms365Row.email });
   }
 
@@ -137,10 +170,10 @@ export async function GET(request: NextRequest) {
         const gmailRow = await getGmailTokens(admin);
         if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
         const stored: GmailTokens = {
-          access_token:  gmailRow.access_token,
+          access_token: gmailRow.access_token,
           refresh_token: gmailRow.refresh_token,
-          expiry_date:   gmailRow.expiry_date,
-          email:         gmailRow.email,
+          expiry_date: gmailRow.expiry_date,
+          email: gmailRow.email,
         };
         const result = await getGmailThread(stored, conversationId);
         await saveGmailRefresh(admin, result.refreshed);
@@ -168,28 +201,28 @@ export async function GET(request: NextRequest) {
 }
 
 const replySchema = z.object({
-  messageId:      z.string().min(1),
-  comment:        z.string().min(1),
+  messageId: z.string().min(1),
+  comment: z.string().min(1),
   conversationId: z.string().optional(),
-  subject:        z.string().optional(),
-  clientEmail:    z.string().optional(),
-  bodyHtml:       z.boolean().optional(),
-  provider:       z.enum(['ms365', 'gmail']).optional(),
+  subject: z.string().optional(),
+  clientEmail: z.string().optional(),
+  bodyHtml: z.boolean().optional(),
+  provider: z.enum(['ms365', 'gmail']).optional(),
 });
 
 const composeSchema = z.object({
-  to:       z.string().email(),
-  subject:  z.string().min(1),
-  body:     z.string().min(1),
+  to: z.string().email(),
+  subject: z.string().min(1),
+  body: z.string().min(1),
   bodyHtml: z.boolean().optional(),
   provider: z.enum(['ms365', 'gmail']).optional(),
 });
 
 const linkSchema = z.object({
   conversationId: z.string(),
-  caseId:         z.string().uuid().nullable(),
-  subject:        z.string().optional(),
-  clientEmail:    z.string().optional(),
+  caseId: z.string().uuid().nullable(),
+  subject: z.string().optional(),
+  clientEmail: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -209,9 +242,9 @@ export async function POST(request: NextRequest) {
         try {
           await sendGmailReplySA({
             threadId: conversationId ?? messageId,
-            to:       clientEmail ?? '',
-            subject:  subject ?? '',
-            body:     comment,
+            to: clientEmail ?? '',
+            subject: subject ?? '',
+            body: comment,
           });
         } catch (err) {
           console.error('[Gmail SA reply]', err);
@@ -221,16 +254,16 @@ export async function POST(request: NextRequest) {
         const gmailRow = await getGmailTokens(admin);
         if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
         const stored: GmailTokens = {
-          access_token:  gmailRow.access_token,
+          access_token: gmailRow.access_token,
           refresh_token: gmailRow.refresh_token,
-          expiry_date:   gmailRow.expiry_date,
-          email:         gmailRow.email,
+          expiry_date: gmailRow.expiry_date,
+          email: gmailRow.email,
         };
         const { refreshed } = await sendGmailReply(stored, {
           threadId: conversationId ?? messageId,
-          to:       clientEmail ?? '',
-          subject:  subject ?? '',
-          body:     comment,
+          to: clientEmail ?? '',
+          subject: subject ?? '',
+          body: comment,
         });
         await saveGmailRefresh(admin, refreshed);
       }
@@ -261,10 +294,10 @@ export async function POST(request: NextRequest) {
         const gmailRow = await getGmailTokens(admin);
         if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
         const stored: GmailTokens = {
-          access_token:  gmailRow.access_token,
+          access_token: gmailRow.access_token,
           refresh_token: gmailRow.refresh_token,
-          expiry_date:   gmailRow.expiry_date,
-          email:         gmailRow.email,
+          expiry_date: gmailRow.expiry_date,
+          email: gmailRow.email,
         };
         const { refreshed } = await sendNewGmail(stored, { to, subject, body, bodyHtml });
         await saveGmailRefresh(admin, refreshed);
@@ -280,10 +313,10 @@ export async function POST(request: NextRequest) {
 
     if (caseId) {
       await admin.from('email_threads').upsert({
-        thread_id:       conversationId,
-        case_id:         caseId,
-        subject:         subject ?? null,
-        client_email:    clientEmail ?? null,
+        thread_id: conversationId,
+        case_id: caseId,
+        subject: subject ?? null,
+        client_email: clientEmail ?? null,
         last_message_at: new Date().toISOString(),
       }, { onConflict: 'thread_id' });
     } else {
