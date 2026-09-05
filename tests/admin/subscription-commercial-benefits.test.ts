@@ -50,6 +50,16 @@ describe('subscription commercial benefits', () => {
     expect(api).toContain("'recurring_management'");
   });
 
+  it('links a pending Checkout benefit only to the matching newly persisted subscription', () => {
+    expect(migration).toContain('link_pending_subscription_commercial_benefits');
+    expect(migration).toContain('e.client_id = new.client_id');
+    expect(migration).toContain('e.primary_company_id = new.company_id');
+    expect(migration).toContain("cs.status in ('completed','complete')");
+    expect(migration).toContain("abs(extract(epoch from (new.updated_at - cs.updated_at))) <= 900");
+    expect(migration).toContain('set subscription_id = new.id');
+    expect(migration).toContain('security invoker');
+  });
+
   it('adds only forward-looking schema and no historical financial mutation', () => {
     expect(migration).toContain('alter table public.subscription_entitlements');
     expect(migration).toContain('beneficiary_company_id uuid references public.companies');
