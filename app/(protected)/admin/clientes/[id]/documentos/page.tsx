@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, CheckCircle2, Download, ExternalLink, FileText, FolderOpen, Mail, Pencil, RefreshCw, Save, Search, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, Download, ExternalLink, FileText, FolderOpen, Mail, Pencil, RefreshCw, Save, Search, XCircle } from 'lucide-react';
 import DocumentHistory from './DocumentHistory';
 
 type EmailProvenance = {
@@ -80,6 +80,49 @@ type Draft = {
 };
 
 const TYPE_OPTIONS = ['email_attachment', 'factura', 'contrato', 'identificacion', 'fiscal', 'laboral', 'bancario', 'otro'];
+const GENERIC_NAMES = new Set(['documento', 'archivo legacy', 'archivo de usuario legacy', 'documento de expediente']);
+
+function duplicateFingerprint(doc: DocumentItem) {
+  const normalizedName = doc.name.trim().toLocaleLowerCase('es-ES').replace(/\s+/g, ' ');
+  if (!normalizedName || GENERIC_NAMES.has(normalizedName)) return null;
+
+  const scope = doc.caseId
+    ? `case:${doc.caseId}`
+    : doc.companyId
+      ? `company:${doc.companyId}`
+      : 'client:unassigned';
+  const mime = doc.mimeType?.trim().toLocaleLowerCase('es-ES') || '*';
+  return { normalizedName, scope, mime };
+}
+
+function buildDuplicateSignals(documents: DocumentItem[]) {
+  const byScopeAndName = new Map<string, DocumentItem[]>();
+  for (const doc of documents) {
+    const fingerprint = duplicateFingerprint(doc);
+    if (!fingerprint) continue;
+    const key = `${fingerprint.scope}|${fingerprint.normalizedName}`;
+    const current = byScopeAndName.get(key) ?? [];
+    current.push(doc);
+    byScopeAndName.set(key, current);
+  }
+
+  const flagged = new Set<string>();
+  for (const group of byScopeAndName.values()) {
+    if (group.length < 2) continue;
+    for (const doc of group) {
+      const fingerprint = duplicateFingerprint(doc);
+      if (!fingerprint) continue;
+      const compatiblePeer = group.some((peer) => {
+        if (peer.recordKey === doc.recordKey) return false;
+        const peerFingerprint = duplicateFingerprint(peer);
+        if (!peerFingerprint) return false;
+        return fingerprint.mime === '*' || peerFingerprint.mime === '*' || fingerprint.mime === peerFingerprint.mime;
+      });
+      if (compatiblePeer) flagged.add(doc.recordKey);
+    }
+  }
+  return flagged;
+}
 
 export default function ClientDocumentsPage() {
   const { id } = useParams<{ id: string }>();
@@ -115,6 +158,8 @@ export default function ClientDocumentsPage() {
   }, [companyFilter, id]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const duplicateSignals = useMemo(() => buildDuplicateSignals(data?.documents ?? []), [data]);
 
   const visible = useMemo(() => {
     if (!data) return [];
@@ -232,12 +277,13 @@ export default function ClientDocumentsPage() {
               <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Archivos legacy: {data.counts.sources.files}</span>
               <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Portal legacy: {data.counts.sources.user_files}</span>
               {data.counts.legacyReadOnly > 0 && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">Solo lectura legacy: {data.counts.legacyReadOnly}</span>}
+              {duplicateSignals.size > 0 && <span className="rounded-full bg-orange-100 px-2.5 py-1 text-orange-800">Posibles duplicados: {duplicateSignals.size}</span>}
             </div>
           </>
         )}
 
         <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
-          La vista unifica el registro canónico y las fuentes documentales legacy sin migrar ni borrar históricos. Solo los documentos canónicos pueden revisarse, clasificarse o vincularse a expedientes; los registros legacy se muestran en modo lectura.
+          La vista unifica el registro canónico y las fuentes documentales legacy sin migrar ni borrar históricos. Solo los documentos canónicos pueden revisarse, clasificarse o vincularse a expedientes; los registros legacy se muestran en modo lectura. Las alertas de posible duplicado son únicamente indicativas: comparan nombre y ámbito explícito, y nunca fusionan ni eliminan archivos.
         </div>
 
         {loading && !data ? (
@@ -253,6 +299,7 @@ export default function ClientDocumentsPage() {
             {visible.map((doc) => {
               const editing = doc.editable && editingId === doc.id && draft;
               const compatibleCases = (data?.cases ?? []).filter((item) => item.companyId === doc.companyId);
+              const possibleDuplicate = duplicateSignals.has(doc.recordKey);
               return (
                 <article key={doc.recordKey} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -264,6 +311,7 @@ export default function ClientDocumentsPage() {
                           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">{doc.companyName ?? 'Sin entidad'}</span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">{doc.sourceLabel}</span>
                           {!doc.editable && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">solo lectura</span>}
+                          {possibleDuplicate && <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-800" title="Coincide el nombre y el ámbito explícito con otro documento; requiere revisión manual"><AlertTriangle className="h-3 w-3" /> posible duplicado</span>}
                           {doc.state === 'revisado' && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800"><CheckCircle2 className="h-3 w-3" /> revisado</span>}
                           {doc.state === 'rechazado' && <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700"><XCircle className="h-3 w-3" /> rechazado</span>}
                           {doc.state === 'pendiente' && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">pendiente</span>}
