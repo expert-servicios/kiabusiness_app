@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CircleDashed, ListTodo, Loader2, Plus, RefreshCw } from 'lucide-react';
 
@@ -31,6 +32,8 @@ const FILTERS: Array<{ value: TaskFilter; label: string }> = [
 ];
 
 export default function AdminTasksPage() {
+  const searchParams = useSearchParams();
+  const clientId = searchParams.get('clientId');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
@@ -45,14 +48,17 @@ export default function AdminTasksPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/admin/tasks', { cache: 'no-store' });
+      const params = new URLSearchParams();
+      if (clientId) params.set('clientId', clientId);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`/api/admin/tasks${qs}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'No se pudieron cargar las tareas');
       setTasks(json.tasks ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error de conexión');
     } finally { setLoading(false); }
-  }, []);
+  }, [clientId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -83,7 +89,7 @@ export default function AdminTasksPage() {
     try {
       const res = await fetch('/api/admin/tasks', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description: description || null, priority, dueDate: dueDate || null }),
+        body: JSON.stringify({ title, description: description || null, priority, dueDate: dueDate || null, clientId: clientId || null }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'No se pudo crear la tarea');
@@ -96,6 +102,7 @@ export default function AdminTasksPage() {
   const today = new Date().toISOString().slice(0, 10);
   const openCount = tasks.filter((t) => t.status === 'pendiente' || t.status === 'en_progreso').length;
   const overdueCount = tasks.filter((t) => t.due_date && t.due_date < today && t.status !== 'completada' && t.status !== 'cancelada').length;
+  const contextualName = clientId ? tasks.find((task) => task.client)?.client?.full_name : null;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-6 py-8 text-[#07111d]">
@@ -104,7 +111,8 @@ export default function AdminTasksPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c88b25]">Admin · Operaciones</p>
             <h1 className="mt-1 font-serif text-3xl font-bold">Tareas pendientes</h1>
-            <p className="mt-2 text-sm text-[#52606d]">Seguimiento operativo generado por EXPERT, KIA o manualmente.</p>
+            <p className="mt-2 text-sm text-[#52606d]">{clientId ? `Vista contextual del cliente${contextualName ? ` · ${contextualName}` : ''}.` : 'Seguimiento operativo generado por EXPERT, KIA o manualmente.'}</p>
+            {clientId && <Link href={`/admin/clientes/${clientId}/operaciones`} className="mt-2 inline-block text-xs font-bold text-[#c88b25]">← Volver a Operaciones 360º</Link>}
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => void load()} className="rounded-xl border border-[#d8cbb5] bg-white p-2.5" title="Actualizar"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
@@ -120,6 +128,7 @@ export default function AdminTasksPage() {
 
         {showNew && <form onSubmit={createTask} className="mt-5 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
           <h2 className="font-serif text-lg font-bold">Nueva tarea manual</h2>
+          {clientId && <p className="mt-1 text-xs text-[#52606d]">La tarea quedará vinculada a este cliente.</p>}
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-sm" required />
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="rounded-xl border border-[#d8cbb5] px-3 py-2.5 text-sm" />
