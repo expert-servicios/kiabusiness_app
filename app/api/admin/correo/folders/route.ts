@@ -38,6 +38,101 @@ export async function GET(request: NextRequest) {
   const ctx = await requireStaff(request);
   if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   const { admin } = ctx;
+  const { searchParams } = new URL(request.url);
+  const folderId = searchParams.get('folderId');
+
+  if (folderId) {
+    const parsedFolder = z.string().uuid().safeParse(folderId);
+    if (!parsedFolder.success) return NextResponse.json({ error: 'ID de carpeta inválido' }, { status: 400 });
+
+    const { data: folder } = await admin
+      .from('admin_email_folders')
+      .select('id,name,slug,system_key,is_system')
+      .eq('id', folderId)
+      .maybeSingle();
+    if (!folder) return NextResponse.json({ error: 'Carpeta no encontrada' }, { status: 404 });
+
+    const { data: states, error: statesError } = await admin
+      .from('admin_email_item_state')
+      .select('folder_id,source_kind,provider,source_key,client_id,company_id,case_id,is_archived,updated_at')
+      .eq('folder_id', folderId)
+      .eq('is_archived', false)
+      .order('updated_at', { ascending: false });
+    if (statesError) return NextResponse.json({ error: 'No se pudo cargar la carpeta' }, { status: 500 });
+
+    const inboxStates = (states ?? []).filter((state) => state.source_kind === 'inbox_thread');
+    const sentStates = (states ?? []).filter((state) => state.source_kind === 'sent_event');
+
+    const inboxKeys = inboxStates.map((state) => state.source_key);
+    const sentIds = sentStates
+      .map((state) => Number(state.source_key))
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    const [inboxResult, sentResult] = await Promise.all([
+      inboxKeys.length
+        ? admin.from('email_inbox_cache')
+          .select('thread_id,provider,subject,from_name,from_email,snippet,date,unread,has_attachment,case_id')
+          .in('thread_id', inboxKeys)
+        : Promise.resolve({ data: [], error: null }),
+      sentIds.length
+        ? admin.from('email_events')
+          .select('id,event_type,recipient_email,subject,status,html,metadata,created_at')
+          .in('id', sentIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (inboxResult.error || sentResult.error) {
+      return NextResponse.json({ error: 'No se pudieron cargar los correos de la carpeta' }, { status: 500 });
+    }
+
+    const inboxByKey = new Map((inboxResult.data ?? []).map((row) => [row.thread_id, row]));
+    const sentById = new Map((sentResult.data ?? []).map((row) => [String(row.id), row]));
+
+    const items = (states ?? []).map((state) => {
+      if (state.source_kind === 'inbox_thread') {
+        const row = inboxByKey.get(state.source_key);
+        return {
+          sourceKind: state.source_kind,
+          provider: state.provider,
+          sourceKey: state.source_key,
+          clientId: state.client_id,
+          companyId: state.company_id,
+          caseId: state.case_id ?? row?.case_id ?? null,
+          movedAt: state.updated_at,
+          subject: row?.subject ?? '(Hilo no disponible en cache)',
+          counterpart: row?.from_name ?? row?.from_email ?? '',
+          email: row?.from_email ?? '',
+          snippet: row?.snippet ?? '',
+          date: row?.date ?? state.updated_at,
+          unread: row?.unread ?? false,
+          hasAttachment: row?.has_attachment ?? false,
+          html: null,
+          status: null,
+        };
+      }
+      const row = sentById.get(state.source_key);
+      return {
+        sourceKind: state.source_kind,
+        provider: state.provider,
+        sourceKey: state.source_key,
+        clientId: state.client_id,
+        companyId: state.company_id,
+        caseId: state.case_id,
+        movedAt: state.updated_at,
+        subject: row?.subject ?? '(Envío no disponible)',
+        counterpart: row?.recipient_email ?? '',
+        email: row?.recipient_email ?? '',
+        snippet: '',
+        date: row?.created_at ?? state.updated_at,
+        unread: false,
+        hasAttachment: false,
+        html: row?.html ?? null,
+        status: row?.status ?? null,
+      };
+    });
+
+    return NextResponse.json({ folder, items });
+  }
 
   const [foldersResult, statesResult, inboxResult, sentResult] = await Promise.all([
     admin.from('admin_email_folders')
