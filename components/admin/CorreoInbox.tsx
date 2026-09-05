@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Mail, RefreshCw, ArrowLeft, Send, Link2, Search, X, Check, PenSquare, Sparkles } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Mail, RefreshCw, ArrowLeft, Send, Link2, Search, X, Check, PenSquare, Sparkles, FolderInput } from 'lucide-react';
 
 interface MailSummary {
   id: string;
@@ -31,7 +31,27 @@ interface MailMessage {
 interface Case {
   id: string;
   service: string;
+  client_id: string;
+  company_id: string | null;
   client: { full_name: string | null; email: string };
+}
+
+interface FolderRow {
+  id: string;
+  name: string;
+  system_key: 'inbox' | 'sent' | null;
+  is_system: boolean;
+}
+
+interface FolderState {
+  folder_id: string | null;
+  source_kind: 'inbox_thread' | 'sent_event';
+  provider: string;
+  source_key: string;
+  client_id: string | null;
+  company_id: string | null;
+  case_id: string | null;
+  is_archived: boolean;
 }
 
 type Provider = 'ms365' | 'gmail';
@@ -39,7 +59,7 @@ type Provider = 'ms365' | 'gmail';
 const MONTH = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function fmtDate(str: string) {
   const d = new Date(str);
-  if (isNaN(d.getTime())) return str;
+  if (Number.isNaN(d.getTime())) return str;
   const now = new Date();
   if (d.toDateString() === now.toDateString()) {
     return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
@@ -92,8 +112,11 @@ export function CorreoInbox({
   const [linking, setLinking] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [suggestingAI, setSuggestingAI] = useState(false);
+  const [folders, setFolders] = useState<FolderRow[]>([]);
+  const [folderStates, setFolderStates] = useState<FolderState[]>([]);
+  const [movingFolder, setMovingFolder] = useState(false);
+  const [folderError, setFolderError] = useState<string | null>(null);
 
-  // Compose state
   const [showCompose, setShowCompose] = useState(false);
   const [composeTo, setComposeTo] = useState('');
   const [composeSubject, setComposeSubject] = useState('');
@@ -105,11 +128,34 @@ export function CorreoInbox({
 
   const activeEmail = provider === 'gmail' ? gmailEmail : ms365Email;
   const activeConnected = provider === 'gmail' ? gmailConnected : ms365Connected;
-  const bothConnected = ms365Connected && gmailConnected;
   const anyConnected = ms365Connected || gmailConnected;
-
   const selectedSummary = mails.find((m) => m.conversationId === selected);
   const lastMsg = threadMessages.at(-1);
+  const customFolders = folders.filter((folder) => !folder.is_system);
+
+  const currentFolderState = useMemo(() => folderStates.find((state) =>
+    state.source_kind === 'inbox_thread' && state.provider === provider && state.source_key === selected
+  ) ?? null, [folderStates, provider, selected]);
+
+  const loadFolderData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/correo/folders', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) return;
+      setFolders(data.folders ?? []);
+      setFolderStates(data.states ?? []);
+    } catch { /* non-blocking */ }
+  }, []);
+
+  const ensureCases = useCallback(async () => {
+    if (cases.length > 0) return cases;
+    const res = await fetch('/api/admin/cases', { cache: 'no-store' });
+    if (!res.ok) return [] as Case[];
+    const data = await res.json();
+    const loaded = (data.cases ?? []) as Case[];
+    setCases(loaded);
+    return loaded;
+  }, [cases]);
 
   const loadMails = useCallback(async (prov: Provider, q?: string) => {
     const params = new URLSearchParams({ action: 'list', provider: prov });
@@ -118,15 +164,17 @@ export function CorreoInbox({
     if (res.ok) {
       const data = await res.json();
       setMails(data.mails ?? []);
+      void loadFolderData();
     }
-  }, []);
+  }, [loadFolderData]);
 
-  // Reload mails when switching provider
+  useEffect(() => { void loadFolderData(); }, [loadFolderData]);
+
   useEffect(() => {
     if (!activeConnected) { setMails([]); return; } // eslint-disable-line react-hooks/set-state-in-effect
     setSelected(null);
     setThreadMessages([]);
-    loadMails(provider);
+    void loadMails(provider);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
 
@@ -141,16 +189,17 @@ export function CorreoInbox({
         const last = (data.messages ?? []).at(-1);
         if (last) setSelectedMailId(last.id);
       }
-    } catch { /* silent */ }
+    } catch { /* non-blocking */ }
     setLoadingThread(false);
   }, []);
 
   const handleSelect = useCallback((conversationId: string) => {
     setSelected(conversationId);
     setSendError(null);
+    setFolderError(null);
     setReply('');
     setMails((prev) => prev.map((m) => m.conversationId === conversationId ? { ...m, unread: false } : m));
-    loadThread(conversationId, provider);
+    void loadThread(conversationId, provider);
   }, [loadThread, provider]);
 
   const handleRefresh = async () => {
@@ -166,40 +215,80 @@ export function CorreoInbox({
     setRefreshing(false);
   };
 
+  const handleMove = async (folderId: string | null, explicitCaseId?: string | null) => {
+    if (!selected || !selectedSummary) return;
+    setMovingFolder(true);
+    setFolderError(null);
+    try {
+      const availableCases = await ensureCases();
+      const caseId = explicitCaseId === undefined ? linkedCaseId : explicitCaseId;
+      const linkedCase = caseId ? availableCases.find((item) => item.id === caseId) ?? null : null;
+      const res = await fetch('/api/admin/correo/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'move',
+          sourceKind: 'inbox_thread',
+          provider,
+          sourceKey: selected,
+          folderId,
+          clientId: linkedCase?.client_id ?? currentFolderState?.client_id ?? null,
+          companyId: linkedCase?.company_id ?? currentFolderState?.company_id ?? null,
+          caseId: caseId ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo mover el correo');
+
+      setFolderStates((prev) => {
+        const rest = prev.filter((state) => !(state.source_kind === 'inbox_thread' && state.provider === provider && state.source_key === selected));
+        if (!folderId) return rest;
+        return [...rest, {
+          folder_id: folderId,
+          source_kind: 'inbox_thread',
+          provider,
+          source_key: selected,
+          client_id: linkedCase?.client_id ?? currentFolderState?.client_id ?? null,
+          company_id: linkedCase?.company_id ?? currentFolderState?.company_id ?? null,
+          case_id: caseId ?? null,
+          is_archived: false,
+        }];
+      });
+      window.dispatchEvent(new Event('correo-folders-changed'));
+      if (folderId) {
+        setMails((prev) => prev.filter((mail) => mail.conversationId !== selected));
+        setSelected(null);
+        setThreadMessages([]);
+      }
+      await loadFolderData();
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : 'No se pudo mover el correo');
+    } finally {
+      setMovingFolder(false);
+    }
+  };
+
   const handleSendReply = async () => {
     if (!reply.trim() || !selectedMailId || !selected) return;
     setSending(true);
     setSendError(null);
     try {
       const res = await fetch('/api/admin/correo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action:         'reply',
-          provider,
-          messageId:      selectedMailId,
-          comment:        reply.trim(),
-          conversationId: selected,
-          subject:        lastMsg?.subject,
-          clientEmail:    lastMsg?.fromEmail,
+          action: 'reply', provider, messageId: selectedMailId, comment: reply.trim(),
+          conversationId: selected, subject: lastMsg?.subject, clientEmail: lastMsg?.fromEmail,
         }),
       });
       if (!res.ok) {
-        const d = await res.json();
-        setSendError(d.error ?? 'Error al enviar');
+        const data = await res.json();
+        setSendError(data.error ?? 'Error al enviar');
         return;
       }
       setThreadMessages((prev) => [...prev, {
-        id: crypto.randomUUID(),
-        conversationId: selected,
-        subject:   lastMsg?.subject ?? '',
-        from:      activeEmail ?? 'admin',
-        fromEmail: activeEmail ?? '',
-        to:        lastMsg?.fromEmail ?? '',
-        date:      new Date().toISOString(),
-        body:      reply.trim(),
-        bodyType:  'text' as const,
-        unread:    false,
+        id: crypto.randomUUID(), conversationId: selected, subject: lastMsg?.subject ?? '',
+        from: activeEmail ?? 'admin', fromEmail: activeEmail ?? '', to: lastMsg?.fromEmail ?? '',
+        date: new Date().toISOString(), body: reply.trim(), bodyType: 'text', unread: false,
       }]);
       setReply('');
     } catch {
@@ -214,20 +303,15 @@ export function CorreoInbox({
     setComposeError(null);
     try {
       const res = await fetch('/api/admin/correo/suggest-reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          compose: true,
-          composeTo: composeTo.trim() || undefined,
-          composeTopic: composeTopic.trim() || undefined,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compose: true, composeTo: composeTo.trim() || undefined, composeTopic: composeTopic.trim() || undefined }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.subject && !composeSubject) setComposeSubject(data.subject);
         if (data.suggestion) setComposeBody(data.suggestion);
       }
-    } catch { /* silent */ }
+    } catch { /* non-blocking */ }
     setComposeKiaLoading(false);
   };
 
@@ -237,26 +321,16 @@ export function CorreoInbox({
     setComposeError(null);
     try {
       const res = await fetch('/api/admin/correo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:   'compose',
-          provider,
-          to:       composeTo.trim(),
-          subject:  composeSubject.trim(),
-          body:     composeBody.trim(),
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'compose', provider, to: composeTo.trim(), subject: composeSubject.trim(), body: composeBody.trim() }),
       });
       if (!res.ok) {
-        const d = await res.json();
-        setComposeError(d.error ?? 'Error al enviar');
+        const data = await res.json();
+        setComposeError(data.error ?? 'Error al enviar');
         return;
       }
       setShowCompose(false);
-      setComposeTo('');
-      setComposeSubject('');
-      setComposeBody('');
-      setComposeTopic('');
+      setComposeTo(''); setComposeSubject(''); setComposeBody(''); setComposeTopic('');
     } catch {
       setComposeError('Error de conexión.');
     } finally {
@@ -266,13 +340,7 @@ export function CorreoInbox({
 
   const openLinkModal = async () => {
     setShowLinkModal(true);
-    if (cases.length === 0) {
-      const res = await fetch('/api/admin/cases');
-      if (res.ok) {
-        const data = await res.json();
-        setCases(data.cases ?? []);
-      }
-    }
+    await ensureCases();
   };
 
   const handleSuggestAI = async () => {
@@ -280,15 +348,14 @@ export function CorreoInbox({
     setSuggestingAI(true);
     try {
       const res = await fetch('/api/admin/correo/suggest-reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject: selectedSummary.subject, messages: threadMessages }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.suggestion) setReply(data.suggestion);
       }
-    } catch { /* silent */ }
+    } catch { /* non-blocking */ }
     setSuggestingAI(false);
   };
 
@@ -296,539 +363,125 @@ export function CorreoInbox({
     if (!selected || !selectedSummary) return;
     setLinking(true);
     try {
-      await fetch('/api/admin/correo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:         'link',
-          conversationId: selected,
-          caseId,
-          subject:        selectedSummary.subject,
-          clientEmail:    selectedSummary.fromEmail,
-        }),
+      const res = await fetch('/api/admin/correo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'link', conversationId: selected, caseId, subject: selectedSummary.subject, clientEmail: selectedSummary.fromEmail }),
       });
+      if (!res.ok) return;
       setLinkedCaseId(caseId);
+      if (currentFolderState?.folder_id) await handleMove(currentFolderState.folder_id, caseId);
       setShowLinkModal(false);
-    } catch { /* silent */ }
-    setLinking(false);
+    } finally {
+      setLinking(false);
+    }
   };
 
   const filteredCases = cases.filter((c) =>
-    !caseSearch ||
-    c.service?.toLowerCase().includes(caseSearch.toLowerCase()) ||
-    c.client?.full_name?.toLowerCase().includes(caseSearch.toLowerCase())
+    !caseSearch || c.service?.toLowerCase().includes(caseSearch.toLowerCase()) ||
+    c.client?.full_name?.toLowerCase().includes(caseSearch.toLowerCase()) ||
+    c.client?.email?.toLowerCase().includes(caseSearch.toLowerCase())
   );
 
-  // ── Not connected at all ───────────────────────────────────────
   if (!anyConnected) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-        <div className="rounded-full bg-blue-50 p-5">
-          <Mail className="h-10 w-10 text-blue-500" />
-        </div>
+        <div className="rounded-full bg-blue-50 p-5"><Mail className="h-10 w-10 text-blue-500" /></div>
         <div>
           <h2 className="text-lg font-bold text-[#07111d]">Conecta tu cuenta de correo</h2>
-          <p className="mt-1 max-w-xs text-sm text-[#29384a]">
-            Gestiona correos de clientes y asócialos a sus expedientes, todo sin salir del panel.
-          </p>
-          {errorParam && (
-            <p className="mt-2 text-xs text-red-600">
-              {errorParam === 'oauth_denied' ? 'Acceso denegado.' : 'Error al conectar. Inténtalo de nuevo.'}
-            </p>
-          )}
-          {connectedParam && (
-            <p className="mt-2 text-xs text-green-700">Cuenta conectada correctamente.</p>
-          )}
+          <p className="mt-1 max-w-xs text-sm text-[#29384a]">Gestiona correos de clientes y asócialos a sus expedientes, todo sin salir del panel.</p>
+          {errorParam && <p className="mt-2 text-xs text-red-600">{errorParam === 'oauth_denied' ? 'Acceso denegado.' : 'Error al conectar. Inténtalo de nuevo.'}</p>}
+          {connectedParam && <p className="mt-2 text-xs text-green-700">Cuenta conectada correctamente.</p>}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <a
-            href="/api/auth/google-gmail"
-            className="inline-flex items-center gap-2 rounded-full border border-[#d8cbb5] bg-white px-5 py-2.5 text-sm font-bold text-[#07111d] transition hover:border-[#c88b25]"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Conectar Gmail
-          </a>
-          <a
-            href="/api/auth/ms365"
-            className="inline-flex items-center gap-2 rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1a2a3a]"
-          >
-            Conectar Microsoft 365
-          </a>
+          <a href="/api/auth/google-gmail" className="rounded-full border border-[#d8cbb5] bg-white px-5 py-2.5 text-sm font-bold text-[#07111d]">Conectar Gmail</a>
+          <a href="/api/auth/ms365" className="rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white">Conectar Microsoft 365</a>
         </div>
-        <p className="text-xs text-[#29384a]/50">
-          Solo permisos de lectura y envío de correo.
-        </p>
+        <p className="text-xs text-[#29384a]/50">Solo permisos de lectura y envío de correo.</p>
       </div>
     );
   }
 
-  // ── Provider tabs (shown when both connected or to add second) ─
   const ProviderBar = (
     <div className="flex items-center gap-1 border-b border-[#d8cbb5] bg-white px-4 py-2">
-      {gmailConnected && (
-        <button
-          type="button"
-          onClick={() => setProvider('gmail')}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
-            provider === 'gmail'
-              ? 'bg-[#07111d] text-white'
-              : 'text-[#29384a] hover:bg-[#f0e9d8]'
-          }`}
-        >
-          <svg className="h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill={provider === 'gmail' ? '#fff' : '#EA4335'} d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill={provider === 'gmail' ? '#ccc' : '#34A853'} d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill={provider === 'gmail' ? '#aaa' : '#FBBC05'} d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-            <path fill={provider === 'gmail' ? '#aaa' : '#EA4335'} d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          Gmail
-        </button>
-      )}
-      {ms365Connected && (
-        <button
-          type="button"
-          onClick={() => setProvider('ms365')}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
-            provider === 'ms365'
-              ? 'bg-[#07111d] text-white'
-              : 'text-[#29384a] hover:bg-[#f0e9d8]'
-          }`}
-        >
-          <span className="text-[10px]">🏢</span> Outlook
-        </button>
-      )}
+      {gmailConnected && <button type="button" onClick={() => setProvider('gmail')} className={`rounded-full px-3 py-1 text-xs font-semibold ${provider === 'gmail' ? 'bg-[#07111d] text-white' : 'text-[#29384a] hover:bg-[#f0e9d8]'}`}>Gmail</button>}
+      {ms365Connected && <button type="button" onClick={() => setProvider('ms365')} className={`rounded-full px-3 py-1 text-xs font-semibold ${provider === 'ms365' ? 'bg-[#07111d] text-white' : 'text-[#29384a] hover:bg-[#f0e9d8]'}`}>Outlook</button>}
       <div className="ml-auto flex gap-2">
-        {!gmailConnected && (
-          <a href="/api/auth/google-gmail" className="text-[10px] font-semibold text-[#c88b25] hover:underline">
-            + Gmail
-          </a>
-        )}
-        {!ms365Connected && (
-          <a href="/api/auth/ms365" className="text-[10px] font-semibold text-[#c88b25] hover:underline">
-            + Outlook
-          </a>
-        )}
+        {!gmailConnected && <a href="/api/auth/google-gmail" className="text-[10px] font-semibold text-[#c88b25]">+ Gmail</a>}
+        {!ms365Connected && <a href="/api/auth/ms365" className="text-[10px] font-semibold text-[#c88b25]">+ Outlook</a>}
       </div>
     </div>
   );
 
-  // ── Selected provider not connected ───────────────────────────
   if (!activeConnected) {
     return (
-      <div className="flex flex-col h-full">
-        {bothConnected || true ? ProviderBar : null}
+      <div className="flex h-full flex-col">
+        {ProviderBar}
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
           <Mail className="h-10 w-10 text-[#d8cbb5]" />
-          <p className="text-sm text-[#29384a]">
-            {provider === 'gmail' ? 'Gmail no conectado.' : 'Microsoft 365 no conectado.'}
-          </p>
-          <a
-            href={provider === 'gmail' ? '/api/auth/google-gmail' : '/api/auth/ms365'}
-            className="rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1a2a3a]"
-          >
-            Conectar {provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}
-          </a>
+          <p className="text-sm text-[#29384a]">{provider === 'gmail' ? 'Gmail no conectado.' : 'Microsoft 365 no conectado.'}</p>
+          <a href={provider === 'gmail' ? '/api/auth/google-gmail' : '/api/auth/ms365'} className="rounded-full bg-[#07111d] px-5 py-2.5 text-sm font-bold text-white">Conectar {provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}</a>
         </div>
       </div>
     );
   }
 
-  // ── Email list panel ──────────────────────────────────────────
   const MailList = (
-    <aside className={`flex flex-col bg-white border-r border-[#d8cbb5]
-      ${selected ? 'hidden lg:flex' : 'flex'}
-      w-full lg:w-80 lg:shrink-0`}
-    >
-      <div className="border-b border-[#d8cbb5] px-4 py-3 space-y-2">
+    <aside className={`flex flex-col border-r border-[#d8cbb5] bg-white ${selected ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 lg:shrink-0`}>
+      <div className="space-y-2 border-b border-[#d8cbb5] px-4 py-3">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-base font-bold text-[#07111d]">Correo</h1>
-            <p className="max-w-[140px] truncate text-[10px] text-[#29384a]/60">{activeEmail}</p>
-          </div>
+          <div><h1 className="font-serif text-base font-bold text-[#07111d]">Correo</h1><p className="max-w-[140px] truncate text-[10px] text-[#29384a]/60">{activeEmail}</p></div>
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => { setShowCompose(true); setComposeError(null); }}
-              className="flex items-center gap-1 rounded-lg bg-[#07111d] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1a2a3a]"
-              title="Nuevo correo"
-            >
-              <PenSquare className="h-3.5 w-3.5" />
-              Nuevo
-            </button>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] transition hover:bg-[#f0e9d8] disabled:opacity-40"
-              title="Actualizar"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
+            <button type="button" onClick={() => { setShowCompose(true); setComposeError(null); }} className="flex items-center gap-1 rounded-lg bg-[#07111d] px-2.5 py-1.5 text-xs font-semibold text-white"><PenSquare className="h-3.5 w-3.5" />Nuevo</button>
+            <button type="button" onClick={handleRefresh} disabled={refreshing} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#29384a] hover:bg-[#f0e9d8]"><RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /></button>
           </div>
         </div>
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar correos..."
-            className="flex-1 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs outline-none focus:border-[#c88b25]"
-          />
-          <button type="submit" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#07111d] text-white">
-            <Search className="h-3.5 w-3.5" />
-          </button>
-        </form>
+        <form onSubmit={handleSearch} className="flex gap-2"><input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar correos..." className="flex-1 rounded-lg border border-[#d8cbb5] px-3 py-1.5 text-xs outline-none" /><button type="submit" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#07111d] text-white"><Search className="h-3.5 w-3.5" /></button></form>
       </div>
-
       <ul className="flex-1 divide-y divide-[#f0e9d8] overflow-y-auto">
-        {mails.length === 0 && (
-          <li className="px-4 py-12 text-center text-sm text-[#29384a]">Sin correos en la bandeja.</li>
-        )}
-        {mails.map((mail) => (
-          <li key={mail.id}>
-            <button
-              type="button"
-              onClick={() => handleSelect(mail.conversationId)}
-              className={`flex w-full items-start gap-3 px-4 py-3.5 text-left transition active:bg-[#f0e9d8] ${
-                selected === mail.conversationId ? 'bg-[#faf8f2]' : 'hover:bg-[#faf8f2]'
-              }`}
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                {initials(mail.from)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-1">
-                  <p className={`truncate text-sm ${mail.unread ? 'font-bold' : 'font-medium'} text-[#07111d]`}>
-                    {mail.from || mail.fromEmail}
-                  </p>
-                  <span className="shrink-0 text-[10px] text-[#29384a]/60">{fmtDate(mail.date)}</span>
-                </div>
-                <p className={`truncate text-xs ${mail.unread ? 'font-semibold text-[#07111d]' : 'text-[#29384a]'}`}>
-                  {mail.subject}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-[#29384a]/60">{mail.snippet}</p>
-              </div>
-              {mail.unread && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}
-            </button>
-          </li>
-        ))}
+        {mails.length === 0 && <li className="px-4 py-12 text-center text-sm text-[#29384a]">Sin correos en la bandeja.</li>}
+        {mails.map((mail) => <li key={mail.id}><button type="button" onClick={() => handleSelect(mail.conversationId)} className={`flex w-full items-start gap-3 px-4 py-3.5 text-left ${selected === mail.conversationId ? 'bg-[#faf8f2]' : 'hover:bg-[#faf8f2]'}`}><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">{initials(mail.from)}</div><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-1"><p className={`truncate text-sm ${mail.unread ? 'font-bold' : 'font-medium'} text-[#07111d]`}>{mail.from || mail.fromEmail}</p><span className="shrink-0 text-[10px] text-[#29384a]/60">{fmtDate(mail.date)}</span></div><p className="truncate text-xs text-[#29384a]">{mail.subject}</p><p className="mt-0.5 truncate text-xs text-[#29384a]/60">{mail.snippet}</p></div>{mail.unread && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}</button></li>)}
       </ul>
-
-      {!(provider === 'gmail' && gmailSA) && (
-        <div className="border-t border-[#d8cbb5] px-4 py-2.5">
-          <button
-            type="button"
-            onClick={async () => {
-              if (!confirm(`¿Desconectar la cuenta de ${provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}?`)) return;
-              await fetch(`/api/admin/correo?provider=${provider}`, { method: 'DELETE' });
-              location.reload();
-            }}
-            className="text-xs text-[#29384a]/50 transition hover:text-red-600"
-          >
-            Desconectar cuenta
-          </button>
-        </div>
-      )}
+      {!(provider === 'gmail' && gmailSA) && <div className="border-t border-[#d8cbb5] px-4 py-2.5"><button type="button" onClick={async () => { if (!confirm(`¿Desconectar la cuenta de ${provider === 'gmail' ? 'Gmail' : 'Microsoft 365'}?`)) return; await fetch(`/api/admin/correo?provider=${provider}`, { method: 'DELETE' }); location.reload(); }} className="text-xs text-[#29384a]/50 hover:text-red-600">Desconectar cuenta</button></div>}
     </aside>
   );
 
-  // ── Thread panel ──────────────────────────────────────────────
   const ThreadPanel = (
-    <div className={`flex flex-col bg-[#faf8f2]
-      ${selected ? 'flex' : 'hidden lg:flex'}
-      flex-1 min-w-0 min-h-0`}
-    >
-      {!selected || !selectedSummary ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[#29384a]/60">
-          <Mail className="h-10 w-10 text-[#d8cbb5]" />
-          <p>Selecciona un correo</p>
+    <div className={`flex min-w-0 min-h-0 flex-1 flex-col bg-[#faf8f2] ${selected ? 'flex' : 'hidden lg:flex'}`}>
+      {!selected || !selectedSummary ? <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[#29384a]/60"><Mail className="h-10 w-10 text-[#d8cbb5]" /><p>Selecciona un correo</p></div> : <>
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#d8cbb5] bg-white px-4 py-3">
+          <button type="button" onClick={() => setSelected(null)} className="mr-1 flex h-8 w-8 items-center justify-center rounded-full text-[#29384a] lg:hidden"><ArrowLeft className="h-5 w-5" /></button>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-[#07111d]">{selectedSummary.subject}</p><p className="truncate text-xs text-[#29384a]/60">{selectedSummary.from}</p></div>
+          <label className="flex items-center gap-1.5 rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#29384a]">
+            <FolderInput className="h-3 w-3" />
+            <span>Mover a</span>
+            <select value={currentFolderState?.folder_id ?? ''} onChange={(e) => void handleMove(e.target.value || null)} disabled={movingFolder} className="max-w-36 bg-transparent text-[10px] font-semibold outline-none">
+              <option value="">Entrantes</option>
+              {customFolders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+            </select>
+          </label>
+          <button type="button" onClick={openLinkModal} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${linkedCaseId ? 'bg-[#D4A017]/15 text-[#c88b25]' : 'border border-[#d8cbb5] text-[#29384a]'}`}><Link2 className="h-3 w-3" />{linkedCaseId ? 'Asociado' : 'Asociar'}</button>
         </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-3 border-b border-[#d8cbb5] bg-white px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#29384a] transition hover:bg-[#f0e9d8] lg:hidden"
-              aria-label="Volver"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[#07111d]">{selectedSummary.subject}</p>
-              <p className="truncate text-xs text-[#29384a]/60">{selectedSummary.from}</p>
-            </div>
-            <div className="shrink-0">
-              {linkedCaseId ? (
-                <button
-                  type="button"
-                  onClick={openLinkModal}
-                  className="flex items-center gap-1 rounded-full bg-[#D4A017]/15 px-2.5 py-1 text-[10px] font-semibold text-[#c88b25] transition hover:bg-[#D4A017]/25"
-                >
-                  <Link2 className="h-3 w-3" /> Asociado
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={openLinkModal}
-                  className="flex items-center gap-1 rounded-full border border-[#d8cbb5] px-2.5 py-1 text-[10px] font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#c88b25]"
-                >
-                  <Link2 className="h-3 w-3" /> Asociar
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto space-y-4 px-4 py-4">
-            {loadingThread ? (
-              <p className="pt-8 text-center text-sm text-[#29384a]/60">Cargando conversación...</p>
-            ) : threadMessages.map((msg) => {
-              const isOwn = msg.fromEmail === activeEmail;
-              return (
-                <div key={msg.id} className={`rounded-xl border p-4 ${
-                  isOwn ? 'border-[#D4A017]/20 bg-[#D4A017]/5' : 'border-[#d8cbb5] bg-white'
-                }`}>
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-semibold text-[#07111d]">{msg.from || msg.fromEmail}</p>
-                      <p className="text-[10px] text-[#29384a]/60">Para: {msg.to}</p>
-                    </div>
-                    <span className="shrink-0 text-[10px] text-[#29384a]/50">{fmtDate(msg.date)}</span>
-                  </div>
-                  {msg.bodyType === 'html' ? (
-                    <iframe
-                      title={`Correo HTML: ${msg.subject}`}
-                      srcDoc={msg.body}
-                      sandbox="allow-popups"
-                      referrerPolicy="no-referrer"
-                      className="h-96 w-full rounded-lg border border-[#f0e9d8] bg-white"
-                    />
-                  ) : (
-                    <p className="whitespace-pre-wrap text-xs leading-relaxed text-[#07111d]">{msg.body}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="border-t border-[#d8cbb5] bg-white p-4 space-y-3">
-            {sendError && <p className="text-xs text-red-600">{sendError}</p>}
-            <textarea
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder={`Responder a ${lastMsg?.fromEmail ?? ''}...`}
-              rows={3}
-              className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm outline-none focus:border-[#c88b25]"
-            />
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={handleSuggestAI}
-                disabled={suggestingAI || loadingThread || threadMessages.length === 0}
-                className="flex items-center gap-1.5 rounded-full border border-[#c88b25] px-4 py-2 text-sm font-semibold text-[#c88b25] transition hover:bg-[#c88b25]/10 disabled:opacity-40"
-                title="Sugerir respuesta con IA"
-              >
-                <span className="text-base leading-none">✦</span>
-                {suggestingAI ? 'Generando...' : 'Sugerir IA'}
-              </button>
-              <button
-                type="button"
-                onClick={handleSendReply}
-                disabled={sending || !reply.trim() || !selectedMailId}
-                className="flex items-center gap-2 rounded-full bg-[#07111d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#1a2a3a] disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-                {sending ? 'Enviando...' : 'Responder'}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+        {folderError && <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{folderError}</div>}
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          {loadingThread ? <p className="pt-8 text-center text-sm text-[#29384a]/60">Cargando conversación...</p> : threadMessages.map((msg) => {
+            const isOwn = msg.fromEmail === activeEmail;
+            return <div key={msg.id} className={`rounded-xl border p-4 ${isOwn ? 'border-[#D4A017]/20 bg-[#D4A017]/5' : 'border-[#d8cbb5] bg-white'}`}><div className="mb-3 flex items-start justify-between gap-2"><div><p className="text-xs font-semibold text-[#07111d]">{msg.from || msg.fromEmail}</p><p className="text-[10px] text-[#29384a]/60">Para: {msg.to}</p></div><span className="text-[10px] text-[#29384a]/50">{fmtDate(msg.date)}</span></div>{msg.bodyType === 'html' ? <iframe title={`Correo HTML: ${msg.subject}`} srcDoc={msg.body} sandbox="allow-popups" referrerPolicy="no-referrer" className="h-96 w-full rounded-lg border border-[#f0e9d8] bg-white" /> : <p className="whitespace-pre-wrap text-xs leading-relaxed text-[#07111d]">{msg.body}</p>}</div>;
+          })}
+        </div>
+        <div className="space-y-3 border-t border-[#d8cbb5] bg-white p-4">
+          {sendError && <p className="text-xs text-red-600">{sendError}</p>}
+          <textarea value={reply} onChange={(e) => setReply(e.target.value)} placeholder={`Responder a ${lastMsg?.fromEmail ?? ''}...`} rows={3} className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm outline-none" />
+          <div className="flex items-center justify-between gap-2"><button type="button" onClick={handleSuggestAI} disabled={suggestingAI || loadingThread || threadMessages.length === 0} className="flex items-center gap-1.5 rounded-full border border-[#c88b25] px-4 py-2 text-sm font-semibold text-[#c88b25]">✦ {suggestingAI ? 'Generando...' : 'Sugerir IA'}</button><button type="button" onClick={handleSendReply} disabled={sending || !reply.trim() || !selectedMailId} className="flex items-center gap-2 rounded-full bg-[#07111d] px-5 py-2 text-sm font-bold text-white disabled:opacity-50"><Send className="h-4 w-4" />{sending ? 'Enviando...' : 'Responder'}</button></div>
+        </div>
+      </>}
     </div>
   );
 
-  return (
-    <>
-      <div className="flex flex-col h-[calc(100dvh-3rem)] lg:h-screen overflow-hidden">
-        {ProviderBar}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          {MailList}
-          {ThreadPanel}
-        </div>
-      </div>
+  return <>
+    <div className="flex h-[calc(100dvh-3rem)] flex-col overflow-hidden lg:h-screen">{ProviderBar}<div className="flex min-h-0 flex-1 overflow-hidden">{MailList}{ThreadPanel}</div></div>
 
-      {showCompose && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"
-          onClick={() => setShowCompose(false)}
-        >
-          <div
-            className="w-full max-w-lg rounded-t-3xl bg-white sm:rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
-              <div className="flex items-center gap-2">
-                <PenSquare className="h-4 w-4 text-[#c88b25]" />
-                <p className="font-semibold text-[#07111d]">Nuevo correo</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCompose(false)}
-                className="rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e9d8]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+    {showCompose && <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={() => setShowCompose(false)}><div className="w-full max-w-lg rounded-t-3xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4"><div className="flex items-center gap-2"><PenSquare className="h-4 w-4 text-[#c88b25]" /><p className="font-semibold text-[#07111d]">Nuevo correo</p></div><button type="button" onClick={() => setShowCompose(false)} className="rounded-lg p-1.5 text-[#29384a]"><X className="h-4 w-4" /></button></div><div className="space-y-3 p-5"><div className="flex gap-2"><input value={composeTopic} onChange={(e) => setComposeTopic(e.target.value)} placeholder="Tema o contexto para Kia (opcional)..." className="flex-1 rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm" /><button type="button" onClick={handleKiaDraft} disabled={composeKiaLoading} className="flex items-center gap-1.5 rounded-xl border border-[#c88b25] px-3 py-2 text-sm font-semibold text-[#c88b25]"><Sparkles className="h-3.5 w-3.5" />{composeKiaLoading ? 'Redactando...' : 'Kia redacta'}</button></div><input type="email" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="Para (email del destinatario)" className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm" /><input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} placeholder="Asunto" className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm" /><textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} placeholder="Cuerpo del correo..." rows={6} className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm" />{composeError && <p className="text-xs text-red-600">{composeError}</p>}<div className="flex items-center justify-between gap-2 pt-1"><p className="text-[10px] text-[#29384a]/50">Enviando desde: {activeEmail}</p><div className="flex gap-2"><button type="button" onClick={() => setShowCompose(false)} className="rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm font-semibold text-[#29384a]">Cancelar</button><button type="button" onClick={handleSendCompose} disabled={composeSending || !composeTo || !composeSubject || !composeBody} className="flex items-center gap-2 rounded-xl bg-[#07111d] px-5 py-2 text-sm font-bold text-white disabled:opacity-50"><Send className="h-4 w-4" />{composeSending ? 'Enviando...' : 'Enviar'}</button></div></div></div></div></div>}
 
-            <div className="p-5 space-y-3">
-              {/* Kia draft section */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={composeTopic}
-                  onChange={(e) => setComposeTopic(e.target.value)}
-                  placeholder="Tema o contexto para Kia (opcional)..."
-                  className="flex-1 rounded-xl border border-[#d8cbb5] px-3 py-2 text-sm outline-none focus:border-[#c88b25]"
-                />
-                <button
-                  type="button"
-                  onClick={handleKiaDraft}
-                  disabled={composeKiaLoading}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#c88b25] px-3 py-2 text-sm font-semibold text-[#c88b25] transition hover:bg-[#c88b25]/10 disabled:opacity-40 whitespace-nowrap"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {composeKiaLoading ? 'Redactando...' : 'Kia redacta'}
-                </button>
-              </div>
-
-              {/* To */}
-              <input
-                type="email"
-                value={composeTo}
-                onChange={(e) => setComposeTo(e.target.value)}
-                placeholder="Para (email del destinatario)"
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
-              />
-
-              {/* Subject */}
-              <input
-                type="text"
-                value={composeSubject}
-                onChange={(e) => setComposeSubject(e.target.value)}
-                placeholder="Asunto"
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
-              />
-
-              {/* Body */}
-              <textarea
-                value={composeBody}
-                onChange={(e) => setComposeBody(e.target.value)}
-                placeholder="Cuerpo del correo..."
-                rows={6}
-                className="w-full resize-none rounded-xl border border-[#d8cbb5] px-4 py-3 text-sm outline-none focus:border-[#c88b25]"
-              />
-
-              {composeError && <p className="text-xs text-red-600">{composeError}</p>}
-
-              {/* Actions */}
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <p className="text-[10px] text-[#29384a]/50">
-                  Enviando desde: {activeEmail}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCompose(false)}
-                    className="rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm font-semibold text-[#29384a] transition hover:bg-[#f0e9d8]"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSendCompose}
-                    disabled={composeSending || !composeTo || !composeSubject || !composeBody}
-                    className="flex items-center gap-2 rounded-xl bg-[#07111d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#1a2a3a] disabled:opacity-50"
-                  >
-                    <Send className="h-4 w-4" />
-                    {composeSending ? 'Enviando...' : 'Enviar'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showLinkModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center"
-          onClick={() => setShowLinkModal(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-3xl bg-white sm:rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4">
-              <p className="font-semibold text-[#07111d]">Asociar a expediente</p>
-              <button
-                type="button"
-                onClick={() => setShowLinkModal(false)}
-                className="rounded-lg p-1.5 text-[#29384a] hover:bg-[#f0e9d8]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              <input
-                type="text"
-                placeholder="Buscar expediente o cliente..."
-                value={caseSearch}
-                onChange={(e) => setCaseSearch(e.target.value)}
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
-              />
-              <ul className="max-h-64 divide-y divide-[#f0e9d8] overflow-y-auto rounded-xl border border-[#f0e9d8]">
-                {filteredCases.length === 0 && (
-                  <li className="px-4 py-6 text-center text-sm text-[#29384a]/60">Sin resultados</li>
-                )}
-                {filteredCases.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleLink(c.id)}
-                      disabled={linking}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left text-sm transition hover:bg-[#faf8f2]"
-                    >
-                      <div>
-                        <p className="font-semibold text-[#07111d]">{c.service}</p>
-                        {c.client?.full_name && (
-                          <p className="text-xs text-[#29384a]/60">{c.client.full_name}</p>
-                        )}
-                      </div>
-                      {linkedCaseId === c.id && <Check className="h-4 w-4 text-[#1a9e4a]" />}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {linkedCaseId && (
-                <button
-                  type="button"
-                  onClick={() => handleLink(null)}
-                  disabled={linking}
-                  className="w-full rounded-xl border border-red-200 py-2 text-xs text-red-600 transition hover:bg-red-50"
-                >
-                  Desasociar expediente
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    {showLinkModal && <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center" onClick={() => setShowLinkModal(false)}><div className="w-full max-w-md rounded-t-3xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between border-b border-[#f0e9d8] px-5 py-4"><p className="font-semibold text-[#07111d]">Asociar a expediente</p><button type="button" onClick={() => setShowLinkModal(false)} className="rounded-lg p-1.5 text-[#29384a]"><X className="h-4 w-4" /></button></div><div className="space-y-3 p-4"><input placeholder="Buscar expediente o cliente..." value={caseSearch} onChange={(e) => setCaseSearch(e.target.value)} className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm" /><ul className="max-h-64 divide-y divide-[#f0e9d8] overflow-y-auto rounded-xl border border-[#f0e9d8]">{filteredCases.length === 0 && <li className="px-4 py-6 text-center text-sm text-[#29384a]/60">Sin resultados</li>}{filteredCases.map((c) => <li key={c.id}><button type="button" onClick={() => void handleLink(c.id)} disabled={linking} className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-[#faf8f2]"><div><p className="font-semibold text-[#07111d]">{c.service}</p><p className="text-xs text-[#29384a]/60">{c.client?.full_name || c.client?.email}</p></div>{linkedCaseId === c.id && <Check className="h-4 w-4 text-[#1a9e4a]" />}</button></li>)}</ul>{linkedCaseId && <button type="button" onClick={() => void handleLink(null)} disabled={linking} className="w-full rounded-xl border border-red-200 py-2 text-xs text-red-600">Desasociar expediente</button>}</div></div></div>}
+  </>;
 }
