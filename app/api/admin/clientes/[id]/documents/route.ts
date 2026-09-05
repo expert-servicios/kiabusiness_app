@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 async function requireAdmin(request: NextRequest) {
@@ -13,7 +14,9 @@ async function requireAdmin(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  return profile?.role === 'admin' || profile?.role === 'owner' ? admin : null;
+  return profile?.role === 'admin' || profile?.role === 'owner'
+    ? { admin, actorId: user.id }
+    : null;
 }
 
 type RawDocument = {
@@ -35,6 +38,14 @@ type RawDocument = {
   uploaded_by_role: string | null;
 };
 
+type ClientCase = {
+  id: string;
+  service: string | null;
+  category: string | null;
+  state: string | null;
+  company_id: string | null;
+};
+
 type EmailProvenance = {
   document_id: string;
   provider: 'gmail' | 'ms365';
@@ -49,16 +60,7 @@ type EmailProvenance = {
 
 const DOCUMENT_SELECT = 'id,company_id,owner_type,owner_id,kind,drive_file_id,mime_type,title,created_at,doc_type,case_id,client_id,file_path,original_name,state,uploaded_by_role';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const admin = await requireAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-
-  const { id } = await params;
-  const requestedCompany = request.nextUrl.searchParams.get('companyId');
-
+async function loadClientContext(admin: ReturnType<typeof getSupabaseAdmin>, id: string) {
   const [profileRes, authRes, casesRes, membershipsRes] = await Promise.all([
     admin.from('profiles').select('id,email,full_name').eq('id', id).single(),
     admin.auth.admin.getUserById(id),
@@ -66,10 +68,9 @@ export async function GET(
     admin.from('profile_companies').select('company_id').eq('profile_id', id),
   ]);
 
-  if (profileRes.error || !profileRes.data) {
-    return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
-  }
+  if (profileRes.error || !profileRes.data) return null;
 
+  const cases = (casesRes.data ?? []) as ClientCase[];
   const companyIds = Array.from(new Set((membershipsRes.data ?? []).map((row) => row.company_id).filter(Boolean)));
   const companiesRes = companyIds.length
     ? await admin.from('companies').select('id,razon_social,nombre_comercial').in('id', companyIds)
@@ -79,14 +80,47 @@ export async function GET(
     id: company.id,
     name: company.razon_social || company.nombre_comercial || company.id,
   }));
-  const allowedCompanyIds = new Set(companies.map((company) => company.id));
+
+  return {
+    profile: profileRes.data,
+    authUser: authRes.data.user,
+    cases,
+    companies,
+    companyIds,
+    allowedCompanyIds: new Set(companies.map((company) => company.id)),
+    caseIds: cases.map((row) => row.id),
+  };
+}
+
+function documentBelongsToClient(doc: RawDocument, id: string, caseIds: string[], companyIds: string[]) {
+  if (doc.kind === 'internal') return false;
+  return doc.client_id === id
+    || Boolean(doc.case_id && caseIds.includes(doc.case_id))
+    || Boolean(doc.company_id && companyIds.includes(doc.company_id))
+    || (doc.owner_type === 'profile' && doc.owner_id === id)
+    || (doc.owner_type === 'company' && Boolean(doc.owner_id && companyIds.includes(doc.owner_id)));
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const ctx = await requireAdmin(request);
+  if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const { admin } = ctx;
+
+  const { id } = await params;
+  const requestedCompany = request.nextUrl.searchParams.get('companyId');
+  const context = await loadClientContext(admin, id);
+  if (!context) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
+
+  const { profile, authUser, cases, companies, companyIds, allowedCompanyIds, caseIds } = context;
 
   if (requestedCompany && requestedCompany !== 'unassigned' && !allowedCompanyIds.has(requestedCompany)) {
     return NextResponse.json({ error: 'Entidad no vinculada a este cliente' }, { status: 400 });
   }
 
-  const caseIds = (casesRes.data ?? []).map((row) => row.id);
-  const caseById = new Map((casesRes.data ?? []).map((row) => [row.id, row]));
+  const caseById = new Map(cases.map((row) => [row.id, row]));
   const companyNameById = new Map(companies.map((company) => [company.id, company.name]));
 
   const [directRes, caseRes, companyRes, profileOwnerRes, companyOwnerRes] = await Promise.all([
@@ -183,22 +217,133 @@ export async function GET(
       ? normalized.filter((doc) => doc.companyId === requestedCompany)
       : normalized;
 
-  const email = (authRes.data.user?.email ?? profileRes.data.email ?? '').trim().toLowerCase();
+  const email = (authUser?.email ?? profile.email ?? '').trim().toLowerCase();
 
   return NextResponse.json({
-    client: {
-      id,
-      name: profileRes.data.full_name ?? email,
-      email,
-    },
+    client: { id, name: profile.full_name ?? email, email },
     companies,
+    cases: cases.map((row) => ({
+      id: row.id,
+      service: row.service,
+      category: row.category,
+      state: row.state,
+      companyId: row.company_id,
+    })),
     documents: filtered,
     counts: {
       total: filtered.length,
+      pending: filtered.filter((doc) => doc.state === 'pendiente').length,
+      reviewed: filtered.filter((doc) => doc.state === 'revisado').length,
+      rejected: filtered.filter((doc) => doc.state === 'rechazado').length,
       withCase: filtered.filter((doc) => doc.caseId).length,
       withCompany: filtered.filter((doc) => doc.companyId).length,
       unassigned: normalized.filter((doc) => !doc.companyId).length,
       technicalExcluded,
+    },
+  });
+}
+
+const updateSchema = z.object({
+  documentId: z.string().uuid(),
+  state: z.enum(['pendiente', 'revisado', 'rechazado']).optional(),
+  docType: z.string().trim().min(1).max(80).optional(),
+  title: z.string().trim().min(1).max(160).optional(),
+  caseId: z.string().uuid().nullable().optional(),
+}).refine((value) => value.state !== undefined || value.docType !== undefined || value.title !== undefined || value.caseId !== undefined, {
+  message: 'No hay cambios que guardar',
+});
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const ctx = await requireAdmin(request);
+  if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const { admin, actorId } = ctx;
+  const { id } = await params;
+
+  const body = await request.json().catch(() => null);
+  const parsed = updateSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+
+  const context = await loadClientContext(admin, id);
+  if (!context) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
+
+  const { data: document, error: documentError } = await admin
+    .from('documents')
+    .select(DOCUMENT_SELECT)
+    .eq('id', parsed.data.documentId)
+    .single();
+  if (documentError || !document) return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 });
+
+  const current = document as RawDocument;
+  if (!documentBelongsToClient(current, id, context.caseIds, context.companyIds)) {
+    return NextResponse.json({ error: 'Documento no vinculado a este cliente' }, { status: 409 });
+  }
+  if (!current.company_id || !context.allowedCompanyIds.has(current.company_id)) {
+    return NextResponse.json({ error: 'La entidad del documento no está vinculada al cliente' }, { status: 409 });
+  }
+
+  let targetCase: ClientCase | null = null;
+  if (parsed.data.caseId) {
+    targetCase = context.cases.find((row) => row.id === parsed.data.caseId) ?? null;
+    if (!targetCase) return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
+    if (!targetCase.company_id || targetCase.company_id !== current.company_id) {
+      return NextResponse.json({
+        error: 'El expediente debe pertenecer a la misma entidad que el documento. No se cambia la entidad automáticamente.',
+        code: 'case_company_mismatch',
+      }, { status: 409 });
+    }
+  }
+
+  const updates: Record<string, string | null> = {};
+  if (parsed.data.state !== undefined) updates.state = parsed.data.state;
+  if (parsed.data.docType !== undefined) updates.doc_type = parsed.data.docType;
+  if (parsed.data.title !== undefined) updates.title = parsed.data.title;
+  if (parsed.data.caseId !== undefined) updates.case_id = parsed.data.caseId;
+
+  const { data: updated, error: updateError } = await admin
+    .from('documents')
+    .update(updates)
+    .eq('id', current.id)
+    .select(DOCUMENT_SELECT)
+    .single();
+  if (updateError || !updated) {
+    console.error('[documents360] update failed', updateError);
+    return NextResponse.json({ error: 'No se pudo actualizar el documento' }, { status: 500 });
+  }
+
+  await admin.from('audit_logs').insert({
+    actor_id: actorId,
+    action: 'document.admin_updated',
+    entity: 'documents',
+    entity_id: current.id,
+    metadata: {
+      client_id: id,
+      company_id: current.company_id,
+      previous: {
+        state: current.state,
+        doc_type: current.doc_type,
+        title: current.title,
+        case_id: current.case_id,
+      },
+      next: {
+        state: updated.state,
+        doc_type: updated.doc_type,
+        title: updated.title,
+        case_id: updated.case_id,
+      },
+    },
+  }).then(() => {});
+
+  return NextResponse.json({
+    document: {
+      id: updated.id,
+      state: updated.state,
+      docType: updated.doc_type,
+      title: updated.title,
+      caseId: updated.case_id,
+      caseName: targetCase?.service ?? (updated.case_id ? context.cases.find((row) => row.id === updated.case_id)?.service ?? null : null),
     },
   });
 }
