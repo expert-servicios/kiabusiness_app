@@ -294,6 +294,7 @@ const linkSchema = z.object({
   conversationId: z.string().trim().min(1).max(500),
   caseId: z.string().uuid().nullable(),
   subject: z.string().trim().max(500).optional(),
+  lastMessageAt: z.string().datetime().optional(),
 });
 
 export async function POST(
@@ -310,7 +311,7 @@ export async function POST(
   const context = await loadClientContext(admin, id);
   if (!context) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
-  const { conversationId, caseId, subject } = parsed.data;
+  const { conversationId, caseId, subject, lastMessageAt } = parsed.data;
   const selectedCase = caseId ? context.cases.find((item) => item.id === caseId) ?? null : null;
   if (caseId && !selectedCase) {
     return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
@@ -322,7 +323,7 @@ export async function POST(
       case_id: caseId,
       subject: subject ?? null,
       client_email: context.email || null,
-      last_message_at: new Date().toISOString(),
+      last_message_at: lastMessageAt ?? null,
     }, { onConflict: 'thread_id' });
     if (error) {
       console.error('[client communications] link thread failed', error);
@@ -331,7 +332,7 @@ export async function POST(
   } else {
     const { error } = await admin
       .from('email_threads')
-      .update({ case_id: null, last_message_at: new Date().toISOString() })
+      .update({ case_id: null })
       .eq('thread_id', conversationId)
       .ilike('client_email', context.email);
     if (error) {
