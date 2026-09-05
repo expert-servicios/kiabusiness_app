@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { CorreoInbox } from '@/components/admin/CorreoInbox';
+import { CorreoFoldersPanel } from '@/components/admin/CorreoFoldersPanel';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 const CORREO_FALLBACK = {
@@ -63,16 +64,21 @@ export default async function AdminCorreoPage({
   const data = await fetchCorreoData();
 
   return (
-    <CorreoInbox
-      ms365Connected={data.ms365Connected}
-      ms365Email={data.ms365Email}
-      gmailConnected={data.gmailConnected}
-      gmailEmail={data.gmailEmail}
-      gmailSA={data.gmailSA}
-      initialMails={data.initialMails as Parameters<typeof CorreoInbox>[0]['initialMails']}
-      initialProvider={data.initialProvider}
-      errorParam={params.error ?? null}
-      connectedParam={params.connected ?? null}
-    />
+    <div className="flex min-h-[calc(100vh-53px)] flex-col bg-white lg:min-h-screen lg:flex-row">
+      <CorreoFoldersPanel />
+      <div className="min-w-0 flex-1">
+        <CorreoInbox
+          ms365Connected={data.ms365Connected}
+          ms365Email={data.ms365Email}
+          gmailConnected={data.gmailConnected}
+          gmailEmail={data.gmailEmail}
+          gmailSA={data.gmailSA}
+          initialMails={data.initialMails as Parameters<typeof CorreoInbox>[0]['initialMails']}
+          initialProvider={data.initialProvider}
+          errorParam={params.error ?? null}
+          connectedParam={params.connected ?? null}
+        />
+      </div>
+    </div>
   );
 }
