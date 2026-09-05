@@ -23,6 +23,13 @@ type Client360 = {
   integrations: { id: string; provider: string; status: string; company_id: string | null; last_success_at: string | null; last_error: string | null }[];
 };
 
+type CanonicalOnboardingState = {
+  activeSubscriptionId: string | null;
+  companyId: string | null;
+  completedAt: string | null;
+  completed: boolean;
+};
+
 type StepState = 'done' | 'active' | 'pending';
 type Step = { key: string; title: string; detail: string; state: StepState; href?: string; action?: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -34,16 +41,22 @@ function stateClass(state: StepState) {
 
 export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
   const [data, setData] = useState<Client360 | null>(null);
+  const [onboardingState, setOnboardingState] = useState<CanonicalOnboardingState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/admin/clientes/${clientId}`, { cache: 'no-store' });
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar el alta');
-      setData(json);
+      const [clientResponse, onboardingResponse] = await Promise.all([
+        fetch(`/api/admin/clientes/${clientId}`, { cache: 'no-store' }),
+        fetch(`/api/admin/clientes/${clientId}/onboarding-state`, { cache: 'no-store' }),
+      ]);
+      const [clientJson, onboardingJson] = await Promise.all([clientResponse.json(), onboardingResponse.json()]);
+      if (!clientResponse.ok) throw new Error(clientJson.error ?? 'No se pudo cargar el alta');
+      if (!onboardingResponse.ok) throw new Error(onboardingJson.error ?? 'No se pudo cargar el estado de onboarding');
+      setData(clientJson);
+      setOnboardingState(onboardingJson);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Error de conexión');
     } finally { setLoading(false); }
@@ -64,7 +77,7 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
     const companyReady = Boolean(activeCompany);
     const commercialReady = Boolean(latestQuote || openCheckout || activeSubscription);
     const checkoutState: StepState = activeSubscription ? 'done' : openCheckout ? 'active' : 'pending';
-    const onboardingDone = Boolean(data.profile.onboarding_completed_at);
+    const onboardingDone = onboardingState?.completed ?? Boolean(data.profile.onboarding_completed_at);
 
     return [
       { key: 'profile', title: 'Perfil y facturación', detail: profileReady ? 'Datos mínimos listos para contratar.' : 'Completar datos personales/fiscales antes de cobrar.', state: profileReady ? 'done' : 'active', href: `/admin/clientes/${clientId}`, action: profileReady ? 'Revisar ficha' : 'Completar ficha', icon: UserRoundCheck },
@@ -79,11 +92,11 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
         detail: activeSubscription ? `${activeSubscription.plan} · ${activeSubscription.status}` : openCheckout ? `Checkout abierto · ${openCheckout.stripe_session_id}` : 'Pendiente de generar/completar Checkout.',
         state: checkoutState, href: `/admin/suscripciones?clientId=${encodeURIComponent(clientId)}${companyQuery}`, action: activeSubscription ? 'Ver suscripción' : 'Ver intentos', icon: CreditCard,
       },
-      { key: 'onboarding', title: 'Onboarding', detail: onboardingDone ? 'Onboarding marcado como completado.' : onboardingCase?.next_action || (activeSubscription ? 'Continuar reunión inicial y configuración poscompra.' : 'Se activa después de la suscripción.'), state: onboardingDone ? 'done' : activeSubscription || onboardingCase ? 'active' : 'pending', href: `/admin/expedientes?clientId=${clientId}`, action: onboardingDone ? 'Ver expediente' : 'Continuar onboarding', icon: CheckCircle2 },
+      { key: 'onboarding', title: 'Onboarding', detail: onboardingDone ? 'Onboarding poscompra completado para la suscripción activa.' : onboardingCase?.next_action || (activeSubscription ? 'Continuar reunión inicial y configuración poscompra.' : 'Se activa después de la suscripción.'), state: onboardingDone ? 'done' : activeSubscription || onboardingCase ? 'active' : 'pending', href: `/admin/expedientes?clientId=${clientId}`, action: onboardingDone ? 'Ver expediente' : 'Continuar onboarding', icon: CheckCircle2 },
       { key: 'holded', title: 'Holded', detail: holded ? `Integración activa${holded.last_success_at ? ` · última OK ${new Date(holded.last_success_at).toLocaleDateString('es-ES')}` : ''}` : 'Sin integración Holded activa para la entidad.', state: holded ? 'done' : activeSubscription ? 'active' : 'pending', href: `/admin/clientes/${clientId}/integraciones`, action: holded ? 'Probar / gestionar' : 'Conectar / revisar', icon: Plug },
       { key: 'communications', title: 'Comunicaciones', detail: `${data.emailEvents.length} email(s) EXPERT registrados. Correo 360 disponible para seguimiento.`, state: data.emailEvents.length ? 'done' : 'active', href: `/admin/clientes/${clientId}/comunicaciones`, action: 'Abrir comunicaciones', icon: Mail },
     ];
-  }, [data, clientId]);
+  }, [data, onboardingState, clientId]);
 
   if (loading && !data) return <div className="border-b border-[#e6dfd2] bg-[#faf8f2] px-6 py-3 text-xs text-[#6b7280]"><RefreshCw className="mr-2 inline h-3.5 w-3.5 animate-spin" />Cargando alta y activación…</div>;
   if (error || !data) return <div className="border-b border-red-200 bg-red-50 px-6 py-2 text-xs text-red-700">No se pudo cargar el cockpit de alta: {error || 'sin datos'}</div>;

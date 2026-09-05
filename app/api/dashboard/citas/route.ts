@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { data: appointments, error } = await admin
       .from('appointments')
       .select('id,service,status,confirmed_date,confirmed_time,meeting_url,notes,created_at')
-      .eq('email', user.email)
+      .ilike('email', user.email)
       .order('confirmed_date', { ascending: false, nullsFirst: false });
 
     if (error) {

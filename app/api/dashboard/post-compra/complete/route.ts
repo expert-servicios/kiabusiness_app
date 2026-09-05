@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const { data: appointments, error: appointmentError } = await admin
     .from('appointments')
     .select('id,service,appointment_type,status')
-    .eq('email', user.email)
+    .ilike('email', user.email)
     .neq('status', 'cancelled');
 
   if (appointmentError) {
