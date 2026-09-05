@@ -85,6 +85,34 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('next: {');
   });
 
+  it('loads document history lazily and scopes audit rows to document, client and company', () => {
+    const historyRoute = source('app/api/admin/clientes/[id]/documents/history/route.ts');
+    const history = source('app/(protected)/admin/clientes/[id]/documentos/DocumentHistory.tsx');
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+
+    expect(historyRoute).toContain(".eq('entity', 'documents')");
+    expect(historyRoute).toContain(".eq('entity_id', document.id)");
+    expect(historyRoute).toContain(".eq('action', 'document.admin_updated')");
+    expect(historyRoute).toContain('metadata.client_id === id');
+    expect(historyRoute).toContain('metadata.company_id === document.company_id');
+    expect(historyRoute).toContain('.limit(50)');
+    expect(history).toContain('Historial');
+    expect(history).toContain('Todavía no hay cambios administrativos registrados');
+    expect(history).toContain('/documents/history?');
+    expect(page).toContain('<DocumentHistory clientId={id} documentId={doc.id} />');
+  });
+
+  it('shows actor, timestamp and before-to-after field changes in history', () => {
+    const historyRoute = source('app/api/admin/clientes/[id]/documents/history/route.ts');
+    const history = source('app/(protected)/admin/clientes/[id]/documentos/DocumentHistory.tsx');
+
+    expect(historyRoute).toContain("admin.from('profiles').select('id,full_name,email,role').in('id', actorIds)");
+    expect(historyRoute).toContain("const fields = ['state', 'doc_type', 'title', 'case_id'] as const");
+    expect(historyRoute).toContain("label = field === 'state' ? 'Estado'");
+    expect(history).toContain("new Date(entry.createdAt).toLocaleString('es-ES')");
+    expect(history).toContain('{change.before}</span> → {change.after}');
+  });
+
   it('surfaces a documents shortcut from Client 360', () => {
     const shortcut = source('app/(protected)/admin/clientes/[id]/ClientCommunicationsShortcut.tsx');
     expect(shortcut).toContain(`/admin/clientes/${'${clientId}'}/documentos`);

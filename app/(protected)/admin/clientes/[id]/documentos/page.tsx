@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, CheckCircle2, Download, ExternalLink, FileText, FolderOpen, Mail, Pencil, RefreshCw, Save, Search, XCircle } from 'lucide-react';
+import DocumentHistory from './DocumentHistory';
 
 type EmailProvenance = {
   type: 'email_attachment';
@@ -218,7 +219,7 @@ export default function ClientDocumentsPage() {
         )}
 
         <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
-          Puedes revisar, clasificar y vincular documentos a expedientes. La entidad del documento nunca se cambia automáticamente; sólo se permiten expedientes del mismo cliente y de la misma entidad. Cada cambio queda registrado en auditoría.
+          Puedes revisar, clasificar y vincular documentos a expedientes. La entidad del documento nunca se cambia automáticamente; sólo se permiten expedientes del mismo cliente y de la misma entidad. Cada cambio queda registrado en auditoría y puede consultarse desde Historial.
         </div>
 
         {loading && !data ? (
@@ -299,6 +300,8 @@ export default function ClientDocumentsPage() {
                         )}
 
                         {doc.caseId && <Link href={`/admin/expedientes/${doc.caseId}`} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#c88b25] hover:underline"><FolderOpen className="h-3.5 w-3.5" /> {doc.caseName ?? 'Abrir expediente'} <ExternalLink className="h-3 w-3" /></Link>}
+
+                        <DocumentHistory clientId={id} documentId={doc.id} />
                       </div>
                     </div>
 
