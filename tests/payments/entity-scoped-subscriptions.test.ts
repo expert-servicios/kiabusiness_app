@@ -23,14 +23,17 @@ describe('entity-scoped billing', () => {
     expect(migration).toContain('manual review required');
   });
 
-  it('customer checkout requires billing readiness and a contracting entity', () => {
+  it('customer checkout requires company billing readiness and a contracting entity', () => {
     const checkout = source('app/api/subscriptions/checkout/route.ts');
-    expect(checkout).toContain(".select('profile_completed,billing_ready,active_company_id')");
+    expect(checkout).toContain(".select('profile_completed,active_company_id')");
+    expect(checkout).toContain(".select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')");
+    expect(checkout).toContain('isCompanyBillingReady(company)');
     expect(checkout).toContain("code: 'billing_required'");
     expect(checkout).toContain("code: 'company_required'");
     expect(checkout).toContain(".eq('company_id', companyId)");
     expect(checkout).toContain('await stripe.checkout.sessions.expire(session.id)');
     expect(checkout).toContain('company_id: companyId');
+    expect(checkout).not.toContain('profile.billing_ready');
     expect(checkout).not.toContain("company_id: companyId ?? ''");
     expect(checkout).not.toContain("code: 'holded_required'");
   });

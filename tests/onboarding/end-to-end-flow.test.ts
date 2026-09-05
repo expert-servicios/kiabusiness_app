@@ -43,12 +43,13 @@ describe('end-to-end onboarding safeguards', () => {
     expect(invite).toContain("if (isNewUser) {");
   });
 
-  it('keeps monthly checkout gated by profile, billing and company membership, not Holded', () => {
+  it('keeps monthly checkout gated by profile, company billing and membership, not Holded', () => {
     const checkout = source('app/api/subscriptions/checkout/route.ts');
 
     expect(checkout).toContain('profile.profile_completed');
-    expect(checkout).toContain('profile.billing_ready');
+    expect(checkout).toContain('isCompanyBillingReady(company)');
     expect(checkout).toContain(".from('profile_companies')");
+    expect(checkout).not.toContain('profile.billing_ready');
     expect(checkout).not.toContain("code: 'holded_required'");
     expect(checkout).toContain('await stripe.checkout.sessions.expire(session.id)');
   });
