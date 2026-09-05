@@ -39,6 +39,12 @@ describe('Admin onboarding follow-up', () => {
     expect(calWebhook).toContain("{ onConflict: 'cal_uid' }");
   });
 
+  it('recognizes the canonical onboarding appointment type when completing post-purchase onboarding', () => {
+    expect(completeRoute).toContain(".select('id,service,appointment_type,status')");
+    expect(completeRoute).toContain("String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'");
+    expect(completeRoute).toContain("String(appointment.service ?? '').toLowerCase().includes('onboarding')");
+  });
+
   it('reuses an open onboarding case and never writes the invalid cases.state nuevo value', () => {
     expect(calWebhook).toContain('findOpenOnboardingCase(authUser.id)');
     expect(helper).toContain(".in('service', ['Alta de usuario', 'Sesión de onboarding'])");
