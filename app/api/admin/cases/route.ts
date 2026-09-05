@@ -22,16 +22,14 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('cases')
-      .select('id,category,service,state,status,opened_at,closed_at,client_id,admin_note,docs_checklist')
+      .select('id,category,service,state,status,opened_at,closed_at,client_id,company_id,admin_note,docs_checklist')
       .order('opened_at', { ascending: false });
 
     if (clientIdFilter) query = query.eq('client_id', clientIdFilter);
 
     const { data: cases, error } = await query;
-
     if (error) return NextResponse.json({ error: 'Error al obtener expedientes' }, { status: 500 });
 
-    // Fetch client profiles in bulk
     const clientIds = [...new Set((cases ?? []).map((c) => c.client_id).filter(Boolean))];
     const profileMap: Record<string, { full_name: string | null; email: string }> = {};
 
@@ -67,8 +65,8 @@ export async function GET(request: NextRequest) {
 
 const createCaseSchema = z.object({
   client_id: z.string().uuid(),
-  service:   z.string().min(1).max(200),
-  category:  z.string().min(1).max(100),
+  service: z.string().min(1).max(200),
+  category: z.string().min(1).max(100),
 });
 
 export async function POST(request: NextRequest) {
@@ -93,7 +91,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Background: sync new case as Holded project
     admin.auth.admin.getUserById(client_id).then(({ data: authUser }) => {
       return admin.from('profiles').select('full_name,phone').eq('id', client_id).maybeSingle()
         .then(({ data: prof }) => {
