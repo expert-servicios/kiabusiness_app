@@ -8,6 +8,7 @@ function source(path: string): string {
 
 describe('Admin onboarding follow-up', () => {
   const migration = source('supabase/migrations/20260905102800_subscription_onboarding_admin_followup.sql');
+  const helper = source('lib/admin/onboarding-followup.ts');
   const calWebhook = source('app/api/webhooks/cal/route.ts');
   const completeRoute = source('app/api/dashboard/post-compra/complete/route.ts');
   const tasksApi = source('app/api/admin/tasks/route.ts');
@@ -40,9 +41,9 @@ describe('Admin onboarding follow-up', () => {
 
   it('reuses an open onboarding case and never writes the invalid cases.state nuevo value', () => {
     expect(calWebhook).toContain('findOpenOnboardingCase(authUser.id)');
+    expect(helper).toContain(".in('service', ['Alta de usuario', 'Sesión de onboarding'])");
     expect(calWebhook).toContain("state: 'en_proceso'");
     expect(calWebhook).not.toContain("state: 'nuevo'");
-    expect(calWebhook).toContain("service in ('Alta de usuario','Sesión de onboarding')");
   });
 
   it('creates idempotent admin booking alerts and syncs onboarding to the Admin calendar', () => {
@@ -66,7 +67,7 @@ describe('Admin onboarding follow-up', () => {
     expect(tasksApi).toContain("source: 'manual'");
     expect(tasksPage).toContain('Tareas pendientes');
     expect(tasksPage).toContain("fetch('/api/admin/tasks'");
-    expect(rightPanel).toContain("href=\"/admin/tareas\"");
+    expect(rightPanel).toContain('href="/admin/tareas"');
     expect(rightPanel).toContain('Tareas abiertas');
   });
 });
