@@ -98,7 +98,7 @@ export default function ClientFiscalObligationsPage() {
           <div className="flex gap-2"><Link href={`/admin/clientes/${id}/operaciones`} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold">Operaciones</Link><button onClick={() => void load()} type="button" className="rounded-xl border border-[#d8cbb5] bg-white p-2.5" title="Actualizar"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button></div>
         </div>
 
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">EXPERT no asigna modelos automáticamente por forma jurídica, plan o tipo de cliente. Primero confirma una plantilla para la entidad; después EXPERT genera los próximos vencimientos, tareas y eventos. Para casos especiales o fechas no estándar, conserva la creación manual de abajo.</div>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">EXPERT no asigna modelos fiscales automáticamente por forma jurídica o plan. Tampoco los deduce por tipo de cliente. Primero confirma una plantilla para la entidad; después EXPERT genera los próximos vencimientos, tareas y eventos. Para casos especiales o fechas no estándar, conserva la creación manual de abajo.</div>
         {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         {context && <FiscalTemplatePanel clientId={id} companies={context.companies} onGenerated={() => void load()} />}
