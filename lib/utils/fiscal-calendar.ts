@@ -230,7 +230,9 @@ export type Urgency = 'overdue' | 'critical' | 'soon' | 'ok';
 export function urgencyLevel(deadline: string): Urgency {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((new Date(`${deadline}T12:00:00`).getTime() - today.getTime()) / 86400000);
+  // Keep date-only comparison compatible with the existing fiscal calendar UI/tests.
+  // Deadlines are stored as ISO dates and are not timestamps.
+  const diff = Math.ceil((new Date(deadline).getTime() - today.getTime()) / 86400000);
   if (diff < 0) return 'overdue';
   if (diff <= 7) return 'critical';
   if (diff <= 30) return 'soon';
