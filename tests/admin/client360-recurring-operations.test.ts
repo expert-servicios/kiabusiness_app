@@ -38,10 +38,10 @@ describe('Client 360 recurring operations', () => {
   });
 
   it('exposes tasks, cases, documents, deadlines and integrations from Client 360 navigation', () => {
-    expect(operationsNav).toContain(`/admin/clientes/${clientId}/operaciones`);
-    expect(operationsNav).toContain(`/admin/clientes/${clientId}/documentos`);
-    expect(operationsNav).toContain(`/admin/tareas?clientId=${clientId}`);
-    expect(operationsNav).toContain(`/admin/clientes/${clientId}/integraciones`);
+    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/operaciones`}');
+    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/documentos`}');
+    expect(operationsNav).toContain('href={`/admin/tareas?clientId=${clientId}`}');
+    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/integraciones`}');
     expect(clientLayout).toContain('<ClientOperationsNav clientId={id} />');
     expect(operationsPage).toContain('Tareas y próximos pasos');
     expect(operationsPage).toContain('Plazos y calendario');
@@ -53,18 +53,18 @@ describe('Client 360 recurring operations', () => {
     expect(tasksPage).toContain("const clientId = searchParams.get('clientId')");
     expect(tasksPage).toContain("params.set('clientId', clientId)");
     expect(tasksPage).toContain('clientId: clientId || null');
-    expect(tasksPage).toContain(`/admin/clientes/${clientId}/operaciones`);
+    expect(tasksPage).toContain('href={`/admin/clientes/${clientId}/operaciones`}');
   });
 
   it('persists case documents using the real production schema and safe company scope', () => {
     expect(documentsRoute).toContain(".select('id,client_id,company_id,service')");
-    expect(documentsRoute).toContain("company_id: companyId");
+    expect(documentsRoute).toContain('company_id: companyId');
     expect(documentsRoute).toContain("owner_type: 'case'");
     expect(documentsRoute).toContain('owner_id: caseId');
     expect(documentsRoute).toContain("kind: 'client_document'");
     expect(documentsRoute).toContain('mime_type: validation.contentType');
     expect(documentsRoute).toContain("code: 'case_company_required'");
-    expect(documentsRoute).toContain(".update({ drive_file_id: driveResult.fileId })");
+    expect(documentsRoute).toContain('.update({ drive_file_id: driveResult.fileId })');
     expect(documentsRoute).not.toContain('.update({ metadata:');
   });
 
