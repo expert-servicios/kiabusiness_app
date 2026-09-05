@@ -77,6 +77,38 @@ async function loadCheckout(sessionId: string) {
   return { admin, local, metadata, profile, clientEmail, company, stripeSession, planName, amountEur };
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    const actorId = await requireStaff(request);
+    if (!actorId) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    const sessionId = new URL(request.url).searchParams.get('sessionId');
+    if (!sessionId || sessionId.length < 10) return NextResponse.json({ error: 'sessionId requerido' }, { status: 400 });
+    const checkout = await loadCheckout(sessionId);
+    if ('error' in checkout) return NextResponse.json({ error: checkout.error }, { status: checkout.status });
+    return NextResponse.json({
+      ok: true,
+      sessionId: checkout.local.stripe_session_id,
+      stripeUrl: checkout.stripeSession.url,
+      clientId: checkout.local.user_id,
+      companyId: checkout.local.company_id,
+      recipient: checkout.clientEmail,
+      clientName: checkout.profile?.full_name ?? checkout.clientEmail.split('@')[0],
+      companyName: checkout.company?.razon_social ?? null,
+      planName: checkout.planName,
+      amountEur: checkout.amountEur,
+      emailSent: checkout.metadata.email_sent === true,
+      emailSentAt: typeof checkout.metadata.email_sent_at === 'string' ? checkout.metadata.email_sent_at : null,
+      emailSource: typeof checkout.metadata.email_source === 'string' ? checkout.metadata.email_source : null,
+      leadId: typeof checkout.metadata.lead_id === 'string' ? checkout.metadata.lead_id : null,
+      quoteId: typeof checkout.metadata.quote_id === 'string' ? checkout.metadata.quote_id : null,
+      onboardingCaseId: typeof checkout.metadata.onboarding_case_id === 'string' ? checkout.metadata.onboarding_case_id : null,
+    });
+  } catch (error) {
+    console.error('[admin/subscriptions/email GET] error:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireStaff(request);
