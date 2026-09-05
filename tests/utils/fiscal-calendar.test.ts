@@ -1,40 +1,48 @@
 import { describe, it, expect } from 'vitest';
-import { generateFiscalObligations, urgencyLevel } from '@/lib/utils/fiscal-calendar';
+import { generateFiscalTemplateObligations, urgencyLevel } from '@/lib/utils/fiscal-calendar';
 
-describe('generateFiscalObligations', () => {
-  it('incluye modelos societarios para empresa y excluye los de autonomo/persona_fisica', () => {
-    const keys = generateFiscalObligations('empresa', 2026).map((o) => o.obligation_key);
-    expect(keys).toContain('202_1P');
-    expect(keys).toContain('200_ANNUAL');
-    expect(keys).toContain('180_ANNUAL');
-    expect(keys.some((k) => k.startsWith('130_'))).toBe(false);
-    expect(keys).not.toContain('100_ANNUAL');
+describe('generateFiscalTemplateObligations', () => {
+  it('genera solo las plantillas expresamente seleccionadas', () => {
+    const items = generateFiscalTemplateObligations(['303_quarterly', '202_triannual'], 2026);
+    const models = new Set(items.map((o) => o.modelo));
+    expect(models).toEqual(new Set(['303', '202']));
+    expect(items).toHaveLength(7);
   });
 
-  it('incluye modelos de autonomo y excluye los exclusivos de empresa', () => {
-    const keys = generateFiscalObligations('autonomo', 2026).map((o) => o.obligation_key);
-    expect(keys.some((k) => k.startsWith('130_'))).toBe(true);
-    expect(keys).toContain('100_ANNUAL');
-    expect(keys.some((k) => k.startsWith('202_'))).toBe(false);
-    expect(keys).not.toContain('200_ANNUAL');
+  it('usa los plazos trimestrales correctos para 303', () => {
+    const items = generateFiscalTemplateObligations(['303_quarterly'], 2026);
+    expect(items.map((o) => [o.period_label, o.deadline])).toEqual([
+      ['1T 2026', '2026-04-20'],
+      ['2T 2026', '2026-07-20'],
+      ['3T 2026', '2026-10-20'],
+      ['4T 2026', '2027-01-30'],
+    ]);
   });
 
-  it('persona_fisica solo tiene 100 (IRPF) y 720 (bienes en el extranjero)', () => {
-    const keys = generateFiscalObligations('persona_fisica', 2026).map((o) => o.obligation_key);
-    expect(keys.sort()).toEqual(['100_ANNUAL', '720_ANNUAL']);
+  it('usa enero dia 20 para el cuarto trimestre de 111/115', () => {
+    const items = generateFiscalTemplateObligations(['111_quarterly', '115_quarterly'], 2026);
+    const fourth = items.filter((o) => o.period_label === '4T 2026');
+    expect(fourth).toHaveLength(2);
+    expect(fourth.every((o) => o.deadline === '2027-01-20')).toBe(true);
   });
 
-  it('ordena las obligaciones por fecha de vencimiento ascendente', () => {
-    const deadlines = generateFiscalObligations('empresa', 2026).map((o) => o.deadline);
-    const sorted = [...deadlines].sort();
-    expect(deadlines).toEqual(sorted);
+  it('genera 202 en abril, octubre y diciembre', () => {
+    const items = generateFiscalTemplateObligations(['202_triannual'], 2026);
+    expect(items.map((o) => o.deadline)).toEqual(['2026-04-20', '2026-10-20', '2026-12-20']);
   });
 
-  it('el modelo 347 respeta el ultimo dia de febrero segun sea ano bisiesto', () => {
-    const leap = generateFiscalObligations('empresa', 2028).find((o) => o.obligation_key === '347_ANNUAL');
-    const nonLeap = generateFiscalObligations('empresa', 2027).find((o) => o.obligation_key === '347_ANNUAL');
-    expect(leap?.deadline).toBe('2028-02-29');
-    expect(nonLeap?.deadline).toBe('2027-02-28');
+  it('respeta febrero bisiesto para 347', () => {
+    const leap = generateFiscalTemplateObligations(['347_annual'], 2027)[0];
+    const nonLeap = generateFiscalTemplateObligations(['347_annual'], 2026)[0];
+    expect(leap.deadline).toBe('2028-02-29');
+    expect(nonLeap.deadline).toBe('2027-02-28');
+  });
+
+  it('marca 2026 como verificado y ejercicios futuros como nominales pendientes de verificar', () => {
+    const verified = generateFiscalTemplateObligations(['202_triannual'], 2026)[0];
+    const future = generateFiscalTemplateObligations(['202_triannual'], 2027)[0];
+    expect(verified.deadline_verified).toBe(true);
+    expect(future.deadline_verified).toBe(false);
   });
 });
 
