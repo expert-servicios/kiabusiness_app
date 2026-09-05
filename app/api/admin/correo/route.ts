@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { listMails, getConversation, sendReply } from '@/lib/integrations/microsoft365';
+import { listMails, getConversation, sendReply, sendNewMail } from '@/lib/integrations/microsoft365';
 import {
   listGmailMails, getGmailThread, sendGmailReply, sendNewGmail,
   listGmailMailsSA, getGmailThreadSA, sendGmailReplySA, sendNewGmailSA,
@@ -91,7 +91,6 @@ async function syncInboxCache(admin: AdminClient, provider: Provider, mails: Inb
   if (error) console.error('[correo] email_inbox_cache sync failed', { provider, error });
 }
 
-// GET ?action=list|conversation|status  &provider=ms365|gmail
 export async function GET(request: NextRequest) {
   const ctx = await assertAdmin(request);
   if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
@@ -282,26 +281,33 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     const { to, subject, body, bodyHtml, provider: prov } = parsed.data;
 
-    if (prov === 'gmail' || !prov) {
-      if (hasGmailSA()) {
-        try {
-          await sendNewGmailSA({ to, subject, body, bodyHtml });
-        } catch (err) {
-          console.error('[Gmail SA compose]', err);
-          return NextResponse.json({ error: 'Error al enviar correo (SA)' }, { status: 500 });
-        }
-      } else {
-        const gmailRow = await getGmailTokens(admin);
-        if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
-        const stored: GmailTokens = {
-          access_token: gmailRow.access_token,
-          refresh_token: gmailRow.refresh_token,
-          expiry_date: gmailRow.expiry_date,
-          email: gmailRow.email,
-        };
-        const { refreshed } = await sendNewGmail(stored, { to, subject, body, bodyHtml });
-        await saveGmailRefresh(admin, refreshed);
+    if (prov === 'ms365') {
+      const ms365Row = await getMs365Tokens(admin);
+      if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
+      const stored = { access_token: ms365Row.access_token, refresh_token: ms365Row.refresh_token, expires_at: ms365Row.expires_at };
+      const { refreshed } = await sendNewMail(stored, { to, subject, body, bodyHtml });
+      await saveMs365Refresh(admin, refreshed);
+      return NextResponse.json({ success: true });
+    }
+
+    if (hasGmailSA()) {
+      try {
+        await sendNewGmailSA({ to, subject, body, bodyHtml });
+      } catch (err) {
+        console.error('[Gmail SA compose]', err);
+        return NextResponse.json({ error: 'Error al enviar correo (SA)' }, { status: 500 });
       }
+    } else {
+      const gmailRow = await getGmailTokens(admin);
+      if (!gmailRow) return NextResponse.json({ error: 'Gmail no conectado' }, { status: 400 });
+      const stored: GmailTokens = {
+        access_token: gmailRow.access_token,
+        refresh_token: gmailRow.refresh_token,
+        expiry_date: gmailRow.expiry_date,
+        email: gmailRow.email,
+      };
+      const { refreshed } = await sendNewGmail(stored, { to, subject, body, bodyHtml });
+      await saveGmailRefresh(admin, refreshed);
     }
     return NextResponse.json({ success: true });
   }
