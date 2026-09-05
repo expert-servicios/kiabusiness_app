@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   const { data: appointments, error: appointmentError } = await admin
     .from('appointments')
-    .select('id,service,status')
+    .select('id,service,appointment_type,status')
     .eq('email', user.email)
     .neq('status', 'cancelled');
 
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
   }
 
   const meetingScheduled = (appointments ?? []).some((appointment) =>
-    String(appointment.service ?? '').toLowerCase().includes('onboarding')
+    String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'
+    || String(appointment.service ?? '').toLowerCase().includes('onboarding')
   );
   if (!meetingScheduled) {
     return NextResponse.json(
