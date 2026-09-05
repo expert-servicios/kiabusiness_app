@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, Download, ExternalLink, FileText, FolderOpen, RefreshCw, Search } from 'lucide-react';
+import { ArrowLeft, Building2, Download, ExternalLink, FileText, FolderOpen, Mail, RefreshCw, Search } from 'lucide-react';
+
+type EmailProvenance = {
+  type: 'email_attachment';
+  provider: 'gmail' | 'ms365';
+  providerLabel: string;
+  accountEmail: string;
+  conversationId: string | null;
+  messageId: string;
+  subject: string | null;
+  fromEmail: string | null;
+  messageDate: string | null;
+  threadUrl: string | null;
+};
 
 type DocumentItem = {
   id: string;
@@ -22,6 +35,7 @@ type DocumentItem = {
   driveFileId: string | null;
   downloadUrl: string | null;
   source: 'documents';
+  provenance: EmailProvenance | null;
 };
 
 type Payload = {
@@ -83,6 +97,10 @@ export default function ClientDocumentsPage() {
       doc.caseName,
       doc.companyName,
       doc.uploadedByRole,
+      doc.provenance?.providerLabel,
+      doc.provenance?.accountEmail,
+      doc.provenance?.subject,
+      doc.provenance?.fromEmail,
     ].filter(Boolean).some((value) => String(value).toLowerCase().includes(needle)));
   }, [data, query]);
 
@@ -158,7 +176,7 @@ export default function ClientDocumentsPage() {
               id="documents-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Nombre, tipo, expediente, entidad…"
+              placeholder="Nombre, tipo, expediente, entidad, correo…"
               className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#29384a] outline-none placeholder:text-[#9ca3af] focus:border-[#c88b25]"
             />
           </div>
@@ -210,12 +228,34 @@ export default function ClientDocumentsPage() {
                         {doc.state && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{doc.state}</span>}
                         {doc.docType && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">{doc.docType}</span>}
                         {doc.uploadedByRole && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">{doc.uploadedByRole}</span>}
+                        {doc.provenance && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-800">
+                            <Mail className="h-3 w-3" /> Recibido por {doc.provenance.providerLabel}
+                          </span>
+                        )}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#8a9aab]">
                         <span>{new Date(doc.createdAt).toLocaleString('es-ES')}</span>
                         {doc.mimeType && <span>{doc.mimeType}</span>}
-                        <span>Fuente: {doc.source}</span>
+                        <span>Fuente: {doc.provenance ? 'correo' : doc.source}</span>
                       </div>
+
+                      {doc.provenance && (
+                        <div className="mt-3 rounded-lg border border-violet-100 bg-violet-50 px-3 py-2 text-xs text-violet-900">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            {doc.provenance.subject && <span><strong>Asunto:</strong> {doc.provenance.subject}</span>}
+                            {doc.provenance.fromEmail && <span><strong>De:</strong> {doc.provenance.fromEmail}</span>}
+                            <span><strong>Cuenta:</strong> {doc.provenance.accountEmail}</span>
+                            {doc.provenance.messageDate && <span><strong>Correo:</strong> {new Date(doc.provenance.messageDate).toLocaleString('es-ES')}</span>}
+                          </div>
+                          {doc.provenance.threadUrl && (
+                            <Link href={doc.provenance.threadUrl} className="mt-2 inline-flex items-center gap-1 font-semibold text-violet-800 hover:underline">
+                              <Mail className="h-3.5 w-3.5" /> Abrir correo de origen <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          )}
+                        </div>
+                      )}
+
                       {doc.caseId && (
                         <Link href={`/admin/expedientes/${doc.caseId}`} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#c88b25] hover:underline">
                           <FolderOpen className="h-3.5 w-3.5" /> {doc.caseName ?? 'Abrir expediente'} <ExternalLink className="h-3 w-3" />
