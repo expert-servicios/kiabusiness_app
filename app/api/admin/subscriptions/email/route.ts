@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
       checkout.metadata.quote_id
         ? checkout.admin.from('quotes').update({ status: 'sent' }).eq('id', String(checkout.metadata.quote_id))
         : Promise.resolve({ error: null }),
+      checkout.admin.from('email_events')
+        .update({ html: tpl.html, updated_at: new Date().toISOString() })
+        .contains('metadata', { idempotency_key: idempotencyKey }),
     ]);
 
     await checkout.admin.from('audit_logs').insert({
