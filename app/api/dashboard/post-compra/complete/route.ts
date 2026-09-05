@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   const { data: appointments, error: appointmentError } = await admin
     .from('appointments')
-    .select('id,service,status')
+    .select('id,service,appointment_type,status')
     .eq('email', user.email)
     .neq('status', 'cancelled');
 
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
   }
 
   const meetingScheduled = (appointments ?? []).some((appointment) =>
-    String(appointment.service ?? '').toLowerCase().includes('onboarding')
+    String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'
+    || String(appointment.service ?? '').toLowerCase().includes('onboarding')
   );
   if (!meetingScheduled) {
     return NextResponse.json(
@@ -140,8 +141,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, alreadyCompleted: true });
   }
 
-  // The DB trigger attached to subscriptions completes the open system task and
-  // finalizes the onboarding case atomically with this transition.
+  // The subscriptions trigger completes the exact open system task and finalizes
+  // the onboarding case atomically with post_purchase_onboarding_at.
   const [{ data: profile }, { data: company }] = await Promise.all([
     admin.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
     subscription.company_id
