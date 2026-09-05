@@ -49,8 +49,10 @@ describe('admin subscription email composer v2', () => {
     expect(route).toContain('case_id: checkout.metadata.onboarding_case_id ?? null');
   });
 
-  it('marks the linked quote as sent only after email delivery is accepted or deduplicated', () => {
+  it('marks the linked quote as sent and stores the final HTML for Client 360', () => {
     expect(route).toContain("checkout.admin.from('quotes').update({ status: 'sent' })");
+    expect(route).toContain("checkout.admin.from('email_events')");
+    expect(route).toContain('update({ html: tpl.html');
     expect(route).toContain('email_sent: true');
     expect(route).toContain("email_source: 'admin_subscription_composer_v2'");
   });
