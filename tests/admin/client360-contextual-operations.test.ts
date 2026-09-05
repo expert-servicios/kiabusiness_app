@@ -43,12 +43,12 @@ describe('Client 360 contextual operations', () => {
     expect(holdedPanel).toContain('Confirmo que el cliente ha autorizado la conexión');
   });
 
-  it('encrypts secrets and never selects or returns the encrypted key in safe integration columns', () => {
+  it('encrypts secrets and only exposes the safe last-four identifier', () => {
     expect(holdedRoute).toContain('encryptSecret(parsed.data.apiKey)');
     expect(holdedRoute).toContain(".from('client_integration_secrets')");
     expect(holdedRoute).toContain("select('encrypted_api_key')");
     expect(holdedRoute).toContain('decryptSecret(secret.encrypted_api_key)');
-    const safeColumns = holdedRoute.match(/const SAFE_COLUMNS = '([^']+)'/)?.[1] ?? '';
+    const safeColumns = (holdedRoute.match(/const SAFE_COLUMNS = '([^']+)'/)?.[1] ?? '').split(',');
     expect(safeColumns).not.toContain('encrypted_api_key');
     expect(safeColumns).not.toContain('api_key');
     expect(safeColumns).toContain('api_key_last4');
