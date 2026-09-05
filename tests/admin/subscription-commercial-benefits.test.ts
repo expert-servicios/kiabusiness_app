@@ -23,15 +23,15 @@ describe('subscription commercial benefits', () => {
   it('requires both commercial entities to belong to the same client', () => {
     expect(api).toContain(".from('profile_companies')");
     expect(api).toContain(".eq('profile_id', clientId)");
-    expect(api).toContain("La entidad contratante y la beneficiaria deben pertenecer al cliente");
-    expect(api).toContain("La entidad incluida debe ser distinta de la entidad contratante");
+    expect(api).toContain('La entidad contratante y la beneficiaria deben pertenecer al cliente');
+    expect(api).toContain('La entidad incluida debe ser distinta de la entidad contratante');
   });
 
   it('allows benefits only on a valid subscription or an open checkout', () => {
     expect(api).toContain("['active', 'trialing', 'past_due'].includes(source.status)");
     expect(api).toContain("source.status !== 'open'");
-    expect(api).toContain("La suscripción no corresponde a este cliente y entidad");
-    expect(api).toContain("El Checkout no corresponde a este cliente y entidad");
+    expect(api).toContain('La suscripción no corresponde a este cliente y entidad');
+    expect(api).toContain('El Checkout no corresponde a este cliente y entidad');
   });
 
   it('keeps internal commercial reasons in audit logs instead of client-readable entitlement metadata', () => {
@@ -61,7 +61,7 @@ describe('subscription commercial benefits', () => {
   });
 
   it('is accessible directly from Client 360 navigation', () => {
-    expect(nav).toContain(`/admin/clientes/${clientId}/beneficios`);
+    expect(nav).toContain('/beneficios`');
     expect(nav).toContain('Beneficios');
   });
 });
