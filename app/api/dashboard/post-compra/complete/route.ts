@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { notifyAdmins } from '@/lib/integrations/push';
-import { getAdminEmails } from '@/lib/admin/onboarding-followup';
+import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 
 const bodySchema = z.object({ subscriptionId: z.string().uuid() });
 
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
   ]);
   const clientName = profile?.full_name ?? user.email.split('@')[0];
   const companyName = company?.razon_social ?? 'Sin entidad';
-  const adminEmails = getAdminEmails();
+  const adminEmails = await getAdminNotificationEmails();
 
   if (adminEmails.length) {
     sendEmail({
