@@ -53,3 +53,42 @@ create unique index if not exists subscription_entitlements_one_active_commercia
     and primary_company_id is not null
     and beneficiary_company_id is not null
     and coalesce(subscription_id, checkout_session_id) is not null;
+
+-- Stripe event ordering is not guaranteed. When EXPERT persists or refreshes the
+-- real subscription after completing its Checkout, attach only benefits from a
+-- recently completed Checkout for the same client and contracting company.
+create or replace function public.link_pending_subscription_commercial_benefits()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+begin
+  if new.company_id is null then
+    return new;
+  end if;
+
+  update public.subscription_entitlements e
+     set subscription_id = new.id,
+         updated_at = now()
+    from public.checkout_sessions cs
+   where e.checkout_session_id = cs.id
+     and e.subscription_id is null
+     and e.active = true
+     and e.feature_key in ('included_entity','discount_percent','discount_amount','free_months')
+     and e.client_id = new.client_id
+     and e.primary_company_id = new.company_id
+     and cs.user_id = new.client_id
+     and cs.company_id = new.company_id
+     and cs.status in ('completed','complete')
+     and abs(extract(epoch from (new.updated_at - cs.updated_at))) <= 900;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists link_pending_subscription_commercial_benefits_trg on public.subscriptions;
+create trigger link_pending_subscription_commercial_benefits_trg
+after insert or update of client_id, company_id, updated_at on public.subscriptions
+for each row
+execute function public.link_pending_subscription_commercial_benefits();
