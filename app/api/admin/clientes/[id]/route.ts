@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const [profileRes, authRes, casesRes, subsRes, quotesRes, waRes, companiesRes, checkoutRes] = await Promise.all([
       admin
         .from('profiles')
-        .select('id,email,full_name,phone,whatsapp_number,role,status,created_at,updated_at,stripe_customer_id,profile_completed,billing_ready,habitual_address_ready,active_company_id,tax_id,address,city,postal_code,province,billing_country')
+        .select('id,email,full_name,phone,whatsapp_number,role,status,created_at,updated_at,stripe_customer_id,profile_completed,billing_ready,habitual_address_ready,active_company_id,onboarding_completed_at,tax_id,address,city,postal_code,province,billing_country')
         .eq('id', id)
         .single(),
       admin.auth.admin.getUserById(id),
@@ -133,14 +133,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({
-      profile:   { ...profileRes.data, email: profileEmail },
-      cases:     casesRes.data    ?? [],
-      subs:      (subsRes.data ?? []).map((sub) => ({ ...sub, plan: sub.plan_name })),
-      quotes:    (quotesRes.data ?? []).map((quote) => ({ ...quote, service: quote.title })),
-      orders:    ordersRes.data    ?? [],
+      profile: { ...profileRes.data, email: profileEmail },
+      cases: casesRes.data ?? [],
+      subs: (subsRes.data ?? []).map((sub) => ({ ...sub, plan: sub.plan_name })),
+      quotes: (quotesRes.data ?? []).map((quote) => ({ ...quote, service: quote.title })),
+      orders: ordersRes.data ?? [],
       checkoutSessions: checkoutRes.data ?? [],
       emailEvents: emailEventsRes.data ?? [],
-      messages:  waRes.data       ?? [],
+      messages: waRes.data ?? [],
       companies,
       integrations: integrations ?? [],
       mappings: Array.from(mappingById.values()),

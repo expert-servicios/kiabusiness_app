@@ -13,7 +13,7 @@ describe('admin subscription link generator', () => {
   it('generates a checkout for an existing client without sending email', () => {
     expect(page).toContain("fetch('/api/admin/subscriptions/send-link'");
     expect(page).toContain('sendEmail: false');
-    expect(page).toContain('Generar enlace sin enviar');
+    expect(page).toContain('Generar Checkout sin enviar');
     expect(page).toContain("fetch('/api/admin/clientes')");
   });
 
