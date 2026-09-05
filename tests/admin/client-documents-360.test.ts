@@ -41,6 +41,20 @@ describe('Admin client documents 360', () => {
     expect(page).toContain('<option value="unassigned">Sin entidad');
   });
 
+  it('enriches email attachments with provenance and a deterministic Correo 360 deep link', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+
+    expect(route).toContain(".from('email_attachment_documents')");
+    expect(route).toContain('conversation_id,message_id,attachment_id,subject,from_email,message_date');
+    expect(route).toContain('providerLabel');
+    expect(route).toContain('/admin/correo/hilo?provider=');
+    expect(page).toContain('Recibido por {doc.provenance.providerLabel}');
+    expect(page).toContain('Abrir correo de origen');
+    expect(page).toContain('doc.provenance?.subject');
+    expect(page).toContain('doc.provenance?.fromEmail');
+  });
+
   it('surfaces a documents shortcut from Client 360', () => {
     const shortcut = source('app/(protected)/admin/clientes/[id]/ClientCommunicationsShortcut.tsx');
     expect(shortcut).toContain(`/admin/clientes/${'${clientId}'}/documentos`);

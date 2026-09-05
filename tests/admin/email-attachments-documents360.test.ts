@@ -42,6 +42,20 @@ describe('Email attachments to Documents 360', () => {
     expect(route).not.toContain('company_id: clientId');
   });
 
+  it('requires the supplied conversation to be linked to the same case and validates message membership at the provider', () => {
+    const route = source('app/api/admin/correo/attachments/route.ts');
+    const page = source('app/(protected)/admin/correo/hilo/page.tsx');
+
+    expect(route).toContain(".from('email_threads')");
+    expect(route).toContain('linkedThread.case_id !== caseId');
+    expect(route).toContain("code: 'thread_case_mismatch'");
+    expect(route).toContain('message.conversationId !== conversationId');
+    expect(route).toContain('attachment.id === attachmentId');
+    expect(route).toContain('getGmailThreadSA(conversationId)');
+    expect(route).toContain('getConversation(stored, conversationId)');
+    expect(page).toContain('provider, conversationId, messageId, attachmentId, clientId, caseId');
+  });
+
   it('uses the canonical private document bucket and an idempotent source mapping', () => {
     const route = source('app/api/admin/correo/attachments/route.ts');
     const migration = source('supabase/migrations/20260905131500_email_attachment_documents.sql');
@@ -52,6 +66,18 @@ describe('Email attachments to Documents 360', () => {
     expect(route).toContain("sourceError.code === '23505'");
     expect(migration).toContain('unique (provider, account_email, message_id, attachment_id)');
     expect(migration).toContain('enable row level security');
+  });
+
+  it('persists deterministic email provenance for Documents 360', () => {
+    const route = source('app/api/admin/correo/attachments/route.ts');
+    const migration = source('supabase/migrations/20260905154500_email_attachment_provenance_context.sql');
+
+    expect(route).toContain('conversation_id: conversationId');
+    expect(route).toContain('subject: messageContext.message.subject');
+    expect(route).toContain('from_email: messageContext.message.fromEmail');
+    expect(route).toContain('message_date: messageContext.message.date');
+    expect(migration).toContain('add column if not exists conversation_id text');
+    expect(migration).toContain('email_attachment_documents_conversation_idx');
   });
 
   it('keeps provider attachments under the same 10 MB and MIME/extension validation as client documents', () => {

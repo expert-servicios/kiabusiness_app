@@ -35,6 +35,18 @@ type RawDocument = {
   uploaded_by_role: string | null;
 };
 
+type EmailProvenance = {
+  document_id: string;
+  provider: 'gmail' | 'ms365';
+  account_email: string;
+  conversation_id: string | null;
+  message_id: string;
+  attachment_id: string;
+  subject: string | null;
+  from_email: string | null;
+  message_date: string | null;
+};
+
 const DOCUMENT_SELECT = 'id,company_id,owner_type,owner_id,kind,drive_file_id,mime_type,title,created_at,doc_type,case_id,client_id,file_path,original_name,state,uploaded_by_role';
 
 export async function GET(
@@ -99,6 +111,17 @@ export async function GET(
   const allMatched = Array.from(deduped.values());
   const technicalExcluded = allMatched.filter((doc) => doc.kind === 'internal').length;
   const operational = allMatched.filter((doc) => doc.kind !== 'internal');
+  const operationalIds = operational.map((doc) => doc.id);
+
+  const provenanceRes = operationalIds.length
+    ? await admin
+      .from('email_attachment_documents')
+      .select('document_id,provider,account_email,conversation_id,message_id,attachment_id,subject,from_email,message_date')
+      .in('document_id', operationalIds)
+    : { data: [] };
+  const provenanceByDocument = new Map(
+    ((provenanceRes.data ?? []) as EmailProvenance[]).map((row) => [row.document_id, row])
+  );
 
   const normalized = await Promise.all(operational.map(async (doc) => {
     const caseRow = doc.case_id ? caseById.get(doc.case_id) : null;
@@ -108,6 +131,7 @@ export async function GET(
     const directCompanyId = doc.company_id && allowedCompanyIds.has(doc.company_id) ? doc.company_id : null;
     const caseCompanyId = caseRow?.company_id && allowedCompanyIds.has(caseRow.company_id) ? caseRow.company_id : null;
     const companyId = directCompanyId ?? caseCompanyId ?? ownerCompanyId ?? null;
+    const provenance = provenanceByDocument.get(doc.id) ?? null;
 
     let downloadUrl: string | null = null;
     if (doc.file_path) {
@@ -134,6 +158,20 @@ export async function GET(
       driveFileId: doc.drive_file_id,
       downloadUrl,
       source: 'documents' as const,
+      provenance: provenance ? {
+        type: 'email_attachment' as const,
+        provider: provenance.provider,
+        providerLabel: provenance.provider === 'gmail' ? 'Gmail' : 'Microsoft 365',
+        accountEmail: provenance.account_email,
+        conversationId: provenance.conversation_id,
+        messageId: provenance.message_id,
+        subject: provenance.subject,
+        fromEmail: provenance.from_email,
+        messageDate: provenance.message_date,
+        threadUrl: provenance.conversation_id
+          ? `/admin/correo/hilo?provider=${encodeURIComponent(provenance.provider)}&conversationId=${encodeURIComponent(provenance.conversation_id)}&clientId=${encodeURIComponent(id)}`
+          : null,
+      } : null,
     };
   }));
 

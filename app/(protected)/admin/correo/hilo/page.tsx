@@ -114,7 +114,7 @@ export default function CorreoThreadPage() {
   };
 
   const saveAttachment = async (messageId: string, attachmentId: string) => {
-    if (!provider || !clientId || !linkedCaseId) return;
+    if (!provider || !clientId || !linkedCaseId || !conversationId) return;
     const key = `${messageId}:${attachmentId}`;
     setSavingAttachment(key);
     setError('');
@@ -122,7 +122,7 @@ export default function CorreoThreadPage() {
       const response = await fetch('/api/admin/correo/attachments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, messageId, attachmentId, clientId, caseId: linkedCaseId }),
+        body: JSON.stringify({ provider, conversationId, messageId, attachmentId, clientId, caseId: linkedCaseId }),
       });
       const json = await response.json();
       if (!response.ok) {
