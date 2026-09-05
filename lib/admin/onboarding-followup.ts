@@ -21,6 +21,7 @@ export async function ensureOnboardingTask(input: {
   description: string;
   dueDate?: string | null;
   priority?: 'baja' | 'media' | 'alta' | 'critica';
+  status?: 'pendiente' | 'en_progreso';
 }) {
   const admin = getSupabaseAdmin();
   const { data: existing, error: lookupError } = await admin
@@ -41,6 +42,7 @@ export async function ensureOnboardingTask(input: {
     due_date: input.dueDate ?? addDaysIsoDate(2),
     priority: input.priority ?? 'alta',
     case_id: input.caseId ?? null,
+    status: input.status ?? existing?.status ?? 'pendiente',
     updated_at: new Date().toISOString(),
   };
 
@@ -57,7 +59,7 @@ export async function ensureOnboardingTask(input: {
       client_id: input.clientId,
       case_id: input.caseId ?? null,
       description: input.description,
-      status: 'pendiente',
+      status: input.status ?? 'pendiente',
       priority: input.priority ?? 'alta',
       due_date: input.dueDate ?? addDaysIsoDate(2),
       source: 'system',
