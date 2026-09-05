@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendEmail } from '@/lib/email/send';
+import { notifyAdmins } from '@/lib/integrations/push';
+import { getAdminEmails } from '@/lib/admin/onboarding-followup';
 
 const bodySchema = z.object({ subscriptionId: z.string().uuid() });
 
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: subscription, error: subscriptionError } = await admin
     .from('subscriptions')
-    .select('id,company_id,status,post_purchase_onboarding_at')
+    .select('id,company_id,status,plan_name,post_purchase_onboarding_at')
     .eq('id', parsed.data.subscriptionId)
     .eq('client_id', user.id)
     .in('status', ['active', 'trialing'])
@@ -118,9 +121,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const completedAt = new Date().toISOString();
   const { data: updated, error: updateError } = await admin
     .from('subscriptions')
-    .update({ post_purchase_onboarding_at: new Date().toISOString() })
+    .update({ post_purchase_onboarding_at: completedAt })
     .eq('id', subscription.id)
     .eq('client_id', user.id)
     .in('status', ['active', 'trialing'])
@@ -135,6 +139,40 @@ export async function POST(request: NextRequest) {
   if (!updated) {
     return NextResponse.json({ ok: true, alreadyCompleted: true });
   }
+
+  // The DB trigger attached to subscriptions completes the open system task and
+  // finalizes the onboarding case atomically with this transition.
+  const [{ data: profile }, { data: company }] = await Promise.all([
+    admin.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
+    subscription.company_id
+      ? admin.from('companies').select('razon_social').eq('id', subscription.company_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const clientName = profile?.full_name ?? user.email.split('@')[0];
+  const companyName = company?.razon_social ?? 'Sin entidad';
+  const adminEmails = getAdminEmails();
+
+  if (adminEmails.length) {
+    sendEmail({
+      to: adminEmails,
+      eventType: 'onboarding.completed.admin',
+      subject: `Alta finalizada — ${clientName}`,
+      html: `<p>El cliente ha completado el alta poscompra en EXPERT.</p><p><strong>Cliente:</strong> ${clientName} (${user.email})</p><p><strong>Empresa:</strong> ${companyName}</p><p><strong>Plan:</strong> ${subscription.plan_name}</p><p><strong>Finalizado:</strong> ${completedAt}</p>`,
+      metadata: {
+        subscription_id: subscription.id,
+        client_id: user.id,
+        company_id: subscription.company_id,
+      },
+      idempotencyKey: `onboarding/completed/admin/${subscription.id}`,
+    }).catch((err) => console.error('[post-compra/complete] admin email:', err));
+  }
+
+  notifyAdmins({
+    title: `Alta finalizada — ${clientName}`,
+    body: `${subscription.plan_name} · ${companyName}`,
+    url: `/admin/clientes/${user.id}`,
+    tag: `onboarding-completed-${subscription.id}`,
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }
