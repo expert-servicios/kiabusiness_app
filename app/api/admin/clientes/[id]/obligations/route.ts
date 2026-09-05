@@ -38,12 +38,7 @@ const patchSchema = z.object({
 });
 
 async function linkedCompany(admin: ReturnType<typeof getSupabaseAdmin>, clientId: string, companyId: string) {
-  const { data } = await admin
-    .from('profile_companies')
-    .select('company_id')
-    .eq('profile_id', clientId)
-    .eq('company_id', companyId)
-    .maybeSingle();
+  const { data } = await admin.from('profile_companies').select('company_id').eq('profile_id', clientId).eq('company_id', companyId).maybeSingle();
   return Boolean(data);
 }
 
@@ -53,15 +48,8 @@ function calendarSummary(row: { model_code?: string | null; title?: string | nul
 }
 
 async function syncCalendar(row: {
-  id: string;
-  model_code: string | null;
-  title: string | null;
-  kind: string;
-  period_key: string | null;
-  due_date: string;
-  notes: string | null;
-  google_event_id: string | null;
-  status: string | null;
+  id: string; model_code: string | null; title: string | null; kind: string; period_key: string | null;
+  due_date: string; notes: string | null; google_event_id: string | null; status: string | null;
 }) {
   if (!hasCalendarSA()) return row.google_event_id;
   if (row.status === 'completed' || row.status === 'cancelled') {
@@ -80,7 +68,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const auth = await requireStaff(request);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   const { id: clientId } = await params;
-
   const { data, error } = await auth.admin
     .from('obligations_calendar')
     .select('id,client_id,company_id,kind,model_code,title,period_key,due_date,status,notes,task_id,google_event_id,source,created_at,updated_at,completed_at')
@@ -96,9 +83,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id: clientId } = await params;
   const parsed = createSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
-  if (!(await linkedCompany(auth.admin, clientId, parsed.data.companyId))) {
-    return NextResponse.json({ error: 'Entidad no vinculada a este cliente' }, { status: 400 });
-  }
+  if (!(await linkedCompany(auth.admin, clientId, parsed.data.companyId))) return NextResponse.json({ error: 'Entidad no vinculada a este cliente' }, { status: 400 });
 
   const { data: created, error } = await auth.admin
     .from('obligations_calendar')
@@ -131,7 +116,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       created.google_event_id = eventId;
     }
   }
-
   return NextResponse.json({ obligation: created }, { status: 201 });
 }
 
@@ -145,13 +129,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data: existing } = await auth.admin
     .from('obligations_calendar')
     .select('id,client_id,company_id,kind,model_code,title,period_key,due_date,status,notes,task_id,google_event_id,source,created_at,updated_at,completed_at')
-    .eq('id', parsed.data.obligationId)
-    .eq('client_id', clientId)
-    .maybeSingle();
+    .eq('id', parsed.data.obligationId).eq('client_id', clientId).maybeSingle();
   if (!existing) return NextResponse.json({ error: 'Obligación no encontrada' }, { status: 404 });
-  if (!(await linkedCompany(auth.admin, clientId, existing.company_id))) {
-    return NextResponse.json({ error: 'Entidad no vinculada a este cliente' }, { status: 409 });
-  }
+  if (!(await linkedCompany(auth.admin, clientId, existing.company_id))) return NextResponse.json({ error: 'Entidad no vinculada a este cliente' }, { status: 409 });
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
@@ -163,12 +143,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (parsed.data.notes !== undefined) update.notes = parsed.data.notes || null;
 
   const { data: changed, error } = await auth.admin
-    .from('obligations_calendar')
-    .update(update)
-    .eq('id', existing.id)
-    .eq('client_id', clientId)
-    .select('id,client_id,company_id,kind,model_code,title,period_key,due_date,status,notes,task_id,google_event_id,source,created_at,updated_at,completed_at')
-    .single();
+    .from('obligations_calendar').update(update).eq('id', existing.id).eq('client_id', clientId)
+    .select('id,client_id,company_id,kind,model_code,title,period_key,due_date,status,notes,task_id,google_event_id,source,created_at,updated_at,completed_at').single();
   if (error || !changed) return NextResponse.json({ error: error?.message ?? 'No se pudo actualizar la obligación' }, { status: 500 });
 
   if (parsed.data.syncCalendar) {
@@ -178,6 +154,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       changed.google_event_id = eventId;
     }
   }
+
+  // If this operational item was generated from the fiscal source of truth,
+  // keep the historical fiscal record aligned in both directions.
+  const fiscalStatus = changed.status === 'completed'
+    ? 'submitted'
+    : changed.status === 'cancelled'
+      ? 'skipped'
+      : 'pending';
+  await auth.admin
+    .from('fiscal_obligations')
+    .update({
+      modelo: changed.model_code ?? undefined,
+      description: changed.title || changed.kind,
+      period_label: changed.period_key,
+      deadline: changed.due_date,
+      notes: changed.notes,
+      status: fiscalStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('obligations_calendar_id', changed.id);
 
   return NextResponse.json({ obligation: changed });
 }
