@@ -35,6 +35,8 @@ interface TokenResponse {
   expires_in: number;
 }
 
+export type Ms365StoredTokens = { access_token: string; refresh_token: string; expires_at: number };
+
 async function fetchToken(body: Record<string, string>): Promise<TokenResponse> {
   const res = await fetch(`${AUTH_BASE}/token`, {
     method: 'POST',
@@ -64,7 +66,7 @@ export async function exchangeMs365Code(code: string) {
   };
 }
 
-async function ensureFreshToken(stored: { access_token: string; refresh_token: string; expires_at: number }) {
+async function ensureFreshToken(stored: Ms365StoredTokens) {
   if (Date.now() < stored.expires_at - 60_000) {
     return { access_token: stored.access_token, refreshed: null };
   }
@@ -124,6 +126,18 @@ export interface MailSummary {
   hasAttachment: boolean;
 }
 
+export interface MailAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  inline: boolean;
+}
+
+export interface MailAttachmentData extends MailAttachment {
+  data: Buffer;
+}
+
 export interface MailMessage {
   id: string;
   conversationId: string;
@@ -135,12 +149,13 @@ export interface MailMessage {
   body: string;
   bodyType: 'html' | 'text';
   unread: boolean;
+  attachments: MailAttachment[];
 }
 
 export async function listMails(
-  stored: { access_token: string; refresh_token: string; expires_at: number },
+  stored: Ms365StoredTokens,
   opts: { query?: string; maxResults?: number } = {}
-): Promise<{ mails: MailSummary[]; refreshed: typeof stored | null }> {
+): Promise<{ mails: MailSummary[]; refreshed: Ms365StoredTokens | null }> {
   const { access_token, refreshed } = await ensureFreshToken(stored);
 
   const select = 'id,conversationId,subject,from,isRead,receivedDateTime,bodyPreview,hasAttachments';
@@ -175,14 +190,28 @@ export async function listMails(
   return { mails, refreshed: refreshed ? { ...stored, ...refreshed } : null };
 }
 
+async function listMessageAttachments(accessToken: string, messageId: string): Promise<MailAttachment[]> {
+  const data = await graphGet(
+    accessToken,
+    `/messages/${encodeURIComponent(messageId)}/attachments?$select=id,name,contentType,size,isInline`
+  );
+  return (data.value ?? []).map((attachment: Record<string, unknown>) => ({
+    id: String(attachment.id ?? ''),
+    name: String(attachment.name ?? 'adjunto'),
+    mimeType: String(attachment.contentType ?? 'application/octet-stream'),
+    size: Number(attachment.size ?? 0),
+    inline: Boolean(attachment.isInline),
+  })).filter((attachment: MailAttachment) => attachment.id && attachment.name);
+}
+
 export async function getConversation(
-  stored: { access_token: string; refresh_token: string; expires_at: number },
+  stored: Ms365StoredTokens,
   conversationId: string
-): Promise<{ messages: MailMessage[]; refreshed: typeof stored | null }> {
+): Promise<{ messages: MailMessage[]; refreshed: Ms365StoredTokens | null }> {
   const { access_token, refreshed } = await ensureFreshToken(stored);
 
-  const select = 'id,conversationId,subject,from,toRecipients,body,isRead,receivedDateTime';
-  const filter = `conversationId eq '${conversationId}'`;
+  const select = 'id,conversationId,subject,from,toRecipients,body,isRead,receivedDateTime,hasAttachments';
+  const filter = `conversationId eq '${conversationId.replace(/'/g, "''")}'`;
   const data = await graphGet(
     access_token,
     `/messages?$filter=${encodeURIComponent(filter)}&$orderby=receivedDateTime asc&$select=${select}`
@@ -190,14 +219,15 @@ export async function getConversation(
 
   for (const m of data.value ?? []) {
     if (!m.isRead) {
-      await graphPatch(access_token, `/messages/${m.id}`, { isRead: true }).catch(() => null);
+      await graphPatch(access_token, `/messages/${encodeURIComponent(m.id)}`, { isRead: true }).catch(() => null);
     }
   }
 
-  const messages: MailMessage[] = (data.value ?? []).map((m: Record<string, unknown>) => {
+  const messages: MailMessage[] = await Promise.all((data.value ?? []).map(async (m: Record<string, unknown>) => {
     const fromObj = m.from as { emailAddress: { name: string; address: string } };
     const toArr = m.toRecipients as { emailAddress: { name: string; address: string } }[];
     const bodyObj = m.body as { contentType: string; content: string };
+    const attachments = m.hasAttachments ? await listMessageAttachments(access_token, String(m.id)) : [];
     return {
       id: m.id as string,
       conversationId: m.conversationId as string,
@@ -209,25 +239,50 @@ export async function getConversation(
       body: bodyObj?.content || '',
       bodyType: (bodyObj?.contentType?.toLowerCase() === 'html' ? 'html' : 'text') as 'html' | 'text',
       unread: !(m.isRead as boolean),
+      attachments,
     };
-  });
+  }));
 
   return { messages, refreshed: refreshed ? { ...stored, ...refreshed } : null };
 }
 
-export async function sendReply(
-  stored: { access_token: string; refresh_token: string; expires_at: number },
-  opts: { messageId: string; comment: string }
-): Promise<{ refreshed: typeof stored | null }> {
+export async function getMailAttachment(
+  stored: Ms365StoredTokens,
+  messageId: string,
+  attachmentId: string
+): Promise<{ attachment: MailAttachmentData; refreshed: Ms365StoredTokens | null }> {
   const { access_token, refreshed } = await ensureFreshToken(stored);
-  await graphPost(access_token, `/messages/${opts.messageId}/reply`, { comment: opts.comment });
+  const attachment = await graphGet(
+    access_token,
+    `/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}`
+  );
+  if (!attachment.contentBytes) throw new Error('MS365 attachment has no downloadable content');
+  return {
+    attachment: {
+      id: String(attachment.id ?? attachmentId),
+      name: String(attachment.name ?? 'adjunto'),
+      mimeType: String(attachment.contentType ?? 'application/octet-stream'),
+      size: Number(attachment.size ?? 0),
+      inline: Boolean(attachment.isInline),
+      data: Buffer.from(String(attachment.contentBytes), 'base64'),
+    },
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function sendReply(
+  stored: Ms365StoredTokens,
+  opts: { messageId: string; comment: string }
+): Promise<{ refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  await graphPost(access_token, `/messages/${encodeURIComponent(opts.messageId)}/reply`, { comment: opts.comment });
   return { refreshed: refreshed ? { ...stored, ...refreshed } : null };
 }
 
 export async function sendNewMail(
-  stored: { access_token: string; refresh_token: string; expires_at: number },
+  stored: Ms365StoredTokens,
   opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
-): Promise<{ refreshed: typeof stored | null }> {
+): Promise<{ refreshed: Ms365StoredTokens | null }> {
   const { access_token, refreshed } = await ensureFreshToken(stored);
   await graphPost(access_token, '/sendMail', {
     message: {

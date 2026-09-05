@@ -17,8 +17,6 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
-// ── Service Account (Domain-Wide Delegation) ──────────────────────────────
-
 export const GMAIL_SA_IMPERSONATE_EMAIL = 'info@expertconsulting.es';
 
 export function hasGmailSA(): boolean {
@@ -36,8 +34,6 @@ async function getGmailSAClient(): Promise<AnyGoogle | null> {
   });
   return google.gmail({ version: 'v1', auth });
 }
-
-// ── OAuth2 helpers ────────────────────────────────────────────────────────
 
 export interface GmailTokens {
   access_token: string;
@@ -64,9 +60,9 @@ async function getOAuth2Client(tokens?: GmailTokens): Promise<AnyGoogle> {
   );
   if (tokens) {
     client.setCredentials({
-      access_token:  tokens.access_token,
+      access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      expiry_date:   tokens.expiry_date,
+      expiry_date: tokens.expiry_date,
     });
   }
   return client;
@@ -92,9 +88,9 @@ export async function exchangeGmailCode(code: string): Promise<GmailTokens> {
   const { data } = await oauth2.userinfo.get();
 
   return {
-    access_token:  tokens.access_token!,
+    access_token: tokens.access_token!,
     refresh_token: tokens.refresh_token!,
-    expiry_date:   tokens.expiry_date!,
+    expiry_date: tokens.expiry_date!,
     email: data.email ?? null,
     scope: tokens.scope ?? null,
   };
@@ -106,17 +102,15 @@ async function ensureFresh(stored: GmailTokens): Promise<{ client: AnyGoogle; re
 
   const { credentials } = await client.refreshAccessToken();
   const refreshed: GmailTokens = {
-    access_token:  credentials.access_token!,
+    access_token: credentials.access_token!,
     refresh_token: credentials.refresh_token ?? stored.refresh_token,
-    expiry_date:   credentials.expiry_date!,
+    expiry_date: credentials.expiry_date!,
     email: stored.email,
     scope: credentials.scope ?? stored.scope,
   };
   client.setCredentials(credentials);
   return { client, refreshed };
 }
-
-// ── Shared types ──────────────────────────────────────────────────────────
 
 export interface GmailSummary {
   id: string;
@@ -130,6 +124,18 @@ export interface GmailSummary {
   hasAttachment: boolean;
 }
 
+export interface GmailAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  inline: boolean;
+}
+
+export interface GmailAttachmentData extends GmailAttachment {
+  data: Buffer;
+}
+
 export interface GmailMessage {
   id: string;
   conversationId: string;
@@ -141,9 +147,8 @@ export interface GmailMessage {
   body: string;
   bodyType: 'html' | 'text';
   unread: boolean;
+  attachments: GmailAttachment[];
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 function hdr(headers: Array<{ name: string; value: string }>, name: string): string {
   return headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? '';
@@ -155,8 +160,12 @@ function parseAddr(addr: string): { name: string; email: string } {
   return { name: addr, email: addr };
 }
 
+function decodeBase64UrlBuffer(data: string): Buffer {
+  return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+}
+
 function b64decode(data: string): string {
-  return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8');
+  return decodeBase64UrlBuffer(data).toString('utf-8');
 }
 
 function extractBody(payload: AnyGoogle): { body: string; bodyType: 'html' | 'text' } {
@@ -176,7 +185,34 @@ function extractBody(payload: AnyGoogle): { body: string; bodyType: 'html' | 'te
   return { body: '', bodyType: 'text' };
 }
 
-// ── Internal implementations (shared between SA and OAuth2) ───────────────
+function collectAttachmentParts(payload: AnyGoogle): Array<{ attachment: GmailAttachment; part: AnyGoogle }> {
+  const collected: Array<{ attachment: GmailAttachment; part: AnyGoogle }> = [];
+
+  function walk(part: AnyGoogle) {
+    if (part?.filename) {
+      const dispositionHeader = (part.headers ?? []).find(
+        (header: { name?: string; value?: string }) => header.name?.toLowerCase() === 'content-disposition'
+      )?.value ?? '';
+      const rawId = part.body?.attachmentId ?? (part.body?.data && part.partId ? `part:${part.partId}` : '');
+      if (rawId) {
+        collected.push({
+          attachment: {
+            id: rawId,
+            name: String(part.filename),
+            mimeType: String(part.mimeType ?? 'application/octet-stream'),
+            size: Number(part.body?.size ?? 0),
+            inline: /inline/i.test(dispositionHeader),
+          },
+          part,
+        });
+      }
+    }
+    for (const child of part?.parts ?? []) walk(child);
+  }
+
+  walk(payload);
+  return collected;
+}
 
 async function _listThreads(
   gmail: AnyGoogle,
@@ -209,9 +245,7 @@ async function _listThreads(
     const subject = hdr(headers, 'Subject') || '(Sin asunto)';
     const dateRaw = hdr(headers, 'Date');
     const unread = (last.labelIds ?? []).includes('UNREAD');
-    const hasAttachment = messages.some((m: AnyGoogle) =>
-      (m.payload?.parts ?? []).some((p: AnyGoogle) => p.filename?.length > 0)
-    );
+    const hasAttachment = messages.some((message: AnyGoogle) => collectAttachmentParts(message.payload).length > 0);
 
     mails.push({
       id: last.id!,
@@ -261,8 +295,38 @@ async function _getThread(gmail: AnyGoogle, threadId: string): Promise<GmailMess
       body,
       bodyType,
       unread: (msg.labelIds ?? []).includes('UNREAD'),
+      attachments: collectAttachmentParts(msg.payload).map(({ attachment }) => attachment),
     };
   });
+}
+
+async function _getAttachment(
+  gmail: AnyGoogle,
+  messageId: string,
+  attachmentId: string
+): Promise<GmailAttachmentData> {
+  const messageRes = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
+  const found = collectAttachmentParts(messageRes.data.payload).find(({ attachment }) => attachment.id === attachmentId);
+  if (!found) throw new Error('Gmail attachment not found');
+
+  let data: Buffer;
+  if (found.part.body?.data) {
+    data = decodeBase64UrlBuffer(found.part.body.data);
+  } else {
+    const result = await gmail.users.messages.attachments.get({
+      userId: 'me',
+      messageId,
+      id: attachmentId,
+    });
+    if (!result.data?.data) throw new Error('Gmail attachment has no downloadable content');
+    data = decodeBase64UrlBuffer(result.data.data);
+  }
+
+  return {
+    ...found.attachment,
+    size: found.attachment.size || data.length,
+    data,
+  };
 }
 
 function buildRawMime(opts: {
@@ -315,8 +379,6 @@ async function _sendNew(
   });
 }
 
-// ── Public API — Service Account path ────────────────────────────────────
-
 export async function listGmailMailsSA(
   opts?: { query?: string; maxResults?: number }
 ): Promise<GmailSummary[]> {
@@ -329,6 +391,12 @@ export async function getGmailThreadSA(threadId: string): Promise<GmailMessage[]
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
   return _getThread(gmail, threadId);
+}
+
+export async function getGmailAttachmentSA(messageId: string, attachmentId: string): Promise<GmailAttachmentData> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _getAttachment(gmail, messageId, attachmentId);
 }
 
 export async function sendGmailReplySA(
@@ -358,8 +426,6 @@ export async function getGmailUnreadCountSA(): Promise<number> {
   return res.data.resultSizeEstimate ?? 0;
 }
 
-// ── Public API — OAuth2 path ──────────────────────────────────────────────
-
 export async function listGmailMails(
   stored: GmailTokens,
   opts?: { query?: string; maxResults?: number }
@@ -380,6 +446,18 @@ export async function getGmailThread(
   const gmail = google.gmail({ version: 'v1', auth: client });
   const messages = await _getThread(gmail, threadId);
   return { messages, refreshed };
+}
+
+export async function getGmailAttachment(
+  stored: GmailTokens,
+  messageId: string,
+  attachmentId: string
+): Promise<{ attachment: GmailAttachmentData; refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = (await import('googleapis')) as AnyGoogle;
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  const attachment = await _getAttachment(gmail, messageId, attachmentId);
+  return { attachment, refreshed };
 }
 
 export async function sendGmailReply(
