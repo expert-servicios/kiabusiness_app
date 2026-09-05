@@ -62,11 +62,8 @@ export async function GET(request: NextRequest) {
 
     const inboxStates = (states ?? []).filter((state) => state.source_kind === 'inbox_thread');
     const sentStates = (states ?? []).filter((state) => state.source_kind === 'sent_event');
-
     const inboxKeys = inboxStates.map((state) => state.source_key);
-    const sentIds = sentStates
-      .map((state) => Number(state.source_key))
-      .filter((id) => Number.isInteger(id) && id > 0);
+    const sentIds = sentStates.map((state) => Number(state.source_key)).filter((id) => Number.isInteger(id) && id > 0);
 
     const [inboxResult, sentResult] = await Promise.all([
       inboxKeys.length
@@ -156,11 +153,10 @@ export async function GET(request: NextRequest) {
   const movedSent = new Set<string>();
 
   for (const state of states) {
+    if (!state.folder_id || state.is_archived) continue;
     if (state.source_kind === 'inbox_thread') movedInbox.add(`${state.provider}:${state.source_key}`);
     if (state.source_kind === 'sent_event') movedSent.add(`${state.provider}:${state.source_key}`);
-    if (state.folder_id && !state.is_archived) {
-      customCounts.set(state.folder_id, (customCounts.get(state.folder_id) ?? 0) + 1);
-    }
+    customCounts.set(state.folder_id, (customCounts.get(state.folder_id) ?? 0) + 1);
   }
 
   const inboxDefaultCount = Math.max(0, Number(inboxResult.count ?? 0) - movedInbox.size);
@@ -192,18 +188,51 @@ export async function POST(request: NextRequest) {
   if (body.action === 'move') {
     const parsed = moveSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
-    if (parsed.data.folderId) {
-      const { data: folder } = await admin.from('admin_email_folders').select('id').eq('id', parsed.data.folderId).maybeSingle();
+    const input = parsed.data;
+
+    if (input.folderId) {
+      const { data: folder } = await admin
+        .from('admin_email_folders')
+        .select('id,is_system,system_key')
+        .eq('id', input.folderId)
+        .maybeSingle();
       if (!folder) return NextResponse.json({ error: 'Carpeta no encontrada' }, { status: 404 });
+      if (folder.is_system) return NextResponse.json({ error: 'Usa “Volver a Entrantes/Enviados” para restaurar la carpeta del sistema' }, { status: 409 });
     }
+
+    if (input.caseId) {
+      const { data: targetCase } = await admin
+        .from('cases')
+        .select('id,client_id,company_id')
+        .eq('id', input.caseId)
+        .maybeSingle();
+      if (!targetCase) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
+      if (input.clientId && targetCase.client_id !== input.clientId) {
+        return NextResponse.json({ error: 'El expediente no pertenece al cliente indicado' }, { status: 400 });
+      }
+      if (input.companyId && targetCase.company_id && targetCase.company_id !== input.companyId) {
+        return NextResponse.json({ error: 'El expediente no pertenece a la entidad indicada' }, { status: 400 });
+      }
+    }
+
+    if (input.folderId === null) {
+      const { error } = await admin.from('admin_email_item_state')
+        .delete()
+        .eq('source_kind', input.sourceKind)
+        .eq('provider', input.provider)
+        .eq('source_key', input.sourceKey);
+      if (error) return NextResponse.json({ error: 'No se pudo restaurar el correo a su carpeta del sistema' }, { status: 500 });
+      return NextResponse.json({ ok: true, restored: true });
+    }
+
     const { error } = await admin.from('admin_email_item_state').upsert({
-      source_kind: parsed.data.sourceKind,
-      provider: parsed.data.provider,
-      source_key: parsed.data.sourceKey,
-      folder_id: parsed.data.folderId,
-      client_id: parsed.data.clientId ?? null,
-      company_id: parsed.data.companyId ?? null,
-      case_id: parsed.data.caseId ?? null,
+      source_kind: input.sourceKind,
+      provider: input.provider,
+      source_key: input.sourceKey,
+      folder_id: input.folderId,
+      client_id: input.clientId ?? null,
+      company_id: input.companyId ?? null,
+      case_id: input.caseId ?? null,
       assigned_by: actorId,
       is_archived: false,
       updated_at: new Date().toISOString(),

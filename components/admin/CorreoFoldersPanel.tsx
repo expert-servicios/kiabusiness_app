@@ -39,7 +39,12 @@ export function CorreoFoldersPanel() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const refreshFromMailMove = () => void load();
+    window.addEventListener('correo-folders-changed', refreshFromMailMove);
+    return () => window.removeEventListener('correo-folders-changed', refreshFromMailMove);
+  }, [load]);
 
   const createFolder = async () => {
     if (!newName.trim()) return;
@@ -136,11 +141,10 @@ export function CorreoFoldersPanel() {
           );
 
           if (folder.is_system) {
-            return (
-              <div key={folder.id} className="flex min-h-10 items-center gap-2 rounded-xl px-2.5 py-2">
-                {label}
-              </div>
-            );
+            if (folder.system_key === 'inbox') {
+              return <Link key={folder.id} href="/admin/correo" className="flex min-h-10 items-center gap-2 rounded-xl px-2.5 py-2 hover:bg-white">{label}</Link>;
+            }
+            return <div key={folder.id} className="flex min-h-10 items-center gap-2 rounded-xl px-2.5 py-2">{label}</div>;
           }
 
           return (

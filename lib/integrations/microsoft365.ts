@@ -188,7 +188,6 @@ export async function getConversation(
     `/messages?$filter=${encodeURIComponent(filter)}&$orderby=receivedDateTime asc&$select=${select}`
   );
 
-  // Mark unread messages as read
   for (const m of data.value ?? []) {
     if (!m.isRead) {
       await graphPatch(access_token, `/messages/${m.id}`, { isRead: true }).catch(() => null);
@@ -222,5 +221,24 @@ export async function sendReply(
 ): Promise<{ refreshed: typeof stored | null }> {
   const { access_token, refreshed } = await ensureFreshToken(stored);
   await graphPost(access_token, `/messages/${opts.messageId}/reply`, { comment: opts.comment });
+  return { refreshed: refreshed ? { ...stored, ...refreshed } : null };
+}
+
+export async function sendNewMail(
+  stored: { access_token: string; refresh_token: string; expires_at: number },
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
+): Promise<{ refreshed: typeof stored | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  await graphPost(access_token, '/sendMail', {
+    message: {
+      subject: opts.subject,
+      body: {
+        contentType: opts.bodyHtml ? 'HTML' : 'Text',
+        content: opts.body,
+      },
+      toRecipients: [{ emailAddress: { address: opts.to } }],
+    },
+    saveToSentItems: true,
+  });
   return { refreshed: refreshed ? { ...stored, ...refreshed } : null };
 }
