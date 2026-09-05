@@ -7,7 +7,7 @@ function source(path: string): string {
 }
 
 describe('Admin client documents 360', () => {
-  it('retrieves documents only from explicit client, case, company or owner relationships', () => {
+  it('retrieves canonical documents only from explicit client, case, company or owner relationships', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain(".eq('client_id', id)");
     expect(route).toContain(".in('case_id', caseIds)");
@@ -25,10 +25,11 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('technicalExcluded');
   });
 
-  it('uses temporary signed urls for stored client files', () => {
+  it('uses temporary signed urls for private canonical and case document storage paths', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
-    expect(route).toContain(".from('client-documents')");
-    expect(route).toContain('createSignedUrl(doc.file_path, 3600)');
+    expect(route).toContain(".from('client-documents').createSignedUrl(filePath, 3600)");
+    expect(route).toContain('signedClientDocumentUrl(admin, doc.file_path)');
+    expect(route).toContain('signedClientDocumentUrl(admin, row.file_path)');
     expect(route).not.toContain(".from('documents').delete(");
   });
 
@@ -39,6 +40,43 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('Entidad no vinculada a este cliente');
     expect(page).toContain("params.set('companyId', companyFilter)");
     expect(page).toContain('<option value="unassigned">Sin entidad');
+  });
+
+  it('normalizes legacy document tables through direct client ownership only', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+
+    expect(route).toContain("admin.from('case_documents').select(LEGACY_CASE_DOCUMENT_SELECT).eq('client_id', id)");
+    expect(route).toContain("admin.from('files').select(LEGACY_FILE_SELECT).eq('user_id', id)");
+    expect(route).toContain("admin.from('user_files').select(LEGACY_USER_FILE_SELECT).eq('user_id', id)");
+    expect(route).toContain(".filter((row) => row.client_id === id && caseIds.includes(row.case_id))");
+    expect(route).toContain("source: 'case_documents' as const");
+    expect(route).toContain("source: 'files' as const");
+    expect(route).toContain("source: 'user_files' as const");
+    expect(route).toContain("sourceLabel: 'Expediente legacy'");
+    expect(route).toContain("sourceLabel: 'Archivos legacy'");
+    expect(route).toContain("sourceLabel: 'Portal legacy'");
+  });
+
+  it('keeps legacy sources read-only and never assigns an entity without an explicit case relationship', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+
+    expect(route).toContain('editable: false');
+    expect(route).toContain('historyAvailable: false');
+    expect(route).toContain('companyId: null');
+    expect(route).toContain('companyName: null');
+    expect(route).toContain('legacyReadOnly');
+    expect(page).toContain("if (!doc.editable) return;");
+    expect(page).toContain("if (!draft || !doc.editable || doc.source !== 'documents') return;");
+    expect(page).toContain('solo lectura');
+    expect(page).toContain('{doc.editable && <button');
+    expect(page).toContain('{doc.historyAvailable && <DocumentHistory');
+  });
+
+  it('rejects non-http legacy file URLs instead of surfacing arbitrary schemes', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain("url.protocol === 'https:' || url.protocol === 'http:'");
+    expect(route).toContain('downloadUrl: safeExternalUrl(row.file_url)');
   });
 
   it('enriches email attachments with provenance and a deterministic Correo 360 deep link', () => {
@@ -54,11 +92,12 @@ describe('Admin client documents 360', () => {
     expect(page).toContain('doc.provenance?.fromEmail');
   });
 
-  it('allows only controlled admin mutations for status, classification, title and case', () => {
+  it('allows only controlled admin mutations for canonical status, classification, title and case', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
 
     expect(route).toContain('export async function PATCH');
+    expect(route).toContain(".from('documents')");
     expect(route).toContain("z.enum(['pendiente', 'revisado', 'rechazado'])");
     expect(route).toContain('docType: z.string().trim().min(1).max(80)');
     expect(route).toContain('title: z.string().trim().min(1).max(160)');
@@ -76,7 +115,7 @@ describe('Admin client documents 360', () => {
     expect(route).not.toContain('updates.company_id');
   });
 
-  it('writes an audit event with previous and next document values', () => {
+  it('writes an audit event with previous and next canonical document values', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain(".from('audit_logs').insert");
     expect(route).toContain("action: 'document.admin_updated'");

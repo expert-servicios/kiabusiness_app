@@ -28,7 +28,7 @@ type RawDocument = {
   drive_file_id: string | null;
   mime_type: string | null;
   title: string | null;
-  created_at: string;
+  created_at: string | null;
   doc_type: string | null;
   case_id: string | null;
   client_id: string | null;
@@ -36,6 +36,38 @@ type RawDocument = {
   original_name: string | null;
   state: string | null;
   uploaded_by_role: string | null;
+};
+
+type LegacyCaseDocument = {
+  id: string;
+  case_id: string;
+  client_id: string;
+  file_path: string;
+  original_name: string;
+  state: string;
+  created_at: string;
+};
+
+type LegacyFile = {
+  id: string;
+  user_id: string | null;
+  file_name: string;
+  file_size: number | null;
+  file_type: string | null;
+  file_url: string;
+  category: string | null;
+  created_at: string | null;
+};
+
+type LegacyUserFile = {
+  id: string;
+  user_id: string | null;
+  file_name: string | null;
+  file_url: string | null;
+  file_size: number | null;
+  file_type: string | null;
+  uploaded_at: string | null;
+  created_at: string | null;
 };
 
 type ClientCase = {
@@ -59,6 +91,9 @@ type EmailProvenance = {
 };
 
 const DOCUMENT_SELECT = 'id,company_id,owner_type,owner_id,kind,drive_file_id,mime_type,title,created_at,doc_type,case_id,client_id,file_path,original_name,state,uploaded_by_role';
+const LEGACY_CASE_DOCUMENT_SELECT = 'id,case_id,client_id,file_path,original_name,state,created_at';
+const LEGACY_FILE_SELECT = 'id,user_id,file_name,file_size,file_type,file_url,category,created_at';
+const LEGACY_USER_FILE_SELECT = 'id,user_id,file_name,file_url,file_size,file_type,uploaded_at,created_at';
 
 async function loadClientContext(admin: ReturnType<typeof getSupabaseAdmin>, id: string) {
   const [profileRes, authRes, casesRes, membershipsRes] = await Promise.all([
@@ -101,6 +136,22 @@ function documentBelongsToClient(doc: RawDocument, id: string, caseIds: string[]
     || (doc.owner_type === 'company' && Boolean(doc.owner_id && companyIds.includes(doc.owner_id)));
 }
 
+function safeExternalUrl(value: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function signedClientDocumentUrl(admin: ReturnType<typeof getSupabaseAdmin>, filePath: string | null) {
+  if (!filePath) return null;
+  const { data } = await admin.storage.from('client-documents').createSignedUrl(filePath, 3600);
+  return data?.signedUrl ?? null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -123,7 +174,7 @@ export async function GET(
   const caseById = new Map(cases.map((row) => [row.id, row]));
   const companyNameById = new Map(companies.map((company) => [company.id, company.name]));
 
-  const [directRes, caseRes, companyRes, profileOwnerRes, companyOwnerRes] = await Promise.all([
+  const [directRes, caseRes, companyRes, profileOwnerRes, companyOwnerRes, legacyCaseRes, legacyFilesRes, legacyUserFilesRes] = await Promise.all([
     admin.from('documents').select(DOCUMENT_SELECT).eq('client_id', id),
     caseIds.length
       ? admin.from('documents').select(DOCUMENT_SELECT).in('case_id', caseIds)
@@ -135,7 +186,19 @@ export async function GET(
     companyIds.length
       ? admin.from('documents').select(DOCUMENT_SELECT).eq('owner_type', 'company').in('owner_id', companyIds)
       : Promise.resolve({ data: [] }),
+    admin.from('case_documents').select(LEGACY_CASE_DOCUMENT_SELECT).eq('client_id', id),
+    admin.from('files').select(LEGACY_FILE_SELECT).eq('user_id', id),
+    admin.from('user_files').select(LEGACY_USER_FILE_SELECT).eq('user_id', id),
   ]);
+
+  if (legacyCaseRes.error || legacyFilesRes.error || legacyUserFilesRes.error) {
+    console.error('[documents360] legacy inventory load failed', {
+      caseDocuments: legacyCaseRes.error,
+      files: legacyFilesRes.error,
+      userFiles: legacyUserFilesRes.error,
+    });
+    return NextResponse.json({ error: 'No se pudo cargar el inventario documental completo' }, { status: 500 });
+  }
 
   const deduped = new Map<string, RawDocument>();
   for (const result of [directRes, caseRes, companyRes, profileOwnerRes, companyOwnerRes]) {
@@ -157,7 +220,7 @@ export async function GET(
     ((provenanceRes.data ?? []) as EmailProvenance[]).map((row) => [row.document_id, row])
   );
 
-  const normalized = await Promise.all(operational.map(async (doc) => {
+  const canonicalDocuments = await Promise.all(operational.map(async (doc) => {
     const caseRow = doc.case_id ? caseById.get(doc.case_id) : null;
     const ownerCompanyId = doc.owner_type === 'company' && doc.owner_id && allowedCompanyIds.has(doc.owner_id)
       ? doc.owner_id
@@ -167,16 +230,9 @@ export async function GET(
     const companyId = directCompanyId ?? caseCompanyId ?? ownerCompanyId ?? null;
     const provenance = provenanceByDocument.get(doc.id) ?? null;
 
-    let downloadUrl: string | null = null;
-    if (doc.file_path) {
-      const { data: urlData } = await admin.storage
-        .from('client-documents')
-        .createSignedUrl(doc.file_path, 3600);
-      downloadUrl = urlData?.signedUrl ?? null;
-    }
-
     return {
       id: doc.id,
+      recordKey: `documents:${doc.id}`,
       name: doc.original_name || doc.title || doc.doc_type || 'Documento',
       title: doc.title,
       docType: doc.doc_type,
@@ -190,8 +246,11 @@ export async function GET(
       companyId,
       companyName: companyId ? companyNameById.get(companyId) ?? null : null,
       driveFileId: doc.drive_file_id,
-      downloadUrl,
+      downloadUrl: await signedClientDocumentUrl(admin, doc.file_path),
       source: 'documents' as const,
+      sourceLabel: 'Documentos',
+      editable: true,
+      historyAvailable: true,
       provenance: provenance ? {
         type: 'email_attachment' as const,
         provider: provenance.provider,
@@ -209,7 +268,98 @@ export async function GET(
     };
   }));
 
-  normalized.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const legacyCaseDocuments = await Promise.all(
+    ((legacyCaseRes.data ?? []) as LegacyCaseDocument[])
+      .filter((row) => row.client_id === id && caseIds.includes(row.case_id))
+      .map(async (row) => {
+        const caseRow = caseById.get(row.case_id) ?? null;
+        const companyId = caseRow?.company_id && allowedCompanyIds.has(caseRow.company_id) ? caseRow.company_id : null;
+        return {
+          id: row.id,
+          recordKey: `case_documents:${row.id}`,
+          name: row.original_name || 'Documento de expediente',
+          title: null,
+          docType: null,
+          mimeType: null,
+          state: row.state,
+          kind: 'legacy',
+          uploadedByRole: null,
+          createdAt: row.created_at,
+          caseId: row.case_id,
+          caseName: caseRow?.service ?? null,
+          companyId,
+          companyName: companyId ? companyNameById.get(companyId) ?? null : null,
+          driveFileId: null,
+          downloadUrl: await signedClientDocumentUrl(admin, row.file_path),
+          source: 'case_documents' as const,
+          sourceLabel: 'Expediente legacy',
+          editable: false,
+          historyAvailable: false,
+          provenance: null,
+        };
+      })
+  );
+
+  const legacyFiles = ((legacyFilesRes.data ?? []) as LegacyFile[]).map((row) => ({
+    id: row.id,
+    recordKey: `files:${row.id}`,
+    name: row.file_name || 'Archivo legacy',
+    title: null,
+    docType: row.category,
+    mimeType: row.file_type,
+    state: null,
+    kind: 'legacy',
+    uploadedByRole: null,
+    createdAt: row.created_at,
+    caseId: null,
+    caseName: null,
+    companyId: null,
+    companyName: null,
+    driveFileId: null,
+    downloadUrl: safeExternalUrl(row.file_url),
+    source: 'files' as const,
+    sourceLabel: 'Archivos legacy',
+    editable: false,
+    historyAvailable: false,
+    provenance: null,
+  }));
+
+  const legacyUserFiles = ((legacyUserFilesRes.data ?? []) as LegacyUserFile[]).map((row) => ({
+    id: row.id,
+    recordKey: `user_files:${row.id}`,
+    name: row.file_name || 'Archivo de usuario legacy',
+    title: null,
+    docType: null,
+    mimeType: row.file_type,
+    state: null,
+    kind: 'legacy',
+    uploadedByRole: null,
+    createdAt: row.uploaded_at ?? row.created_at,
+    caseId: null,
+    caseName: null,
+    companyId: null,
+    companyName: null,
+    driveFileId: null,
+    downloadUrl: safeExternalUrl(row.file_url),
+    source: 'user_files' as const,
+    sourceLabel: 'Portal legacy',
+    editable: false,
+    historyAvailable: false,
+    provenance: null,
+  }));
+
+  const normalized = [
+    ...canonicalDocuments,
+    ...legacyCaseDocuments,
+    ...legacyFiles,
+    ...legacyUserFiles,
+  ];
+
+  normalized.sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 
   const filtered = requestedCompany === 'unassigned'
     ? normalized.filter((doc) => !doc.companyId)
@@ -239,6 +389,13 @@ export async function GET(
       withCompany: filtered.filter((doc) => doc.companyId).length,
       unassigned: normalized.filter((doc) => !doc.companyId).length,
       technicalExcluded,
+      legacyReadOnly: filtered.filter((doc) => !doc.editable).length,
+      sources: {
+        documents: filtered.filter((doc) => doc.source === 'documents').length,
+        case_documents: filtered.filter((doc) => doc.source === 'case_documents').length,
+        files: filtered.filter((doc) => doc.source === 'files').length,
+        user_files: filtered.filter((doc) => doc.source === 'user_files').length,
+      },
     },
   });
 }

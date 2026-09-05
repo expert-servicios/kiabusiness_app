@@ -19,23 +19,29 @@ type EmailProvenance = {
   threadUrl: string | null;
 };
 
+type DocumentSource = 'documents' | 'case_documents' | 'files' | 'user_files';
+
 type DocumentItem = {
   id: string;
+  recordKey: string;
   name: string;
   title: string | null;
   docType: string | null;
   mimeType: string | null;
-  state: 'pendiente' | 'revisado' | 'rechazado' | null;
+  state: 'pendiente' | 'revisado' | 'rechazado' | string | null;
   kind: string | null;
   uploadedByRole: string | null;
-  createdAt: string;
+  createdAt: string | null;
   caseId: string | null;
   caseName: string | null;
   companyId: string | null;
   companyName: string | null;
   driveFileId: string | null;
   downloadUrl: string | null;
-  source: 'documents';
+  source: DocumentSource;
+  sourceLabel: string;
+  editable: boolean;
+  historyAvailable: boolean;
   provenance: EmailProvenance | null;
 };
 
@@ -61,6 +67,8 @@ type Payload = {
     withCompany: number;
     unassigned: number;
     technicalExcluded: number;
+    legacyReadOnly: number;
+    sources: Record<DocumentSource, number>;
   };
 };
 
@@ -114,15 +122,16 @@ export default function ClientDocumentsPage() {
     if (!needle) return data.documents;
     return data.documents.filter((doc) => [
       doc.name, doc.title, doc.docType, doc.state, doc.caseName, doc.companyName,
-      doc.uploadedByRole, doc.provenance?.providerLabel, doc.provenance?.accountEmail,
+      doc.uploadedByRole, doc.sourceLabel, doc.provenance?.providerLabel, doc.provenance?.accountEmail,
       doc.provenance?.subject, doc.provenance?.fromEmail,
     ].filter(Boolean).some((value) => String(value).toLowerCase().includes(needle)));
   }, [data, query]);
 
   const startEdit = (doc: DocumentItem) => {
+    if (!doc.editable) return;
     setEditingId(doc.id);
     setDraft({
-      state: doc.state ?? 'pendiente',
+      state: doc.state === 'revisado' || doc.state === 'rechazado' ? doc.state : 'pendiente',
       docType: doc.docType ?? 'otro',
       title: doc.title ?? doc.name,
       caseId: doc.caseId ?? '',
@@ -130,7 +139,7 @@ export default function ClientDocumentsPage() {
   };
 
   const saveEdit = async (doc: DocumentItem) => {
-    if (!draft) return;
+    if (!draft || !doc.editable || doc.source !== 'documents') return;
     setSaving(true);
     setError('');
     try {
@@ -198,28 +207,37 @@ export default function ClientDocumentsPage() {
           </div>
           <div className="rounded-xl border border-[#d8cbb5] bg-white p-4">
             <label htmlFor="documents-search" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8a9aab]"><Search className="h-3.5 w-3.5" /> Buscar</label>
-            <input id="documents-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, tipo, expediente, entidad, correo…" className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#29384a] outline-none placeholder:text-[#9ca3af] focus:border-[#c88b25]" />
+            <input id="documents-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, tipo, expediente, entidad, fuente, correo…" className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#29384a] outline-none placeholder:text-[#9ca3af] focus:border-[#c88b25]" />
           </div>
         </div>
 
         {data && (
-          <div className="mb-5 grid gap-3 sm:grid-cols-4">
-            {[
-              ['Pendientes', data.counts.pending],
-              ['Revisados', data.counts.reviewed],
-              ['Rechazados', data.counts.rejected],
-              ['Con expediente', data.counts.withCase],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a9aab]">{label}</p>
-                <p className="mt-1 text-xl font-bold text-[#07111d]">{value}</p>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="mb-3 grid gap-3 sm:grid-cols-4">
+              {[
+                ['Pendientes', data.counts.pending],
+                ['Revisados', data.counts.reviewed],
+                ['Rechazados', data.counts.rejected],
+                ['Con expediente', data.counts.withCase],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a9aab]">{label}</p>
+                  <p className="mt-1 text-xl font-bold text-[#07111d]">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold text-[#5f6f7f]">
+              <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Canónicos: {data.counts.sources.documents}</span>
+              <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Expediente legacy: {data.counts.sources.case_documents}</span>
+              <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Archivos legacy: {data.counts.sources.files}</span>
+              <span className="rounded-full border border-[#d8cbb5] bg-white px-2.5 py-1">Portal legacy: {data.counts.sources.user_files}</span>
+              {data.counts.legacyReadOnly > 0 && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">Solo lectura legacy: {data.counts.legacyReadOnly}</span>}
+            </div>
+          </>
         )}
 
         <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
-          Puedes revisar, clasificar y vincular documentos a expedientes. La entidad del documento nunca se cambia automáticamente; sólo se permiten expedientes del mismo cliente y de la misma entidad. Cada cambio queda registrado en auditoría y puede consultarse desde Historial.
+          La vista unifica el registro canónico y las fuentes documentales legacy sin migrar ni borrar históricos. Solo los documentos canónicos pueden revisarse, clasificarse o vincularse a expedientes; los registros legacy se muestran en modo lectura.
         </div>
 
         {loading && !data ? (
@@ -233,10 +251,10 @@ export default function ClientDocumentsPage() {
         ) : (
           <div className="space-y-3">
             {visible.map((doc) => {
-              const editing = editingId === doc.id && draft;
+              const editing = doc.editable && editingId === doc.id && draft;
               const compatibleCases = (data?.cases ?? []).filter((item) => item.companyId === doc.companyId);
               return (
-                <article key={doc.id} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+                <article key={doc.recordKey} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <div className="rounded-xl bg-[#f0e8d8] p-2.5 text-[#c88b25]"><FileText className="h-5 w-5" /></div>
@@ -244,6 +262,8 @@ export default function ClientDocumentsPage() {
                         <h2 className="break-words text-sm font-bold text-[#07111d]">{doc.title || doc.name}</h2>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">{doc.companyName ?? 'Sin entidad'}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">{doc.sourceLabel}</span>
+                          {!doc.editable && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">solo lectura</span>}
                           {doc.state === 'revisado' && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800"><CheckCircle2 className="h-3 w-3" /> revisado</span>}
                           {doc.state === 'rechazado' && <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700"><XCircle className="h-3 w-3" /> rechazado</span>}
                           {doc.state === 'pendiente' && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">pendiente</span>}
@@ -251,9 +271,9 @@ export default function ClientDocumentsPage() {
                           {doc.provenance && <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-800"><Mail className="h-3 w-3" /> {doc.provenance.providerLabel}</span>}
                         </div>
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#8a9aab]">
-                          <span>{new Date(doc.createdAt).toLocaleString('es-ES')}</span>
+                          {doc.createdAt && <span>{new Date(doc.createdAt).toLocaleString('es-ES')}</span>}
                           {doc.mimeType && <span>{doc.mimeType}</span>}
-                          <span>Fuente: {doc.provenance ? 'correo' : doc.source}</span>
+                          <span>Fuente: {doc.provenance ? 'correo' : doc.sourceLabel}</span>
                         </div>
 
                         {editing && (
@@ -301,12 +321,12 @@ export default function ClientDocumentsPage() {
 
                         {doc.caseId && <Link href={`/admin/expedientes/${doc.caseId}`} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#c88b25] hover:underline"><FolderOpen className="h-3.5 w-3.5" /> {doc.caseName ?? 'Abrir expediente'} <ExternalLink className="h-3 w-3" /></Link>}
 
-                        <DocumentHistory clientId={id} documentId={doc.id} />
+                        {doc.historyAvailable && <DocumentHistory clientId={id} documentId={doc.id} />}
                       </div>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
-                      <button type="button" onClick={() => startEdit(doc)} className="flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] hover:border-[#c88b25]"><Pencil className="h-3.5 w-3.5" /> Gestionar</button>
+                      {doc.editable && <button type="button" onClick={() => startEdit(doc)} className="flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] hover:border-[#c88b25]"><Pencil className="h-3.5 w-3.5" /> Gestionar</button>}
                       {doc.downloadUrl ? <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-semibold text-[#29384a] hover:border-[#c88b25]"><Download className="h-3.5 w-3.5" /> Abrir</a> : doc.driveFileId ? <span className="rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-600">Drive vinculado</span> : <span className="rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500">Sin archivo accesible</span>}
                     </div>
                   </div>
