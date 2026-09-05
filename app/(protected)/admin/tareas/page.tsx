@@ -20,14 +20,22 @@ type Task = {
   case: { id: string; service: string; state: string; status: string } | null;
 };
 
+type TaskFilter = 'open' | 'all' | Task['status'];
 const priorityLabel = { baja: 'Baja', media: 'Media', alta: 'Alta', critica: 'Crítica' } as const;
+const FILTERS: Array<{ value: TaskFilter; label: string }> = [
+  { value: 'open', label: 'Abiertas' },
+  { value: 'pendiente', label: 'Pendientes' },
+  { value: 'en_progreso', label: 'En progreso' },
+  { value: 'completada', label: 'Completadas' },
+  { value: 'all', label: 'Todas' },
+];
 
 export default function AdminTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'open' | 'all' | Task['status']>('open');
+  const [filter, setFilter] = useState<TaskFilter>('open');
   const [showNew, setShowNew] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -124,7 +132,7 @@ export default function AdminTasksPage() {
         {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {[['open','Abiertas'],['pendiente','Pendientes'],['en_progreso','En progreso'],['completada','Completadas'],['all','Todas']] as const satisfies ReadonlyArray<readonly [typeof filter,string]>}.map(([value,label]) => <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-full px-3 py-1.5 text-xs font-bold ${filter === value ? 'bg-[#07111d] text-white' : 'border border-[#d8cbb5] bg-white text-[#52606d]'}`}>{label}</button>)}
+          {FILTERS.map(({ value, label }) => <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-full px-3 py-1.5 text-xs font-bold ${filter === value ? 'bg-[#07111d] text-white' : 'border border-[#d8cbb5] bg-white text-[#52606d]'}`}>{label}</button>)}
         </div>
 
         <div className="mt-4 space-y-3">
@@ -137,7 +145,7 @@ export default function AdminTasksPage() {
                   {task.description && <p className="mt-2 text-sm leading-6 text-[#52606d]">{task.description}</p>}
                   <div className="mt-3 flex flex-wrap gap-3 text-xs text-[#6b7280]">
                     {task.due_date && <span className={overdue ? 'font-bold text-red-700' : ''}>Vence: {new Date(`${task.due_date}T12:00:00`).toLocaleDateString('es-ES')}</span>}
-                    {task.client && <Link href={`/admin/clientes/${task.client.id}`} className="font-bold text-[#9a6a17]">Cliente: {task.client.full_name ?? task.client.id.slice(0,8)}</Link>}
+                    {task.client && <Link href={`/admin/clientes/${task.client.id}`} className="font-bold text-[#9a6a17]">Cliente: {task.client.full_name ?? task.client.id.slice(0, 8)}</Link>}
                     {task.case && <Link href={`/admin/expedientes?caseId=${task.case.id}`} className="font-bold text-[#9a6a17]">Expediente: {task.case.service}</Link>}
                   </div>
                 </div>
