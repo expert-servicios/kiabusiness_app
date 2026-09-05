@@ -9,7 +9,7 @@ function source(path: string): string {
 describe('Admin client communications company scoping', () => {
   it('attributes communications only from explicit company or case context', () => {
     const route = source('app/api/admin/clientes/[id]/communications/route.ts');
-    expect(route).toContain("select('id,company_id')");
+    expect(route).toContain("select('id,company_id,service')");
     expect(route).toContain("metadataString(row.metadata, 'company_id')");
     expect(route).toContain("metadataString(row.metadata, 'case_id')");
     expect(route).toContain('caseCompanyById');
@@ -27,7 +27,7 @@ describe('Admin client communications company scoping', () => {
   it('exposes all/entity/unassigned filters in the Admin UI', () => {
     const page = source('app/(protected)/admin/clientes/[id]/comunicaciones/page.tsx');
     expect(page).toContain("params.set('companyId', companyFilter)");
-    expect(page).toContain('<option value="all">Todas las comunicaciones</option>');
+    expect(page).toContain('<option value="all">Todas</option>');
     expect(page).toContain('<option value="unassigned">Sin entidad');
     expect(page).toContain("item.companyName ?? 'Sin entidad'");
   });
