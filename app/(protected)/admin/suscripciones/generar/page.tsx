@@ -31,6 +31,8 @@ type ClientDetail = {
   };
   companies: Company[];
   subs: Array<{ id: string; plan: string; status: string; company_id: string | null }>;
+  checkoutSessions: Array<{ id: string; stripe_session_id: string; status: string; company_id: string | null; created_at: string }>;
+  quotes: Array<{ id: string; service: string; status: string; amount_eur: number; company_id: string | null }>;
 };
 
 const PLANS = [
@@ -50,7 +52,14 @@ export default function AdminGenerateSubscriptionLinkPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ stripeUrl: string; sessionId: string; companyId: string } | null>(null);
+  const [result, setResult] = useState<{
+    stripeUrl: string;
+    sessionId: string;
+    companyId: string;
+    leadId?: string;
+    quoteId?: string;
+    onboardingCaseId?: string;
+  } | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -58,14 +67,19 @@ export default function AdminGenerateSubscriptionLinkPage() {
         const res = await fetch('/api/admin/clientes');
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? 'No se pudieron cargar los clientes');
-        setClients(json.clients ?? []);
+        const rows = (json.clients ?? []) as ClientSummary[];
+        setClients(rows);
+        const initialClientId = new URLSearchParams(window.location.search).get('clientId');
+        if (initialClientId && rows.some((client) => client.id === initialClientId)) {
+          await chooseClient(initialClientId);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'No se pudieron cargar los clientes');
       } finally {
         setLoadingClients(false);
       }
     })();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredClients = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -120,7 +134,15 @@ export default function AdminGenerateSubscriptionLinkPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error ?? 'No se pudo generar el Checkout');
-      setResult({ stripeUrl: json.stripeUrl, sessionId: json.sessionId, companyId: json.companyId });
+      setResult({
+        stripeUrl: json.stripeUrl,
+        sessionId: json.sessionId,
+        companyId: json.companyId,
+        leadId: json.leadId,
+        quoteId: json.quoteId,
+        onboardingCaseId: json.onboardingCaseId,
+      });
+      await chooseClient(detail.profile.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo generar el Checkout');
     } finally {
@@ -136,19 +158,23 @@ export default function AdminGenerateSubscriptionLinkPage() {
   const activeForCompany = detail?.subs.some(
     (sub) => sub.company_id === companyId && (sub.status === 'active' || sub.status === 'trialing'),
   ) ?? false;
+  const openCheckoutForCompany = detail?.checkoutSessions.find(
+    (session) => session.company_id === companyId && session.status === 'open',
+  ) ?? null;
+  const latestQuoteForCompany = detail?.quotes.find((quote) => quote.company_id === companyId) ?? null;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-6 py-8 text-[#07111d]">
       <div className="mx-auto max-w-4xl">
         <div className="flex items-start gap-3">
-          <Link href="/admin/suscripciones" className="mt-1 rounded-lg border border-[#d8cbb5] p-2 text-[#29384a] hover:border-[#d7a33a]">
+          <Link href={selectedClientId ? `/admin/clientes/${selectedClientId}` : '/admin/suscripciones'} className="mt-1 rounded-lg border border-[#d8cbb5] p-2 text-[#29384a] hover:border-[#d7a33a]">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c88b25]">Admin · Suscripciones</p>
-            <h1 className="mt-1 font-serif text-3xl font-bold">Generar enlace de contratación</h1>
+            <h1 className="mt-1 font-serif text-3xl font-bold">Preparar contratación</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#29384a]">
-              Genera una única sesión Stripe para un cliente existente, la registra en EXPERT y no envía ningún email automáticamente. Revisa el enlace antes de comunicarlo.
+              Crea o reutiliza la trazabilidad comercial canónica de EXPERT (lead → presupuesto → expediente → Checkout) para una entidad concreta. El enlace no se envía automáticamente.
             </p>
           </div>
         </div>
@@ -156,27 +182,17 @@ export default function AdminGenerateSubscriptionLinkPage() {
         {error && <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         <section className="mt-6 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-          <label className="text-xs font-bold uppercase tracking-wide text-[#29384a]">1. Buscar cliente existente</label>
+          <label className="text-xs font-bold uppercase tracking-wide text-[#29384a]">1. Cliente existente</label>
           <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#d8cbb5] px-3">
             <Search className="h-4 w-4 text-[#8a9aab]" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Nombre o email"
-              className="w-full bg-transparent py-3 text-sm outline-none"
-            />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nombre o email" className="w-full bg-transparent py-3 text-sm outline-none" />
           </div>
           {loadingClients ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#c88b25]" /></div>
           ) : (
             <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-[#f0e8d8]">
               {filteredClients.map((client) => (
-                <button
-                  key={client.id}
-                  type="button"
-                  onClick={() => void chooseClient(client.id)}
-                  className={`flex w-full items-center justify-between border-b border-[#f8f4eb] px-4 py-3 text-left last:border-b-0 ${selectedClientId === client.id ? 'bg-[#d7a33a]/10' : 'hover:bg-[#f8f4eb]'}`}
-                >
+                <button key={client.id} type="button" onClick={() => void chooseClient(client.id)} className={`flex w-full items-center justify-between border-b border-[#f8f4eb] px-4 py-3 text-left last:border-b-0 ${selectedClientId === client.id ? 'bg-[#d7a33a]/10' : 'hover:bg-[#f8f4eb]'}`}>
                   <span>
                     <span className="block text-sm font-semibold">{client.full_name ?? 'Sin nombre'}</span>
                     <span className="block text-xs text-[#6b7280]">{client.email}</span>
@@ -209,9 +225,7 @@ export default function AdminGenerateSubscriptionLinkPage() {
                 <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm">
                   <option value="">Selecciona entidad</option>
                   {detail.companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.razon_social ?? company.name} {company.nif ? `· ${company.nif}` : ''}
-                    </option>
+                    <option key={company.id} value={company.id}>{company.razon_social ?? company.name} {company.nif ? `· ${company.nif}` : ''}</option>
                   ))}
                 </select>
               </label>
@@ -219,28 +233,31 @@ export default function AdminGenerateSubscriptionLinkPage() {
               <label className="text-sm font-semibold">
                 3. Plan
                 <select value={planKey} onChange={(e) => setPlanKey(e.target.value as (typeof PLANS)[number]['key'])} className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm">
-                  {PLANS.map((plan) => (
-                    <option key={plan.key} value={plan.key}>{plan.name} · {plan.amount} €/mes + IVA</option>
-                  ))}
+                  {PLANS.map((plan) => <option key={plan.key} value={plan.key}>{plan.name} · {plan.amount} €/mes + IVA</option>)}
                 </select>
               </label>
             </div>
 
-            {activeForCompany && (
+            {latestQuoteForCompany && (
+              <div className="mt-4 rounded-xl border border-[#e6dfd2] bg-[#faf8f2] px-4 py-3 text-sm text-[#29384a]">
+                Presupuesto existente: <strong>{latestQuoteForCompany.service}</strong> · {latestQuoteForCompany.status} · {latestQuoteForCompany.amount_eur} € base.
+              </div>
+            )}
+            {openCheckoutForCompany && !activeForCompany && (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Esta entidad ya tiene una suscripción activa/trialing. No generes otro Checkout sin revisar el caso.
+                Ya existe un Checkout abierto para esta entidad (<span className="font-mono text-xs">{openCheckoutForCompany.stripe_session_id}</span>). No se generará otro hasta resolver o expirar éste.
+              </div>
+            )}
+            {activeForCompany && (
+              <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                Esta entidad ya tiene una suscripción activa/trialing. No procede generar otro Checkout.
               </div>
             )}
 
             <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => void generateLink()}
-                disabled={generating || !companyId || !detail.profile.profile_completed || !detail.profile.billing_ready || activeForCompany}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#d7a33a] px-5 py-3 text-sm font-bold text-[#07111d] disabled:cursor-not-allowed disabled:opacity-50"
-              >
+              <button type="button" onClick={() => void generateLink()} disabled={generating || !companyId || !detail.profile.profile_completed || !detail.profile.billing_ready || activeForCompany || Boolean(openCheckoutForCompany)} className="inline-flex items-center gap-2 rounded-xl bg-[#d7a33a] px-5 py-3 text-sm font-bold text-[#07111d] disabled:cursor-not-allowed disabled:opacity-50">
                 {generating && <Loader2 className="h-4 w-4 animate-spin" />}
-                Generar enlace sin enviar
+                Generar Checkout sin enviar
               </button>
             </div>
           </section>
@@ -251,16 +268,15 @@ export default function AdminGenerateSubscriptionLinkPage() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-700" />
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-green-900">Checkout generado y registrado, sin email automático</h2>
+                <h2 className="font-semibold text-green-900">Contratación preparada y Checkout registrado</h2>
                 <p className="mt-1 text-xs text-green-800">Session ID: <span className="font-mono">{result.sessionId}</span></p>
+                {result.quoteId && <p className="mt-1 text-xs text-green-800">Presupuesto: <span className="font-mono">{result.quoteId}</span></p>}
+                {result.onboardingCaseId && <p className="mt-1 text-xs text-green-800">Expediente de alta: <span className="font-mono">{result.onboardingCaseId}</span></p>}
                 <p className="mt-3 break-all rounded-lg bg-white px-3 py-2 text-xs text-[#29384a]">{result.stripeUrl}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void copyLink()} className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900">
-                    <Copy className="h-3.5 w-3.5" /> Copiar enlace
-                  </button>
-                  <a href={result.stripeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900">
-                    <ExternalLink className="h-3.5 w-3.5" /> Verificar en Stripe Checkout
-                  </a>
+                  <button type="button" onClick={() => void copyLink()} className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900"><Copy className="h-3.5 w-3.5" /> Copiar enlace</button>
+                  <a href={result.stripeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900"><ExternalLink className="h-3.5 w-3.5" /> Verificar Checkout</a>
+                  <Link href={`/admin/clientes/${selectedClientId}`} className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-semibold text-green-900">Volver al Cliente 360</Link>
                 </div>
               </div>
             </div>
