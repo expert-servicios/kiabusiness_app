@@ -52,20 +52,22 @@ function sanitizeFileName(fileName: string, extension: string): string {
   return sanitized.includes('.') ? sanitized : `${sanitized}.${extension}`;
 }
 
-export function validateClientDocumentFile(
-  file: File,
+export function validateClientDocumentMetadata(
+  fileName: string,
+  mimeType: string,
+  size: number,
   maxBytes = CLIENT_DOCUMENT_MAX_BYTES
 ): UploadValidationResult {
-  if (file.size <= 0) {
+  if (!Number.isFinite(size) || size <= 0) {
     return { ok: false, status: 400, error: 'Archivo requerido' };
   }
 
-  if (file.size > maxBytes) {
+  if (size > maxBytes) {
     const maxMb = Math.max(1, Math.ceil(maxBytes / (1024 * 1024)));
     return { ok: false, status: 400, error: `El archivo no puede superar ${maxMb} MB` };
   }
 
-  const extension = getExtension(file.name);
+  const extension = getExtension(fileName);
   const allowedType = ALLOWED_CLIENT_DOCUMENT_TYPES.find((entry) =>
     entry.extensions.includes(extension)
   );
@@ -78,7 +80,7 @@ export function validateClientDocumentFile(
     };
   }
 
-  const mime = file.type.split(';')[0].trim().toLowerCase();
+  const mime = mimeType.split(';')[0].trim().toLowerCase();
   if (mime && !allowedType.mimes.includes(mime)) {
     return {
       ok: false,
@@ -89,9 +91,16 @@ export function validateClientDocumentFile(
 
   return {
     ok: true,
-    safeName: sanitizeFileName(file.name, extension),
+    safeName: sanitizeFileName(fileName, extension),
     contentType: allowedType.contentType,
   };
+}
+
+export function validateClientDocumentFile(
+  file: File,
+  maxBytes = CLIENT_DOCUMENT_MAX_BYTES
+): UploadValidationResult {
+  return validateClientDocumentMetadata(file.name, file.type, file.size, maxBytes);
 }
 
 export function buildClientDocumentStoragePath(caseId: string, safeName: string): string {
