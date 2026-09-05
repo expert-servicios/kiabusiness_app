@@ -67,7 +67,7 @@ describe('Email attachments to Documents 360', () => {
     expect(page).toContain('/api/admin/correo/attachments');
     expect(page).toContain('Guardar en Documentos');
     expect(page).toContain('!linkedCaseId');
-    expect(page).toContain('Vincula este hilo a un expediente');
+    expect(page).toContain('vincula este hilo a un expediente');
     expect(page).toContain(`/admin/clientes/${'${clientId}'}/documentos`);
   });
 });
