@@ -73,6 +73,27 @@ describe('Admin client documents 360', () => {
     expect(page).toContain('{doc.historyAvailable && <DocumentHistory');
   });
 
+  it('flags only review-only duplicate signals based on explicit scope and compatible mime', () => {
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+
+    expect(page).toContain('function duplicateFingerprint(doc: DocumentItem)');
+    expect(page).toContain("? `case:${doc.caseId}`");
+    expect(page).toContain("? `company:${doc.companyId}`");
+    expect(page).toContain("'client:unassigned'");
+    expect(page).toContain("fingerprint.mime === '*' || peerFingerprint.mime === '*' || fingerprint.mime === peerFingerprint.mime");
+    expect(page).toContain('possibleDuplicate = duplicateSignals.has(doc.recordKey)');
+    expect(page).toContain('posible duplicado');
+    expect(page).toContain('nunca fusionan ni eliminan archivos');
+    expect(page).not.toContain('mergeDuplicates');
+    expect(page).not.toContain('deleteDuplicate');
+  });
+
+  it('ignores generic placeholder names when calculating possible duplicates', () => {
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+    expect(page).toContain("const GENERIC_NAMES = new Set(['documento', 'archivo legacy', 'archivo de usuario legacy', 'documento de expediente'])");
+    expect(page).toContain('GENERIC_NAMES.has(normalizedName)');
+  });
+
   it('rejects non-http legacy file URLs instead of surfacing arbitrary schemes', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain("url.protocol === 'https:' || url.protocol === 'http:'");
