@@ -5,15 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Building2, CheckCircle2, CircleDashed, CreditCard, FileText, Mail, Plug, RefreshCw, UserRoundCheck } from 'lucide-react';
 
 type Client360 = {
-  profile: {
-    id: string;
-    full_name: string | null;
-    email: string;
-    profile_completed: boolean;
-    billing_ready: boolean;
-    active_company_id: string | null;
-    onboarding_completed_at: string | null;
-  };
+  profile: { id: string; full_name: string | null; email: string; profile_completed: boolean; billing_ready: boolean; active_company_id: string | null; onboarding_completed_at: string | null };
   companies: { id: string; name: string; nif: string | null }[];
   cases: { id: string; service: string; state: string; status: string; next_action?: string | null }[];
   quotes: { id: string; service: string; status: string; amount_eur: number; company_id: string | null }[];
@@ -28,6 +20,11 @@ type CanonicalOnboardingState = {
   companyId: string | null;
   completedAt: string | null;
   completed: boolean;
+  meetingScheduled: boolean;
+  meetingOccurred: boolean;
+  meetingDate: string | null;
+  holdedConnected: boolean;
+  canAdminComplete: boolean;
 };
 
 type StepState = 'done' | 'active' | 'pending';
@@ -43,7 +40,9 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
   const [data, setData] = useState<Client360 | null>(null);
   const [onboardingState, setOnboardingState] = useState<CanonicalOnboardingState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(false);
   const [error, setError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
 
   const load = async () => {
     setLoading(true); setError('');
@@ -55,14 +54,30 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
       const [clientJson, onboardingJson] = await Promise.all([clientResponse.json(), onboardingResponse.json()]);
       if (!clientResponse.ok) throw new Error(clientJson.error ?? 'No se pudo cargar el alta');
       if (!onboardingResponse.ok) throw new Error(onboardingJson.error ?? 'No se pudo cargar el estado de onboarding');
-      setData(clientJson);
-      setOnboardingState(onboardingJson);
+      setData(clientJson); setOnboardingState(onboardingJson);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Error de conexión');
     } finally { setLoading(false); }
   };
 
   useEffect(() => { void load(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const completeOnboarding = async () => {
+    if (!onboardingState?.activeSubscriptionId || !onboardingState.canAdminComplete) return;
+    setCompleting(true); setActionMessage(''); setError('');
+    try {
+      const response = await fetch(`/api/admin/clientes/${clientId}/complete-onboarding`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: onboardingState.activeSubscriptionId }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo finalizar el alta');
+      setActionMessage(json.reviewSent ? 'Alta completada. Bienvenida y solicitud de valoración enviadas.' : 'Alta completada y bienvenida enviada.');
+      await load();
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'No se pudo finalizar el alta');
+    } finally { setCompleting(false); }
+  };
 
   const steps = useMemo<Step[]>(() => {
     if (!data) return [];
@@ -82,37 +97,34 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
     return [
       { key: 'profile', title: 'Perfil y facturación', detail: profileReady ? 'Datos mínimos listos para contratar.' : 'Completar datos personales/fiscales antes de cobrar.', state: profileReady ? 'done' : 'active', href: `/admin/clientes/${clientId}`, action: profileReady ? 'Revisar ficha' : 'Completar ficha', icon: UserRoundCheck },
       { key: 'company', title: 'Entidad contratante', detail: activeCompany ? `${activeCompany.name}${activeCompany.nif ? ` · ${activeCompany.nif}` : ''}` : 'No hay entidad activa vinculada.', state: companyReady ? 'done' : 'active', href: `/admin/empresas?clientId=${encodeURIComponent(clientId)}${companyQuery}`, action: companyReady ? 'Ver empresa' : 'Vincular empresa', icon: Building2 },
-      {
-        key: 'commercial', title: 'Presupuesto y contratación',
-        detail: latestQuote ? `${latestQuote.service} · ${latestQuote.status} · ${latestQuote.amount_eur} € base` : activeSubscription ? `Suscripción ${activeSubscription.plan}` : openCheckout ? 'Checkout ya generado; no crear otro mientras siga abierto.' : 'Preparar lead, presupuesto, expediente y Checkout en una sola operación.',
-        state: commercialReady ? (activeSubscription ? 'done' : 'active') : (profileReady && companyReady ? 'active' : 'pending'), href: `/admin/suscripciones/generar?clientId=${clientId}`, action: commercialReady ? 'Revisar contratación' : 'Preparar contratación', icon: FileText,
-      },
-      {
-        key: 'payment', title: 'Stripe y suscripción',
-        detail: activeSubscription ? `${activeSubscription.plan} · ${activeSubscription.status}` : openCheckout ? `Checkout abierto · ${openCheckout.stripe_session_id}` : 'Pendiente de generar/completar Checkout.',
-        state: checkoutState, href: `/admin/suscripciones?clientId=${encodeURIComponent(clientId)}${companyQuery}`, action: activeSubscription ? 'Ver suscripción' : 'Ver intentos', icon: CreditCard,
-      },
-      { key: 'onboarding', title: 'Onboarding', detail: onboardingDone ? 'Onboarding poscompra completado para la suscripción activa.' : onboardingCase?.next_action || (activeSubscription ? 'Continuar reunión inicial y configuración poscompra.' : 'Se activa después de la suscripción.'), state: onboardingDone ? 'done' : activeSubscription || onboardingCase ? 'active' : 'pending', href: `/admin/expedientes?clientId=${clientId}`, action: onboardingDone ? 'Ver expediente' : 'Continuar onboarding', icon: CheckCircle2 },
-      { key: 'holded', title: 'Holded', detail: holded ? `Integración activa${holded.last_success_at ? ` · última OK ${new Date(holded.last_success_at).toLocaleDateString('es-ES')}` : ''}` : 'Sin integración Holded activa para la entidad.', state: holded ? 'done' : activeSubscription ? 'active' : 'pending', href: `/admin/clientes/${clientId}/integraciones`, action: holded ? 'Probar / gestionar' : 'Conectar / revisar', icon: Plug },
-      { key: 'communications', title: 'Comunicaciones', detail: `${data.emailEvents.length} email(s) EXPERT registrados. Correo 360 disponible para seguimiento.`, state: data.emailEvents.length ? 'done' : 'active', href: `/admin/clientes/${clientId}/comunicaciones`, action: 'Abrir comunicaciones', icon: Mail },
+      { key: 'commercial', title: 'Presupuesto y contratación', detail: latestQuote ? `${latestQuote.service} · ${latestQuote.status} · ${latestQuote.amount_eur} € base` : activeSubscription ? `Suscripción ${activeSubscription.plan}` : openCheckout ? 'Checkout ya generado; no crear otro mientras siga abierto.' : 'Preparar lead, presupuesto, expediente y Checkout en una sola operación.', state: commercialReady ? (activeSubscription ? 'done' : 'active') : (profileReady && companyReady ? 'active' : 'pending'), href: `/admin/suscripciones/generar?clientId=${clientId}`, action: commercialReady ? 'Revisar contratación' : 'Preparar contratación', icon: FileText },
+      { key: 'payment', title: 'Stripe y suscripción', detail: activeSubscription ? `${activeSubscription.plan} · ${activeSubscription.status}` : openCheckout ? `Checkout abierto · ${openCheckout.stripe_session_id}` : 'Pendiente de generar/completar Checkout.', state: checkoutState, href: `/admin/suscripciones?clientId=${encodeURIComponent(clientId)}${companyQuery}`, action: activeSubscription ? 'Ver suscripción' : 'Ver intentos', icon: CreditCard },
+      { key: 'onboarding', title: 'Onboarding', detail: onboardingDone ? 'Onboarding poscompra completado por Admin.' : onboardingState?.meetingOccurred ? 'Reunión celebrada. Validar Holded y finalizar el alta desde esta ficha.' : onboardingState?.meetingScheduled ? 'Reunión reservada; el cierre se habilitará cuando haya transcurrido la cita.' : onboardingCase?.next_action || (activeSubscription ? 'Pendiente reservar la reunión inicial.' : 'Se activa después de la suscripción.'), state: onboardingDone ? 'done' : activeSubscription || onboardingCase ? 'active' : 'pending', href: `/admin/expedientes?clientId=${clientId}`, action: onboardingDone ? 'Ver expediente' : 'Revisar onboarding', icon: CheckCircle2 },
+      { key: 'holded', title: 'Holded', detail: onboardingState?.holdedConnected || holded ? 'Conexión Holded validada para el alta.' : 'Sin integración Holded válida para cerrar el alta.', state: onboardingState?.holdedConnected || holded ? 'done' : activeSubscription ? 'active' : 'pending', href: `/admin/clientes/${clientId}/integraciones`, action: onboardingState?.holdedConnected || holded ? 'Gestionar conexión' : 'Conectar / revisar', icon: Plug },
+      { key: 'communications', title: 'Comunicaciones', detail: `${data.emailEvents.length} email(s) EXPERT registrados. Los nuevos envíos guardan también el contenido completo.`, state: data.emailEvents.length ? 'done' : 'active', href: `/admin/clientes/${clientId}/comunicaciones`, action: 'Abrir comunicaciones', icon: Mail },
     ];
   }, [data, onboardingState, clientId]);
 
   if (loading && !data) return <div className="border-b border-[#e6dfd2] bg-[#faf8f2] px-6 py-3 text-xs text-[#6b7280]"><RefreshCw className="mr-2 inline h-3.5 w-3.5 animate-spin" />Cargando alta y activación…</div>;
-  if (error || !data) return <div className="border-b border-red-200 bg-red-50 px-6 py-2 text-xs text-red-700">No se pudo cargar el cockpit de alta: {error || 'sin datos'}</div>;
+  if (error && !data) return <div className="border-b border-red-200 bg-red-50 px-6 py-2 text-xs text-red-700">No se pudo cargar el cockpit de alta: {error}</div>;
+  if (!data) return null;
 
   const completed = steps.filter((step) => step.state === 'done').length;
   return (
     <section className="border-b border-[#e6dfd2] bg-[#faf8f2]">
       <div className="mx-auto max-w-7xl px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c88b25]">Alta y activación</p><h2 className="mt-1 font-serif text-lg font-bold text-[#07111d]">Mesa de operaciones del cliente</h2><p className="mt-1 text-xs text-[#6b7280]">{completed}/{steps.length} etapas completadas. Ejecuta cada paso desde EXPERT sin reconstruir el flujo manualmente.</p></div><button type="button" onClick={() => void load()} className="rounded-lg border border-[#d8cbb5] bg-white p-2 text-[#29384a] hover:border-[#c88b25]" title="Actualizar alta"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c88b25]">Alta y activación</p><h2 className="mt-1 font-serif text-lg font-bold text-[#07111d]">Mesa de operaciones del cliente</h2><p className="mt-1 text-xs text-[#6b7280]">{completed}/{steps.length} etapas completadas. El cierre final lo realiza Admin después de la reunión.</p></div><button type="button" onClick={() => void load()} className="rounded-lg border border-[#d8cbb5] bg-white p-2 text-[#29384a] hover:border-[#c88b25]" title="Actualizar alta"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button></div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {steps.map((step) => {
-            const Icon = step.icon; const StateIcon = step.state === 'done' ? CheckCircle2 : CircleDashed;
-            const body = <div className={`h-full rounded-xl border p-3 transition ${stateClass(step.state)} ${step.href ? 'hover:border-[#c88b25]' : ''}`}><div className="flex items-start justify-between gap-2"><div className="flex items-center gap-2"><Icon className="h-4 w-4 text-[#c88b25]" /><p className="text-sm font-bold text-[#07111d]">{step.title}</p></div><StateIcon className={`h-4 w-4 ${step.state === 'done' ? 'text-green-700' : step.state === 'active' ? 'text-amber-700' : 'text-[#9ca3af]'}`} /></div><p className="mt-2 min-h-10 text-xs leading-5 text-[#4b5563]">{step.detail}</p>{step.action && <p className="mt-2 text-[11px] font-bold text-[#9a6a17]">{step.action} →</p>}</div>;
-            return step.href ? <Link key={step.key} href={step.href}>{body}</Link> : <div key={step.key}>{body}</div>;
-          })}
+          {steps.map((step) => { const Icon = step.icon; const StateIcon = step.state === 'done' ? CheckCircle2 : CircleDashed; const body = <div className={`h-full rounded-xl border p-3 transition ${stateClass(step.state)} ${step.href ? 'hover:border-[#c88b25]' : ''}`}><div className="flex items-start justify-between gap-2"><div className="flex items-center gap-2"><Icon className="h-4 w-4 text-[#c88b25]" /><p className="text-sm font-bold text-[#07111d]">{step.title}</p></div><StateIcon className={`h-4 w-4 ${step.state === 'done' ? 'text-green-700' : step.state === 'active' ? 'text-amber-700' : 'text-[#9ca3af]'}`} /></div><p className="mt-2 min-h-10 text-xs leading-5 text-[#4b5563]">{step.detail}</p>{step.action && <p className="mt-2 text-[11px] font-bold text-[#9a6a17]">{step.action} →</p>}</div>; return step.href ? <Link key={step.key} href={step.href}>{body}</Link> : <div key={step.key}>{body}</div>; })}
         </div>
+        {error && <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+        {actionMessage && <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">{actionMessage}</div>}
+        {onboardingState?.activeSubscriptionId && !onboardingState.completed && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8cbb5] bg-white p-4">
+            <div><p className="text-sm font-bold text-[#07111d]">Cierre de alta</p><p className="mt-1 text-xs text-[#6b7280]">Requiere reunión ya celebrada y Holded validado. Al confirmar se envía la bienvenida al Espacio de Cliente Responsable EXPERT y la solicitud de valoración.</p></div>
+            <button type="button" disabled={!onboardingState.canAdminComplete || completing} onClick={() => void completeOnboarding()} className="rounded-lg bg-[#07111d] px-4 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{completing ? 'Finalizando…' : 'Finalizar alta y enviar bienvenida'}</button>
+          </div>
+        )}
       </div>
     </section>
   );

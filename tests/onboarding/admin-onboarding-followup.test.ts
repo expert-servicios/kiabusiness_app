@@ -10,7 +10,7 @@ describe('Admin onboarding follow-up', () => {
   const migration = source('supabase/migrations/20260905102800_subscription_onboarding_admin_followup.sql');
   const helper = source('lib/admin/onboarding-followup.ts');
   const calWebhook = source('app/api/webhooks/cal/route.ts');
-  const completeRoute = source('app/api/dashboard/post-compra/complete/route.ts');
+  const completeRoute = source('app/api/admin/clientes/[id]/complete-onboarding/route.ts');
   const tasksApi = source('app/api/admin/tasks/route.ts');
   const tasksPage = source('app/(protected)/admin/tareas/page.tsx');
   const rightPanel = source('components/admin/AdminRightPanel.tsx');
@@ -39,10 +39,10 @@ describe('Admin onboarding follow-up', () => {
     expect(calWebhook).toContain("{ onConflict: 'cal_uid' }");
   });
 
-  it('recognizes the canonical onboarding appointment type when completing post-purchase onboarding', () => {
-    expect(completeRoute).toContain(".select('id,service,appointment_type,status')");
+  it('recognizes the canonical onboarding appointment and only closes after it happened', () => {
     expect(completeRoute).toContain("String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'");
     expect(completeRoute).toContain("String(appointment.service ?? '').toLowerCase().includes('onboarding')");
+    expect(completeRoute).toContain('meetingAt <= now');
   });
 
   it('reuses an open onboarding case and never writes the invalid cases.state nuevo value', () => {
@@ -60,11 +60,12 @@ describe('Admin onboarding follow-up', () => {
     expect(calWebhook).toContain('deleteCalendarEventSA(appointment.google_event_id)');
   });
 
-  it('notifies Admin once when onboarding is completed while the DB trigger closes operational work', () => {
-    expect(completeRoute).toContain("eventType: 'onboarding.completed.admin'");
-    expect(completeRoute).toContain('idempotencyKey: `onboarding/completed/admin/${subscription.id}`');
-    expect(completeRoute).toContain('notifyAdmins({');
+  it('stores onboarding completion and sends client completion/review notifications once', () => {
     expect(completeRoute).toContain(".update({ post_purchase_onboarding_at: completedAt })");
+    expect(completeRoute).toContain("eventType: 'onboarding.completed.client'");
+    expect(completeRoute).toContain('idempotencyKey: `onboarding/completed/client/${subscription.id}`');
+    expect(completeRoute).toContain("eventType: 'onboarding.review_request'");
+    expect(completeRoute).toContain('idempotencyKey: `onboarding/review/${subscription.id}`');
   });
 
   it('exposes internal tasks as an authenticated staff workspace and in the Admin alerts panel', () => {

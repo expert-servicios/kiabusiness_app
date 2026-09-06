@@ -9,7 +9,6 @@ function source(path: string): string {
 describe('Admin notification recipients', () => {
   const helper = source('lib/admin/admin-notification-recipients.ts');
   const calWebhook = source('app/api/webhooks/cal/route.ts');
-  const completeRoute = source('app/api/dashboard/post-compra/complete/route.ts');
 
   it('combines configured recipients with active Admin and owner accounts', () => {
     expect(helper).toContain("process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es'");
@@ -24,10 +23,9 @@ describe('Admin notification recipients', () => {
     expect(helper).toContain('return [...recipients.values()]');
   });
 
-  it('uses active Admin recipient resolution for onboarding booking and completion alerts', () => {
+  it('uses active Admin recipient resolution for onboarding booking alerts', () => {
     expect(calWebhook).toContain("import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients'");
     expect(calWebhook).toContain('const adminEmails = await getAdminNotificationEmails()');
-    expect(completeRoute).toContain("import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients'");
-    expect(completeRoute).toContain('const adminEmails = await getAdminNotificationEmails()');
+    expect(calWebhook).toContain("eventType: 'onboarding.booking.admin'");
   });
 });

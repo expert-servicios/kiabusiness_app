@@ -14,11 +14,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { id: clientId } = await params;
-  const { data: subscriptions, error } = await admin
-    .from('subscriptions')
-    .select('id,status,company_id,post_purchase_onboarding_at,created_at')
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false });
+  const [{ data: subscriptions, error }, { data: authUser }] = await Promise.all([
+    admin.from('subscriptions').select('id,status,company_id,post_purchase_onboarding_at,created_at').eq('client_id', clientId).order('created_at', { ascending: false }),
+    admin.auth.admin.getUserById(clientId),
+  ]);
 
   if (error) {
     console.error('[admin/clientes/onboarding-state]', error.message);
@@ -26,10 +25,61 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const active = (subscriptions ?? []).find((sub) => sub.status === 'active' || sub.status === 'trialing') ?? null;
+  const email = authUser.user?.email ?? '';
+  let meetingScheduled = false;
+  let meetingOccurred = false;
+  let meetingDate: string | null = null;
+
+  if (email) {
+    const { data: appointments } = await admin
+      .from('appointments')
+      .select('service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+      .ilike('email', email)
+      .neq('status', 'cancelled')
+      .order('appointment_date', { ascending: false });
+    const onboarding = (appointments ?? []).find((appointment) =>
+      String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'
+      || String(appointment.service ?? '').toLowerCase().includes('onboarding')
+    );
+    if (onboarding) {
+      meetingScheduled = true;
+      meetingDate = onboarding.appointment_date ?? (onboarding.confirmed_date ? `${onboarding.confirmed_date}T${onboarding.confirmed_time ?? '00:00'}:00` : null);
+      if (meetingDate) {
+        const parsed = new Date(meetingDate);
+        meetingOccurred = !Number.isNaN(parsed.getTime()) && parsed <= new Date();
+      }
+    }
+  }
+
+  let holdedConnected = false;
+  if (active?.company_id) {
+    const { data: integration } = await admin
+      .from('client_integrations')
+      .select('id')
+      .eq('provider', 'holded')
+      .eq('company_id', active.company_id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+    holdedConnected = Boolean(integration);
+  }
+  if (!holdedConnected) {
+    const [{ data: connection }, { data: holdedEvent }] = await Promise.all([
+      admin.from('holded_mcp_connections').select('id').eq('supabase_user_id', clientId).eq('channel', 'claude').eq('status', 'connected').limit(1).maybeSingle(),
+      email ? admin.from('holded_mcp_events').select('id').eq('user_email', email).in('event_type', ['user_connected', 'first_activity']).eq('channel', 'claude').limit(1).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
+    holdedConnected = Boolean(connection || holdedEvent);
+  }
+
   return NextResponse.json({
     activeSubscriptionId: active?.id ?? null,
     companyId: active?.company_id ?? null,
     completedAt: active?.post_purchase_onboarding_at ?? null,
     completed: Boolean(active?.post_purchase_onboarding_at),
+    meetingScheduled,
+    meetingOccurred,
+    meetingDate,
+    holdedConnected,
+    canAdminComplete: Boolean(active && !active.post_purchase_onboarding_at && meetingOccurred && holdedConnected),
   });
 }
