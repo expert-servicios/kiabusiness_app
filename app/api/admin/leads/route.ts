@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireAdminClient } from '@/lib/auth/require-admin';
 
 const LIFECYCLE_STAGES = ['lead', 'prospect', 'customer', 'former_customer'] as const;
 const STRIPE_ACTIVITIES = ['no_activity', 'abandoned', 'paid', 'subscribed'] as const;
 const MARKETING_STATUSES = ['unknown', 'consented', 'unsubscribed', 'blocked'] as const;
-
-async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin' && profile?.role !== 'owner') return null;
-  return admin;
-}
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function positiveInt(raw: string | null, fallback: number, max: number) {
   const value = Number(raw);
@@ -27,9 +12,17 @@ function positiveInt(raw: string | null, fallback: number, max: number) {
   return Math.min(value, max);
 }
 
+function sanitizeSearch(raw: string) {
+  return raw
+    .replace(/[^\p{L}\p{N}\s@._+\-']/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdminClient(request);
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const url = new URL(request.url);
@@ -38,8 +31,7 @@ export async function GET(request: NextRequest) {
     const lifecycle = url.searchParams.get('lifecycle');
     const activity = url.searchParams.get('activity');
     const marketing = url.searchParams.get('marketing');
-    const rawSearch = url.searchParams.get('q')?.trim() ?? '';
-    const search = rawSearch.replace(/[,%()]/g, ' ').trim().slice(0, 100);
+    const search = sanitizeSearch(url.searchParams.get('q') ?? '');
 
     let query = admin
       .from('leads')
@@ -79,6 +71,21 @@ export async function GET(request: NextRequest) {
     ]);
 
     if (listResult.error) throw listResult.error;
+
+    const statsResults = [
+      totalResult,
+      leadsResult,
+      prospectsResult,
+      customersResult,
+      formerResult,
+      subscribedResult,
+      paidResult,
+      abandonedResult,
+      consentedResult,
+      unknownResult,
+    ];
+    const statsError = statsResults.find((result) => result.error)?.error;
+    if (statsError) throw statsError;
 
     const leads = listResult.data ?? [];
     const leadIds = leads.map((lead) => lead.id);
@@ -163,16 +170,21 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdminClient(request);
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const url = new URL(request.url);
     const id = url.searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+    if (!UUID_PATTERN.test(id)) return NextResponse.json({ error: 'ID no válido' }, { status: 400 });
 
-    const body = await request.json();
-    const lifecycleStage = body?.lifecycle_stage;
-    if (!LIFECYCLE_STAGES.includes(lifecycleStage)) {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Solicitud no válida' }, { status: 400 });
+    }
+
+    const lifecycleStage = body.lifecycle_stage;
+    if (typeof lifecycleStage !== 'string' || !LIFECYCLE_STAGES.includes(lifecycleStage as (typeof LIFECYCLE_STAGES)[number])) {
       return NextResponse.json({ error: 'Etapa no válida' }, { status: 400 });
     }
 
