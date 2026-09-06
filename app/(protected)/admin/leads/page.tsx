@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Mail, Phone, Search, ShieldCheck, UserRound, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Mail, Phone, Search, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { LeadLifecycleSelect } from '@/components/admin/LeadLifecycleSelect';
 
@@ -61,7 +61,7 @@ const activityLabels: Record<string, string> = {
 };
 
 const marketingLabels: Record<string, string> = {
-  unknown: 'Sin consentimiento',
+  unknown: 'Consentimiento no acreditado',
   consented: 'Consentido',
   unsubscribed: 'Baja',
   blocked: 'Bloqueado',
@@ -95,6 +95,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   if (marketing) apiQuery.set('marketing', marketing);
 
   const data = await fetchWithCookies<ApiResponse>(`/api/admin/leads?${apiQuery.toString()}`);
+  const loadFailed = data === null;
   const leads = data?.leads ?? [];
   const stats = data?.stats ?? {
     total: 0, leads: 0, prospects: 0, customers: 0, former_customers: 0,
@@ -135,6 +136,16 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
       </div>
 
       <div className="mx-auto max-w-7xl px-5 py-6 lg:px-8">
+        {loadFailed && (
+          <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-semibold">No se pudieron cargar los datos del CRM.</p>
+              <p className="mt-1 text-xs">Las cifras mostradas no representan el estado real. Recarga la página antes de tomar decisiones.</p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
           <form className="contents" action="/admin/leads">
             <label className="relative block">
@@ -157,7 +168,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
             </select>
             <select name="marketing" defaultValue={marketing} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
               <option value="">Todo marketing</option>
-              <option value="unknown">Sin consentimiento</option>
+              <option value="unknown">Consentimiento no acreditado</option>
               <option value="consented">Consentido</option>
               <option value="unsubscribed">Baja</option>
               <option value="blocked">Bloqueado</option>
@@ -172,7 +183,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
             ['Prospectos', stats.prospects, `${stats.abandoned} con checkout/pago abandonado`],
             ['Clientes', stats.customers, `${stats.paid} con actividad pagada`],
             ['Antiguos', stats.former_customers, 'Marcados manualmente'],
-            ['Marketing', stats.marketing_consented, `${stats.marketing_unknown} sin consentimiento`],
+            ['Marketing', stats.marketing_consented, `${stats.marketing_unknown} sin consentimiento registrado`],
           ].map(([label, value, note]) => (
             <div key={String(label)} className="rounded-xl border border-[#e0d5c3] bg-white p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-[#8c6a22]">{label}</p>
@@ -182,7 +193,13 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
           ))}
         </div>
 
-        {leads.length === 0 ? (
+        {loadFailed ? (
+          <div className="rounded-2xl border border-dashed border-amber-300 bg-white p-12 text-center">
+            <AlertTriangle className="mx-auto h-10 w-10 text-amber-600" />
+            <h2 className="mt-4 font-serif text-lg font-bold text-[#07111d]">Datos no disponibles</h2>
+            <p className="mt-2 text-sm text-[#6f665b]">No se muestran resultados vacíos para evitar confundir un fallo de carga con una ausencia real de contactos.</p>
+          </div>
+        ) : leads.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#d8cbb5] bg-white p-12 text-center">
             <Users className="mx-auto h-10 w-10 text-[#c7b9a2]" />
             <h2 className="mt-4 font-serif text-lg font-bold text-[#07111d]">No hay contactos con estos filtros</h2>
@@ -194,7 +211,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                 <thead className="bg-[#fbf7ef] text-left text-[11px] uppercase tracking-wide text-[#756b5f]">
                   <tr>
                     <th className="px-4 py-3">Contacto</th>
-                    <th className="px-4 py-3">Etapa</th>
+                    <th className="px-4 py-3">Etapa CRM</th>
                     <th className="px-4 py-3">Stripe</th>
                     <th className="px-4 py-3">Marketing</th>
                     <th className="px-4 py-3">Origen</th>
