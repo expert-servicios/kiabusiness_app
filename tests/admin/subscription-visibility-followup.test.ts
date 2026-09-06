@@ -26,4 +26,14 @@ describe('Admin subscription visibility and follow-up', () => {
     expect(taskQuery).not.toContain(".lt('due_date', today)");
     expect(inbox).toContain("overdue ? 'Tarea vencida' : 'Tarea pendiente'");
   });
+
+  it('notifies exactly on the first transition to an activated Stripe subscription state', () => {
+    const webhook = source('app/api/stripe/webhook/route.ts');
+
+    expect(webhook).toContain('function isActivatedSubscriptionStatus');
+    expect(webhook).toContain('const becameActivated = isActivatedSubscriptionStatus(sub.status) && !isActivatedSubscriptionStatus(prevStatus)');
+    expect(webhook).toContain('await handleSubscriptionActivation(supabaseAdmin, sub, subscriptionRecord)');
+    expect(webhook).toContain('stripe/subscription-activation/client/${sub.id}');
+    expect(webhook).toContain('stripe/subscription-activation/admin/${sub.id}');
+  });
 });
