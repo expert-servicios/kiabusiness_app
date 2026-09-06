@@ -11,10 +11,11 @@ import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recip
 function verifySignature(body: string, header: string | null): boolean {
   const secret = process.env.CAL_WEBHOOK_SECRET;
   if (!secret || !header) return false;
-  const expected = 'sha256=' + createHmac('sha256', secret).update(body).digest('hex');
+  const digest = createHmac('sha256', secret).update(body).digest('hex');
+  const received = header.startsWith('sha256=') ? header.slice(7) : header;
   try {
-    const a = Buffer.from(expected, 'utf8');
-    const b = Buffer.from(header, 'utf8');
+    const a = Buffer.from(digest, 'utf8');
+    const b = Buffer.from(received, 'utf8');
     if (a.length !== b.length) return false;
     return timingSafeEqual(a, b);
   } catch { return false; }
