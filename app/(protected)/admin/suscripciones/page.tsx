@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { AlertCircle, CheckCircle2, Clock3, CreditCard, ExternalLink, Gift, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3, CreditCard, ExternalLink, Gift, Link2Off, XCircle } from 'lucide-react';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 export interface Subscription {
@@ -8,11 +8,14 @@ export interface Subscription {
   plan_name: string;
   status: string;
   stripe_customer_id: string;
+  stripe_subscription_id: string;
   current_period_end: string | null;
   canceled_at: string | null;
   created_at: string;
-  client_id: string;
+  client_id: string | null;
   company_id: string | null;
+  source: 'expert' | 'stripe_only';
+  requires_linking: boolean;
   client: { name: string | null; email: string; phone: string | null; whatsapp_number: string | null } | null;
 }
 
@@ -82,6 +85,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
   });
   const checkouts = (client360?.checkoutSessions ?? []).filter((checkout) => !params.companyId || checkout.company_id === params.companyId);
   const active = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
+  const stripeOnlyCount = subscriptions.filter((s) => s.source === 'stripe_only').length;
   const contextual = Boolean(params.clientId || params.companyId);
 
   return (
@@ -99,12 +103,19 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
               <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">{contextual ? 'Stripe y suscripciones del cliente' : 'Suscripciones'}</h1>
               {contextual && <p className="mt-2 text-xs text-[#6b7280]">{client360?.profile.full_name || client360?.profile.email || 'Cliente'}{params.companyId ? ` · empresa ${params.companyId.slice(0, 8)}…` : ''}</p>}
             </div>
-            <div className="flex gap-6 text-sm text-[#29384a]">
+            <div className="flex flex-wrap gap-6 text-sm text-[#29384a]">
               <span><strong className="font-serif text-2xl text-[#07111d]">{active.length}</strong> activas</span>
               {contextual && <span><strong className="font-serif text-2xl text-[#07111d]">{checkouts.length}</strong> checkout(s)</span>}
+              {!contextual && stripeOnlyCount > 0 && <span><strong className="font-serif text-2xl text-amber-700">{stripeOnlyCount}</strong> solo Stripe</span>}
               <span><strong className="font-serif text-2xl text-[#07111d]">{subscriptions.length}</strong> suscripción(es)</span>
             </div>
           </div>
+
+          {!contextual && stripeOnlyCount > 0 && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="flex items-start gap-2"><Link2Off className="mt-0.5 h-4 w-4 shrink-0" /><p><strong>{stripeOnlyCount} suscripción(es) existen en Stripe pero todavía no están vinculadas a un cliente/entidad de EXPERT.</strong> Se muestran para revisión; esta pantalla no crea, fusiona ni corrige históricos automáticamente.</p></div>
+            </div>
+          )}
 
           {contextual && (
             <section className="mb-8 rounded-2xl border border-[#e6dfd2] bg-[#faf8f2] p-5">
@@ -128,8 +139,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
           ) : (
             <div className="space-y-4">
               {subscriptions.map((sub) => {
-                const cfg = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.canceled;
-                return <div key={sub.id} className="rounded-3xl border border-[#d8cbb5] bg-[#f8f4eb] p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-[#07111d]">{sub.plan_name}</p><p className="mt-1 text-xs text-[#29384a]">{sub.client?.name || sub.client?.email || sub.client_id.slice(0, 8)} · Desde {new Date(sub.created_at).toLocaleDateString('es-ES')}</p>{sub.client?.email && <p className="mt-1 text-xs text-[#8a9aab]">{sub.client.email}</p>}</div><span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${cfg.color}`}>{cfg.icon} {cfg.label}</span></div>{sub.current_period_end && <p className="mt-3 text-xs text-[#29384a]">Próxima renovación: <strong>{new Date(sub.current_period_end).toLocaleDateString('es-ES')}</strong></p>}{sub.canceled_at && <p className="mt-2 text-xs text-gray-500">Cancelada el {new Date(sub.canceled_at).toLocaleDateString('es-ES')}</p>}<div className="mt-4 flex flex-wrap gap-4"><Link href={`/admin/clientes/${sub.client_id}`} className="text-xs font-bold text-[#9a6a17]">Abrir Cliente 360 →</Link><Link href={`/admin/clientes/${sub.client_id}/beneficios`} className="inline-flex items-center gap-1 text-xs font-bold text-[#9a6a17]"><Gift className="h-3.5 w-3.5" />Beneficios y entidades incluidas</Link></div></div>;
+                const cfg = STATUS_CONFIG[sub.status] ?? { label: sub.status, icon: <AlertCircle className="h-4 w-4" />, color: 'bg-gray-100 text-gray-700' };
+                const displayName = sub.client?.name || sub.client?.email || (sub.client_id ? sub.client_id.slice(0, 8) : 'Sin vincular');
+                return <div key={sub.id} className={`rounded-3xl border p-6 ${sub.source === 'stripe_only' ? 'border-amber-300 bg-amber-50/60' : 'border-[#d8cbb5] bg-[#f8f4eb]'}`}><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-[#07111d]">{sub.plan_name}</p>{sub.source === 'stripe_only' && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">Solo Stripe · vinculación pendiente</span>}</div><p className="mt-1 text-xs text-[#29384a]">{displayName} · Desde {new Date(sub.created_at).toLocaleDateString('es-ES')}</p>{sub.client?.email && <p className="mt-1 text-xs text-[#8a9aab]">{sub.client.email}</p>}<p className="mt-1 font-mono text-[10px] text-[#8a9aab]">{sub.stripe_subscription_id}</p></div><span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${cfg.color}`}>{cfg.icon} {cfg.label}</span></div>{sub.current_period_end && <p className="mt-3 text-xs text-[#29384a]">Próxima renovación: <strong>{new Date(sub.current_period_end).toLocaleDateString('es-ES')}</strong></p>}{sub.canceled_at && <p className="mt-2 text-xs text-gray-500">Cancelada el {new Date(sub.canceled_at).toLocaleDateString('es-ES')}</p>}{sub.client_id ? <div className="mt-4 flex flex-wrap gap-4"><Link href={`/admin/clientes/${sub.client_id}`} className="text-xs font-bold text-[#9a6a17]">Abrir Cliente 360 →</Link><Link href={`/admin/clientes/${sub.client_id}/beneficios`} className="inline-flex items-center gap-1 text-xs font-bold text-[#9a6a17]"><Gift className="h-3.5 w-3.5" />Beneficios y entidades incluidas</Link></div> : <p className="mt-4 text-xs font-semibold text-amber-800">Revisión manual necesaria antes de vincular esta suscripción a un cliente o entidad.</p>}</div>;
               })}
             </div>
           )}
