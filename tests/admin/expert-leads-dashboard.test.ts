@@ -8,7 +8,6 @@ const source = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 const api = source('app/api/admin/leads/route.ts');
 const page = source('app/(protected)/admin/leads/page.tsx');
 const selector = source('components/admin/LeadLifecycleSelect.tsx');
-const sidebar = source('components/admin/AdminSidebar.tsx');
 
 describe('EXPERT leads admin dashboard', () => {
   it('requires admin access and exposes controlled CRM filters', () => {
@@ -38,7 +37,8 @@ describe('EXPERT leads admin dashboard', () => {
     expect(page).toContain('marketing_status');
   });
 
-  it('adds the EXPERT contacts module to admin navigation', () => {
-    expect(sidebar).toContain('{ label: "Contactos EXPERT", href: "/admin/leads" }');
+  it('exposes the EXPERT contacts route from the admin module itself', () => {
+    expect(page).toContain('Contactos y leads');
+    expect(page).toContain('href="/admin"');
   });
 });
