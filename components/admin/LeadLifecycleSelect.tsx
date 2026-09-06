@@ -44,7 +44,7 @@ export function LeadLifecycleSelect({ leadId, currentStage }: { leadId: string; 
         value={stage}
         disabled={saving}
         onChange={(event) => handleChange(event.target.value)}
-        aria-label="Etapa del contacto"
+        aria-label="Etapa CRM del contacto"
         className="rounded-lg border border-[#d8cbb5] bg-white px-2.5 py-2 text-xs font-semibold text-[#29384a] disabled:opacity-60"
       >
         {OPTIONS.map((option) => (
