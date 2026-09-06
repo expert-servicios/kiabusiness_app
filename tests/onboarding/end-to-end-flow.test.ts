@@ -8,7 +8,6 @@ describe('end-to-end onboarding safeguards', () => {
   it('repairs the missing onboarding completion column without historical DML', () => {
     const migration = source('supabase/migrations/20260904092000_repair_profiles_onboarding_at.sql');
     const sql = migration.replace(/^\s*--.*$/gm, '');
-
     expect(migration).toContain('add column if not exists onboarding_completed_at timestamptz');
     expect(migration).toContain('create index if not exists profiles_onboarding_pending_idx');
     expect(sql).not.toMatch(/\b(insert|update|delete)\b/i);
@@ -16,7 +15,6 @@ describe('end-to-end onboarding safeguards', () => {
 
   it('fails initial onboarding completion when persistence fails', () => {
     const route = source('app/api/dashboard/onboarding/complete/route.ts');
-
     expect(route).toContain('const { error: updateError } = await getSupabaseAdmin()');
     expect(route).toContain('if (updateError)');
     expect(route).toContain("{ status: 500 }");
@@ -24,7 +22,6 @@ describe('end-to-end onboarding safeguards', () => {
 
   it('requires profile fields before contracting and keeps Holded out of initial onboarding', () => {
     const wizard = source('app/(protected)/dashboard/onboarding/page.tsx');
-
     expect(wizard).toContain('Teléfono *');
     expect(wizard).toContain("if (!profileData.phone.trim())");
     expect(wizard).toContain("const res = await fetch('/api/dashboard/onboarding/complete'");
@@ -35,7 +32,6 @@ describe('end-to-end onboarding safeguards', () => {
 
   it('uses canonical readiness rules for newly admin-created clients', () => {
     const invite = source('app/api/admin/users/invite/route.ts');
-
     expect(invite).toContain("import { computeProfileReadiness } from '@/lib/utils/profile-readiness';");
     expect(invite).toContain('const readiness = computeProfileReadiness({');
     expect(invite).toContain('profileData.profile_completed = readiness.profileCompleted');
@@ -45,7 +41,6 @@ describe('end-to-end onboarding safeguards', () => {
 
   it('keeps monthly checkout gated by profile, company billing and membership, not Holded', () => {
     const checkout = source('app/api/subscriptions/checkout/route.ts');
-
     expect(checkout).toContain('profile.profile_completed');
     expect(checkout).toContain('isCompanyBillingReady(company)');
     expect(checkout).toContain(".from('profile_companies')");
@@ -56,21 +51,26 @@ describe('end-to-end onboarding safeguards', () => {
 
   it('keeps admin subscription links scoped to the selected entity without pre-payment Holded gate', () => {
     const sendLink = source('app/api/admin/subscriptions/send-link/route.ts');
-
     expect(sendLink).toContain("code: 'company_required'");
     expect(sendLink).not.toContain("code: 'holded_required'");
     expect(sendLink).toContain('company_id: companyId');
     expect(sendLink).toContain('await stripe.checkout.sessions.expire(session.id)');
   });
 
-  it('re-validates meeting and Holded server-side before completing one exact subscription', () => {
-    const complete = source('app/api/dashboard/post-compra/complete/route.ts');
+  it('reserves final onboarding closure for Admin after the meeting and Holded validation', () => {
+    const clientComplete = source('app/api/dashboard/post-compra/complete/route.ts');
+    const adminComplete = source('app/api/admin/clientes/[id]/complete-onboarding/route.ts');
     const wizard = source('components/dashboard/PostCompraWizard.tsx');
 
-    expect(complete).toContain('onboarding_meeting_required');
-    expect(complete).toContain("code: 'holded_required'");
-    expect(complete).toContain(".eq('id', parsed.data.subscriptionId)");
-    expect(complete).toContain(".eq('client_id', user.id)");
-    expect(wizard).toContain('JSON.stringify({ subscriptionId })');
+    expect(clientComplete).toContain("code: 'admin_completion_required'");
+    expect(clientComplete).toContain('{ status: 403 }');
+    expect(adminComplete).toContain("code: 'onboarding_meeting_not_completed'");
+    expect(adminComplete).toContain("code: 'holded_required'");
+    expect(adminComplete).toContain(".eq('id', parsed.data.subscriptionId)");
+    expect(adminComplete).toContain(".eq('client_id', clientId)");
+    expect(adminComplete).toContain("eventType: 'onboarding.completed.client'");
+    expect(adminComplete).toContain("eventType: 'onboarding.review_request'");
+    expect(wizard).not.toContain("fetch('/api/dashboard/post-compra/complete'");
+    expect(wizard).toContain('Espacio de Cliente Responsable EXPERT');
   });
 });
