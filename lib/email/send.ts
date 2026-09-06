@@ -121,6 +121,7 @@ export async function sendEmail({
           event_type: eventType,
           recipient_email: email,
           subject,
+          html,
           resend_id: null,
           status: 'failed',
           last_error: errMsg,
@@ -139,6 +140,7 @@ export async function sendEmail({
         event_type: eventType,
         recipient_email: email,
         subject,
+        html,
         resend_id: resendId,
         status: 'sent',
         metadata: eventMetadata
