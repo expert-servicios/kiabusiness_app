@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, CreditCard, Users } from 'lucide-react';
+import {
+  LayoutDashboard,
+  FolderOpen,
+  CreditCard,
+  Users,
+  ListChecks,
+  ShieldCheck,
+} from 'lucide-react';
 
 const TABS = [
   { href: '/admin', label: 'Inicio', icon: LayoutDashboard, exact: true },
+  { href: '/admin/operaciones', label: 'Ops', icon: ListChecks, exact: false },
+  { href: '/admin/calidad-datos', label: 'Calidad', icon: ShieldCheck, exact: false },
   { href: '/admin/expedientes', label: 'Tramites', icon: FolderOpen, exact: false },
   { href: '/admin/clientes', label: 'Clientes', icon: Users, exact: false },
   { href: '/admin/pagos', label: 'Factura', icon: CreditCard, exact: false },
@@ -24,11 +33,11 @@ export function AdminMobileNav({ urgentCount = 0 }: { urgentCount?: number }) {
             <Link
               key={href}
               href={href}
-              className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition active:opacity-70 ${
+              className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[9px] font-semibold transition active:opacity-70 ${
                 active ? 'text-[#d7a33a]' : 'text-white/50'
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4.5 w-4.5" />
               {label}
               {isHome && urgentCount > 0 && (
                 <span className="absolute right-1 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">
