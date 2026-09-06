@@ -4,7 +4,7 @@ export type SegmentKey =
   | 'all_active'      // all active clients
   | 'subscribers'     // clients with active subscription
   | 'no_subscription' // active clients without active subscription
-  | 'leads'           // unconverted leads
+  | 'leads'           // consented, unconverted leads
   | 'all'             // everyone (active + inactive clients)
   | 'newsletter';     // newsletter subscribers
 
@@ -17,7 +17,7 @@ export const SEGMENT_LABELS: Record<SegmentKey, string> = {
   all_active:      'Todos los clientes activos',
   subscribers:     'Suscriptores activos',
   no_subscription: 'Clientes sin suscripción',
-  leads:           'Leads (no convertidos)',
+  leads:           'Leads con consentimiento',
   all:             'Todos (activos + inactivos)',
   newsletter:      'Suscriptores newsletter',
 };
@@ -39,6 +39,7 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
       .from('leads')
       .select('email, name')
       .not('state', 'eq', 'converted')
+      .eq('marketing_status', 'consented')
       .not('email', 'is', null);
     return (data ?? []).map((r) => ({ email: r.email, name: r.name ?? null }));
   }
