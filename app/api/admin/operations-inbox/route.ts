@@ -99,9 +99,8 @@ export async function GET(request: NextRequest) {
       .from('internal_tasks')
       .select('id,title,description,status,priority,due_date,case_id,client_id,company_id,source,created_at')
       .in('status', ['pendiente', 'en_progreso'])
-      .lt('due_date', today)
-      .order('due_date', { ascending: true })
-      .limit(100),
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .limit(150),
     admin
       .from('documents')
       .select('id,client_id,company_id,case_id,original_name,title,state,created_at')
@@ -270,13 +269,14 @@ export async function GET(request: NextRequest) {
   }
 
   for (const item of tasksRes.data ?? []) {
+    const overdue = Boolean(item.due_date && item.due_date < today);
     const severe = item.priority === 'alta' || item.priority === 'critica';
     push({
       id: `task:${item.id}`,
       kind: 'task',
-      severity: severe ? 'high' : 'medium',
-      title: `Tarea vencida: ${item.title}`,
-      detail: `${item.priority ?? 'prioridad media'} · ${item.source ?? 'operación interna'}`,
+      severity: overdue || severe ? 'high' : 'medium',
+      title: `${overdue ? 'Tarea vencida' : 'Tarea pendiente'}: ${item.title}`,
+      detail: `${item.priority ?? 'prioridad media'} · ${item.source ?? 'operación interna'}${item.due_date ? ` · vence ${item.due_date}` : ''}`,
       href: item.case_id
         ? `/admin/expedientes/${item.case_id}`
         : item.client_id
