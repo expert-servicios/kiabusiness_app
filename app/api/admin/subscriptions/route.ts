@@ -13,7 +13,7 @@ type ClientSummary = {
 function stripeCustomerSummary(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): ClientSummary | null {
   if (!customer || typeof customer === 'string' || customer.deleted) return null;
   return {
-    name: customer.name ?? customer.business_name ?? null,
+    name: customer.name ?? null,
     email: customer.email ?? '',
     phone: customer.phone ?? null,
     whatsapp_number: null,
