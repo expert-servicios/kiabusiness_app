@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -51,6 +51,8 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Ops",
     icon: FolderOpen,
     items: [
+      { label: "Bandeja operativa", href: "/admin/operaciones" },
+      { label: "Calidad de Datos", href: "/admin/calidad-datos" },
       { label: "Expedientes", href: "/admin/expedientes" },
       { label: "Documentos", href: "/admin/documentos" },
       { label: "Citas", href: "/admin/citas" },
