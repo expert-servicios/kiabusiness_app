@@ -33,6 +33,7 @@ function getAdminEmails(): string[] {
 }
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
+type SubscriptionRecord = { clientId: string; companyId: string | null; planName: string; periodEnd: string | null };
 
 function getPlanName(priceId: string, fallback?: string | null): string {
   if (fallback) return fallback;
@@ -53,6 +54,10 @@ function getStripeCustomerId(customer: Stripe.Subscription['customer']): string 
 function getAllowedSubscriptionStatus(status: Stripe.Subscription.Status) {
   const allowed = ['active', 'canceled', 'past_due', 'unpaid', 'trialing'] as const;
   return allowed.includes(status as (typeof allowed)[number]) ? status : null;
+}
+
+function isActivatedSubscriptionStatus(status: string | undefined | null): boolean {
+  return status === 'active' || status === 'trialing';
 }
 
 async function linkStripeCustomer(
@@ -105,7 +110,7 @@ async function upsertSubscriptionFromStripe(
   sub: Stripe.Subscription,
   userIdHint?: string | null,
   companyIdHint?: string | null,
-): Promise<{ clientId: string; companyId: string | null; planName: string; periodEnd: string | null } | null> {
+): Promise<SubscriptionRecord | null> {
   const customerId = getStripeCustomerId(sub.customer);
   const priceId = sub.items.data[0]?.price.id ?? '';
   const status = getAllowedSubscriptionStatus(sub.status);
@@ -236,6 +241,79 @@ async function startHoldedJob(
     })
     .eq('id', jobId)
     .then(() => null, () => null);
+}
+
+async function handleSubscriptionActivation(
+  supabaseAdmin: SupabaseAdmin,
+  sub: Stripe.Subscription,
+  subscriptionRecord: SubscriptionRecord,
+): Promise<void> {
+  const clientInfo = await getClientEmail(subscriptionRecord.clientId);
+  if (!clientInfo) return;
+
+  const tpl = subscriptionCreated(clientInfo.name, subscriptionRecord.planName, subscriptionRecord.periodEnd);
+  await sendEmail({
+    to: clientInfo.email,
+    eventType: 'subscription.created',
+    ...tpl,
+    metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId },
+    idempotencyKey: `stripe/subscription-activation/client/${sub.id}`,
+  });
+
+  notifyAdmins({
+    title: `⚡ Nueva suscripción — ${clientInfo.name}`,
+    body: subscriptionRecord.planName,
+    url: '/admin/suscripciones',
+    tag: `sub-${sub.id}`,
+  }).catch(() => {});
+
+  const monthlyAmount = sub.items.data[0]?.price.unit_amount
+    ? sub.items.data[0].price.unit_amount / 100
+    : 0;
+
+  const adminEmails = getAdminEmails();
+  if (adminEmails.length) {
+    const adminTpl = servicePaymentConfirmedAdmin(clientInfo.name, clientInfo.email, monthlyAmount, subscriptionRecord.planName);
+    await sendEmail({
+      to: adminEmails,
+      eventType: 'subscription.created.admin',
+      ...adminTpl,
+      metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId },
+      idempotencyKey: `stripe/subscription-activation/admin/${sub.id}`,
+    });
+  }
+
+  const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
+    clientName: clientInfo.name, clientEmail: clientInfo.email,
+    planName: subscriptionRecord.planName, amountEur: monthlyAmount,
+    subscriptionId: sub.id, companyId: subscriptionRecord.companyId,
+    localEntity: 'stripe_subscriptions',
+  });
+  await startHoldedJob(supabaseAdmin, subJobId);
+  syncSubscriptionToHolded({
+    clientName: clientInfo.name,
+    clientEmail: clientInfo.email,
+    planName: subscriptionRecord.planName,
+    amountEur: monthlyAmount,
+    subscriptionId: sub.id,
+    localEntity: 'stripe_subscriptions'
+  }).then((result) => {
+    void resolveHoldedJob(supabaseAdmin, subJobId, result.error ? 'failed' : 'success', result.error);
+    if (result.invoiceId) {
+      supabaseAdmin.from('subscriptions').update({
+        metadata: {
+          holded: {
+            contact_id: result.contactId,
+            invoice_id: result.invoiceId,
+            sync_event_id: result.syncEventId
+          }
+        }
+      }).eq('stripe_subscription_id', sub.id).then(() => {});
+    }
+  }).catch((err) => {
+    console.error('[webhook] holded sync (subscription) failed:', err);
+    void resolveHoldedJob(supabaseAdmin, subJobId, 'failed', err instanceof Error ? err.message : String(err));
+  });
 }
 
 // ── Order Holded trace helper ─────────────────────────────────────────────────
@@ -923,76 +1001,8 @@ export async function POST(req: NextRequest) {
   if (event.type === 'customer.subscription.created') {
     const sub = event.data.object as Stripe.Subscription;
     const subscriptionRecord = await upsertSubscriptionFromStripe(supabaseAdmin, sub);
-
-    if (subscriptionRecord) {
-      const clientInfo = await getClientEmail(subscriptionRecord.clientId);
-      if (clientInfo) {
-        const tpl = subscriptionCreated(clientInfo.name, subscriptionRecord.planName, subscriptionRecord.periodEnd);
-        await sendEmail({
-          to: clientInfo.email,
-          eventType: 'subscription.created',
-          ...tpl,
-          metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId }
-        });
-
-        notifyAdmins({
-          title: `⚡ Nueva suscripción — ${clientInfo.name}`,
-          body:  subscriptionRecord.planName,
-          url:   `/admin/suscripciones`,
-          tag:   `sub-${sub.id}`,
-        }).catch(() => {});
-
-        const monthlyAmount = sub.items.data[0]?.price.unit_amount
-          ? sub.items.data[0].price.unit_amount / 100
-          : 0;
-
-        {
-          const adminEmails = getAdminEmails();
-          if (adminEmails.length) {
-            const adminTpl = servicePaymentConfirmedAdmin(clientInfo.name, clientInfo.email, monthlyAmount, subscriptionRecord.planName);
-            sendEmail({
-              to: adminEmails,
-              eventType: 'subscription.created.admin',
-              ...adminTpl,
-              metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId }
-            }).catch((err) => {
-              console.error('[webhook] admin payment email failed (subscription):', err);
-            });
-          }
-        }
-
-        const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
-          clientName: clientInfo.name, clientEmail: clientInfo.email,
-          planName: subscriptionRecord.planName, amountEur: monthlyAmount,
-          subscriptionId: sub.id, companyId: subscriptionRecord.companyId,
-          localEntity: 'stripe_subscriptions',
-        });
-        await startHoldedJob(supabaseAdmin, subJobId);
-        syncSubscriptionToHolded({
-          clientName: clientInfo.name,
-          clientEmail: clientInfo.email,
-          planName: subscriptionRecord.planName,
-          amountEur: monthlyAmount,
-          subscriptionId: sub.id,
-          localEntity: 'stripe_subscriptions'
-        }).then((result) => {
-          void resolveHoldedJob(supabaseAdmin, subJobId, result.error ? 'failed' : 'success', result.error);
-          if (result.invoiceId) {
-            supabaseAdmin.from('subscriptions').update({
-              metadata: {
-                holded: {
-                  contact_id: result.contactId,
-                  invoice_id: result.invoiceId,
-                  sync_event_id: result.syncEventId
-                }
-              }
-            }).eq('stripe_subscription_id', sub.id).then(() => {});
-          }
-        }).catch((err) => {
-          console.error('[webhook] holded sync (subscription) failed:', err);
-          void resolveHoldedJob(supabaseAdmin, subJobId, 'failed', err instanceof Error ? err.message : String(err));
-        });
-      }
+    if (subscriptionRecord && isActivatedSubscriptionStatus(sub.status)) {
+      await handleSubscriptionActivation(supabaseAdmin, sub, subscriptionRecord);
     }
   }
 
@@ -1002,6 +1012,10 @@ export async function POST(req: NextRequest) {
     const prevStatus = prevAttributes?.status as string | undefined;
 
     const subscriptionRecord = await upsertSubscriptionFromStripe(supabaseAdmin, sub);
+    const becameActivated = isActivatedSubscriptionStatus(sub.status) && !isActivatedSubscriptionStatus(prevStatus);
+    if (subscriptionRecord && becameActivated) {
+      await handleSubscriptionActivation(supabaseAdmin, sub, subscriptionRecord);
+    }
 
     if (sub.status === 'past_due' && prevStatus !== 'past_due') {
       const { data: dbSub } = await supabaseAdmin
