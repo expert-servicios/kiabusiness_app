@@ -76,6 +76,16 @@ type ActiveCustomerEvidence = {
 };
 type CustomerEvidence = DeletedCustomerEvidence | ActiveCustomerEvidence;
 
+type RollbackIssue =
+  | 'membership_delete_failed'
+  | 'company_delete_failed'
+  | 'membership_verification_failed'
+  | 'company_verification_failed'
+  | 'stripe_mapping_verification_failed'
+  | 'membership_still_present'
+  | 'company_still_present'
+  | 'stripe_mapping_still_present';
+
 async function requireStaff(request: NextRequest): Promise<StaffContext | null> {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -139,6 +149,79 @@ async function audit(admin: AdminClient, actorId: string, action: string, entity
     metadata,
   });
   if (error) console.error('[stripe-reconciliation] audit failed', error.message);
+}
+
+async function rollbackCreatedCompany(admin: AdminClient, clientId: string, companyId: string): Promise<RollbackIssue[]> {
+  const issues: RollbackIssue[] = [];
+
+  const { error: membershipDeleteError } = await admin
+    .from('profile_companies')
+    .delete()
+    .eq('profile_id', clientId)
+    .eq('company_id', companyId);
+  if (membershipDeleteError) issues.push('membership_delete_failed');
+
+  const { error: companyDeleteError } = await admin.from('companies').delete().eq('id', companyId);
+  if (companyDeleteError) issues.push('company_delete_failed');
+
+  const [membershipCheck, companyCheck, mappingCheck] = await Promise.all([
+    admin.from('profile_companies').select('id').eq('profile_id', clientId).eq('company_id', companyId).maybeSingle(),
+    admin.from('companies').select('id').eq('id', companyId).maybeSingle(),
+    admin.from('company_stripe_customers').select('id').eq('company_id', companyId).limit(1),
+  ]);
+
+  if (membershipCheck.error) issues.push('membership_verification_failed');
+  else if (membershipCheck.data) issues.push('membership_still_present');
+
+  if (companyCheck.error) issues.push('company_verification_failed');
+  else if (companyCheck.data) issues.push('company_still_present');
+
+  if (mappingCheck.error) issues.push('stripe_mapping_verification_failed');
+  else if ((mappingCheck.data ?? []).length > 0) issues.push('stripe_mapping_still_present');
+
+  return issues;
+}
+
+async function rollbackBootstrapResponse(
+  ctx: StaffContext,
+  clientId: string,
+  companyId: string,
+  stripeCustomerId: string,
+  failedStage: 'membership' | 'stripe_mapping',
+  revertedMessage: string,
+) {
+  const rollbackIssues = await rollbackCreatedCompany(ctx.admin, clientId, companyId);
+
+  if (rollbackIssues.length > 0) {
+    console.error('[stripe-reconciliation] rollback requires manual review', {
+      clientId,
+      companyId,
+      failedStage,
+      rollbackIssues,
+    });
+    await audit(ctx.admin, ctx.actorId, 'stripe_reconciliation.partial_bootstrap_manual_review_required', companyId, {
+      client_id: clientId,
+      company_id: companyId,
+      stripe_customer_id: stripeCustomerId,
+      failed_stage: failedStage,
+      rollback_issues: rollbackIssues,
+    });
+    return NextResponse.json({
+      error: 'No se pudo revertir completamente el alta parcial. No continúe con esta conciliación hasta revisar manualmente los registros indicados.',
+      code: 'partial_bootstrap_manual_review_required',
+      companyId,
+      failedStage,
+      rollbackIssues,
+    }, { status: 500 });
+  }
+
+  await audit(ctx.admin, ctx.actorId, 'stripe_reconciliation.bootstrap_rolled_back', companyId, {
+    client_id: clientId,
+    company_id: companyId,
+    stripe_customer_id: stripeCustomerId,
+    failed_stage: failedStage,
+  });
+  return NextResponse.json({ error: revertedMessage, code: 'bootstrap_rolled_back' }, { status: 500 });
 }
 
 async function inspectCustomer(customerId: string): Promise<CustomerEvidence> {
@@ -364,8 +447,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       role: 'owner',
     });
     if (membershipError) {
-      await ctx.admin.from('companies').delete().eq('id', company.id);
-      return NextResponse.json({ error: 'No se pudo vincular la empresa al usuario; el alta parcial se ha revertido.' }, { status: 500 });
+      return rollbackBootstrapResponse(
+        ctx,
+        clientId,
+        company.id,
+        customerId,
+        'membership',
+        'No se pudo vincular la empresa al usuario; el alta parcial se ha revertido.',
+      );
     }
 
     const { data: mapping, error: mappingError } = await ctx.admin
@@ -388,9 +477,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .select('id,company_id,stripe_customer_id,is_primary,status')
       .single();
     if (mappingError || !mapping) {
-      await ctx.admin.from('profile_companies').delete().eq('profile_id', clientId).eq('company_id', company.id);
-      await ctx.admin.from('companies').delete().eq('id', company.id);
-      return NextResponse.json({ error: 'No se pudo asociar Stripe; la empresa creada se ha revertido.' }, { status: 500 });
+      return rollbackBootstrapResponse(
+        ctx,
+        clientId,
+        company.id,
+        customerId,
+        'stripe_mapping',
+        'No se pudo asociar Stripe; la empresa creada se ha revertido.',
+      );
     }
 
     await audit(ctx.admin, ctx.actorId, 'stripe_reconciliation.company_created_and_customer_mapped', company.id, {
