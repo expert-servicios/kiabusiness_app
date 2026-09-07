@@ -304,7 +304,7 @@ export default async function HomePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-        {/* Campaña temporal julio 2026, retirar tras el 31/07 */}
+        {/* Campaña estacional: reincorporación de septiembre, retirar tras el 30/09 */}
         <JulyCampaignBanner focus="holded" />
         <Hero />
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
