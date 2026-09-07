@@ -79,6 +79,13 @@ describe('Stripe invoice legal-entity attribution', () => {
     expect(operations).toContain('An explicit attribution anywhere in this tenant always wins');
   });
 
+  it('fails closed if Stripe identity or invoice attribution queries fail', () => {
+    expect(operations).toContain('if (stripeMappingsRes.error)');
+    expect(operations).toContain('if (companyInvoiceAttributionsRes.error)');
+    expect(operations).toContain('if (customerInvoiceAttributionsRes.error)');
+    expect(operations).toContain('No se pudo resolver la atribución legal');
+  });
+
   it('exposes invoice attribution from Client 360 with confirmation and visible history', () => {
     expect(nav).toContain('href={`/admin/clientes/${clientId}/stripe/facturas`}');
     expect(page).toContain('Atribución de facturas Stripe');
