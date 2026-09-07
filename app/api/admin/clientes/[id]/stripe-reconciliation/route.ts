@@ -37,11 +37,44 @@ const actionSchema = z.discriminatedUnion('action', [
 ]);
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+type StaffContext = { admin: AdminClient; actorId: string };
 
-type StaffContext = {
-  admin: AdminClient;
-  actorId: string;
+type InvoiceEvidence = {
+  id: string;
+  number: string | null;
+  status: string | null;
+  customerName: string | null;
+  customerTaxIds: string[];
+  amountPaid: number;
+  amountDue: number;
+  currency: string;
+  createdAt: string;
 };
+
+type SubscriptionEvidence = {
+  id: string;
+  status: Stripe.Subscription.Status;
+  priceId: string | null;
+  productId: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  metadata: Stripe.Metadata;
+};
+
+type DeletedCustomerEvidence = { deleted: true; id: string };
+type ActiveCustomerEvidence = {
+  deleted: false;
+  id: string;
+  name: string | null;
+  email: string | null;
+  createdAt: string;
+  metadata: Stripe.Metadata;
+  invoices: InvoiceEvidence[];
+  subscriptions: SubscriptionEvidence[];
+  taxIds: string[];
+  mixedTaxHistory: boolean;
+};
+type CustomerEvidence = DeletedCustomerEvidence | ActiveCustomerEvidence;
 
 async function requireStaff(request: NextRequest): Promise<StaffContext | null> {
   const supabase = createServerSupabaseClient(request);
@@ -64,7 +97,7 @@ function normalizeTaxId(value: string | null | undefined): string | null {
   return normalized || null;
 }
 
-function stripeCustomerId(customer: Stripe.Subscription['customer']): string | null {
+function getStripeCustomerId(customer: Stripe.Subscription['customer']): string | null {
   return typeof customer === 'string' ? customer : customer?.id ?? null;
 }
 
@@ -81,10 +114,7 @@ async function loadTarget(admin: AdminClient, clientId: string) {
     admin.auth.admin.getUserById(clientId),
   ]);
   if (!profile || !auth.data.user) return null;
-  return {
-    profile,
-    email: auth.data.user.email ?? profile.email ?? '',
-  };
+  return { profile, email: auth.data.user.email ?? profile.email ?? '' };
 }
 
 async function loadMembership(admin: AdminClient, clientId: string, companyId: string) {
@@ -111,17 +141,34 @@ async function audit(admin: AdminClient, actorId: string, action: string, entity
   if (error) console.error('[stripe-reconciliation] audit failed', error.message);
 }
 
-async function inspectCustomer(customerId: string) {
+async function inspectCustomer(customerId: string): Promise<CustomerEvidence> {
   const stripe = getStripeClient();
   const customer = await stripe.customers.retrieve(customerId);
-  if (customer.deleted) {
-    return { deleted: true, id: customer.id };
-  }
+  if (customer.deleted) return { deleted: true, id: customer.id };
 
   const [invoices, subscriptions] = await Promise.all([
-    stripe.invoices.list({ customer: customerId, limit: 5 }),
-    stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 20 }),
+    stripe.invoices.list({ customer: customerId, limit: 100 }),
+    stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 }),
   ]);
+
+  const invoiceEvidence: InvoiceEvidence[] = invoices.data.map((invoice) => ({
+    id: invoice.id,
+    number: invoice.number ?? null,
+    status: invoice.status ?? null,
+    customerName: invoice.customer_name ?? null,
+    customerTaxIds: (invoice.customer_tax_ids ?? []).map((item) => item.value).filter(Boolean),
+    amountPaid: Number(invoice.amount_paid ?? 0) / 100,
+    amountDue: Number(invoice.amount_due ?? 0) / 100,
+    currency: String(invoice.currency ?? 'eur').toUpperCase(),
+    createdAt: new Date(invoice.created * 1000).toISOString(),
+  }));
+
+  const taxIds = Array.from(new Set(
+    invoiceEvidence
+      .flatMap((invoice) => invoice.customerTaxIds)
+      .map(normalizeTaxId)
+      .filter((value): value is string => Boolean(value)),
+  ));
 
   return {
     deleted: false,
@@ -130,17 +177,7 @@ async function inspectCustomer(customerId: string) {
     email: customer.email ?? null,
     createdAt: new Date(customer.created * 1000).toISOString(),
     metadata: customer.metadata ?? {},
-    invoices: invoices.data.map((invoice) => ({
-      id: invoice.id,
-      number: invoice.number ?? null,
-      status: invoice.status ?? null,
-      customerName: invoice.customer_name ?? null,
-      customerTaxIds: (invoice.customer_tax_ids ?? []).map((item) => item.value).filter(Boolean),
-      amountPaid: Number(invoice.amount_paid ?? 0) / 100,
-      amountDue: Number(invoice.amount_due ?? 0) / 100,
-      currency: String(invoice.currency ?? 'eur').toUpperCase(),
-      createdAt: new Date(invoice.created * 1000).toISOString(),
-    })),
+    invoices: invoiceEvidence,
     subscriptions: subscriptions.data.map((subscription) => {
       const firstItem = subscription.items.data[0];
       return {
@@ -153,7 +190,25 @@ async function inspectCustomer(customerId: string) {
         metadata: subscription.metadata ?? {},
       };
     }),
+    taxIds,
+    mixedTaxHistory: taxIds.length > 1,
   };
+}
+
+function mixedHistoryResponse(evidence: ActiveCustomerEvidence) {
+  return NextResponse.json({
+    error: 'Este Stripe Customer contiene facturas históricas de más de un CIF/NIF. No puede mapearse a una sola empresa hasta implantar atribución por factura/periodo.',
+    code: 'mixed_customer_tax_history',
+    stripeTaxIds: evidence.taxIds,
+  }, { status: 409 });
+}
+
+function taxMismatchResponse(taxIds: string[]) {
+  return NextResponse.json({
+    error: 'El CIF/NIF de la empresa no coincide con la evidencia fiscal disponible en Stripe.',
+    code: 'stripe_tax_id_mismatch',
+    stripeTaxIds: taxIds,
+  }, { status: 409 });
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -199,12 +254,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const exactCustomerId = request.nextUrl.searchParams.get('stripeCustomerId')?.trim() ?? '';
-  let evidence: Awaited<ReturnType<typeof inspectCustomer>> | null = null;
+  let evidence: CustomerEvidence | null = null;
   let evidenceError: string | null = null;
   if (exactCustomerId) {
-    if (!STRIPE_ID.test(exactCustomerId)) {
-      evidenceError = 'Stripe Customer ID inválido';
-    } else {
+    if (!STRIPE_ID.test(exactCustomerId)) evidenceError = 'Stripe Customer ID inválido';
+    else {
       try {
         evidence = await inspectCustomer(exactCustomerId);
       } catch (error) {
@@ -225,11 +279,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     subscriptions: subscriptionsRes.data ?? [],
     evidence,
     evidenceError,
-    rules: {
-      emailIsIdentity: false,
-      automaticMerge: false,
-      exactStripeIdRequired: true,
-    },
+    rules: { emailIsIdentity: false, automaticMerge: false, exactStripeIdRequired: true },
   });
 }
 
@@ -242,34 +292,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!target) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
   const parsed = actionSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
 
   const tenant = await getTenantForUser(clientId);
-  if (!tenant?.id) {
-    return NextResponse.json({ error: 'No se pudo resolver el tenant del cliente' }, { status: 409 });
-  }
+  if (!tenant?.id) return NextResponse.json({ error: 'No se pudo resolver el tenant del cliente' }, { status: 409 });
 
   if (parsed.data.action === 'create_company_and_map') {
     const customerId = parsed.data.stripeCustomerId;
-    let evidence: Awaited<ReturnType<typeof inspectCustomer>>;
+    let evidence: CustomerEvidence;
     try {
       evidence = await inspectCustomer(customerId);
     } catch (error) {
       return NextResponse.json({ error: error instanceof Error ? error.message : 'Stripe Customer no encontrado' }, { status: 400 });
     }
     if (evidence.deleted) return NextResponse.json({ error: 'El Stripe Customer está eliminado' }, { status: 409 });
+    if (evidence.mixedTaxHistory) return mixedHistoryResponse(evidence);
 
     const normalizedTaxId = normalizeTaxId(parsed.data.cifNif);
-    const invoiceTaxIds = evidence.invoices.flatMap((invoice) => invoice.customerTaxIds.map(normalizeTaxId)).filter(Boolean);
-    if (invoiceTaxIds.length > 0 && normalizedTaxId && !invoiceTaxIds.includes(normalizedTaxId)) {
-      return NextResponse.json({
-        error: 'El CIF/NIF no coincide con la evidencia fiscal disponible en las facturas Stripe',
-        code: 'stripe_tax_id_mismatch',
-        stripeTaxIds: Array.from(new Set(invoiceTaxIds)),
-      }, { status: 409 });
-    }
+    if (evidence.taxIds.length === 1 && normalizedTaxId !== evidence.taxIds[0]) return taxMismatchResponse(evidence.taxIds);
 
     const { data: existingTaxId, error: duplicateError } = await ctx.admin
       .from('companies')
@@ -340,7 +380,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           verified_by: ctx.actorId,
           stripe_name: evidence.name,
           stripe_email: evidence.email,
-          stripe_invoice_tax_ids: Array.from(new Set(invoiceTaxIds)),
+          stripe_invoice_tax_ids: evidence.taxIds,
         },
       })
       .select('id,company_id,stripe_customer_id,is_primary,status')
@@ -357,7 +397,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       stripe_customer_id: customerId,
       tax_id: normalizedTaxId,
     });
-
     return NextResponse.json({ ok: true, company, mapping }, { status: 201 });
   }
 
@@ -365,13 +404,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const membership = await loadMembership(ctx.admin, clientId, parsed.data.companyId);
     if (!membership) return NextResponse.json({ error: 'La empresa no pertenece a este usuario' }, { status: 404 });
 
-    let evidence: Awaited<ReturnType<typeof inspectCustomer>>;
+    let evidence: CustomerEvidence;
     try {
       evidence = await inspectCustomer(parsed.data.stripeCustomerId);
     } catch (error) {
       return NextResponse.json({ error: error instanceof Error ? error.message : 'Stripe Customer no encontrado' }, { status: 400 });
     }
     if (evidence.deleted) return NextResponse.json({ error: 'El Stripe Customer está eliminado' }, { status: 409 });
+    if (evidence.mixedTaxHistory) return mixedHistoryResponse(evidence);
+
+    const companyTaxId = normalizeTaxId(membership.company.cif_nif);
+    if (evidence.taxIds.length === 1 && companyTaxId && companyTaxId !== evidence.taxIds[0]) return taxMismatchResponse(evidence.taxIds);
 
     const { data: existing } = await ctx.admin
       .from('company_stripe_customers')
@@ -380,9 +423,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq('stripe_customer_id', parsed.data.stripeCustomerId)
       .maybeSingle();
 
-    if (existing?.company_id === parsed.data.companyId) {
-      return NextResponse.json({ ok: true, mapping: existing, idempotent: true });
-    }
+    if (existing?.company_id === parsed.data.companyId) return NextResponse.json({ ok: true, mapping: existing, idempotent: true });
     if (existing) {
       return NextResponse.json({
         error: 'Este Stripe Customer ya está asociado a otra empresa. No se ha modificado nada.',
@@ -421,6 +462,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           verified_by: ctx.actorId,
           stripe_name: evidence.name,
           stripe_email: evidence.email,
+          stripe_invoice_tax_ids: evidence.taxIds,
         },
       })
       .select('id,company_id,stripe_customer_id,is_primary,status')
@@ -433,7 +475,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       stripe_customer_id: parsed.data.stripeCustomerId,
       is_primary: mapping.is_primary,
     });
-
     return NextResponse.json({ ok: true, mapping }, { status: 201 });
   }
 
@@ -448,7 +489,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Suscripción Stripe no encontrada' }, { status: 400 });
   }
 
-  const customerId = stripeCustomerId(subscription.customer);
+  const customerId = getStripeCustomerId(subscription.customer);
   const firstItem = subscription.items.data[0];
   const priceId = firstItem?.price.id ?? null;
   const status = allowedSubscriptionStatus(subscription.status);
@@ -511,9 +552,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (productId) {
     try {
       const product = await stripe.products.retrieve(productId);
-      if (!product.deleted && product.name) planName = product.name;
+      if (product.name) planName = product.name;
     } catch {
-      // Product name is cosmetic; do not block a verified subscription import.
+      // Cosmetic lookup only. A verified subscription import must not depend on the product label.
     }
   }
 
@@ -553,6 +594,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     stripe_subscription_id: subscription.id,
     stripe_customer_id: customerId,
   });
-
   return NextResponse.json({ ok: true, subscription: imported }, { status: 201 });
 }
