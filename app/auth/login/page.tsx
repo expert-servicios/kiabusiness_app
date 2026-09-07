@@ -131,7 +131,7 @@ function LoginForm() {
                 Hemos enviado un enlace de acceso a{' '}
                 <span className="font-medium text-white/80">{email}</span>
               </p>
-              <p className="mt-2 text-xs text-white/40">El enlace caduca en 24 horas.</p>
+              <p className="mt-2 text-xs text-white/40">El enlace caduca en 1 hora.</p>
             </div>
             <button
               type="button"
