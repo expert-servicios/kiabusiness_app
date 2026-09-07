@@ -13,6 +13,7 @@ describe('Client 360 recurring operations', () => {
   const clientLayout = source('app/(protected)/admin/clientes/[id]/layout.tsx');
   const tasksPage = source('app/(protected)/admin/tareas/page.tsx');
   const documentsRoute = source('app/api/cases/[id]/documents/route.ts');
+  const companyStripeMigration = source('supabase/migrations/20260907175500_add_company_stripe_customer_mappings.sql');
 
   it('aggregates recurring operations from canonical sources without mutating them', () => {
     expect(operationsApi).toContain(".from('internal_tasks')");
@@ -26,6 +27,21 @@ describe('Client 360 recurring operations', () => {
     expect(operationsApi).not.toContain(".update({");
     expect(operationsApi).not.toContain(".insert({");
     expect(operationsApi).not.toContain(".delete()");
+  });
+
+  it('scopes Stripe identity and subscriptions by company instead of shared email', () => {
+    expect(companyStripeMigration).toContain('create table public.company_stripe_customers');
+    expect(companyStripeMigration).toContain('unique (tenant_id, stripe_customer_id)');
+    expect(companyStripeMigration).toContain('company_stripe_customers_one_primary_active_idx');
+    expect(companyStripeMigration).not.toContain('stripe_email');
+    expect(operationsApi).toContain(".from('company_stripe_customers')");
+    expect(operationsApi).toContain(".in('company_id', companyIds)");
+    expect(operationsApi).toContain(".in('status', ['active', 'historical'])");
+    expect(operationsApi).toContain("stripeIdentitySource: mappedIds.length ? 'company_stripe_customers'");
+    expect(operationsApi).toContain('legacyStripeCustomerId');
+    expect(operationsApi).toContain('const subscriptions = [...(clientSubsRes.data ?? []), ...(companySubsRes.data ?? [])]');
+    expect(operationsApi).toContain('stripeCustomerIds');
+    expect(operationsApi).not.toContain('lower(email)');
   });
 
   it('keeps Stripe invoice documents distinct from local EXPERT orders', () => {
