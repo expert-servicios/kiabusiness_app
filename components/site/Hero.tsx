@@ -32,30 +32,30 @@ export function Hero() {
 
       <div className="mx-auto flex min-h-[650px] w-full max-w-7xl items-center px-6 py-20 lg:min-h-[650px] lg:px-20 lg:pb-32">
         <div className="max-w-xl">
-          <p className="mb-5 text-xs font-bold uppercase tracking-[0.32em] text-[#D4A017]">Asesoría premium en España</p>
+          <p className="mb-5 text-xs font-bold uppercase tracking-[0.32em] text-[#D4A017]">Fiscal, legal y gestión inteligente</p>
 
           <h1 className="font-serif text-[2.35rem] font-semibold leading-[1.05] text-[#F8F6F1] md:text-5xl xl:text-[3.65rem]">
-            <span className="block">Asesoría fiscal</span>
-            <span className="block">y legal</span>
-            <span className="block text-[#D4A017]">sin complicaciones</span>
+            <span className="block">Asesoría inteligente</span>
+            <span className="block">para empresas</span>
+            <span className="block text-[#D4A017]">responsables</span>
           </h1>
 
           <p className="mt-6 max-w-lg text-lg leading-8 text-[#F8F6F1]/88 md:text-xl">
-            Contrata online, sube tu documentación y recibe tu trámite resuelto con seguimiento profesional.
+            Cuanto más te impliques en la gestión de tu empresa, menos pagas. Kia vigila tus números todos los días y nuestro equipo fiscal y legal responde cuando de verdad importa.
           </p>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
             <Link
-              href="/servicios/empresas-autonomos"
+              href="/cita"
               className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
-              Soy empresa
+              Reservar cita gratuita
             </Link>
             <Link
-              href="/servicios/declaraciones-impuestos"
+              href="/planes"
               className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
-              Soy particular
+              Ver cómo funcionan los planes
             </Link>
           </div>
 

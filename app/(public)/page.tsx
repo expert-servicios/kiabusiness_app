@@ -6,6 +6,7 @@ import {
   Anchor,
   ArrowRight,
   Award,
+  Bell,
   Briefcase,
   Calculator,
   Check,
@@ -206,6 +207,47 @@ const holdedCards = [
   },
 ] as const;
 
+const modeloSteps: Array<IconItem & { title: string; text: string }> = [
+  {
+    title: 'Tú gestionas en Holded',
+    text: 'Subes facturas, organizas cobros y pagos, mantienes tu empresa al día.',
+    Icon: Upload
+  },
+  {
+    title: 'Kia vigila y avisa',
+    text: 'Nuestra IA detecta alertas fiscales, plazos y desviaciones antes de que se conviertan en un problema.',
+    Icon: Bell
+  },
+  {
+    title: 'Nosotros validamos y presentamos',
+    text: 'Revisamos, corregimos si hace falta y presentamos lo que corresponda según tu plan.',
+    Icon: FileCheck
+  }
+];
+
+const authorityItems: Array<IconItem & { title: string; text: string }> = [
+  {
+    title: '+20 años',
+    text: 'de experiencia fiscal y legal',
+    Icon: Star
+  },
+  {
+    title: 'Colaboradora social AEAT',
+    text: 'Colaboramos directamente con la Agencia Tributaria',
+    Icon: ShieldCheck
+  },
+  {
+    title: 'Red PAE',
+    text: 'Punto de Atención al Emprendedor reconocido',
+    Icon: Briefcase
+  },
+  {
+    title: 'Holded Solution Partner',
+    text: 'Implantación y soporte certificado',
+    Icon: MonitorCheck
+  }
+];
+
 export default async function HomePage({
   searchParams
 }: {
@@ -266,8 +308,10 @@ export default async function HomePage({
         <JulyCampaignBanner focus="holded" />
         <Hero />
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
+      <ModeloResponsable />
       <AdvisorSaasTeaser />
       <Services />
+      <Authority />
       <FeaturedServices />
       <HowItWorks />
       <ClientPortal />
@@ -280,6 +324,45 @@ export default async function HomePage({
       <FinalCta />
     </main>
     </>
+  );
+}
+
+function ModeloResponsable() {
+  return (
+    <section className="bg-[#0D1B2A] px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          dark
+          centered
+          eyebrow="El modelo EXPERT"
+          title="Un modelo de precios que no habías visto antes"
+          text="La mayoría de asesorías cobran más cuanto más delegas. Nosotros hacemos lo contrario: cuanto más organizada esté tu empresa y más te impliques en su día a día, menos pagas cada mes. Tú decides el nivel de compromiso; Kia y nuestro equipo se adaptan a él."
+        />
+
+        <div className="mt-11 grid gap-5 md:grid-cols-3">
+          {modeloSteps.map(({ Icon, title, text }, index) => (
+            <article key={title} className="border border-[#D4A017]/25 bg-[#23364D]/35 p-7 shadow-[0_20px_45px_rgba(13,27,42,0.32)]">
+              <div className="flex items-center justify-between">
+                <span className="font-serif text-4xl font-bold text-[#D4A017]">{String(index + 1).padStart(2, '0')}</span>
+                <Icon className="h-8 w-8 stroke-[#D4A017]" strokeWidth={1.7} />
+              </div>
+              <h3 className="mt-6 font-serif text-xl font-bold text-[#F8F6F1]">{title}</h3>
+              <p className="mt-3 text-sm leading-7 text-[#9CA3AF]">{text}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/planes"
+            className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Descubre cuánto puedes ahorrar implicándote
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -331,6 +414,50 @@ function Services() {
               </p>
             </Link>
           ))}
+
+          <Link
+            href="/servicios"
+            className="group flex flex-col justify-center border border-[#D4A017]/40 bg-[#07111d] p-6 text-[#F8F6F1] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-[#D4A017]/40 bg-[#D4A017]/10 text-[#D4A017]">
+              <ArrowRight className="h-6 w-6" />
+            </span>
+            <h3 className="mt-5 font-serif text-xl font-bold leading-tight">Ver todos los servicios</h3>
+            <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">Explora el catálogo completo, organizado por categoría.</p>
+            <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
+              Explorar
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            </p>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Authority() {
+  return (
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          dark
+          centered
+          eyebrow="Confianza"
+          title="Expertos de verdad, no un chatbot con traje"
+          text="Casi 20 años de trayectoria fiscal y legal, con las acreditaciones que dan respaldo real a cada trámite."
+        />
+
+        <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {authorityItems.map(({ Icon, title, text }) => (
+            <div
+              key={title}
+              className="border border-[#D4A017]/25 bg-[#23364D]/35 p-6 text-center shadow-[0_20px_45px_rgba(13,27,42,0.32)]"
+            >
+              <Icon className="mx-auto h-9 w-9 stroke-[#D4A017]" strokeWidth={1.6} />
+              <p className="mt-4 font-serif text-lg font-bold text-[#F8F6F1]">{title}</p>
+              <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">{text}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -339,10 +466,9 @@ function Services() {
 
 function FeaturedServices() {
   return (
-    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+    <section className="px-6 py-16 md:py-20">
       <div className="mx-auto max-w-7xl">
         <SectionTitle
-          dark
           eyebrow="Servicios destacados"
           title="Los trámites más solicitados, listos para empezar online."
           text="Cada servicio se orienta a un resultado concreto: documentación revisada, trámite presentado y seguimiento claro."
@@ -353,11 +479,11 @@ function FeaturedServices() {
             <Link
               href={href}
               key={title}
-              className="group border border-[#D4A017]/25 bg-[#23364D]/35 p-7 shadow-[0_20px_45px_rgba(13,27,42,0.32)] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
+              className="group border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_18px_40px_rgba(13,27,42,0.11)]"
             >
               <Icon className="h-9 w-9 stroke-[#D4A017]" strokeWidth={1.7} />
-              <h3 className="mt-6 font-serif text-2xl font-bold text-[#F8F6F1]">{title}</h3>
-              <p className="mt-4 min-h-24 text-sm leading-7 text-[#9CA3AF]">{text}</p>
+              <h3 className="mt-6 font-serif text-2xl font-bold text-[#0D1B2A]">{title}</h3>
+              <p className="mt-4 min-h-24 text-sm leading-7 text-[#23364D]">{text}</p>
               <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-[#D4A017]">
                 Empezar
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -372,9 +498,10 @@ function FeaturedServices() {
 
 function HowItWorks() {
   return (
-    <section className="px-6 py-16 md:py-20">
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
       <div className="mx-auto max-w-7xl">
         <SectionTitle
+          dark
           eyebrow="Proceso"
           title="Un flujo pensado para clientes que no quieren perder tiempo."
           text="La parte compleja ocurre detrás: tú ves el estado, entregas documentos y recibes el resultado."
@@ -383,13 +510,13 @@ function HowItWorks() {
 
         <div className="mt-11 grid gap-4 md:grid-cols-4">
           {processSteps.map(({ Icon, title, text }, index) => (
-            <article key={title} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-6 shadow-[0_10px_28px_rgba(13,27,42,0.07)]">
+            <article key={title} className="border border-[#D4A017]/25 bg-[#23364D]/35 p-6 shadow-[0_20px_45px_rgba(13,27,42,0.32)]">
               <div className="flex items-center justify-between">
                 <span className="font-serif text-4xl font-bold text-[#D4A017]">{String(index + 1).padStart(2, '0')}</span>
-                <Icon className="h-8 w-8 stroke-[#0D1B2A]" strokeWidth={1.7} />
+                <Icon className="h-8 w-8 stroke-[#D4A017]" strokeWidth={1.7} />
               </div>
-              <h3 className="mt-7 font-serif text-xl font-bold">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[#23364D]">{text}</p>
+              <h3 className="mt-7 font-serif text-xl font-bold text-[#F8F6F1]">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[#9CA3AF]">{text}</p>
             </article>
           ))}
         </div>
@@ -607,8 +734,8 @@ function BlogPreview() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <SectionTitle
             eyebrow="Blog"
-            title="Guías y artículos fiscales"
-            text="Contenido práctico sobre impuestos, extranjería y gestión de empresas. Sin jerga."
+            title="Últimos artículos"
+            text="Guías prácticas sobre fiscalidad, extranjería y gestión, escritas sin tecnicismos."
           />
           <Link
             href="/blog"
@@ -734,16 +861,26 @@ function FinalCta() {
       <div className="absolute inset-x-0 top-0 h-px bg-[#D4A017]/40" />
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Siguiente paso</p>
-        <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">Cuéntanos tu caso y te orientamos.</h2>
+        <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">
+          ¿Empezamos a gestionar tu empresa de forma más inteligente?
+        </h2>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#9CA3AF]">
-          Si no sabes qué servicio necesitas, empezamos por revisar tu situación y preparar una propuesta clara.
+          Cuenta con nosotros desde 49 €/mes. Cuanto más te impliques, menos pagas.
         </p>
-        <Link
-          href="/solicitar-presupuesto"
-          className="mt-8 inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-        >
-          Solicitar presupuesto
-        </Link>
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <Link
+            href="/cita"
+            className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Reservar cita gratuita
+          </Link>
+          <Link
+            href="/planes"
+            className="inline-flex min-h-12 items-center justify-center border border-[#D4A017]/60 px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10"
+          >
+            Ver planes y precios
+          </Link>
+        </div>
       </div>
     </section>
   );
