@@ -200,6 +200,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const tenant = await getTenantForUser(clientId);
   if (!tenant?.id) return NextResponse.json({ error: 'No se pudo resolver el tenant del cliente' }, { status: 409 });
+  if (!companyMembership.company.tenant_id || companyMembership.company.tenant_id !== tenant.id) {
+    return NextResponse.json({
+      error: 'La empresa no tiene un tenant consistente con el usuario. Debe revisarse antes de atribuir facturas.',
+      code: 'company_tenant_mismatch',
+    }, { status: 409 });
+  }
 
   let inspected: Awaited<ReturnType<typeof inspectInvoice>>;
   try {
