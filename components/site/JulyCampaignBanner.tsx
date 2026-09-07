@@ -8,8 +8,8 @@ type JulyCampaignBannerProps = {
 
 const copy = {
   holded: {
-    eyebrow: 'Julio fiscal',
-    text: 'Ordena Holded y tu gestion mensual antes del siguiente cierre.',
+    eyebrow: 'Septiembre',
+    text: 'Vuelta de vacaciones: pon tus cuentas al dia antes de que se acumulen los pendientes.',
     primaryLabel: 'Diagnostico Holded',
     primaryHref: julySiteCampaignLinks.holded,
     secondaryLabel: 'Comparar planes',
