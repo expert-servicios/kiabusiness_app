@@ -38,11 +38,25 @@ describe('Admin Stripe reconciliation', () => {
     expect(route).toContain("source: 'admin_manual_review'");
   });
 
-  it('rolls back partial company creation if membership or Stripe mapping fails', () => {
-    expect(route).toContain("await ctx.admin.from('companies').delete().eq('id', company.id)");
-    expect(route).toContain("await ctx.admin.from('profile_companies').delete().eq('profile_id', clientId).eq('company_id', company.id)");
+  it('verifies compensating rollback before claiming a partial company creation was reverted', () => {
+    expect(route).toContain('async function rollbackCreatedCompany');
+    expect(route).toContain(".from('profile_companies')\n    .delete()");
+    expect(route).toContain("admin.from('companies').delete().eq('id', companyId)");
+    expect(route).toContain("admin.from('company_stripe_customers').select('id').eq('company_id', companyId).limit(1)");
+    expect(route).toContain("'membership_still_present'");
+    expect(route).toContain("'company_still_present'");
+    expect(route).toContain("'stripe_mapping_still_present'");
+    expect(route).toContain("code: 'bootstrap_rolled_back'");
     expect(route).toContain('el alta parcial se ha revertido');
     expect(route).toContain('la empresa creada se ha revertido');
+  });
+
+  it('fails closed and exposes a manual-review code if compensating rollback cannot be verified', () => {
+    expect(route).toContain("code: 'partial_bootstrap_manual_review_required'");
+    expect(route).toContain('rollbackIssues');
+    expect(route).toContain("'stripe_reconciliation.partial_bootstrap_manual_review_required'");
+    expect(route).toContain("'stripe_reconciliation.bootstrap_rolled_back'");
+    expect(route).toContain('No se pudo revertir completamente el alta parcial');
   });
 
   it('requires an explicit company-customer mapping before importing a subscription', () => {
