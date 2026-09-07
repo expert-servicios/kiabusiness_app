@@ -162,7 +162,7 @@ export async function GET(
     const [caseResult, docsResult] = await Promise.all([
       admin
         .from('cases')
-        .select('id,category,service,state,status,opened_at,closed_at,client_id,admin_note,docs_checklist')
+        .select('id,category,service,state,status,opened_at,closed_at,client_id,admin_note,docs_checklist,assigned_to')
         .eq('id', id)
         .single(),
       admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false })
@@ -175,9 +175,12 @@ export async function GET(
     const caseData = caseResult.data;
 
     // Fetch client info
-    const [authUser, clientProfile] = await Promise.all([
+    const [authUser, clientProfile, assigneeProfile] = await Promise.all([
       admin.auth.admin.getUserById(caseData.client_id),
-      admin.from('profiles').select('full_name,phone').eq('id', caseData.client_id).single()
+      admin.from('profiles').select('full_name,phone').eq('id', caseData.client_id).single(),
+      caseData.assigned_to
+        ? admin.from('profiles').select('id,full_name').eq('id', caseData.assigned_to).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     // Generate signed download URLs (1h validity)
@@ -197,7 +200,8 @@ export async function GET(
           email: authUser.data.user?.email ?? '',
           full_name: clientProfile.data?.full_name ?? null,
           phone: clientProfile.data?.phone ?? null
-        }
+        },
+        assignee: assigneeProfile.data ?? null,
       },
       documents: docs
     });
@@ -230,6 +234,7 @@ export async function PATCH(
       admin_note?: string;
       next_action?: string;
       due_date?: string;
+      assigned_to?: string | null;
     };
 
     // Validate status transition if status is being updated
@@ -253,6 +258,7 @@ export async function PATCH(
       if (body.admin_note !== undefined) updatePayload.admin_note  = body.admin_note;
       if (body.next_action !== undefined) updatePayload.next_action = body.next_action;
       if (body.due_date !== undefined)   updatePayload.due_date    = body.due_date;
+      if (body.assigned_to !== undefined) updatePayload.assigned_to = body.assigned_to;
       if (body.status === 'finalizado')  updatePayload.closed_at   = new Date().toISOString();
 
       const { error: updateErr } = await admin.from('cases').update(updatePayload).eq('id', id);
@@ -358,6 +364,7 @@ export async function PATCH(
     if (body.admin_note !== undefined) updatePayload.admin_note  = body.admin_note;
     if (body.next_action !== undefined) updatePayload.next_action = body.next_action;
     if (body.due_date !== undefined)   updatePayload.due_date    = body.due_date;
+    if (body.assigned_to !== undefined) updatePayload.assigned_to = body.assigned_to;
 
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });

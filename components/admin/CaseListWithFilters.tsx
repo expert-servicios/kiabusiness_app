@@ -14,7 +14,9 @@ interface Case {
   opened_at: string;
   closed_at: string | null;
   client_id: string;
+  assigned_to: string | null;
   client: { full_name: string | null; email: string };
+  assignee: { full_name: string | null } | null;
 }
 
 const STATE_FILTER_OPTIONS = [
@@ -52,6 +54,7 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
   const search        = searchParams.get('q') ?? '';
   const stateFilter   = searchParams.get('state') ?? 'all';
   const categoryFilter = searchParams.get('cat') ?? 'all';
+  const assigneeFilter = searchParams.get('assignee') ?? 'all';
 
   // Update a single URL param, preserving others
   const setParam = useCallback((key: string, value: string) => {
@@ -65,6 +68,7 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
   const setSearch        = (v: string) => setParam('q', v);
   const setStateFilter   = (v: string) => setParam('state', v);
   const setCategoryFilter = (v: string) => setParam('cat', v);
+  const setAssigneeFilter = (v: string) => setParam('assignee', v);
   const clearFilters = () => {
     router.push('?', { scroll: false });
   };
@@ -72,6 +76,14 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
   const categories = useMemo(() => {
     const cats = [...new Set(cases.map((c) => c.category))].sort();
     return cats;
+  }, [cases]);
+
+  const assignees = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of cases) {
+      if (c.assigned_to) map.set(c.assigned_to, c.assignee?.full_name ?? 'Sin nombre');
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [cases]);
 
   const filtered = useMemo(() => {
@@ -84,14 +96,17 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
         (c.client.full_name?.toLowerCase().includes(q) ?? false);
       const matchesState = matchesStateFilter(c.state, stateFilter);
       const matchesCat = categoryFilter === 'all' || c.category === categoryFilter;
-      return matchesSearch && matchesState && matchesCat;
+      const matchesAssignee =
+        assigneeFilter === 'all' ||
+        (assigneeFilter === 'unassigned' ? !c.assigned_to : c.assigned_to === assigneeFilter);
+      return matchesSearch && matchesState && matchesCat && matchesAssignee;
     });
-  }, [cases, search, stateFilter, categoryFilter]);
+  }, [cases, search, stateFilter, categoryFilter, assigneeFilter]);
 
   const open = filtered.filter((c) => !CLOSED_STATES.includes(c.state as never));
   const closed = filtered.filter((c) => CLOSED_STATES.includes(c.state as never));
 
-  const hasFilters = search || stateFilter !== 'all' || categoryFilter !== 'all';
+  const hasFilters = search || stateFilter !== 'all' || categoryFilter !== 'all' || assigneeFilter !== 'all';
 
   return (
     <div>
@@ -130,6 +145,18 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
             ))}
           </select>
         )}
+
+        <select
+          value={assigneeFilter}
+          onChange={(e) => setAssigneeFilter(e.target.value)}
+          className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2.5 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
+        >
+          <option value="all">Todos los responsables</option>
+          <option value="unassigned">Sin asignar</option>
+          {assignees.map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
 
         {hasFilters && (
           <button
