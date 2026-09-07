@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const [profileRes, authRes, membershipsRes, casesRes, tasksRes, clientSubsRes, checkoutsRes, ordersRes] = await Promise.all([
     admin.from('profiles').select('id,full_name,email,active_company_id,status').eq('id', clientId).single(),
     admin.auth.admin.getUserById(clientId),
-    admin.from('profile_companies').select('company_id,company:companies(id,razon_social,nombre_comercial,cif_nif,stripe_customer_id,status)').eq('profile_id', clientId),
+    admin.from('profile_companies').select('company_id,company:companies(id,razon_social,nombre_comercial,cif_nif,stripe_customer_id,status,tenant_id)').eq('profile_id', clientId),
     admin.from('cases').select('id,service,category,state,status,priority,next_action,company_id,opened_at,updated_at').eq('client_id', clientId).order('updated_at', { ascending: false }).limit(50),
     admin.from('internal_tasks').select('id,title,description,status,priority,due_date,case_id,source,created_at,updated_at').eq('client_id', clientId).order('due_date', { ascending: true, nullsFirst: false }).limit(50),
     admin.from('subscriptions').select('id,plan_name,status,company_id,current_period_start,current_period_end,canceled_at,stripe_subscription_id,created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(30),
@@ -61,9 +61,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       nif: company.cif_nif,
       legacyStripeCustomerId: company.stripe_customer_id,
       status: company.status,
+      tenantId: company.tenant_id,
     }] : [];
   });
   const companyIds = companies.map((company) => company.id);
+  const tenantIds = Array.from(new Set(companies.map((company) => company.tenantId).filter((value): value is string => Boolean(value))));
   const caseIds = (casesRes.data ?? []).map((item) => item.id);
 
   const [
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     companyDocsRes,
     stripeMappingsRes,
     companySubsRes,
-    invoiceAttributionsRes,
+    companyInvoiceAttributionsRes,
   ] = await Promise.all([
     companyIds.length
       ? admin.from('obligations_calendar').select('id,company_id,kind,due_date,status,attendees,created_at').in('company_id', companyIds).order('due_date', { ascending: true }).limit(100)
@@ -96,7 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ? admin.from('subscriptions').select('id,plan_name,status,company_id,current_period_start,current_period_end,canceled_at,stripe_subscription_id,created_at').in('company_id', companyIds).order('created_at', { ascending: false }).limit(100)
       : Promise.resolve({ data: [] }),
     companyIds.length
-      ? admin.from('stripe_invoice_company_attributions').select('id,company_id,stripe_invoice_id,stripe_customer_id,invoice_tax_id,source,status').in('company_id', companyIds).eq('status', 'active')
+      ? admin.from('stripe_invoice_company_attributions').select('id,tenant_id,company_id,stripe_invoice_id,stripe_customer_id,invoice_tax_id,source,status').in('company_id', companyIds).eq('status', 'active')
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -130,10 +132,36 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       name: company.name,
       nif: company.nif,
       status: company.status,
+      tenantId: company.tenantId,
       stripeCustomerIds,
       stripeIdentitySource: mappedIds.length ? 'company_stripe_customers' : company.legacyStripeCustomerId ? 'legacy_company_field' : 'none',
     };
   });
+
+  const mappedCustomerIds = Array.from(new Set(companiesWithStripe.flatMap((company) => company.stripeCustomerIds)));
+  const customerInvoiceAttributionsRes = mappedCustomerIds.length && tenantIds.length
+    ? await admin
+      .from('stripe_invoice_company_attributions')
+      .select('id,tenant_id,company_id,stripe_invoice_id,stripe_customer_id,invoice_tax_id,source,status')
+      .in('tenant_id', tenantIds)
+      .in('stripe_customer_id', mappedCustomerIds)
+      .eq('status', 'active')
+    : { data: [] };
+
+  const attributionById = new Map<string, {
+    id: string;
+    tenant_id: string;
+    company_id: string;
+    stripe_invoice_id: string;
+    stripe_customer_id: string;
+    invoice_tax_id: string | null;
+    source: string;
+    status: string;
+  }>();
+  for (const result of [companyInvoiceAttributionsRes, customerInvoiceAttributionsRes]) {
+    for (const row of result.data ?? []) attributionById.set(row.id, row);
+  }
+  const invoiceAttributions = Array.from(attributionById.values());
 
   const subscriptions = [...(clientSubsRes.data ?? []), ...(companySubsRes.data ?? [])]
     .filter((subscription, index, all) => all.findIndex((candidate) => candidate.id === subscription.id) === index)
@@ -162,7 +190,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const stripeInvoices: StripeInvoiceView[] = [];
   const stripeErrors: Array<{ companyId: string; stripeCustomerId: string; message: string }> = [];
   const seenStripeInvoiceIds = new Set<string>();
-  const activeAttributionByInvoiceId = new Map((invoiceAttributionsRes.data ?? []).map((row) => [row.stripe_invoice_id, row]));
+  const activeAttributionByInvoiceId = new Map(invoiceAttributions.map((row) => [row.stripe_invoice_id, row]));
   const companyById = new Map(companiesWithStripe.map((company) => [company.id, company]));
 
   const pushInvoice = (invoice: Stripe.Invoice, company: (typeof companiesWithStripe)[number], stripeCustomerId: string, attributionSource: AttributionSource) => {
@@ -195,6 +223,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         for (const invoice of invoices.data) {
           if (seenStripeInvoiceIds.has(invoice.id)) continue;
 
+          // An explicit attribution anywhere in this tenant always wins. If it
+          // points to another company, this Client 360 must not reclaim the
+          // invoice through tax-ID or Customer fallback.
           const explicitAttribution = activeAttributionByInvoiceId.get(invoice.id);
           if (explicitAttribution) {
             if (explicitAttribution.company_id !== company.id) continue;
@@ -223,8 +254,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   // Explicit invoice attribution can surface invoices whose Stripe Customer is
   // intentionally not mapped wholesale (for example a Customer reused by two
-  // legal entities over time). Fetch only the exact immutable invoice ID.
-  for (const attribution of invoiceAttributionsRes.data ?? []) {
+  // legal entities over time). Fetch only exact immutable invoice IDs that are
+  // attributed to companies managed in this Client 360.
+  for (const attribution of companyInvoiceAttributionsRes.data ?? []) {
     if (seenStripeInvoiceIds.has(attribution.stripe_invoice_id)) continue;
     const company = companyById.get(attribution.company_id);
     if (!company) continue;
