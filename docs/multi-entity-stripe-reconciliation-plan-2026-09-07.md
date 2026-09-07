@@ -9,7 +9,6 @@ Un mismo usuario de EXPERT puede gestionar varias entidades fiscales o mercantil
 Caso de referencia confirmado:
 
 - el mismo usuario gestiona **ALVILS ESP, S.L.U.** e **Inversiones Paso Seguro**;
-- la suscripción Stripe activa `sub_1S0IA7LeYwwgvux4rxwWSQ9D` no es la del caso ALVILS/Inversiones; el identificador confirmado para ALVILS es `sub_1S0IA7LeYwwgvux4vE1VB7DK`;
 - la suscripción Stripe activa `sub_1S0IA7LeYwwgvux4vE1VB7DK` corresponde a **ALVILS ESP, S.L.U.**;
 - Stripe Customer `cus_SwAQzEZGfhlP5S` aparece como `ALVILS`, con CIF de factura `B56305501`, y es el Customer de la suscripción activa;
 - Stripe Customer `cus_OQkYuIkz8n5FYB` aparece actualmente como `INVERSIONES PASO SEGURO`, pero su histórico fue reutilizado para más de una identidad fiscal;
