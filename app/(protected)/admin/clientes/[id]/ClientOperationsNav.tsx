@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarClock, CreditCard, FileText, Gauge, Gift, ListTodo, Mail, Plug } from 'lucide-react';
+import { CalendarClock, CreditCard, FileText, Gauge, Gift, ListTodo, Mail, Plug, ReceiptText } from 'lucide-react';
 
 export function ClientOperationsNav({ clientId }: { clientId: string }) {
   return (
@@ -30,6 +30,9 @@ export function ClientOperationsNav({ clientId }: { clientId: string }) {
         </Link>
         <Link href={`/admin/clientes/${clientId}/stripe`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
           <CreditCard className="h-3.5 w-3.5" /> Stripe
+        </Link>
+        <Link href={`/admin/clientes/${clientId}/stripe/facturas`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
+          <ReceiptText className="h-3.5 w-3.5" /> Facturas Stripe
         </Link>
       </div>
     </nav>
