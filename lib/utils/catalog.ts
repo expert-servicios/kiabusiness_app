@@ -946,6 +946,64 @@ export const services: Service[] = [
     ]
   },
   {
+    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
+    // price_id real de Stripe (o confirmar que no hace falta, ver lib/integrations/service-checkout.ts,
+    // que usa price_data dinámico y solo necesita una clave única) antes de activar en producción.
+    slug: 'constitucion-sl-circe',
+    categoria: 'empresas-autonomos',
+    name: 'Constitución de SL por CIRCE',
+    shortDescription: 'Constitución telemática de Sociedad Limitada a través del sistema CIRCE, más rápida y económica.',
+    description:
+      'Constituimos tu Sociedad Limitada mediante el sistema CIRCE (Centro de Información y Red de Creación de Empresas): tramitación 100% telemática con el Documento Único Electrónico (DUE), denominación social, estatutos tipo, notaría y alta fiscal coordinados en un único circuito. Es la vía más rápida y económica para socios que puedan acogerse a estatutos estandarizados.',
+    price: '180 € + IVA',
+    stripePriceId: 'price_circe_sl_constitucion',
+    duration: '3–7 días hábiles',
+    includes: [
+      'Certificado de denominación social (BORME)',
+      'Documento Único Electrónico (DUE) vía CIRCE',
+      'Estatutos sociales tipo (modelo estandarizado)',
+      'Coordinación con notaría adherida al sistema CIRCE',
+      'Inscripción en Registro Mercantil',
+      'Alta fiscal en Hacienda (Modelo 036) y obtención del CIF definitivo'
+    ],
+    requirements: [
+      'Todos los socios deben aportar DNI/NIE en vigor',
+      'Aplica solo a sociedades que puedan usar estatutos tipo (sin pactos parasociales complejos)'
+    ],
+    faqs: [
+      { q: '¿En qué se diferencia de la constitución de SL estándar?', a: 'CIRCE usa un circuito telemático con estatutos tipo, por lo que es más rápido y económico. Si necesitas estatutos a medida o pactos de socios complejos, la vía estándar es más adecuada.' },
+      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de NIE. Si algún socio aún no tiene NIF/NIE, puedes contratar también el servicio de "NIF para socio extranjero".' }
+    ]
+  },
+  {
+    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
+    // price_id real de Stripe (o confirmar que no hace falta) antes de activar en producción.
+    slug: 'nif-socio-extranjero',
+    categoria: 'empresas-autonomos',
+    name: 'NIF para Socio Extranjero',
+    shortDescription: 'Obtención del NIF para socios o administradores extranjeros sin residencia en España.',
+    description:
+      'Tramitamos el Número de Identificación Fiscal (NIF) para socios, administradores o apoderados extranjeros que van a participar en una sociedad española y no disponen de NIE. Necesario para poder constituir la sociedad, firmar ante notario y figurar en el Registro Mercantil.',
+    price: '60 € + IVA / persona',
+    servicePriceDetail: 'Precio por cada socio o administrador que necesite NIF.',
+    stripePriceId: 'price_circe_nif_socio_extranjero',
+    duration: '5–10 días hábiles',
+    includes: [
+      'Cumplimentación del Modelo 030 / EX-15',
+      'Coordinación con representante fiscal en España',
+      'Presentación ante la Administración competente',
+      'Seguimiento del expediente hasta la obtención del NIF'
+    ],
+    requirements: [
+      'Pasaporte en vigor del socio o administrador',
+      'Poder de representación si no se tramita en persona'
+    ],
+    faqs: [
+      { q: '¿Cuántos NIF necesito tramitar?', a: 'Uno por cada socio o administrador extranjero sin NIE que vaya a figurar en la escritura de constitución. Puedes añadir varias unidades en el carrito, una por persona.' },
+      { q: '¿El NIF sustituye al NIE?', a: 'No. El NIF es exclusivamente a efectos fiscales para poder constituir la sociedad; si el socio va a residir en España necesitará tramitar además su NIE/TIE.' }
+    ]
+  },
+  {
     slug: 'contabilidad-mensual',
     categoria: 'empresas-autonomos',
     name: 'Contabilidad Mensual',
