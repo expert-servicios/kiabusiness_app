@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/checkout-expiry",
+      "schedule": "0 6 * * *"
+    },
+    {
       "path": "/api/cron/email-sync",
       "schedule": "0 7 * * *"
     },

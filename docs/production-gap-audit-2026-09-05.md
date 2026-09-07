@@ -96,13 +96,23 @@ El PR #42 implementa un checkout antiguo para CIRCE/NIF y está muy desfasado re
 
 ## Siguiente orden de ejecución
 
-1. Corregir y fusionar copy Plan Avanzado.
-2. Cerrar PR antiguos que hayan sido sustituidos por un sucesor explícito.
-3. Cerrar P0 checkout multi-entidad sobre `main` actual.
-4. Revisar el checkout abierto existente antes de cualquier reconciliación histórica.
-5. Endurecimiento de funciones/grants Supabase con migración focalizada y Advisor posterior.
-6. Reimplementar checkout CIRCE/NIF sobre el flujo de entidad definitivo.
-7. Continuar roadmap: Operations 360 / inbox operativo, búsqueda global, leads comerciales, Telegram, calidad de datos, calendario fiscal, roles/assigned_to y read model escalable.
+1. [x] Corregir y fusionar copy Plan Avanzado — PR #109.
+2. [x] Cerrar PR antiguos que hayan sido sustituidos por un sucesor explícito.
+3. [x] Cerrar P0 checkout multi-entidad sobre `main` actual — PR #113.
+4. [x] Revisar el checkout abierto existente antes de cualquier reconciliación histórica —
+   revisado 2026-09-07: solo 1 sesión `open` en producción, un enlace de suscripción
+   generado por admin (04/09) cuyo cliente ya tiene la suscripción activa por otra vía.
+   Sin duplicado de cobro ni riesgo financiero. Cerrado un gap encontrado en la revisión:
+   nada expiraba automáticamente las filas `checkout_sessions` obsoletas cuando el webhook
+   de Stripe no llegaba a marcarlas — nuevo cron `checkout-expiry` (diario, 06:00 UTC)
+   marca `expired` las sesiones `open`/otro estado no terminal con más de 48h, y cierra
+   la NBA `checkout_abandonado` asociada. El trigger de NBA también excluía solo
+   `completed`, no `expired` — corregido para no regenerar el aviso tras expirar.
+5. [x] Endurecimiento de funciones/grants Supabase con migración focalizada y Advisor posterior — PR #112.
+6. [ ] Reimplementar checkout CIRCE/NIF sobre el flujo de entidad definitivo.
+7. [~] Continuar roadmap: Operations 360 / inbox operativo (hecho, PR #114), calidad de datos (hecho,
+   PR #115), búsqueda global y calendario fiscal (ya existían). Pendiente: leads comerciales
+   (más allá del genérico `saas-leads` actual), Telegram, roles/`assigned_to`, read model escalable.
 
 ## Criterios de producción
 

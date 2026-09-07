@@ -21,7 +21,7 @@ async function triggerCheckoutsAbandonados() {
   const { data: sessions } = await admin
     .from('checkout_sessions')
     .select('id, user_id, metadata, created_at')
-    .neq('status', 'completed')
+    .not('status', 'in', '(completed,expired)')
     .lt('created_at', ago24h)
     .limit(50);
 
