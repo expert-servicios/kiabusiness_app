@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { isStaffRole } from '@/lib/auth/roles';
@@ -11,6 +12,24 @@ async function requireStaff(request: NextRequest) {
   const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive' || !isStaffRole(profile?.role)) return null;
   return admin;
+}
+
+function normalizeTaxId(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toUpperCase().replace(/[\s-]+/g, '') ?? '';
+  return normalized || null;
+}
+
+function getInvoiceTaxIds(invoice: Stripe.Invoice): string[] {
+  return Array.from(new Set(
+    (invoice.customer_tax_ids ?? [])
+      .map((item) => normalizeTaxId(item.value))
+      .filter((value): value is string => Boolean(value)),
+  ));
+}
+
+function getInvoiceCustomerId(invoice: Stripe.Invoice): string | null {
+  if (!invoice.customer) return null;
+  return typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +74,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     companyDocsRes,
     stripeMappingsRes,
     companySubsRes,
+    invoiceAttributionsRes,
   ] = await Promise.all([
     companyIds.length
       ? admin.from('obligations_calendar').select('id,company_id,kind,due_date,status,attendees,created_at').in('company_id', companyIds).order('due_date', { ascending: true }).limit(100)
@@ -74,6 +94,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       : Promise.resolve({ data: [] }),
     companyIds.length
       ? admin.from('subscriptions').select('id,plan_name,status,company_id,current_period_start,current_period_end,canceled_at,stripe_subscription_id,created_at').in('company_id', companyIds).order('created_at', { ascending: false }).limit(100)
+      : Promise.resolve({ data: [] }),
+    companyIds.length
+      ? admin.from('stripe_invoice_company_attributions').select('id,company_id,stripe_invoice_id,stripe_customer_id,invoice_tax_id,source,status').in('company_id', companyIds).eq('status', 'active')
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -117,11 +140,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const stripe = getStripeClient();
-  const stripeInvoices: Array<{
+  type AttributionSource = 'explicit_invoice' | 'invoice_tax_id' | 'customer_mapping_fallback';
+  type StripeInvoiceView = {
     id: string;
     companyId: string;
     companyName: string;
     stripeCustomerId: string;
+    attributionSource: AttributionSource;
     number: string | null;
     status: string | null;
     amountDue: number;
@@ -132,33 +157,59 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     periodEnd: string | null;
     hostedInvoiceUrl: string | null;
     invoicePdf: string | null;
-  }> = [];
+  };
+
+  const stripeInvoices: StripeInvoiceView[] = [];
   const stripeErrors: Array<{ companyId: string; stripeCustomerId: string; message: string }> = [];
   const seenStripeInvoiceIds = new Set<string>();
+  const activeAttributionByInvoiceId = new Map((invoiceAttributionsRes.data ?? []).map((row) => [row.stripe_invoice_id, row]));
+  const companyById = new Map(companiesWithStripe.map((company) => [company.id, company]));
+
+  const pushInvoice = (invoice: Stripe.Invoice, company: (typeof companiesWithStripe)[number], stripeCustomerId: string, attributionSource: AttributionSource) => {
+    if (seenStripeInvoiceIds.has(invoice.id)) return;
+    seenStripeInvoiceIds.add(invoice.id);
+    stripeInvoices.push({
+      id: invoice.id,
+      companyId: company.id,
+      companyName: company.name,
+      stripeCustomerId,
+      attributionSource,
+      number: invoice.number ?? null,
+      status: invoice.status ?? null,
+      amountDue: Number(invoice.amount_due ?? 0) / 100,
+      amountPaid: Number(invoice.amount_paid ?? 0) / 100,
+      currency: String(invoice.currency ?? 'eur').toUpperCase(),
+      createdAt: new Date(invoice.created * 1000).toISOString(),
+      periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
+      periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
+      hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
+      invoicePdf: invoice.invoice_pdf ?? null,
+    });
+  };
 
   for (const company of companiesWithStripe) {
+    const companyTaxId = normalizeTaxId(company.nif);
     for (const stripeCustomerId of company.stripeCustomerIds) {
       try {
         const invoices = await stripe.invoices.list({ customer: stripeCustomerId, limit: 30 });
         for (const invoice of invoices.data) {
           if (seenStripeInvoiceIds.has(invoice.id)) continue;
-          seenStripeInvoiceIds.add(invoice.id);
-          stripeInvoices.push({
-            id: invoice.id,
-            companyId: company.id,
-            companyName: company.name,
-            stripeCustomerId,
-            number: invoice.number ?? null,
-            status: invoice.status ?? null,
-            amountDue: Number(invoice.amount_due ?? 0) / 100,
-            amountPaid: Number(invoice.amount_paid ?? 0) / 100,
-            currency: String(invoice.currency ?? 'eur').toUpperCase(),
-            createdAt: new Date(invoice.created * 1000).toISOString(),
-            periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
-            periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
-            hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
-            invoicePdf: invoice.invoice_pdf ?? null,
-          });
+
+          const explicitAttribution = activeAttributionByInvoiceId.get(invoice.id);
+          if (explicitAttribution) {
+            if (explicitAttribution.company_id !== company.id) continue;
+            pushInvoice(invoice, company, stripeCustomerId, 'explicit_invoice');
+            continue;
+          }
+
+          const invoiceTaxIds = getInvoiceTaxIds(invoice);
+          if (invoiceTaxIds.length > 0) {
+            if (!companyTaxId || !invoiceTaxIds.includes(companyTaxId)) continue;
+            pushInvoice(invoice, company, stripeCustomerId, 'invoice_tax_id');
+            continue;
+          }
+
+          pushInvoice(invoice, company, stripeCustomerId, 'customer_mapping_fallback');
         }
       } catch (error) {
         stripeErrors.push({
@@ -169,6 +220,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
   }
+
+  // Explicit invoice attribution can surface invoices whose Stripe Customer is
+  // intentionally not mapped wholesale (for example a Customer reused by two
+  // legal entities over time). Fetch only the exact immutable invoice ID.
+  for (const attribution of invoiceAttributionsRes.data ?? []) {
+    if (seenStripeInvoiceIds.has(attribution.stripe_invoice_id)) continue;
+    const company = companyById.get(attribution.company_id);
+    if (!company) continue;
+    try {
+      const invoice = await stripe.invoices.retrieve(attribution.stripe_invoice_id);
+      const stripeCustomerId = getInvoiceCustomerId(invoice) ?? attribution.stripe_customer_id;
+      pushInvoice(invoice, company, stripeCustomerId, 'explicit_invoice');
+    } catch (error) {
+      stripeErrors.push({
+        companyId: attribution.company_id,
+        stripeCustomerId: attribution.stripe_customer_id,
+        message: error instanceof Error ? error.message.slice(0, 180) : 'No se pudo leer la factura Stripe atribuida',
+      });
+    }
+  }
+
   stripeInvoices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const email = authRes.data.user?.email ?? profileRes.data.email ?? '';
