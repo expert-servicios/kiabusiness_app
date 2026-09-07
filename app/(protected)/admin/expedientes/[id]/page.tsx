@@ -38,7 +38,9 @@ interface CaseDetail {
   client_id: string;
   admin_note: string | null;
   docs_checklist: string[] | null;
+  assigned_to: string | null;
   client: { email: string; full_name: string | null; phone: string | null };
+  assignee: { full_name: string | null } | null;
 }
 
 

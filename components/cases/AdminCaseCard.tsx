@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FolderOpen, ExternalLink } from 'lucide-react';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS } from '@/lib/utils/case-states';
+import StaffAssigneeSelect from '@/components/admin/StaffAssigneeSelect';
 
 interface Case {
   id: string;
@@ -14,6 +15,7 @@ interface Case {
   opened_at: string;
   closed_at: string | null;
   client_id: string;
+  assigned_to?: string | null;
   client?: { full_name: string | null; email: string };
 }
 
@@ -34,6 +36,25 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const [organism, setOrganism] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [assignedTo, setAssignedTo] = useState<string | null>(caseItem.assigned_to ?? null);
+  const [assigning, setAssigning] = useState(false);
+
+  const handleAssign = async (nextAssignee: string | null) => {
+    setAssigning(true);
+    try {
+      const response = await fetch(`/api/admin/cases/${caseItem.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_to: nextAssignee }),
+      });
+      if (response.ok) {
+        setAssignedTo(nextAssignee);
+        router.refresh();
+      }
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const stateChanged = state !== caseItem.state;
   const needsOrganism = state === 'pendiente_externo';
@@ -114,6 +135,13 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
         >
           {saving ? 'Guardando…' : 'Cambiar estado'}
         </button>
+
+        <StaffAssigneeSelect
+          value={assignedTo}
+          disabled={assigning}
+          onChange={(id) => void handleAssign(id)}
+          className="rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
+        />
 
         <Link
           href={`/admin/expedientes/${caseItem.id}`}

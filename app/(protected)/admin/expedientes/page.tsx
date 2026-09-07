@@ -12,7 +12,9 @@ interface CaseWithClient {
   opened_at: string;
   closed_at: string | null;
   client_id: string;
+  assigned_to: string | null;
   client: { full_name: string | null; email: string };
+  assignee: { full_name: string | null } | null;
 }
 
 async function getAdminCases(): Promise<CaseWithClient[]> {

@@ -22,10 +22,12 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('cases')
-      .select('id,category,service,state,status,opened_at,closed_at,client_id,company_id,admin_note,docs_checklist')
+      .select('id,category,service,state,status,opened_at,closed_at,client_id,company_id,admin_note,docs_checklist,assigned_to')
       .order('opened_at', { ascending: false });
 
     if (clientIdFilter) query = query.eq('client_id', clientIdFilter);
+    const assignedToFilter = searchParams.get('assignedTo');
+    if (assignedToFilter) query = query.eq('assigned_to', assignedToFilter);
 
     const { data: cases, error } = await query;
     if (error) return NextResponse.json({ error: 'Error al obtener expedientes' }, { status: 500 });
@@ -51,9 +53,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const assigneeIds = [...new Set((cases ?? []).map((c) => c.assigned_to).filter(Boolean))] as string[];
+    const assigneeMap: Record<string, { full_name: string | null }> = {};
+    if (assigneeIds.length > 0) {
+      const { data: assignees } = await admin.from('profiles').select('id,full_name').in('id', assigneeIds);
+      for (const a of assignees ?? []) assigneeMap[a.id] = { full_name: a.full_name ?? null };
+    }
+
     const enriched = (cases ?? []).map((c) => ({
       ...c,
-      client: profileMap[c.client_id] ?? { full_name: null, email: '' }
+      client: profileMap[c.client_id] ?? { full_name: null, email: '' },
+      assignee: c.assigned_to ? assigneeMap[c.assigned_to] ?? null : null,
     }));
 
     return NextResponse.json({ cases: enriched });

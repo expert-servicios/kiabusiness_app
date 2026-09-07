@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CircleDashed, ListTodo, Loader2, Plus, RefreshCw } from 'lucide-react';
+import StaffAssigneeSelect from '@/components/admin/StaffAssigneeSelect';
 
 type Task = {
   id: string;
@@ -13,12 +14,14 @@ type Task = {
   priority: 'baja' | 'media' | 'alta' | 'critica';
   case_id: string | null;
   client_id: string | null;
+  assigned_to: string | null;
   due_date: string | null;
   source: 'manual' | 'kia' | 'system';
   created_at: string;
   completed_at: string | null;
   client: { id: string; full_name: string | null } | null;
   case: { id: string; service: string; state: string; status: string } | null;
+  assignee: { id: string; full_name: string | null } | null;
 };
 
 type TaskFilter = 'open' | 'all' | Task['status'];
@@ -79,6 +82,20 @@ export default function AdminTasksPage() {
       if (!res.ok) throw new Error(json.error ?? 'No se pudo actualizar');
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo actualizar'); }
+    finally { setSaving(''); }
+  }
+
+  async function setAssignee(id: string, assignedTo: string | null) {
+    setSaving(id); setError('');
+    try {
+      const res = await fetch('/api/admin/tasks', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, assignedTo }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'No se pudo reasignar');
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo reasignar'); }
     finally { setSaving(''); }
   }
 
@@ -156,11 +173,20 @@ export default function AdminTasksPage() {
                     {task.due_date && <span className={overdue ? 'font-bold text-red-700' : ''}>Vence: {new Date(`${task.due_date}T12:00:00`).toLocaleDateString('es-ES')}</span>}
                     {task.client && <Link href={`/admin/clientes/${task.client.id}`} className="font-bold text-[#9a6a17]">Cliente: {task.client.full_name ?? task.client.id.slice(0, 8)}</Link>}
                     {task.case && <Link href={`/admin/expedientes?caseId=${task.case.id}`} className="font-bold text-[#9a6a17]">Expediente: {task.case.service}</Link>}
+                    <span>{task.assignee ? `Asignada a: ${task.assignee.full_name ?? 'Sin nombre'}` : 'Sin asignar'}</span>
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  {task.status === 'pendiente' && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'en_progreso')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold"><CircleDashed className="h-3.5 w-3.5" />Iniciar</button>}
-                  {(task.status === 'pendiente' || task.status === 'en_progreso') && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'completada')} className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-2 text-xs font-bold text-white"><CheckCircle2 className="h-3.5 w-3.5" />Completar</button>}
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <StaffAssigneeSelect
+                    value={task.assigned_to}
+                    disabled={saving === task.id}
+                    onChange={(assigneeId) => void setAssignee(task.id, assigneeId)}
+                    className="rounded-lg border border-[#d8cbb5] px-2 py-1.5 text-xs"
+                  />
+                  <div className="flex gap-2">
+                    {task.status === 'pendiente' && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'en_progreso')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold"><CircleDashed className="h-3.5 w-3.5" />Iniciar</button>}
+                    {(task.status === 'pendiente' || task.status === 'en_progreso') && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'completada')} className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-2 text-xs font-bold text-white"><CheckCircle2 className="h-3.5 w-3.5" />Completar</button>}
+                  </div>
                 </div>
               </div>
             </div>;
