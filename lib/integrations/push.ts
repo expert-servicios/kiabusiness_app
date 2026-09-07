@@ -1,5 +1,7 @@
 import webpush from 'web-push';
 import { getSupabaseAdmin } from './supabase';
+import { notifyAdminsTelegram } from './telegram';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 export interface PushPayload {
   title: string;
@@ -55,6 +57,10 @@ async function sendToSubscriptions(
 
 // Send push to all admin + owner users
 export async function notifyAdmins(payload: PushPayload): Promise<void> {
+  const link = payload.url ? absoluteAppUrl(payload.url) : null;
+  const telegramText = `<b>${escapeHtml(payload.title)}</b>\n${escapeHtml(payload.body)}${link ? `\n${link}` : ''}`;
+  notifyAdminsTelegram(telegramText).catch(() => {});
+
   if (!ensureVapid()) return;
   const admin = getSupabaseAdmin();
 
@@ -66,6 +72,10 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
   if (!profiles?.length) return;
 
   await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // Send push to a specific client user
