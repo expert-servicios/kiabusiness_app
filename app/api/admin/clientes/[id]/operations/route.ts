@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { id: clientId } = await params;
-  const [profileRes, authRes, membershipsRes, casesRes, tasksRes, subsRes, checkoutsRes, ordersRes] = await Promise.all([
+  const [profileRes, authRes, membershipsRes, casesRes, tasksRes, clientSubsRes, checkoutsRes, ordersRes] = await Promise.all([
     admin.from('profiles').select('id,full_name,email,active_company_id,status').eq('id', clientId).single(),
     admin.auth.admin.getUserById(clientId),
     admin.from('profile_companies').select('company_id,company:companies(id,razon_social,nombre_comercial,cif_nif,stripe_customer_id,status)').eq('profile_id', clientId),
@@ -40,14 +40,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       id: company.id,
       name: company.razon_social || company.nombre_comercial || company.id,
       nif: company.cif_nif,
-      stripeCustomerId: company.stripe_customer_id,
+      legacyStripeCustomerId: company.stripe_customer_id,
       status: company.status,
     }] : [];
   });
   const companyIds = companies.map((company) => company.id);
   const caseIds = (casesRes.data ?? []).map((item) => item.id);
 
-  const [obligationsRes, integrationsRes, directDocsRes, caseDocsRes, companyDocsRes] = await Promise.all([
+  const [
+    obligationsRes,
+    integrationsRes,
+    directDocsRes,
+    caseDocsRes,
+    companyDocsRes,
+    stripeMappingsRes,
+    companySubsRes,
+  ] = await Promise.all([
     companyIds.length
       ? admin.from('obligations_calendar').select('id,company_id,kind,due_date,status,attendees,created_at').in('company_id', companyIds).order('due_date', { ascending: true }).limit(100)
       : Promise.resolve({ data: [] }),
@@ -61,6 +69,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     companyIds.length
       ? admin.from('documents').select('id,company_id,case_id,kind,state,created_at').in('company_id', companyIds)
       : Promise.resolve({ data: [] }),
+    companyIds.length
+      ? admin.from('company_stripe_customers').select('company_id,stripe_customer_id,is_primary,status').in('company_id', companyIds).in('status', ['active', 'historical'])
+      : Promise.resolve({ data: [] }),
+    companyIds.length
+      ? admin.from('subscriptions').select('id,plan_name,status,company_id,current_period_start,current_period_end,canceled_at,stripe_subscription_id,created_at').in('company_id', companyIds).order('created_at', { ascending: false }).limit(100)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const docMap = new Map<string, { id: string; company_id: string | null; case_id: string | null; kind: string | null; state: string | null; created_at: string }>();
@@ -71,11 +85,43 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
   const documents = Array.from(docMap.values());
 
+  const customerIdsByCompany = new Map<string, string[]>();
+  for (const mapping of stripeMappingsRes.data ?? []) {
+    const existing = customerIdsByCompany.get(mapping.company_id) ?? [];
+    if (!existing.includes(mapping.stripe_customer_id)) {
+      if (mapping.is_primary) existing.unshift(mapping.stripe_customer_id);
+      else existing.push(mapping.stripe_customer_id);
+    }
+    customerIdsByCompany.set(mapping.company_id, existing);
+  }
+
+  const companiesWithStripe = companies.map((company) => {
+    const mappedIds = customerIdsByCompany.get(company.id) ?? [];
+    const stripeCustomerIds = mappedIds.length
+      ? mappedIds
+      : company.legacyStripeCustomerId
+        ? [company.legacyStripeCustomerId]
+        : [];
+    return {
+      id: company.id,
+      name: company.name,
+      nif: company.nif,
+      status: company.status,
+      stripeCustomerIds,
+      stripeIdentitySource: mappedIds.length ? 'company_stripe_customers' : company.legacyStripeCustomerId ? 'legacy_company_field' : 'none',
+    };
+  });
+
+  const subscriptions = [...(clientSubsRes.data ?? []), ...(companySubsRes.data ?? [])]
+    .filter((subscription, index, all) => all.findIndex((candidate) => candidate.id === subscription.id) === index)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   const stripe = getStripeClient();
   const stripeInvoices: Array<{
     id: string;
     companyId: string;
     companyName: string;
+    stripeCustomerId: string;
     number: string | null;
     status: string | null;
     amountDue: number;
@@ -87,34 +133,40 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     hostedInvoiceUrl: string | null;
     invoicePdf: string | null;
   }> = [];
-  const stripeErrors: Array<{ companyId: string; message: string }> = [];
+  const stripeErrors: Array<{ companyId: string; stripeCustomerId: string; message: string }> = [];
+  const seenStripeInvoiceIds = new Set<string>();
 
-  for (const company of companies) {
-    if (!company.stripeCustomerId) continue;
-    try {
-      const invoices = await stripe.invoices.list({ customer: company.stripeCustomerId, limit: 30 });
-      for (const invoice of invoices.data) {
-        stripeInvoices.push({
-          id: invoice.id,
+  for (const company of companiesWithStripe) {
+    for (const stripeCustomerId of company.stripeCustomerIds) {
+      try {
+        const invoices = await stripe.invoices.list({ customer: stripeCustomerId, limit: 30 });
+        for (const invoice of invoices.data) {
+          if (seenStripeInvoiceIds.has(invoice.id)) continue;
+          seenStripeInvoiceIds.add(invoice.id);
+          stripeInvoices.push({
+            id: invoice.id,
+            companyId: company.id,
+            companyName: company.name,
+            stripeCustomerId,
+            number: invoice.number ?? null,
+            status: invoice.status ?? null,
+            amountDue: Number(invoice.amount_due ?? 0) / 100,
+            amountPaid: Number(invoice.amount_paid ?? 0) / 100,
+            currency: String(invoice.currency ?? 'eur').toUpperCase(),
+            createdAt: new Date(invoice.created * 1000).toISOString(),
+            periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
+            periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
+            hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
+            invoicePdf: invoice.invoice_pdf ?? null,
+          });
+        }
+      } catch (error) {
+        stripeErrors.push({
           companyId: company.id,
-          companyName: company.name,
-          number: invoice.number ?? null,
-          status: invoice.status ?? null,
-          amountDue: Number(invoice.amount_due ?? 0) / 100,
-          amountPaid: Number(invoice.amount_paid ?? 0) / 100,
-          currency: String(invoice.currency ?? 'eur').toUpperCase(),
-          createdAt: new Date(invoice.created * 1000).toISOString(),
-          periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
-          periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
-          hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
-          invoicePdf: invoice.invoice_pdf ?? null,
+          stripeCustomerId,
+          message: error instanceof Error ? error.message.slice(0, 180) : 'No se pudieron leer las facturas Stripe',
         });
       }
-    } catch (error) {
-      stripeErrors.push({
-        companyId: company.id,
-        message: error instanceof Error ? error.message.slice(0, 180) : 'No se pudieron leer las facturas Stripe',
-      });
     }
   }
   stripeInvoices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -123,7 +175,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const today = new Date().toISOString().slice(0, 10);
   const openTasks = (tasksRes.data ?? []).filter((task) => task.status === 'pendiente' || task.status === 'en_progreso');
   const openCases = (casesRes.data ?? []).filter((item) => item.state !== 'finalizado');
-  const activeSubs = (subsRes.data ?? []).filter((sub) => sub.status === 'active' || sub.status === 'trialing');
+  const activeSubs = subscriptions.filter((sub) => sub.status === 'active' || sub.status === 'trialing');
   const activeIntegrations = (integrationsRes.data ?? []).filter((item) => item.status === 'active');
 
   return NextResponse.json({
@@ -134,7 +186,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       activeCompanyId: profileRes.data.active_company_id,
       status: profileRes.data.status,
     },
-    companies,
+    companies: companiesWithStripe,
     summary: {
       openTasks: openTasks.length,
       overdueTasks: openTasks.filter((task) => task.due_date && task.due_date < today).length,
@@ -149,7 +201,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     },
     tasks: tasksRes.data ?? [],
     cases: casesRes.data ?? [],
-    subscriptions: subsRes.data ?? [],
+    subscriptions,
     checkoutSessions: checkoutsRes.data ?? [],
     orders: ordersRes.data ?? [],
     obligations: obligationsRes.data ?? [],
