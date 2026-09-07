@@ -230,11 +230,29 @@ export default async function PlanesPage({ searchParams }: Props) {
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Planes mensuales con Holded</p>
           <h1 className="mt-5 font-serif text-4xl font-bold leading-tight md:text-6xl">
-            Revisión y gestión contable desde 49 €/mes.
+            Elige cuánto quieres implicarte
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-[#C9D1D9] md:text-lg">
-            Elige cuánto quieres implicarte. Tú trabajas en <strong className="text-[#D4A017]">Holded</strong>, Kia detecta alertas y EXPERT revisa, valida o gestiona según el plan contratado.
+            Tú trabajas en <strong className="text-[#D4A017]">Holded</strong>, Kia detecta alertas y EXPERT revisa, valida o gestiona según el plan que elijas. <strong className="text-[#D4A017]">A más implicación tuya, menor cuota mensual.</strong>
           </p>
+
+          <div className="mx-auto mt-9 max-w-2xl">
+            <div className="h-1.5 rounded-full bg-gradient-to-r from-[#23364D] via-[#8a6a2a] to-[#D4A017]" />
+            <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF] sm:text-xs">
+              <span>Personalizado</span>
+              <span>Colaborativo</span>
+              <span>Avanzado</span>
+              <span className="text-[#D4A017]">Supervisión</span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#C9D1D9]">
+              <span>Gestión delegada</span>
+              <span className="flex items-center gap-1.5 font-semibold text-[#D4A017]">
+                Cuanto más te impliques, menos pagas
+                <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="#planes"
@@ -552,6 +570,31 @@ export default async function PlanesPage({ searchParams }: Props) {
                 <p className="mt-2 text-sm leading-6 text-[#C9D1D9]">{text}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#07111d] px-6 py-14 text-center text-[#F8F6F1] md:py-16">
+        <div className="mx-auto max-w-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">¿Sigues con dudas?</p>
+          <h2 className="mt-3 font-serif text-2xl font-bold md:text-3xl">¿Dudas sobre qué plan encaja contigo?</h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-7 text-[#9CA3AF]">
+            Cuéntanos cómo gestionas tu empresa hoy y te decimos qué plan te conviene, sin compromiso.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/ayuda/kia?topic=planes-mensuales"
+              className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Habla con Kia ahora
+            </Link>
+            <Link
+              href="/cita"
+              className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+            >
+              Reservar cita con un asesor
+            </Link>
           </div>
         </div>
       </section>
