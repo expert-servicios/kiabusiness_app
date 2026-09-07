@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { getPublishedBlogArticles } from '@/lib/utils/blog';
+import { BlogExplorer } from '@/components/site/BlogExplorer';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 
 export const metadata: Metadata = {
@@ -20,14 +21,6 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
   alternates: { canonical: 'https://expertconsulting.es/blog' }
-};
-
-const categoryColors: Record<string, string> = {
-  Fiscalidad: 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10',
-  Extranjería: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
-  Empresas: 'text-emerald-400 border-emerald-400/40 bg-emerald-400/10',
-  Holded: 'text-rose-400 border-rose-400/40 bg-rose-400/10',
-  Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
 };
 
 const blogJsonLd = {
@@ -50,7 +43,23 @@ const blogJsonLd = {
 };
 
 export default function BlogPage() {
-  const articles = getPublishedBlogArticles();
+  const articleList = getPublishedBlogArticles().map((article) => ({
+    slug: article.slug,
+    category: article.category,
+    title: article.title,
+    excerpt: article.excerpt,
+    date: article.date,
+    readTime: article.readTime,
+    tags: article.tags,
+    relatedServiceSlugs: article.relatedServiceSlugs
+  }));
+
+  const categories = Array.from(new Set(articleList.map((article) => article.category))).sort((a, b) =>
+    a.localeCompare(b, 'es')
+  );
+  const tags = Array.from(new Set(articleList.flatMap((article) => article.tags))).sort((a, b) =>
+    a.localeCompare(b, 'es')
+  );
 
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
@@ -67,47 +76,8 @@ export default function BlogPage() {
       </div>
 
       {/* Articles */}
-      <section className="mx-auto max-w-5xl px-6 py-12 md:py-16">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => {
-            const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
-            return (
-              <article
-                key={article.slug}
-                className="flex flex-col border border-[#D4A017]/20 bg-white shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017]/50 hover:shadow-[0_10px_28px_rgba(13,27,42,0.10)]"
-              >
-                <div className="flex flex-1 flex-col p-5">
-                  <span className={`inline-block self-start border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
-                    {article.category}
-                  </span>
-                  <h2 className="mt-3 font-serif text-lg font-bold leading-snug text-[#0D1B2A]">{article.title}</h2>
-                  <p className="mt-3 flex-1 text-sm leading-6 text-[#23364D]">{article.excerpt}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {article.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="border border-[#D4A017]/20 px-2 py-1 text-[11px] text-[#6B7280]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-5 flex items-center justify-between text-xs text-[#9CA3AF]">
-                    <span>{article.date}</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {article.readTime}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/blog/${article.slug}`}
-                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
-                  >
-                    Leer artículo
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+      <section className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+        <BlogExplorer articles={articleList} categories={categories} tags={tags} />
 
         {/* Newsletter */}
         <div className="mt-12 bg-[#0D1B2A] p-8">
