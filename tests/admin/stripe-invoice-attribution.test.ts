@@ -7,7 +7,7 @@ function source(path: string): string {
 }
 
 describe('Stripe invoice legal-entity attribution', () => {
-  const migration = source('supabase/migrations/20260907182500_add_stripe_invoice_company_attributions.sql');
+  const migration = source('supabase/migrations/20260907184513_add_stripe_invoice_company_attributions.sql');
   const route = source('app/api/admin/clientes/[id]/stripe-invoice-attributions/route.ts');
   const revokeRoute = source('app/api/admin/clientes/[id]/stripe-invoice-attributions/[attributionId]/route.ts');
   const operations = source('app/api/admin/clientes/[id]/operations/route.ts');
