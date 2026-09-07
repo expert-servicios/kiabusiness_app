@@ -36,23 +36,23 @@ import { academyPrograms } from '@/lib/data/academy-catalog';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
-  title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
+  title: 'Asesoría fiscal y legal inteligente para empresas responsables | EXPERT Consulting',
   description:
-    'Plataforma operativa para asesorías, gestorías y despachos: clientes, expedientes, documentos, pagos y Holded integrado. También asesoría fiscal, legal y administrativa para empresas y autónomos.',
+    'Gestión fiscal, legal y contable con IA (Kia) y equipo experto. Cuanto más te impliques en la gestión de tu empresa, menos pagas. Planes desde 49€/mes.',
   openGraph: {
     type: 'website',
     url: 'https://expertconsulting.es',
-    title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
+    title: 'Asesoría fiscal y legal inteligente para empresas responsables | EXPERT Consulting',
     description:
-      'Plataforma operativa para asesorías, gestorías y despachos: clientes, expedientes, documentos, pagos y Holded integrado.',
-    siteName: 'EXPERT — Plataforma para Asesorías',
+      'Gestión fiscal, legal y contable con IA (Kia) y equipo experto. Cuanto más te impliques en la gestión de tu empresa, menos pagas. Planes desde 49€/mes.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
     images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
-    description: 'Plataforma para asesorías, gestorías y despachos. También asesoría fiscal y legal para empresas y autónomos.',
+    title: 'Asesoría fiscal y legal inteligente para empresas responsables | EXPERT Consulting',
+    description: 'Gestión fiscal, legal y contable con IA (Kia) y equipo experto. Planes desde 49€/mes.',
     images: ['/branding/expert%20servicios.png']
   },
   alternates: { canonical: 'https://expertconsulting.es' }
