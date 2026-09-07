@@ -156,7 +156,9 @@ async function inspectCustomer(customerId: string): Promise<CustomerEvidence> {
     number: invoice.number ?? null,
     status: invoice.status ?? null,
     customerName: invoice.customer_name ?? null,
-    customerTaxIds: (invoice.customer_tax_ids ?? []).map((item) => item.value).filter(Boolean),
+    customerTaxIds: (invoice.customer_tax_ids ?? [])
+      .map((item) => item.value)
+      .filter((value): value is string => typeof value === 'string' && value.length > 0),
     amountPaid: Number(invoice.amount_paid ?? 0) / 100,
     amountDue: Number(invoice.amount_due ?? 0) / 100,
     currency: String(invoice.currency ?? 'eur').toUpperCase(),
