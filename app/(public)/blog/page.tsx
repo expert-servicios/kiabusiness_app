@@ -70,7 +70,7 @@ export default function BlogPage() {
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Blog</p>
           <h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">Guías y artículos sobre fiscalidad en España</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[#9CA3AF]">
-            Contenido práctico sobre impuestos, extranjería, gestión de empresas y herramientas digitales. Sin jerga innecesaria.
+            Fiscalidad, IA y gestión explicadas sin tecnicismos, para empresarios que quieren entender — no solo delegar.
           </p>
         </div>
       </div>
@@ -95,6 +95,11 @@ export default function BlogPage() {
               <NewsletterForm source="blog" variant="dark" layout="horizontal" />
             </div>
           </div>
+          <p className="mt-6 border-t border-[#D4A017]/15 pt-4 text-center text-xs text-[#9CA3AF]">
+            <Link href="/docs" className="font-semibold text-[#D4A017] transition hover:text-[#F2C14E]">
+              ¿Prefieres ir directo a la base de conocimientos? →
+            </Link>
+          </p>
         </div>
 
         <div className="mt-6 border border-[#D4A017]/25 bg-white p-8 text-center">
