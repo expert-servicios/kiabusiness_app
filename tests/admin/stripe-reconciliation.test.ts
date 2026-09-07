@@ -21,6 +21,13 @@ describe('Admin Stripe reconciliation', () => {
     expect(page).toContain('IDs Stripe exactos');
   });
 
+  it('blocks a Stripe Customer reused across more than one legal tax identity', () => {
+    expect(route).toContain('mixedTaxHistory: taxIds.length > 1');
+    expect(route).toContain("code: 'mixed_customer_tax_history'");
+    expect(route).toContain('atribución por factura/periodo');
+    expect(route).toContain('if (evidence.mixedTaxHistory) return mixedHistoryResponse(evidence)');
+  });
+
   it('creates a company only after duplicate-tax-id and existing-mapping checks', () => {
     expect(route).toContain("action: z.literal('create_company_and_map')");
     expect(route).toContain(".from('companies')");
