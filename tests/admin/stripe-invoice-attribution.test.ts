@@ -33,6 +33,11 @@ describe('Stripe invoice legal-entity attribution', () => {
     expect(page).toContain('La factura manda sobre el Customer');
   });
 
+  it('requires the selected company to belong to the resolved tenant', () => {
+    expect(route).toContain("code: 'company_tenant_mismatch'");
+    expect(route).toContain('companyMembership.company.tenant_id !== tenant.id');
+  });
+
   it('uses invoice tax identity as evidence and fails closed on mismatch', () => {
     expect(route).toContain("code: 'company_tax_id_required'");
     expect(route).toContain("code: 'invoice_tax_id_mismatch'");
@@ -65,6 +70,13 @@ describe('Stripe invoice legal-entity attribution', () => {
     expect(operations).toContain('const invoiceTaxIds = getInvoiceTaxIds(invoice)');
     expect(operations).toContain("pushInvoice(invoice, company, stripeCustomerId, 'invoice_tax_id')");
     expect(operations).toContain('stripe.invoices.retrieve(attribution.stripe_invoice_id)');
+  });
+
+  it('sees explicit attributions for mapped Customers even when they point outside this Client 360', () => {
+    expect(operations).toContain(".in('stripe_customer_id', mappedCustomerIds)");
+    expect(operations).toContain(".in('tenant_id', tenantIds)");
+    expect(operations).toContain('if (explicitAttribution.company_id !== company.id) continue');
+    expect(operations).toContain('An explicit attribution anywhere in this tenant always wins');
   });
 
   it('exposes invoice attribution from Client 360 with confirmation and visible history', () => {
