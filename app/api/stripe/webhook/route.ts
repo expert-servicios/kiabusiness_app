@@ -736,6 +736,7 @@ export async function POST(req: NextRequest) {
           .insert({
             source          : 'catalog',
             client_id       : session.client_reference_id ?? null,
+            company_id      : session.metadata?.company_id ?? null,
             stripe_payment_id: paymentId,
             amount_eur      : amountEur,
             ...legacyOrderFields(amountEur, serviceName),
