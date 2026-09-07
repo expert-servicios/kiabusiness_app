@@ -9,9 +9,7 @@ import { categories } from '@/lib/utils/catalog';
 import { CartIcon } from '@/components/cart/CartIcon';
 
 const navLinks = [
-  { label: 'Formación', href: '/academy' },
   { label: 'Para asesorías', href: '/para-asesorias', highlight: true },
-  { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Reservar cita', href: '/cita' }
 ] as const;
@@ -32,15 +30,22 @@ const planesLinks = [
   { label: 'Presupuesto personalizado', href: '/planes/presupuesto-personalizado' }
 ];
 
+const recursosLinks = [
+  { label: 'Blog', href: '/blog' },
+  { label: 'Base de conocimientos', href: '/docs' },
+];
+
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [planesOpen, setPlanesOpen] = useState(false);
   const [holdedOpen, setHoldedOpen] = useState(false);
+  const [recursosOpen, setRecursosOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const planesDropdownRef = useRef<HTMLDivElement>(null);
   const holdedDropdownRef = useRef<HTMLDivElement>(null);
+  const recursosDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -48,6 +53,7 @@ export function Header() {
       setServicesOpen(false);
       setPlanesOpen(false);
       setHoldedOpen(false);
+      setRecursosOpen(false);
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [pathname]);
@@ -64,6 +70,7 @@ export function Header() {
         setServicesOpen(false);
         setPlanesOpen(false);
         setHoldedOpen(false);
+        setRecursosOpen(false);
       }
     }
 
@@ -87,6 +94,9 @@ export function Header() {
       if (holdedDropdownRef.current && !holdedDropdownRef.current.contains(e.target as Node)) {
         setHoldedOpen(false);
       }
+      if (recursosDropdownRef.current && !recursosDropdownRef.current.contains(e.target as Node)) {
+        setRecursosOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -97,6 +107,7 @@ export function Header() {
     setServicesOpen(false);
     setPlanesOpen(false);
     setHoldedOpen(false);
+    setRecursosOpen(false);
   }
 
   function toggleMobile() {
@@ -105,6 +116,7 @@ export function Header() {
         setServicesOpen(false);
         setPlanesOpen(false);
         setHoldedOpen(false);
+        setRecursosOpen(false);
       }
       return !open;
     });
@@ -141,7 +153,7 @@ export function Header() {
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); }}
+              onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); setHoldedOpen(false); setRecursosOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={servicesOpen}
             >
@@ -172,11 +184,49 @@ export function Header() {
             )}
           </div>
 
+          {/* Holded dropdown */}
+          <div className="relative" ref={holdedDropdownRef}>
+            <button
+              type="button"
+              onClick={() => { setHoldedOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setRecursosOpen(false); }}
+              className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
+              aria-expanded={holdedOpen}
+            >
+              Holded
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {holdedOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
+                <Link
+                  href="/planes/gratuito"
+                  onClick={() => setHoldedOpen(false)}
+                  className="block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]"
+                >
+                  Prueba gratuita 14 días →
+                </Link>
+                {holdedLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setHoldedOpen(false)}
+                    className={link.highlight
+                      ? 'block px-4 py-2.5 text-sm font-bold text-[#D4A017] transition hover:bg-[#23364D]'
+                      : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Planes dropdown */}
           <div className="relative" ref={planesDropdownRef}>
             <button
               type="button"
-              onClick={() => { setPlanesOpen((v) => !v); setServicesOpen(false); }}
+              onClick={() => { setPlanesOpen((v) => !v); setServicesOpen(false); setHoldedOpen(false); setRecursosOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={planesOpen}
             >
@@ -203,31 +253,30 @@ export function Header() {
             )}
           </div>
 
-          {/* Holded dropdown */}
-          <div className="relative" ref={holdedDropdownRef}>
+          <Link href="/academy" className="transition hover:text-[#D4A017]">Formación</Link>
+
+          {/* Recursos dropdown (Blog + Base de conocimientos) */}
+          <div className="relative" ref={recursosDropdownRef}>
             <button
               type="button"
-              onClick={() => { setHoldedOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); }}
+              onClick={() => { setRecursosOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setHoldedOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
-              aria-expanded={holdedOpen}
+              aria-expanded={recursosOpen}
             >
-              Holded
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+              Recursos
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {holdedOpen && (
-              <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
-                {holdedLinks.map((link) => (
+            {recursosOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-64 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
+                {recursosLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setHoldedOpen(false)}
-                    className={link.highlight
-                      ? 'block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]'
-                      : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
-                    }
+                    onClick={() => setRecursosOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                   >
-                    {link.highlight ? `${link.label} →` : link.label}
+                    {link.label}
                   </Link>
                 ))}
               </div>
@@ -300,6 +349,7 @@ export function Header() {
                   setServicesOpen((v) => !v);
                   setPlanesOpen(false);
                   setHoldedOpen(false);
+                  setRecursosOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={servicesOpen}
@@ -330,6 +380,48 @@ export function Header() {
               )}
             </div>
 
+            {/* Mobile Holded accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHoldedOpen((v) => !v);
+                  setServicesOpen(false);
+                  setPlanesOpen(false);
+                  setRecursosOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                aria-expanded={holdedOpen}
+              >
+                Holded
+                <ChevronDown className={`h-4 w-4 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {holdedOpen && (
+                <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
+                  <Link
+                    href="/planes/gratuito"
+                    onClick={closeMobile}
+                    className="block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]"
+                  >
+                    Prueba gratuita 14 días →
+                  </Link>
+                  {holdedLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobile}
+                      className={link.highlight
+                        ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
+                        : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
+                      }
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Mobile Planes accordion */}
             <div>
               <button
@@ -338,6 +430,7 @@ export function Header() {
                   setPlanesOpen((v) => !v);
                   setServicesOpen(false);
                   setHoldedOpen(false);
+                  setRecursosOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={planesOpen}
@@ -364,32 +457,38 @@ export function Header() {
               )}
             </div>
 
-            {/* Mobile Holded accordion */}
+            <Link
+              href="/academy"
+              onClick={closeMobile}
+              className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+            >
+              Formación
+            </Link>
+
+            {/* Mobile Recursos accordion */}
             <div>
               <button
                 type="button"
                 onClick={() => {
-                  setHoldedOpen((v) => !v);
+                  setRecursosOpen((v) => !v);
                   setServicesOpen(false);
                   setPlanesOpen(false);
+                  setHoldedOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
-                aria-expanded={holdedOpen}
+                aria-expanded={recursosOpen}
               >
-                Holded
-                <ChevronDown className={`h-4 w-4 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+                Recursos
+                <ChevronDown className={`h-4 w-4 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
               </button>
-              {holdedOpen && (
+              {recursosOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
-                  {holdedLinks.map((link) => (
+                  {recursosLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={closeMobile}
-                      className={link.highlight
-                        ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
-                        : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
-                      }
+                      className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
                     >
                       {link.label}
                     </Link>

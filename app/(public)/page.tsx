@@ -5,12 +5,17 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
   ArrowRight,
+  Award,
   Briefcase,
   Calculator,
   Check,
+  Clock,
   FileCheck,
   FileText,
+  BookOpen,
+  Gift,
   Globe2,
+  GraduationCap,
   Home,
   LockKeyhole,
   MonitorCheck,
@@ -18,13 +23,16 @@ import {
   ShieldCheck,
   Star,
   Upload,
+  Zap,
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
-import { HoldedDemoForm } from '@/components/site/HoldedDemoForm';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+import { CalendlyButton } from '@/components/site/CalendlyButton';
 import { getPublishedBlogArticles } from '@/lib/utils/blog';
+import { academyPrograms } from '@/lib/data/academy-catalog';
+import { getCalAcademyUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
   title: 'EXPERT | Plataforma para asesorías y gestión fiscal en España',
@@ -174,11 +182,28 @@ const operations: Array<IconItem & { title: string; text: string }> = [
   }
 ];
 
-const holdedBenefits = [
-  'Revisión de tu contabilidad actual',
-  'Plan de migración a Holded por fases',
-  'Configuración de facturación, bancos y reporting',
-  'Acompañamiento inicial para tu equipo'
+const holdedCards = [
+  {
+    Icon: Gift,
+    title: 'Prueba gratis 14 días',
+    text: 'Sin tarjeta de crédito. Lo activamos con nuestra cuenta de partner y hacemos el onboarding contigo.',
+    href: '/planes/gratuito',
+    cta: 'Solicitar prueba gratuita',
+  },
+  {
+    Icon: Upload,
+    title: 'Migración e implantación',
+    text: 'Desde 499 € + IVA. Auditoría, limpieza y estructura lista para operar, con datos bien vinculados.',
+    href: '/holded',
+    cta: 'Ver packs de migración',
+  },
+  {
+    Icon: Zap,
+    title: 'Licencia con asistencia',
+    text: 'Contrata Holded a través de nosotros: configuración, soporte y formación, mismas condiciones que Holded.',
+    href: '/contacto?asunto=Licencia%20Holded%20con%20asistencia',
+    cta: 'Solicitar información',
+  },
 ] as const;
 
 export default async function HomePage({
@@ -247,8 +272,10 @@ export default async function HomePage({
       <HowItWorks />
       <ClientPortal />
       <HoldedMigration />
+      <Formacion />
       <Operations />
       <BlogPreview />
+      <DocsPreview />
       <ReviewsPreview />
       <FinalCta />
     </main>
@@ -431,34 +458,107 @@ function ClientPortal() {
 function HoldedMigration() {
   return (
     <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
-      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div>
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <SectionTitle
             dark
-            eyebrow="Holded Solution Partner"
-            title="Migración de contabilidad a Holded con criterio profesional."
-            text="Preparamos el paso desde hojas de cálculo, programas antiguos o procesos dispersos hacia un entorno contable más claro, conectado y mantenible."
+            eyebrow="Holded Solution Partner certificado"
+            title="La única asesoría que te vende Holded, te migra y te enseña a llevarlo."
+            text="Como Solution Partner certificados gestionamos tu acceso a Holded con las mismas condiciones que tendrías directamente con ellos — más el acompañamiento que Holded no te da."
           />
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {holdedBenefits.map((benefit) => (
-              <div key={benefit} className="flex items-start gap-3 border border-[#D4A017]/25 bg-[#23364D]/35 p-4">
-                <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" />
-                <p className="text-sm leading-6 text-[#F8F6F1]/86">{benefit}</p>
-              </div>
-            ))}
-          </div>
-
           <Link
             href="/holded"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
+            className="inline-flex shrink-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
           >
-            Ver página Holded
+            Ver todo lo que hacemos con Holded
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
-        <HoldedDemoForm />
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {holdedCards.map(({ Icon, title, text, href, cta }) => (
+            <Link
+              href={href}
+              key={title}
+              className="group flex flex-col border border-[#D4A017]/25 bg-[#23364D]/35 p-7 shadow-[0_20px_45px_rgba(13,27,42,0.32)] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
+            >
+              <span className="flex h-11 w-11 items-center justify-center bg-[#D4A017]/15 text-[#D4A017]">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-6 font-serif text-xl font-bold text-[#F8F6F1]">{title}</h3>
+              <p className="mt-3 flex-1 text-sm leading-7 text-[#9CA3AF]">{text}</p>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-[#D4A017]">
+                {cta}
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Formacion() {
+  const calAcademyUrl = getCalAcademyUrl();
+
+  return (
+    <section className="px-6 py-16 md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <SectionTitle
+            eyebrow="Formación"
+            title="Que tu equipo entienda los números, no solo los introduzca."
+            text="Programas prácticos de EXPERT Business Academy para trabajar la gestión empresarial y laboral con criterio, no a ciegas."
+          />
+          <Link
+            href="/academy"
+            className="inline-flex shrink-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
+          >
+            Ver todos los programas
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {academyPrograms.map((program) => (
+            <Link
+              href={program.slug === academyPrograms[0].slug ? '/academy' : `/academy/${program.slug}`}
+              key={program.slug}
+              className="group border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_18px_40px_rgba(13,27,42,0.11)]"
+            >
+              <span className="flex h-11 w-11 items-center justify-center border border-[#D4A017]/25 bg-[#0D1B2A] text-[#D4A017]">
+                <GraduationCap className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 font-serif text-xl font-bold leading-tight text-[#0D1B2A]">{program.name}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">{program.tagline}</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 border border-[#D4A017]/25 px-2.5 py-1 text-xs font-semibold text-[#23364D]">
+                  <Clock className="h-3.5 w-3.5 text-[#D4A017]" />
+                  {program.hoursTraining}h + {program.hoursInternship || program.hoursTutoring || 0}h {program.hoursInternship ? 'prácticas' : 'tutoría'}
+                </span>
+                <span className="inline-flex items-center gap-1.5 border border-[#D4A017]/25 px-2.5 py-1 text-xs font-semibold text-[#23364D]">
+                  <Award className="h-3.5 w-3.5 text-[#D4A017]" />
+                  {program.price}
+                </span>
+              </div>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
+                Ver programa
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </p>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8">
+          <CalendlyButton
+            url={calAcademyUrl}
+            fallbackHref="/cita"
+            className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
+          >
+            Reservar entrevista de admisión
+          </CalendlyButton>
+        </div>
       </div>
     </section>
   );
@@ -466,9 +566,10 @@ function HoldedMigration() {
 
 function Operations() {
   return (
-    <section className="px-6 py-16 md:py-20">
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
       <div className="mx-auto max-w-7xl">
         <SectionTitle
+          dark
           eyebrow="Continuidad"
           title="Para quien necesita algo más que un trámite puntual."
           text="EXPERT también cubre la gestión recurrente, la digitalización contable y el acompañamiento operativo."
@@ -477,10 +578,10 @@ function Operations() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {operations.map(({ Icon, title, text }) => (
-            <article key={title} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)]">
+            <article key={title} className="border border-[#D4A017]/25 bg-[#23364D]/35 p-7 shadow-[0_20px_45px_rgba(13,27,42,0.32)]">
               <Icon className="h-8 w-8 stroke-[#D4A017]" strokeWidth={1.7} />
-              <h3 className="mt-6 font-serif text-xl font-bold">{title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#23364D]">{text}</p>
+              <h3 className="mt-6 font-serif text-xl font-bold text-[#F8F6F1]">{title}</h3>
+              <p className="mt-3 text-sm leading-7 text-[#9CA3AF]">{text}</p>
             </article>
           ))}
         </div>
@@ -501,11 +602,10 @@ function BlogPreview() {
   const preview = getPublishedBlogArticles().slice(0, 3);
 
   return (
-    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+    <section className="px-6 py-16 md:py-20">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <SectionTitle
-            dark
             eyebrow="Blog"
             title="Guías y artículos fiscales"
             text="Contenido práctico sobre impuestos, extranjería y gestión de empresas. Sin jerga."
@@ -525,15 +625,15 @@ function BlogPreview() {
             return (
               <article
                 key={article.slug}
-                className="flex flex-col border border-[#D4A017]/20 bg-[#23364D]/35 p-6 transition hover:-translate-y-0.5 hover:border-[#D4A017]/60"
+                className="flex flex-col border border-[#D4A017]/20 bg-white p-6 shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017]/60"
               >
                 <span className={`inline-block self-start border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
                   {article.category}
                 </span>
-                <h3 className="mt-3 font-serif text-lg font-bold leading-snug text-[#F8F6F1]">
+                <h3 className="mt-3 font-serif text-lg font-bold leading-snug text-[#0D1B2A]">
                   {article.title}
                 </h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-[#9CA3AF]">{article.excerpt}</p>
+                <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">{article.excerpt}</p>
                 <div className="mt-4 flex items-center justify-between text-xs text-[#9CA3AF]">
                   <span>{article.date}</span>
                   <span>{article.readTime}</span>
@@ -551,22 +651,54 @@ function BlogPreview() {
         </div>
 
         {/* Newsletter strip */}
-        <div className="mt-12 border border-[#D4A017]/25 bg-[#23364D]/35 p-6 md:p-8">
+        <div className="mt-12 border border-[#D4A017]/25 bg-white p-6 md:p-8">
           <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">
                 Alertas fiscales
               </p>
-              <h3 className="mt-2 font-serif text-xl font-bold text-[#F8F6F1] md:text-2xl">
+              <h3 className="mt-2 font-serif text-xl font-bold text-[#0D1B2A] md:text-2xl">
                 Recibe los próximos artículos en tu email
               </h3>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-[#9CA3AF]">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[#23364D]">
                 Novedades fiscales, cambios en extranjería y guías prácticas. Sin spam. Cancela cuando quieras.
               </p>
             </div>
             <div className="md:min-w-[400px]">
-              <NewsletterForm source="home" variant="dark" layout="horizontal" />
+              <NewsletterForm source="home" variant="light" layout="horizontal" />
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DocsPreview() {
+  return (
+    <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
+          <SectionTitle
+            dark
+            eyebrow="Base de conocimientos"
+            title="¿Prefieres resolverlo tú mismo antes de escribirnos?"
+            text="Nuestra base de conocimientos reúne guías paso a paso sobre nacionalidad, fiscalidad y trámites habituales — para que encuentres la respuesta en dos minutos."
+          />
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <Link
+              href="/docs"
+              className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+            >
+              <BookOpen className="h-4 w-4" />
+              Explorar la base de conocimientos
+            </Link>
+            <Link
+              href="/contacto"
+              className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10"
+            >
+              ¿No lo encuentras? Habla con nosotros
+            </Link>
           </div>
         </div>
       </div>
