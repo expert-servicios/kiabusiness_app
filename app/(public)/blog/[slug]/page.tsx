@@ -63,6 +63,45 @@ const categoryColors: Record<string, string> = {
   Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
 };
 
+const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: string }> = {
+  Fiscalidad: {
+    text: 'En EXPERT revisamos situaciones fiscales como esta a diario. Reserva una cita gratuita y te decimos exactamente qué necesitas.',
+    ctaLabel: 'Reservar cita gratuita',
+    ctaHref: '/cita',
+  },
+  Extranjería: {
+    text: 'Preparamos y acompañamos expedientes de extranjería y nacionalidad cada semana. Reserva una cita gratuita para revisar tu caso.',
+    ctaLabel: 'Reservar cita gratuita',
+    ctaHref: '/cita',
+  },
+  Empresas: {
+    text: '¿Quieres que Kia y nuestro equipo lleven la gestión de tu empresa? Descubre qué plan encaja contigo.',
+    ctaLabel: 'Ver planes',
+    ctaHref: '/planes',
+  },
+  Holded: {
+    text: '¿Quieres que Kia vigile tu contabilidad en Holded y nuestro equipo la revise? Descubre cómo funcionan los planes.',
+    ctaLabel: 'Ver planes',
+    ctaHref: '/planes',
+  },
+  Trámites: {
+    text: 'En EXPERT gestionamos este tipo de trámites a diario. Cuéntanos tu situación y te orientamos sin compromiso.',
+    ctaLabel: 'Solicitar presupuesto',
+    ctaHref: '/solicitar-presupuesto',
+  },
+  Formación: {
+    text: '¿Quieres que tu equipo entienda los números, no solo los introduzca? Descubre los programas de EXPERT Business Academy.',
+    ctaLabel: 'Ver programas de formación',
+    ctaHref: '/academy',
+  },
+};
+
+const defaultCta = {
+  text: 'En EXPERT gestionamos este tipo de casos a diario. Cuéntanos tu situación y te orientamos sin compromiso.',
+  ctaLabel: 'Solicitar presupuesto',
+  ctaHref: '/solicitar-presupuesto',
+};
+
 export default async function BlogArticlePage({
   params
 }: {
@@ -77,6 +116,7 @@ export default async function BlogArticlePage({
 
   const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
   const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
+  const cta = categoryCta[article.category] ?? defaultCta;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
 
   // Parse "13 may 2026" → "2026-05-13"
@@ -170,18 +210,18 @@ export default async function BlogArticlePage({
               <Section key={heading} heading={heading} content={content} />
             ))}
 
-            {/* CTA */}
+            {/* CTA contextual */}
             <div className="mt-8 border border-[#D4A017]/30 bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">¿Necesitas ayuda con este trámite?</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">¿Te ha sido útil este artículo?</p>
               <p className="mt-2 text-sm leading-6 text-[#23364D]">
-                En EXPERT gestionamos este tipo de casos a diario. Cuéntanos tu situación y te orientamos sin compromiso.
+                {cta.text}
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
-                  href="/solicitar-presupuesto"
+                  href={cta.ctaHref}
                   className="inline-flex items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
                 >
-                  Solicitar presupuesto
+                  {cta.ctaLabel}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
