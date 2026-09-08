@@ -19,6 +19,7 @@ const holdedLinks = [
   { label: 'Pack Starter — 499 € + IVA', href: '/holded/pack-starter' },
   { label: 'Migración sin inventario — 899 € + IVA', href: '/holded/migracion-sin-inventario' },
   { label: 'Migración con inventario — 1.199 € + IVA', href: '/holded/migracion-con-inventario' },
+  { label: 'Migración laboral — 50 € + IVA / empleado', href: '/holded/migracion-laboral' },
 ];
 
 const planesLinks = [
@@ -35,6 +36,11 @@ const recursosLinks = [
   { label: 'Base de conocimientos', href: '/docs' },
 ];
 
+const formacionLinks = [
+  { label: 'Programa Superior de Dirección, Administración y Gestión Empresarial', href: '/academy', highlight: true },
+  { label: 'Gestión Laboral Integral — 1.200 €', href: '/academy/gestion-laboral-integral' },
+];
+
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -42,10 +48,12 @@ export function Header() {
   const [planesOpen, setPlanesOpen] = useState(false);
   const [holdedOpen, setHoldedOpen] = useState(false);
   const [recursosOpen, setRecursosOpen] = useState(false);
+  const [formacionOpen, setFormacionOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const planesDropdownRef = useRef<HTMLDivElement>(null);
   const holdedDropdownRef = useRef<HTMLDivElement>(null);
   const recursosDropdownRef = useRef<HTMLDivElement>(null);
+  const formacionDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -54,6 +62,7 @@ export function Header() {
       setPlanesOpen(false);
       setHoldedOpen(false);
       setRecursosOpen(false);
+      setFormacionOpen(false);
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [pathname]);
@@ -71,6 +80,7 @@ export function Header() {
         setPlanesOpen(false);
         setHoldedOpen(false);
         setRecursosOpen(false);
+        setFormacionOpen(false);
       }
     }
 
@@ -97,6 +107,9 @@ export function Header() {
       if (recursosDropdownRef.current && !recursosDropdownRef.current.contains(e.target as Node)) {
         setRecursosOpen(false);
       }
+      if (formacionDropdownRef.current && !formacionDropdownRef.current.contains(e.target as Node)) {
+        setFormacionOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -108,6 +121,7 @@ export function Header() {
     setPlanesOpen(false);
     setHoldedOpen(false);
     setRecursosOpen(false);
+    setFormacionOpen(false);
   }
 
   function toggleMobile() {
@@ -117,6 +131,7 @@ export function Header() {
         setPlanesOpen(false);
         setHoldedOpen(false);
         setRecursosOpen(false);
+        setFormacionOpen(false);
       }
       return !open;
     });
@@ -153,12 +168,12 @@ export function Header() {
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); setHoldedOpen(false); setRecursosOpen(false); }}
+              onClick={() => { setServicesOpen((v) => !v); setPlanesOpen(false); setHoldedOpen(false); setRecursosOpen(false); setFormacionOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={servicesOpen}
             >
               Servicios
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {servicesOpen && (
@@ -188,12 +203,12 @@ export function Header() {
           <div className="relative" ref={holdedDropdownRef}>
             <button
               type="button"
-              onClick={() => { setHoldedOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setRecursosOpen(false); }}
+              onClick={() => { setHoldedOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setRecursosOpen(false); setFormacionOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={holdedOpen}
             >
               Holded
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {holdedOpen && (
@@ -226,12 +241,12 @@ export function Header() {
           <div className="relative" ref={planesDropdownRef}>
             <button
               type="button"
-              onClick={() => { setPlanesOpen((v) => !v); setServicesOpen(false); setHoldedOpen(false); setRecursosOpen(false); }}
+              onClick={() => { setPlanesOpen((v) => !v); setServicesOpen(false); setHoldedOpen(false); setRecursosOpen(false); setFormacionOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={planesOpen}
             >
               Planes
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {planesOpen && (
@@ -253,18 +268,47 @@ export function Header() {
             )}
           </div>
 
-          <Link href="/academy" className="transition hover:text-[#D4A017]">Formación</Link>
+          {/* Formación dropdown */}
+          <div className="relative" ref={formacionDropdownRef}>
+            <button
+              type="button"
+              onClick={() => { setFormacionOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setHoldedOpen(false); setRecursosOpen(false); }}
+              className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
+              aria-expanded={formacionOpen}
+            >
+              Formación
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${formacionOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {formacionOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
+                {formacionLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setFormacionOpen(false)}
+                    className={link.highlight
+                      ? 'block border-b border-white/10 px-4 py-3 text-sm font-bold text-[#D4A017] transition hover:bg-[#23364D]'
+                      : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Recursos dropdown (Blog + Base de conocimientos) */}
           <div className="relative" ref={recursosDropdownRef}>
             <button
               type="button"
-              onClick={() => { setRecursosOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setHoldedOpen(false); }}
+              onClick={() => { setRecursosOpen((v) => !v); setServicesOpen(false); setPlanesOpen(false); setHoldedOpen(false); setFormacionOpen(false); }}
               className="inline-flex items-center gap-1 transition hover:text-[#D4A017]"
               aria-expanded={recursosOpen}
             >
               Recursos
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {recursosOpen && (
@@ -350,12 +394,13 @@ export function Header() {
                   setPlanesOpen(false);
                   setHoldedOpen(false);
                   setRecursosOpen(false);
+                  setFormacionOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={servicesOpen}
               >
                 Servicios
-                <ChevronDown className={`h-4 w-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
               </button>
               {servicesOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
@@ -389,12 +434,13 @@ export function Header() {
                   setServicesOpen(false);
                   setPlanesOpen(false);
                   setRecursosOpen(false);
+                  setFormacionOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={holdedOpen}
               >
                 Holded
-                <ChevronDown className={`h-4 w-4 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${holdedOpen ? 'rotate-180' : ''}`} />
               </button>
               {holdedOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
@@ -431,12 +477,13 @@ export function Header() {
                   setServicesOpen(false);
                   setHoldedOpen(false);
                   setRecursosOpen(false);
+                  setFormacionOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={planesOpen}
               >
                 Planes
-                <ChevronDown className={`h-4 w-4 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${planesOpen ? 'rotate-180' : ''}`} />
               </button>
               {planesOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
@@ -457,13 +504,41 @@ export function Header() {
               )}
             </div>
 
-            <Link
-              href="/academy"
-              onClick={closeMobile}
-              className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
-            >
-              Formación
-            </Link>
+            {/* Mobile Formación accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormacionOpen((v) => !v);
+                  setServicesOpen(false);
+                  setPlanesOpen(false);
+                  setHoldedOpen(false);
+                  setRecursosOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
+                aria-expanded={formacionOpen}
+              >
+                Formación
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${formacionOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {formacionOpen && (
+                <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
+                  {formacionLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobile}
+                      className={link.highlight
+                        ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
+                        : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
+                      }
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Mobile Recursos accordion */}
             <div>
@@ -474,12 +549,13 @@ export function Header() {
                   setServicesOpen(false);
                   setPlanesOpen(false);
                   setHoldedOpen(false);
+                  setFormacionOpen(false);
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                 aria-expanded={recursosOpen}
               >
                 Recursos
-                <ChevronDown className={`h-4 w-4 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${recursosOpen ? 'rotate-180' : ''}`} />
               </button>
               {recursosOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
