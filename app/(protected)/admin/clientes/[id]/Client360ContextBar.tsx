@@ -4,6 +4,21 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Building2, CreditCard, FileText, Mail, Plug, RefreshCw, User } from 'lucide-react';
 
+type CompanyCoverage = {
+  covered: boolean;
+  source: 'direct_subscription' | 'trial' | 'included_entity' | 'none';
+  companyId: string;
+  subscriptionId: string | null;
+  subscriptionStatus: string | null;
+  planName: string | null;
+  primaryCompanyId: string | null;
+  primaryCompanyName: string | null;
+  coverageScope: string | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  excludedServices: string[];
+};
+
 type Client360 = {
   profile: {
     id: string;
@@ -15,12 +30,13 @@ type Client360 = {
     billing_ready: boolean;
   };
   companies: { id: string; name: string; nif: string | null }[];
-  cases: { id: string; service: string; state: string }[];
-  quotes: { id: string; service: string; status: string; amount_eur: number }[];
+  cases: { id: string; service: string; state: string; company_id?: string | null }[];
+  quotes: { id: string; service: string; status: string; amount_eur: number; company_id?: string | null }[];
   subs: { id: string; plan: string; status: string; company_id: string | null }[];
   checkoutSessions: { id: string; stripe_session_id: string; status: string; company_id: string | null; created_at: string; metadata: Record<string, unknown> | null }[];
   emailEvents: { id: number; subject: string | null; status: string | null; created_at: string }[];
   integrations: { id: string; provider: string; status: string; company_id: string | null; last_success_at: string | null; last_error: string | null }[];
+  commercialCoverageByCompany: Record<string, CompanyCoverage>;
 };
 
 function Badge({ children, ok = false }: { children: React.ReactNode; ok?: boolean }) {
@@ -50,10 +66,27 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
   useEffect(() => { void load(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeCompany = useMemo(() => data?.companies.find((company) => company.id === data.profile.active_company_id) ?? data?.companies[0] ?? null, [data]);
-  const activeSubscription = data?.subs.find((sub) => sub.status === 'active' || sub.status === 'trialing') ?? null;
-  const openCheckout = data?.checkoutSessions.find((session) => session.status === 'open') ?? null;
-  const activeIntegrations = data?.integrations.filter((integration) => integration.status === 'active') ?? [];
-  const openCases = data?.cases.filter((item) => item.state !== 'finalizado') ?? [];
+  const activeCoverage = activeCompany ? data?.commercialCoverageByCompany?.[activeCompany.id] ?? null : null;
+  const activeSubscription = activeCompany
+    ? data?.subs.find((sub) => sub.company_id === activeCompany.id && (sub.status === 'active' || sub.status === 'trialing')) ?? null
+    : null;
+  const openCheckout = activeCompany
+    ? data?.checkoutSessions.find((session) => session.company_id === activeCompany.id && session.status === 'open') ?? null
+    : null;
+  const activeIntegrations = activeCompany
+    ? data?.integrations.filter((integration) => integration.status === 'active' && (integration.company_id === activeCompany.id || integration.company_id === null)) ?? []
+    : [];
+  const openCases = activeCompany
+    ? data?.cases.filter((item) => item.state !== 'finalizado' && (item.company_id === activeCompany.id || item.company_id == null)) ?? []
+    : data?.cases.filter((item) => item.state !== 'finalizado') ?? [];
+
+  const commercialLabel = activeCoverage?.source === 'included_entity'
+    ? `Entidad incluida · ${activeCoverage.planName ?? 'cobertura activa'}`
+    : activeSubscription
+      ? `${activeSubscription.plan} · ${activeSubscription.status}`
+      : openCheckout
+        ? `Checkout ${openCheckout.status}`
+        : 'Sin cobertura activa';
 
   if (loading && !data) {
     return <div className="border-b border-[#d8cbb5] bg-white px-6 py-3 text-xs text-[#8a9aab]"><RefreshCw className="mr-2 inline h-3.5 w-3.5 animate-spin" />Cargando contexto del cliente…</div>;
@@ -80,6 +113,7 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
               <Building2 className="h-3.5 w-3.5 text-[#c88b25]" />
               <span className="font-semibold">{activeCompany?.name ?? 'Sin entidad activa'}</span>
               {activeCompany?.nif && <span className="font-mono text-[#8a9aab]">{activeCompany.nif}</span>}
+              {activeCoverage?.source === 'included_entity' ? <Badge ok>Incluida</Badge> : null}
             </div>
           </div>
 
@@ -89,9 +123,10 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-          <Link href={`/admin/expedientes?clientId=${clientId}`} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
+          <Link href={`/admin/expedientes?clientId=${clientId}${activeCompany ? `&companyId=${activeCompany.id}` : ''}`} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><FileText className="h-3.5 w-3.5" />Expedientes</p>
-            <p className="mt-1 text-sm font-bold text-[#07111d]">{openCases.length} abiertos · {data.cases.length} total</p>
+            <p className="mt-1 text-sm font-bold text-[#07111d]">{openCases.length} abiertos</p>
+            <p className="text-[10px] text-[#8a9aab]">Contexto: {activeCompany?.name ?? 'cliente'}</p>
           </Link>
           <Link href="/admin/presupuestos" className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><CreditCard className="h-3.5 w-3.5" />Presupuesto</p>
@@ -99,9 +134,13 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
             {data.quotes[0] && <p className="text-[10px] text-[#8a9aab]">{data.quotes[0].status} · {data.quotes[0].amount_eur} € base</p>}
           </Link>
           <Link href="/admin/suscripciones" className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
-            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><CreditCard className="h-3.5 w-3.5" />Stripe</p>
-            <p className="mt-1 text-sm font-bold text-[#07111d]">{activeSubscription ? `${activeSubscription.plan} · ${activeSubscription.status}` : openCheckout ? `Checkout ${openCheckout.status}` : 'Sin suscripción activa'}</p>
-            <p className="text-[10px] text-[#8a9aab]">{data.checkoutSessions.length} intento(s) registrado(s)</p>
+            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><CreditCard className="h-3.5 w-3.5" />Cobertura</p>
+            <p className="mt-1 text-sm font-bold text-[#07111d]">{commercialLabel}</p>
+            {activeCoverage?.source === 'included_entity' && activeCoverage.primaryCompanyName ? (
+              <p className="text-[10px] text-[#8a9aab]">Contratante: {activeCoverage.primaryCompanyName}</p>
+            ) : (
+              <p className="text-[10px] text-[#8a9aab]">{activeSubscription ? 'Suscripción directa' : `${data.checkoutSessions.length} intento(s) registrado(s)`}</p>
+            )}
           </Link>
           <Link href={`/admin/clientes/${clientId}/comunicaciones`} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><Mail className="h-3.5 w-3.5" />Comunicaciones</p>
@@ -112,7 +151,7 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><Plug className="h-3.5 w-3.5" />Integraciones</p>
             <p className="mt-1 text-sm font-bold text-[#07111d]">{activeIntegrations.length} activas</p>
             <div className="mt-1 flex flex-wrap gap-1">
-              {activeIntegrations.length ? activeIntegrations.map((integration) => <Badge key={integration.id} ok>{integration.provider}</Badge>) : <span className="text-[10px] text-[#8a9aab]">Sin integración registrada</span>}
+              {activeIntegrations.length ? activeIntegrations.map((integration) => <Badge key={integration.id} ok>{integration.provider}</Badge>) : <span className="text-[10px] text-[#8a9aab]">Sin integración registrada para esta entidad</span>}
             </div>
           </div>
         </div>
