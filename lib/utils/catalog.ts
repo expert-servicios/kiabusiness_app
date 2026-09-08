@@ -1525,6 +1525,7 @@ export const services: Service[] = [
     metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
     metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
     price: '50 € + IVA / empleado',
+    stripePriceId: 'price_1UDKyMLeYwwgvux40YFzyVwi',
     duration: '3–5 días hábiles para hasta 15 empleados',
     includes: [
       'Revisión documental previa',
