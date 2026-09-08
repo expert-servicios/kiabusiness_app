@@ -97,4 +97,21 @@ describe('entity-scoped billing', () => {
     expect(switcher).toContain('if (!response.ok)');
     expect(switcher).toContain("setError(data?.error ?? 'No se pudo cambiar la entidad activa.')");
   });
+
+  it('legacy Kia copilot authorizes requested company against profile membership', () => {
+    const kia = source('app/api/ai/kia/route.ts');
+    expect(kia).toContain(".from('profile_companies')");
+    expect(kia).toContain(".eq('profile_id', user.id)");
+    expect(kia).toContain(".eq('company_id', resolvedCompanyId)");
+    expect(kia).toContain("error: companyId ? 'company_forbidden' : 'active_company_invalid'");
+    expect(kia).toContain("{ status: companyId ? 403 : 409 }");
+  });
+
+  it('legacy Kia copilot exposes only the customer-safe tool surface', () => {
+    const kia = source('app/api/ai/kia/route.ts');
+    expect(kia).toContain('LEGACY_DASHBOARD_SAFE_TOOLS');
+    expect(kia).toContain('allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS]');
+    expect(kia).not.toContain("'get_accounting_snapshot',");
+    expect(kia).not.toContain("'create_internal_task',");
+  });
 });
