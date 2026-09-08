@@ -86,7 +86,8 @@ describe('itemized quote checkout', () => {
     expect(route).toContain('El importe no coincide con las líneas del catálogo.');
     expect(route).toContain('price: item.stripePriceId, quantity: item.quantity');
     expect(route).toContain("automatic_tax: { enabled: true }");
-    expect(route).toContain("employee_count: String(resolvedItems.find((item) => item.serviceSlug === 'holded-migracion-laboral')?.quantity ?? '')");
+    expect(route).toContain('itemMetadata.employee_count = String(');
+    expect(route).toContain("item.serviceSlug === 'holded-migracion-laboral'");
   });
 
   it('admin quote UI selects client company and builds catalog lines without trusting price ids', () => {
