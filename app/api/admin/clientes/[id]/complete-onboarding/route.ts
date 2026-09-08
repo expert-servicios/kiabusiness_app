@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmailOnce } from '@/lib/email/send';
 import { onboardingReviewRequestEmail, responsibleClientWelcomeEmail } from '@/lib/email/onboarding-templates';
+import { loadOnboardingAppointmentsForIdentity } from '@/lib/admin/onboarding-booking-identity';
 
 const bodySchema = z.object({ subscriptionId: z.string().uuid() });
 
@@ -46,15 +47,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!clientEmail) return NextResponse.json({ error: 'El cliente no tiene email de acceso' }, { status: 409 });
 
   const now = new Date();
-  const { data: appointments, error: appointmentError } = await admin
-    .from('appointments')
-    .select('id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
-    .ilike('email', clientEmail)
-    .neq('status', 'cancelled')
-    .order('appointment_date', { ascending: false });
-  if (appointmentError) return NextResponse.json({ error: 'No se pudo validar la reunión de onboarding' }, { status: 500 });
+  let appointments;
+  try {
+    appointments = await loadOnboardingAppointmentsForIdentity(admin, clientId, subscription.company_id, clientEmail);
+  } catch (appointmentError) {
+    console.error('[admin complete onboarding] booking identity:', appointmentError);
+    return NextResponse.json({ error: 'No se pudo validar la reunión de onboarding' }, { status: 500 });
+  }
 
-  const completedMeeting = (appointments ?? []).find((appointment) => {
+  const completedMeeting = appointments.find((appointment) => {
     const onboarding = String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'
       || String(appointment.service ?? '').toLowerCase().includes('onboarding');
     const meetingAt = appointment.appointment_date
