@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { deleteCalendarEventSA, hasCalendarSA, upsertCalendarEventSA } from '@/lib/integrations/google-calendar';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
+import { resolveBookingClientIdByEmail } from '@/lib/admin/onboarding-booking-identity';
 
 function verifySignature(body: string, header: string | null): boolean {
   const secret = process.env.CAL_WEBHOOK_SECRET;
@@ -72,41 +73,35 @@ async function sendOnboardingPreparation(attendee: CalAttendee, payload: CalPayl
   });
 }
 
-async function resolveAuthUser(email: string) {
-  const normalized = email.trim().toLowerCase();
-  const authUsers = await listAllAuthUsers();
-  return authUsers.find((user) => (user.email ?? '').trim().toLowerCase() === normalized) ?? null;
-}
-
 async function ensureCaseForBooking(admin: ReturnType<typeof getSupabaseAdmin>, attendee: CalAttendee, payload: CalPayload): Promise<{ clientId: string; caseId: string } | null> {
   try {
-    const authUser = await resolveAuthUser(attendee.email);
-    if (!authUser) return null;
+    const clientId = await resolveBookingClientIdByEmail(admin, attendee.email);
+    if (!clientId) return null;
     const slug = payload.eventType?.slug ?? '';
     const meta = SLUG_SERVICE[slug] ?? { category: 'general', service: payload.eventType?.title ?? payload.title };
 
     if (slug === 'onboarding') {
-      const existingOnboarding = await findOpenOnboardingCase(authUser.id);
+      const existingOnboarding = await findOpenOnboardingCase(clientId);
       if (existingOnboarding) {
         await admin.from('cases').update({ next_action: `Onboarding reservado para ${payload.startTime}. Verificar Holded y finalizar el alta.`, updated_at: new Date().toISOString() }).eq('id', existingOnboarding.id);
-        return { clientId: authUser.id, caseId: existingOnboarding.id };
+        return { clientId, caseId: existingOnboarding.id };
       }
     }
 
-    const { data: existing } = await admin.from('cases').select('id').eq('client_id', authUser.id).eq('service', meta.service).neq('state', 'finalizado').order('opened_at', { ascending: false }).limit(1).maybeSingle();
-    if (existing) return { clientId: authUser.id, caseId: existing.id };
+    const { data: existing } = await admin.from('cases').select('id').eq('client_id', clientId).eq('service', meta.service).neq('state', 'finalizado').order('opened_at', { ascending: false }).limit(1).maybeSingle();
+    if (existing) return { clientId, caseId: existing.id };
 
     const { data: newCase, error } = await admin.from('cases').insert({
-      client_id: authUser.id, category: meta.category, service: meta.service, state: 'en_proceso', status: 'nuevo',
+      client_id: clientId, category: meta.category, service: meta.service, state: 'en_proceso', status: 'nuevo',
       next_action: slug === 'onboarding' ? 'Verificar Holded y finalizar el alta' : null,
       admin_note: `Expediente creado automáticamente desde reserva Cal.com (${payload.uid})`, opened_at: new Date().toISOString(),
     }).select('id').single();
     if (error || !newCase) { console.error('[cal/webhook] ensureCaseForBooking insert:', error?.message); return null; }
 
-    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', authUser.id).single();
+    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', clientId).single();
     const name = profile?.full_name ?? attendee.name;
     sendEmail({ to: attendee.email, eventType: 'case.opened', ...caseOpened(name, meta.service, null, ''), metadata: { case_id: newCase.id, source: 'cal_booking', cal_uid: payload.uid }, idempotencyKey: `cal/case-opened/${payload.uid}` }).catch((e: unknown) => console.error('[cal/webhook] case.opened email:', e));
-    return { clientId: authUser.id, caseId: newCase.id };
+    return { clientId, caseId: newCase.id };
   } catch (err) {
     console.error('[cal/webhook] ensureCaseForBooking:', err instanceof Error ? err.message : err);
     return null;
