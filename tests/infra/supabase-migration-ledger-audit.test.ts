@@ -132,4 +132,57 @@ describe('Supabase migration ledger auditor', () => {
     expect(output).toContain('Repeated remote statement hashes (1)');
     expect(output).toContain('result: ALIGNED');
   });
+
+  it('writes a deterministic machine-readable drift manifest', () => {
+    const { root, migrations, ledger } = fixture();
+    const manifestPath = path.join(root, 'manifest.json');
+
+    writeMigration(migrations, '20260901000005_local.sql');
+    writeMigration(migrations, '20260901000006_local_only.sql');
+    writeLedger(ledger, [
+      {
+        version: '20260901000005',
+        name: 'remote_match',
+        statement_count: 1,
+        statements_md5: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      },
+      {
+        version: '20260901000007',
+        name: 'remote_only',
+        statement_count: 2,
+        statements_md5: 'ffffffffffffffffffffffffffffffff',
+      },
+    ]);
+
+    const output = run(ledger, migrations, [`--json-output=${manifestPath}`]);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+    expect(output).toContain(`manifest: ${manifestPath}`);
+    expect(manifest).toMatchObject({
+      counts: {
+        remote_rows: 2,
+        remote_unique_versions: 2,
+        local_sql_files: 2,
+        local_unique_versions: 2,
+        exact_timestamp_intersection: 1,
+      },
+      exact_versions: ['20260901000005'],
+      remote_only: [
+        {
+          version: '20260901000007',
+          name: 'remote_only',
+          statement_count: 2,
+          statements_md5: 'ffffffffffffffffffffffffffffffff',
+        },
+      ],
+      local_only: [
+        {
+          version: '20260901000006',
+          file: '20260901000006_local_only.sql',
+          name: 'local_only',
+        },
+      ],
+      result: 'DRIFT',
+    });
+  });
 });
