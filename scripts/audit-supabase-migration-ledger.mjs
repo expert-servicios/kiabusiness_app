@@ -6,10 +6,13 @@ import process from 'node:process';
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
+const migrationsDirArg = args.find((arg) => arg.startsWith('--migrations-dir='));
 const jsonPath = args.find((arg) => !arg.startsWith('--'));
 
 if (!jsonPath) {
-  console.error('Usage: node scripts/audit-supabase-migration-ledger.mjs <remote-ledger.json> [--strict]');
+  console.error(
+    'Usage: node scripts/audit-supabase-migration-ledger.mjs <remote-ledger.json> [--strict] [--migrations-dir=<path>]',
+  );
   process.exit(2);
 }
 
@@ -37,8 +40,7 @@ function readRemoteLedger(filePath) {
   });
 }
 
-function readLocalMigrations(root) {
-  const migrationDir = path.join(root, 'supabase', 'migrations');
+function readLocalMigrations(migrationDir) {
   const files = fs.readdirSync(migrationDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.sql'))
     .map((entry) => entry.name)
@@ -74,9 +76,12 @@ function printSection(title, rows, format) {
   for (const row of rows) console.log(`  ${format(row)}`);
 }
 
-const repoRoot = process.cwd();
+const migrationsDir = migrationsDirArg
+  ? path.resolve(migrationsDirArg.slice('--migrations-dir='.length))
+  : path.join(process.cwd(), 'supabase', 'migrations');
+
 const remote = readRemoteLedger(path.resolve(jsonPath));
-const local = readLocalMigrations(repoRoot);
+const local = readLocalMigrations(migrationsDir);
 const validLocal = local.filter((row) => row.version);
 const invalidLocal = local.filter((row) => !row.version);
 
