@@ -22,7 +22,7 @@ describe('KIA multi-company scope', () => {
     expect(route).not.toMatch(/LEGACY_DASHBOARD_SAFE_TOOLS[\s\S]*?'get_accounting_snapshot'/);
   });
 
-  it('resolves company membership once and reuses the authorized id for company and accounting context', () => {
+  it('reuses one authorized company for company and accounting context', () => {
     const context = source('lib/ai/kia/kia-context-builder.ts');
     expect(context).toContain('resolveAuthorizedCompanyId(admin, input.companyId, clientId)');
     expect(context).toContain(".from('profile_companies')");
@@ -30,5 +30,12 @@ describe('KIA multi-company scope', () => {
     expect(context).toContain(".eq('company_id', companyId)");
     expect(context).toContain('loadCompany(admin, resolvedCompanyId)');
     expect(context).toContain('loadAccounting(admin, resolvedCompanyId)');
+  });
+
+  it('scopes documents and cases to the authorized company when one is active', () => {
+    const context = source('lib/ai/kia/kia-context-builder.ts');
+    expect(context).toContain('loadDocuments(admin, clientId, input.caseId, resolvedCompanyId)');
+    expect(context).toContain('loadCasesForClient(admin, clientId, resolvedCompanyId)');
+    expect(context).toContain("if (companyId) query = query.eq('company_id', companyId)");
   });
 });
