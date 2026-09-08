@@ -92,7 +92,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     loadProfile(admin, clientId, contact),
     loadCompany(admin, resolvedCompanyId),
     loadService(input.serviceSlug),
-    loadDocuments(admin, clientId, input.caseId),
+    loadDocuments(admin, clientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
     loadSelectedMessage(admin, input.selectedMessageId),
     loadAccounting(admin, resolvedCompanyId),
@@ -107,8 +107,12 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     status: c.state,
     nextAction: null,
   }));
-  const directCases = phone ? [] : await loadCasesForClient(admin, clientId);
-  const cases = contactCases.length > 0 ? contactCases : directCases;
+  const directCases = (resolvedCompanyId || !phone)
+    ? await loadCasesForClient(admin, clientId, resolvedCompanyId)
+    : [];
+  const cases = resolvedCompanyId
+    ? directCases
+    : contactCases.length > 0 ? contactCases : directCases;
 
   return {
     contact: {
@@ -235,11 +239,17 @@ async function loadService(serviceSlug: string | undefined): Promise<KiaContext[
   };
 }
 
-async function loadDocuments(admin: AdminClient, clientId: string | null, caseId: string | undefined): Promise<KiaContext['documents']> {
+async function loadDocuments(
+  admin: AdminClient,
+  clientId: string | null,
+  caseId: string | undefined,
+  companyId: string | null,
+): Promise<KiaContext['documents']> {
   if (!clientId && !caseId) return { pendingCount: 0, recent: [] };
   let query = admin.from('documents').select('id, original_name, state, created_at').order('created_at', { ascending: false }).limit(5);
   if (caseId) query = query.eq('case_id', caseId);
-  else if (clientId) query = query.eq('client_id', clientId);
+  if (clientId) query = query.eq('client_id', clientId);
+  if (companyId) query = query.eq('company_id', companyId);
   const { data } = await query;
   const rows = data ?? [];
   return {
@@ -314,13 +324,16 @@ async function loadAccounting(admin: AdminClient, companyId: string | null): Pro
 async function loadCasesForClient(
   admin: AdminClient,
   clientId: string | null,
+  companyId: string | null,
 ): Promise<KiaContext['cases']> {
   if (!clientId) return [];
-  const { data } = await admin
+  let query = admin
     .from('cases')
     .select('id, service, state, opened_at')
     .eq('client_id', clientId)
-    .not('state', 'in', ['finalizado', 'cerrado', 'entregado'])
+    .not('state', 'in', ['finalizado', 'cerrado', 'entregado']);
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data } = await query
     .order('opened_at', { ascending: false })
     .limit(10);
   return (data ?? []).map((c: { id: string; service: string; state: string; opened_at: string }) => ({
