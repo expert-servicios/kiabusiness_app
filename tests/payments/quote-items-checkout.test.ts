@@ -116,4 +116,30 @@ describe('itemized quote checkout', () => {
     const registry = source('lib/services/service-registry.ts');
     expect(registry).toContain("'holded-migracion-laboral'");
   });
+
+  it('fulfills quote payments only after Stripe confirms payment and supports async success', () => {
+    const webhook = source('app/api/stripe/webhook/route.ts');
+    expect(webhook).toContain("session.metadata?.quote_id && session.payment_status === 'paid'");
+    expect(webhook).toContain('await fulfillQuotePayment(supabaseAdmin, session)');
+    expect(webhook).toContain("event.type === 'checkout.session.async_payment_succeeded'");
+  });
+
+  it('quote fulfillment keeps company context, validates subtotal and recovers idempotently', () => {
+    const fulfillment = source('lib/payments/quote-fulfillment.ts');
+    expect(fulfillment).toContain("if (session.payment_status !== 'paid') return");
+    expect(fulfillment).toContain('company mismatch; manual review required');
+    expect(fulfillment).toContain('subtotal mismatch; manual review required');
+    expect(fulfillment).toContain(".eq('stripe_payment_id', paymentId)");
+    expect(fulfillment).toContain(".eq('quote_id', quoteId)");
+    expect(fulfillment).toContain('company_id: quote.company_id ?? metadataCompanyId');
+    expect(fulfillment).toContain('idempotencyKey: `stripe/quote/${quoteId}/client/');
+  });
+
+  it('records labor migration plus training as a Holded case with an explicit next action', () => {
+    const fulfillment = source('lib/payments/quote-fulfillment.ts');
+    expect(fulfillment).toContain("slugs.includes('holded-migracion-laboral')");
+    expect(fulfillment).toContain("slugs.includes('holded-modulo-formacion')");
+    expect(fulfillment).toContain('Aportar documentación laboral en el portal seguro y agendar la formación Holded de 2 h.');
+    expect(fulfillment).toContain('Formación Holded pendiente de agenda.');
+  });
 });
