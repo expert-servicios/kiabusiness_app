@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { z } from 'zod';
 import { syncClientToHolded } from '@/lib/integrations/holded';
 import { upsertStripeCustomer } from '@/lib/integrations/stripe';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -68,6 +69,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }] : [];
     });
     const companyIds = companies.map((company) => company.id);
+
+    const commercialCoverage = companyIds.length
+      ? await Promise.all(companyIds.map((companyId) => resolveCompanyCommercialCoverage(admin, id, companyId)))
+      : [];
+    const commercialCoverageByCompany = Object.fromEntries(
+      commercialCoverage.map((coverage) => [coverage.companyId, coverage]),
+    );
 
     const integrationQuery = admin
       .from('client_integrations')
@@ -142,6 +150,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       emailEvents: emailEventsRes.data ?? [],
       messages: waRes.data ?? [],
       companies,
+      commercialCoverageByCompany,
       integrations: integrations ?? [],
       mappings: Array.from(mappingById.values()),
       syncEvents: Array.from(eventById.values())
