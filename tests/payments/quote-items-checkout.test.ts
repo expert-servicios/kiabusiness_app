@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { quoteItemsSubtotal, resolveQuoteItems } from '@/lib/quotes/quote-items';
+import { listQuoteServices, quoteItemsSubtotal, resolveQuoteItems } from '@/lib/quotes/quote-items';
 
 function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -45,10 +45,36 @@ describe('itemized quote checkout', () => {
     ])).toThrow(/cantidad 1/);
   });
 
+  it('rejects repeated structured service lines', () => {
+    expect(() => resolveQuoteItems([
+      { serviceSlug: 'holded-modulo-formacion', quantity: 1 },
+      { serviceSlug: 'holded-modulo-formacion', quantity: 1 },
+    ])).toThrow(/repetido/);
+  });
+
+  it('exposes only quote-safe catalog services and their quantity rules', () => {
+    const services = listQuoteServices();
+    expect(services).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        serviceSlug: 'holded-migracion-laboral',
+        unitAmountEur: 50,
+        minQuantity: 5,
+        maxQuantity: 200,
+      }),
+      expect.objectContaining({
+        serviceSlug: 'holded-modulo-formacion',
+        unitAmountEur: 180,
+        minQuantity: 1,
+        maxQuantity: 1,
+      }),
+    ]));
+    expect(services.some((service) => service.serviceSlug.startsWith('plan-'))).toBe(false);
+  });
+
   it('persists quote lines behind quote ownership RLS', () => {
     const migration = source('supabase/migrations/20260908190000_quote_items_checkout.sql');
     expect(migration).toContain('create table if not exists public.quote_items');
-    expect(migration).toContain("client view own quote items");
+    expect(migration).toContain('client view own quote items');
     expect(migration).toContain('q.client_id = auth.uid()');
     expect(migration).toContain('tenant_admin select quote items');
   });
@@ -63,6 +89,20 @@ describe('itemized quote checkout', () => {
     expect(route).toContain("employee_count: String(resolvedItems.find((item) => item.serviceSlug === 'holded-migracion-laboral')?.quantity ?? '')");
   });
 
+  it('admin quote UI selects client company and builds catalog lines without trusting price ids', () => {
+    const modal = source('components/admin/NuevaCotizacionModal.tsx');
+    const clients = source('app/api/admin/clients-quick/route.ts');
+    const catalog = source('app/api/admin/quote-services/route.ts');
+
+    expect(modal).toContain('Entidad contratante *');
+    expect(modal).toContain('companyId: selectedCompanyId');
+    expect(modal).toContain('items: lines');
+    expect(modal).toContain("fetch('/api/admin/quote-services')");
+    expect(modal).not.toContain('stripePriceId');
+    expect(clients).toContain("company:companies(id,razon_social,cif_nif)");
+    expect(catalog).toContain('listQuoteServices()');
+  });
+
   it('client re-checkout validates ownership, company and persisted subtotal', () => {
     const route = source('app/api/quotes/[id]/checkout/route.ts');
     expect(route).toContain('quote.client_id !== user.id');
@@ -70,5 +110,10 @@ describe('itemized quote checkout', () => {
     expect(route).toContain('structuredSubtotal');
     expect(route).toContain('El presupuesto necesita revisión antes del pago.');
     expect(route).toContain('await stripe.checkout.sessions.expire(session.id)');
+  });
+
+  it('classifies labor migration as a Holded service', () => {
+    const registry = source('lib/services/service-registry.ts');
+    expect(registry).toContain("'holded-migracion-laboral'");
   });
 });
