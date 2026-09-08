@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isStaffRole } from '@/lib/auth/roles';
+import { loadOnboardingAppointmentsForIdentity } from '@/lib/admin/onboarding-booking-identity';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerSupabaseClient(request);
@@ -30,14 +31,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   let meetingOccurred = false;
   let meetingDate: string | null = null;
 
-  if (email) {
-    const { data: appointments } = await admin
-      .from('appointments')
-      .select('service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
-      .ilike('email', email)
-      .neq('status', 'cancelled')
-      .order('appointment_date', { ascending: false });
-    const onboarding = (appointments ?? []).find((appointment) =>
+  try {
+    const appointments = await loadOnboardingAppointmentsForIdentity(admin, clientId, active?.company_id, email);
+    const onboarding = appointments.find((appointment) =>
       String(appointment.appointment_type ?? '').toLowerCase() === 'onboarding'
       || String(appointment.service ?? '').toLowerCase().includes('onboarding')
     );
@@ -49,6 +45,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         meetingOccurred = !Number.isNaN(parsed.getTime()) && parsed <= new Date();
       }
     }
+  } catch (appointmentError) {
+    console.error('[admin/clientes/onboarding-state] booking identity:', appointmentError);
+    return NextResponse.json({ error: 'No se pudo validar la reunión de onboarding' }, { status: 500 });
   }
 
   let holdedConnected = false;
