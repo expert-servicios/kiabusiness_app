@@ -20,6 +20,20 @@ interface CompanyContext {
   forma_juridica: string;
 }
 
+interface CompanyCoverage {
+  covered: boolean;
+  source: 'direct_subscription' | 'trial' | 'included_entity' | 'none';
+  subscriptionId: string | null;
+  subscriptionStatus: string | null;
+  planName: string | null;
+  primaryCompanyId: string | null;
+  primaryCompanyName: string | null;
+  coverageScope: string | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  excludedServices: string[];
+}
+
 interface BillingInvoice {
   id: string;
   number: string | null;
@@ -54,9 +68,9 @@ function money(value: number, currency: string) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency }).format(value);
 }
 
-async function getSubscriptions(): Promise<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null }> {
-  const data = await fetchWithCookies<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null }>('/api/subscriptions');
-  return { subscriptions: data?.subscriptions ?? [], company: data?.company ?? null };
+async function getSubscriptions(): Promise<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null; coverage: CompanyCoverage | null }> {
+  const data = await fetchWithCookies<{ subscriptions: SubscriptionRecord[]; company: CompanyContext | null; coverage: CompanyCoverage | null }>('/api/subscriptions');
+  return { subscriptions: data?.subscriptions ?? [], company: data?.company ?? null, coverage: data?.coverage ?? null };
 }
 
 async function getInvoices(): Promise<BillingInvoice[]> {
@@ -72,9 +86,11 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const initialBilling: 'mensual' | 'anual' = params.billing === 'anual' ? 'anual' : 'mensual';
 
-  const [{ subscriptions, company }, invoices] = await Promise.all([getSubscriptions(), getInvoices()]);
+  const [{ subscriptions, company, coverage }, invoices] = await Promise.all([getSubscriptions(), getInvoices()]);
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
-  const hasActive = activeSubscriptions.length > 0;
+  const hasDirectActive = activeSubscriptions.length > 0;
+  const hasCoverage = Boolean(coverage?.covered);
+  const includedEntity = coverage?.source === 'included_entity';
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
@@ -90,7 +106,7 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
               <p className="text-sm uppercase tracking-[0.28em] text-[#c88b25]">Suscripciones</p>
               <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">Tus suscripciones</h1>
             </div>
-            {hasActive ? <CustomerPortalButton /> : null}
+            {hasDirectActive ? <CustomerPortalButton /> : null}
           </div>
 
           {company ? (
@@ -111,6 +127,29 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
               Selecciona o crea una entidad fiscal antes de contratar una suscripción.
             </div>
           )}
+
+          {includedEntity && coverage ? (
+            <div className="mb-10 rounded-3xl border border-green-200 bg-green-50 p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-green-800">Entidad incluida</p>
+                  <h2 className="mt-1 font-serif text-xl font-bold text-[#07111d]">Cobertura activa sin segunda cuota</h2>
+                  <p className="mt-2 text-sm text-[#29384a]">
+                    Esta entidad está incluida en {coverage.planName ?? 'el plan activo'}{coverage.primaryCompanyName ? ` de ${coverage.primaryCompanyName}` : ''}.
+                  </p>
+                  <p className="mt-2 text-xs text-[#6f6254]">
+                    No necesitas contratar otro plan. La facturación y el portal de pago se gestionan desde la entidad contratante.
+                  </p>
+                  {coverage.excludedServices.length > 0 ? (
+                    <p className="mt-2 text-xs text-[#6f6254]">Servicios no incluidos en esta cobertura: {coverage.excludedServices.join(', ')}.</p>
+                  ) : null}
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-semibold text-green-800">
+                  <CheckCircle2 className="h-4 w-4" /> Activa
+                </span>
+              </div>
+            </div>
+          ) : null}
 
           {subscriptions.length > 0 ? (
             <div className="mb-10 space-y-4">
@@ -135,7 +174,7 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
             </div>
           ) : null}
 
-          {company && (hasActive || invoices.length > 0) ? (
+          {company && !includedEntity && (hasDirectActive || invoices.length > 0) ? (
             <section className="mb-10 border-t border-[#e7dcc7] pt-8">
               <div className="mb-4 flex items-start gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#d7a33a]/15 text-[#a86f16]"><ReceiptText className="h-4 w-4" /></div>
@@ -172,7 +211,7 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
             </section>
           ) : null}
 
-          {!hasActive && company ? (
+          {!hasCoverage && company ? (
             <div>
               <p className="mb-8 text-[#29384a]">{subscriptions.length > 0 ? 'La suscripción de esta entidad ha finalizado. Elige un plan para retomar el servicio.' : `Elige el plan que contratará ${company.razon_social}.`}</p>
               <SubscriptionPlanCards

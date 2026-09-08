@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
+import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 
 export interface KiaContextInput {
@@ -43,6 +44,11 @@ export interface KiaContext {
     name: string | null;
     taxId: string | null;
     hasMonthlyPlan: boolean;
+    coverageSource: CompanyCoverageSource;
+    coveragePlanName: string | null;
+    coveragePrimaryCompanyId: string | null;
+    coveragePrimaryCompanyName: string | null;
+    coverageScope: string | null;
     holdedConnected: boolean;
     holdedPermissions: Record<string, boolean>;
   } | null;
@@ -90,7 +96,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   const [profile, company, service, documents, conversation, selectedMessage, accounting, memories] = await Promise.all([
     loadProfile(admin, clientId, contact),
-    loadCompany(admin, resolvedCompanyId),
+    loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
     loadDocuments(admin, clientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
@@ -199,13 +205,19 @@ async function resolveAuthorizedCompanyId(
   return membership ? companyId : null;
 }
 
-async function loadCompany(admin: AdminClient, resolvedCompanyId: string | null): Promise<KiaContext['company']> {
+async function loadCompany(
+  admin: AdminClient,
+  clientId: string | null,
+  resolvedCompanyId: string | null,
+): Promise<KiaContext['company']> {
   if (!resolvedCompanyId) return null;
 
-  const [{ data: company }, { data: integrations }, { data: subscriptions }] = await Promise.all([
+  const [{ data: company }, { data: integrations }, coverage] = await Promise.all([
     admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif').eq('id', resolvedCompanyId).maybeSingle(),
     admin.from('client_integrations').select('status, permissions_detected').eq('company_id', resolvedCompanyId).eq('provider', 'holded').order('created_at', { ascending: false }).limit(1),
-    admin.from('subscriptions').select('id, status').eq('company_id', resolvedCompanyId).in('status', ['active', 'trialing']).limit(1),
+    clientId
+      ? resolveCompanyCommercialCoverage(admin, clientId, resolvedCompanyId)
+      : Promise.resolve(null),
   ]);
 
   if (!company) return null;
@@ -214,7 +226,12 @@ async function loadCompany(admin: AdminClient, resolvedCompanyId: string | null)
     id: resolvedCompanyId,
     name: (company.nombre_comercial ?? company.razon_social ?? null) as string | null,
     taxId: company.cif_nif ?? null,
-    hasMonthlyPlan: Boolean(subscriptions?.length),
+    hasMonthlyPlan: Boolean(coverage?.covered),
+    coverageSource: coverage?.source ?? 'none',
+    coveragePlanName: coverage?.planName ?? null,
+    coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
+    coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
+    coverageScope: coverage?.coverageScope ?? null,
     holdedConnected: integration?.status === 'active',
     holdedPermissions: integration?.permissions_detected ?? {},
   };

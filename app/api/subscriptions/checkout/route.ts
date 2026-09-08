@@ -4,6 +4,7 @@ import { getStripeClient, toStripeAscii } from '@/lib/integrations/stripe';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 
 const bodySchema = z.object({
   priceId: z.string().min(1),
@@ -109,6 +110,17 @@ export async function POST(request: NextRequest) {
         code: 'billing_required',
         companyId,
         missingFields: missingCompanyBillingFields(company),
+      }, { status: 409 });
+    }
+
+    const coverage = await resolveCompanyCommercialCoverage(admin, user.id, companyId);
+    if (coverage.covered && coverage.source === 'included_entity') {
+      return NextResponse.json({
+        error: coverage.primaryCompanyName
+          ? `Esta entidad ya está incluida en la cobertura de ${coverage.primaryCompanyName}.`
+          : 'Esta entidad ya está incluida en otra suscripción activa de tu cuenta.',
+        code: 'company_covered',
+        coverage,
       }, { status: 409 });
     }
 
