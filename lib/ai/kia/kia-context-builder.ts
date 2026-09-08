@@ -17,11 +17,8 @@ export interface KiaContextInput {
   selectedMessageId?: string;
   syntheticRecentMessages?: KiaContext['conversation']['recentMessages'];
   syntheticSelectedMessage?: KiaContext['conversation']['selectedMessage'];
-  /** Dashboard copilot: current page path e.g. '/dashboard/empresa', '/dashboard/expedientes/abc123' */
   currentPage?: string;
-  /** Dashboard copilot: what task the user is performing e.g. 'editing_company', 'viewing_case' */
   currentTask?: string;
-  /** Dashboard copilot: arbitrary page-specific data (caseId, reportId, etc.) */
   pageData?: Record<string, unknown>;
 }
 
@@ -86,32 +83,36 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const contact = phone ? await resolveKiaContactContext(admin, phone) : null;
   const clientId = input.clientId ?? contact?.clientId ?? input.userId ?? null;
   const leadId = input.leadId ?? contact?.leadId ?? null;
+  const resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId);
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
 
   const [profile, company, service, documents, conversation, selectedMessage, accounting, memories] = await Promise.all([
     loadProfile(admin, clientId, contact),
-    loadCompany(admin, input.companyId, clientId),
+    loadCompany(admin, resolvedCompanyId),
     loadService(input.serviceSlug),
-    loadDocuments(admin, clientId, input.caseId),
+    loadDocuments(admin, clientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
     loadSelectedMessage(admin, input.selectedMessageId),
-    loadAccounting(admin, input.companyId),
+    loadAccounting(admin, resolvedCompanyId),
     shouldLoadMemories
       ? retrieveKiaMemories({ query: input.latestMessage!, clientId, leadId, phone, openAiApiKey: openAiKey, supabase: admin }).catch(() => [] as KiaMemory[])
       : Promise.resolve([] as KiaMemory[]),
   ]);
 
-  // For dashboard channel: load cases directly from DB when phone isn't available
   const contactCases = (contact?.openCases ?? []).slice(0, 5).map((c) => ({
     id: c.id,
     serviceName: c.service,
     status: c.state,
     nextAction: null,
   }));
-  const directCases = phone ? [] : await loadCasesForClient(admin, clientId);
-  const cases = contactCases.length > 0 ? contactCases : directCases;
+  const directCases = (resolvedCompanyId || !phone)
+    ? await loadCasesForClient(admin, clientId, resolvedCompanyId)
+    : [];
+  const cases = resolvedCompanyId
+    ? directCases
+    : contactCases.length > 0 ? contactCases : directCases;
 
   return {
     contact: {
@@ -177,8 +178,28 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
   };
 }
 
-async function loadCompany(admin: AdminClient, companyId: string | undefined, clientId: string | null): Promise<KiaContext['company']> {
-  const resolvedCompanyId = companyId ?? await loadActiveCompanyId(admin, clientId);
+async function resolveAuthorizedCompanyId(
+  admin: AdminClient,
+  requestedCompanyId: string | undefined,
+  clientId: string | null,
+): Promise<string | null> {
+  if (!clientId) return requestedCompanyId ?? null;
+
+  const companyId = requestedCompanyId ?? await loadActiveCompanyId(admin, clientId);
+  if (!companyId) return null;
+
+  const { data: membership, error } = await admin
+    .from('profile_companies')
+    .select('company_id')
+    .eq('profile_id', clientId)
+    .eq('company_id', companyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return membership ? companyId : null;
+}
+
+async function loadCompany(admin: AdminClient, resolvedCompanyId: string | null): Promise<KiaContext['company']> {
   if (!resolvedCompanyId) return null;
 
   const [{ data: company }, { data: integrations }, { data: subscriptions }] = await Promise.all([
@@ -187,11 +208,12 @@ async function loadCompany(admin: AdminClient, companyId: string | undefined, cl
     admin.from('subscriptions').select('id, status').eq('company_id', resolvedCompanyId).in('status', ['active', 'trialing']).limit(1),
   ]);
 
+  if (!company) return null;
   const integration = integrations?.[0] as { status?: string; permissions_detected?: Record<string, boolean> } | undefined;
   return {
     id: resolvedCompanyId,
-    name: (company?.nombre_comercial ?? company?.razon_social ?? null) as string | null,
-    taxId: company?.cif_nif ?? null,
+    name: (company.nombre_comercial ?? company.razon_social ?? null) as string | null,
+    taxId: company.cif_nif ?? null,
     hasMonthlyPlan: Boolean(subscriptions?.length),
     holdedConnected: integration?.status === 'active',
     holdedPermissions: integration?.permissions_detected ?? {},
@@ -217,11 +239,17 @@ async function loadService(serviceSlug: string | undefined): Promise<KiaContext[
   };
 }
 
-async function loadDocuments(admin: AdminClient, clientId: string | null, caseId: string | undefined): Promise<KiaContext['documents']> {
+async function loadDocuments(
+  admin: AdminClient,
+  clientId: string | null,
+  caseId: string | undefined,
+  companyId: string | null,
+): Promise<KiaContext['documents']> {
   if (!clientId && !caseId) return { pendingCount: 0, recent: [] };
   let query = admin.from('documents').select('id, original_name, state, created_at').order('created_at', { ascending: false }).limit(5);
   if (caseId) query = query.eq('case_id', caseId);
-  else if (clientId) query = query.eq('client_id', clientId);
+  if (clientId) query = query.eq('client_id', clientId);
+  if (companyId) query = query.eq('company_id', companyId);
   const { data } = await query;
   const rows = data ?? [];
   return {
@@ -274,7 +302,7 @@ async function loadSelectedMessage(admin: AdminClient, selectedMessageId: string
   };
 }
 
-async function loadAccounting(admin: AdminClient, companyId: string | undefined): Promise<KiaContext['accounting']> {
+async function loadAccounting(admin: AdminClient, companyId: string | null): Promise<KiaContext['accounting']> {
   if (!companyId) return { hasSnapshot: false, latestQuarter: null, anomalyCount: 0, criticalAnomalyCount: 0 };
   try {
     const [{ data: snapshots }, { data: anomalies }] = await Promise.all([
@@ -293,17 +321,19 @@ async function loadAccounting(admin: AdminClient, companyId: string | undefined)
   }
 }
 
-/** Direct DB case query used by dashboard channel when there is no phone-based contact. */
 async function loadCasesForClient(
   admin: AdminClient,
   clientId: string | null,
+  companyId: string | null,
 ): Promise<KiaContext['cases']> {
   if (!clientId) return [];
-  const { data } = await admin
+  let query = admin
     .from('cases')
     .select('id, service, state, opened_at')
     .eq('client_id', clientId)
-    .not('state', 'in', ['finalizado', 'cerrado', 'entregado'])
+    .not('state', 'in', ['finalizado', 'cerrado', 'entregado']);
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data } = await query
     .order('opened_at', { ascending: false })
     .limit(10);
   return (data ?? []).map((c: { id: string; service: string; state: string; opened_at: string }) => ({

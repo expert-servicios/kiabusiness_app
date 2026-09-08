@@ -24,15 +24,29 @@ const requestSchema = z.object({
   companyId   : z.string().uuid().optional(),
 }).strict();
 
+const LEGACY_DASHBOARD_SAFE_TOOLS = [
+  'get_user_expedientes',
+  'get_user_companies',
+  'get_user_pending_docs',
+  'get_case_status',
+  'get_holded_connection_status',
+  'get_holded_invoices',
+  'get_holded_contacts',
+  'get_holded_bank_balance',
+  'get_company_status_snapshot',
+  'generate_company_report',
+  'generate_holded_connection_link',
+  'generate_profile_link',
+  'generate_checkout_gate_link',
+] as const;
+
 export async function POST(request: NextRequest) {
-  // ── Auth ──────────────────────────────────────────────────────────────────
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  // ── Rate limit + cost cap ─────────────────────────────────────────────────
   if (!checkKiaMessageRateLimit(user.id)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
@@ -41,7 +55,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'daily_cost_cap_reached' }, { status: 429 });
   }
 
-  // ── Parse body ────────────────────────────────────────────────────────────
   let body: unknown;
   try {
     body = await request.json();
@@ -55,17 +68,46 @@ export async function POST(request: NextRequest) {
   }
   const { message, sessionId, currentPage, currentTask, pageData, companyId } = parsed.data;
 
-  // ── Resolver tenant para contexto ─────────────────────────────────────────
   const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
+  const { data: profile, error: profileError } = await admin
     .from('profiles')
     .select('tenant_id, active_company_id')
     .eq('id', user.id)
     .maybeSingle();
 
+  if (profileError) {
+    console.error('[KiaCopilot] profile lookup failed:', profileError.message);
+    return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
+  }
+
   const resolvedCompanyId = companyId ?? profile?.active_company_id ?? undefined;
 
-  // ── Ejecutar decisión Kia ─────────────────────────────────────────────────
+  if (resolvedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', user.id)
+      .eq('company_id', resolvedCompanyId)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('[KiaCopilot] company membership lookup failed:', membershipError.message);
+      return NextResponse.json({ error: 'company_membership_check_failed' }, { status: 500 });
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        {
+          error: companyId ? 'company_forbidden' : 'active_company_invalid',
+          reply: companyId
+            ? 'La entidad seleccionada no pertenece a tu cuenta.'
+            : 'La entidad activa ya no está disponible. Selecciona una de tus empresas antes de usar KIA.',
+        },
+        { status: companyId ? 403 : 409 },
+      );
+    }
+  }
+
   let result;
   try {
     result = await runKiaDecision({
@@ -74,6 +116,7 @@ export async function POST(request: NextRequest) {
       message,
       locale     : 'es',
       allowTools : true,
+      allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS],
       contextInput: {
         channel     : 'dashboard',
         userId      : user.id,
@@ -93,7 +136,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // ── Guardar sesión en kia_sessions ────────────────────────────────────────
   let effectiveSessionId = sessionId;
   try {
     const sessionData = {
@@ -123,11 +165,9 @@ export async function POST(request: NextRequest) {
       effectiveSessionId = createdSession?.id ?? undefined;
     }
   } catch (err) {
-    // No-fatal: el chat sigue funcionando aunque no se guarde la sesión
     console.warn('[KiaCopilot] session save failed:', err);
   }
 
-  // ── Persistir decision log (no-fatal) ─────────────────────────────────────
   const response = NextResponse.json({
     reply      : result.userMessage,
     quickReplies: (result.decision.quickReplies ?? []).map((reply) => reply.title),
