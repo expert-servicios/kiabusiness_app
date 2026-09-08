@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 type LedgerRow = {
@@ -11,6 +11,15 @@ type LedgerRow = {
 
 function json<T>(path: string): T {
   return JSON.parse(readFileSync(resolve(process.cwd(), path), 'utf8')) as T;
+}
+
+function collectSqlReferences(value: unknown): string[] {
+  if (typeof value === 'string') return value.endsWith('.sql') ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap(collectSqlReferences);
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap(collectSqlReferences);
+  }
+  return [];
 }
 
 describe('Supabase migration ledger Phase 0 evidence', () => {
@@ -68,6 +77,12 @@ describe('Supabase migration ledger Phase 0 evidence', () => {
     expect(manifest.remote_only_live.length).toBeGreaterThan(0);
     expect(manifest.remote_duplicates.length).toBeGreaterThan(0);
     expect(manifest.local_version_collisions.length).toBeGreaterThan(0);
+
+    const referencedSql = [...new Set(collectSqlReferences(manifest))];
+    expect(referencedSql.length).toBeGreaterThan(0);
+    for (const filename of referencedSql) {
+      expect(existsSync(resolve(process.cwd(), 'supabase', 'migrations', filename)), filename).toBe(true);
+    }
   });
 
   it('records a data-free public-schema fingerprint for later parity checks', () => {
