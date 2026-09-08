@@ -1,0 +1,150 @@
+{
+  "as_of": "2026-09-08",
+  "project_ref": "ybtpqscmqrrjjmuoryap",
+  "source_snapshot": "production-ledger-2026-09-08.json",
+  "history_repair_authorized": false,
+  "notes": [
+    "This file records reviewed historical classifications only.",
+    "It is not an instruction to replay DDL or mutate supabase_migrations.schema_migrations.",
+    "Every applied/reverted history change still requires the final one-row manifest, re-verification and explicit production checkpoint approval."
+  ],
+  "pre_ledger_bootstrap": {
+    "remote_ledger_first_version": "20260508082323",
+    "evidence": "Core tables existed before the first remote ledger row; early local files are not a faithful representation of the production bootstrap.",
+    "canonical_example": "orders retained legacy user_id/pack_name/amount/stripe_session_id and was later aligned with quote_id/client_id/stripe_payment_id/amount_eur."
+  },
+  "schema_effect_present_ledger_absent_candidates": [
+    {
+      "local_version": "20260721000001",
+      "local_file": "20260721000001_academy_enrollments.sql",
+      "name": "academy_enrollments",
+      "classification": "candidate_history_applied",
+      "reason": "Table, constraints and policies exist; September atomic fulfillment functions require the table to have existed before their creation."
+    },
+    {
+      "local_version": "20260901000001",
+      "local_file": "20260901000001_academy_knowledge_status.sql",
+      "name": "academy_knowledge_status",
+      "classification": "candidate_history_applied",
+      "reason": "Table and expected RLS policy exist, but no corresponding remote ledger row was found."
+    }
+  ],
+  "exact_version_opaque_remote_statements": [
+    {
+      "version": "20260525162302",
+      "name": "kia_health_schema_repair",
+      "reason": "Remote statements contain only a Management API marker; distinct SQL is preserved in the exact-version Git file and its effects were verified in production."
+    },
+    {
+      "version": "20260525172343",
+      "name": "kia_rls_repair",
+      "reason": "Remote statements contain only a Management API marker; distinct SQL is preserved in the exact-version Git file and its effects were verified in production."
+    },
+    {
+      "version": "20260525172441",
+      "name": "kia_grants_repair",
+      "reason": "Remote statements contain only a Management API marker; distinct SQL is preserved in the exact-version Git file and its effects were verified in production."
+    }
+  ],
+  "reviewed_semantic_pairs": [
+    {"remote_version":"20260514150834","remote_name":"add_external_mappings","local_version":"20260509164929","local_file":"20260509164929_add_external_mappings.sql"},
+    {"remote_version":"20260522073601","remote_name":"add_fiscal_obligations","local_version":"20260522110000","local_file":"20260522110000_add_fiscal_obligations.sql"},
+    {"remote_version":"20260522073607","remote_name":"orders_catalog_support","local_version":"20260522120000","local_file":"20260522120000_orders_catalog_support.sql"},
+    {"remote_version":"20260522091031","remote_name":"leads_whatsapp_upsert","local_version":"20260522130000","local_file":"20260522130000_leads_whatsapp_upsert.sql"},
+    {"remote_version":"20260528193421","remote_name":"holded_integration_consent_columns","local_version":"20260528120000","local_file":"20260528120000_holded_integration_consent_columns.sql"},
+    {"remote_version":"20260529080052","remote_name":"holded_mcp_bridge_tables","local_version":"20260529090000","local_file":"20260529090000_holded_mcp_bridge_tables.sql"},
+    {"remote_version":"20260529105719","remote_name":"kia_financial_reports","local_version":"20260529100000","local_file":"20260529100000_kia_financial_reports.sql"},
+    {"remote_version":"20260602092112","remote_name":"admin_clients_operational_status","local_version":"20260602084321","local_file":"20260602084321_admin_clients_operational_status.sql"},
+    {"remote_version":"20260602092119","remote_name":"admin_orders_holded_traceability_repair","local_version":"20260602092034","local_file":"20260602092034_admin_orders_holded_traceability_repair.sql"},
+    {"remote_version":"20260625194116","remote_name":"harden_security_definer_functions","local_version":"20260618190255","local_file":"20260618190255_harden_security_definer_functions.sql"},
+    {"remote_version":"20260625194140","remote_name":"pgcron_email_queue","local_version":"20260625000001","local_file":"20260625000001_pgcron_email_queue.sql"},
+    {"remote_version":"20260703100222","remote_name":"pgcron_email_queue_auth","local_version":"20260703000001","local_file":"20260703000001_pgcron_email_queue_auth.sql"},
+    {"remote_version":"20260703181516","remote_name":"fix_pgcron_http_post_schema","local_version":"20260703000002","local_file":"20260703000002_fix_pgcron_http_post_schema.sql"},
+    {"remote_version":"20260710105118","remote_name":"profile_billing_and_holded_order_status","local_version":"20260523062807","local_file":"20260523062807_profile_billing_and_holded_order_status.sql"},
+    {"remote_version":"20260907180358","remote_name":"add_company_stripe_customer_mappings","local_version":"20260907175500","local_file":"20260907175500_add_company_stripe_customer_mappings.sql"}
+  ],
+  "remote_duplicate_groups": [
+    {
+      "name": "fix_pgcron_http_post_schema",
+      "versions": ["20260703181516", "20260703182452"],
+      "classification": "byte_identical_remote_duplicate"
+    },
+    {
+      "name": "subscription_onboarding_admin_followup",
+      "versions": ["20260905082637", "20260905083616"],
+      "classification": "byte_identical_remote_duplicate"
+    }
+  ],
+  "remote_only_live_changes": [
+    {"version":"20260603092133","name":"email_inbox_cache_and_system_kv"},
+    {"version":"20260603164620","name":"payments_case_link_and_manual_payments"},
+    {"version":"20260603170130","name":"google_calendar_event_ids"},
+    {"version":"20260603170629","name":"marketing_campaigns"},
+    {"version":"20260625200519","name":"email_events_add_last_error"},
+    {"version":"20260710190314","name":"fix_email_queue_schema_mismatch"},
+    {"version":"20260902193301","name":"email_events_html"},
+    {"version":"20260904102705","name":"entity_scope_one_time_orders"},
+    {"version":"20260904104108","name":"subscription_checkout_atomic_claim"},
+    {"version":"20260904104416","name":"sync_subscription_checkout_claim_status"},
+    {"version":"20260904104552","name":"holded_contact_creation_claims"}
+  ],
+  "remote_creation_history_missing_as_standalone_local_migration": [
+    {"version":"20260523102812","name":"create_service_readiness_assessments","objects":["service_readiness_assessments"]},
+    {"version":"20260527123644","name":"create_subscription_entitlements","objects":["subscription_entitlements"]},
+    {"version":"20260527124051","name":"create_connector_tables","objects":["connector_instances","connector_usage_events","connector_audit_logs"]}
+  ],
+  "local_not_applied_at_filename_time": [
+    {
+      "local_version": "20260523062807",
+      "local_file": "20260523062807_profile_billing_and_holded_order_status.sql",
+      "actual_remote_version": "20260710105118",
+      "reason": "Remote July migration explicitly records that the May repo file had not previously been applied."
+    },
+    {
+      "local_version": "20260607000002",
+      "local_file": "20260607000002_email_queue.sql",
+      "reason": "Current error/max_attempts state is explained by the later remote July schema-mismatch repair; no evidence supports marking this June file applied."
+    },
+    {
+      "local_version": "20260607000003",
+      "local_file": "20260607000003_profiles_onboarding_at.sql",
+      "reason": "A later September repair was required because the expected production column/index state was missing."
+    }
+  ],
+  "local_files_evolved_after_original_application": [
+    {"local_file":"20260604000000_kia_memories.sql","reason":"Current file adds idempotency/ACL hardening not present in the original remote statement."},
+    {"local_file":"20260604000001_kia_memories_search_rpc.sql","reason":"Current file adds embedding-null filtering and explicit ACL not present in the original remote statement."},
+    {"local_file":"20260604120000_tenant_ready.sql","reason":"Remote application reordered tenant_id creation before the policy; current local ordering differs."},
+    {"local_file":"20260607000001_rls_tenant_aware_phase2.sql","reason":"Current local intent is SELECT-only for cases/documents, while production retains stale legacy ALL policies tracked by #147."},
+    {"local_file":"20260607000004_subscription_post_purchase_onboarding.sql","reason":"Current local file contains an additional pending-onboarding index that is not present in production."},
+    {"local_file":"20260522184242_whatsapp_thread_replies.sql","reason":"Current local file adds a quoted_direction check constraint not present in the original remote statement."}
+  ],
+  "local_timestamp_collisions": [
+    {
+      "version": "20260903113000",
+      "files": [
+        "20260903113000_limit_invoice_documents_service_role.sql",
+        "20260903113000_secure_servicios_con_pagos_view.sql"
+      ],
+      "corresponding_remote_versions": ["20260903103711", "20260903104758"]
+    },
+    {
+      "version": "20260607000005",
+      "files": [
+        "20260607000005_email_queue.sql",
+        "20260607000005_email_queue_processing_status.sql"
+      ],
+      "note": "email_queue_processing_status also exists as an identical local copy under 20260607000006."
+    }
+  ],
+  "create_if_not_exists_noop_history": [
+    {
+      "object": "viability_assessments",
+      "first_remote_version": "20260521150551",
+      "second_remote_version": "20260522073549",
+      "effective_schema": "first definition",
+      "reason": "Second CREATE TABLE IF NOT EXISTS proposed incompatible nullability/types but did not replace the existing table."
+    }
+  ],
+  "separate_forward_security_issues": [147, 149]
+}
