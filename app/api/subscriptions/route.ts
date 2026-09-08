@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,16 +38,21 @@ export async function GET(request: NextRequest) {
     }
 
     let company: { id: string; razon_social: string; forma_juridica: string } | null = null;
+    let coverage = null;
     if (companyId) {
-      const { data } = await admin
-        .from('companies')
-        .select('id,razon_social,forma_juridica')
-        .eq('id', companyId)
-        .maybeSingle();
+      const [{ data }, resolvedCoverage] = await Promise.all([
+        admin
+          .from('companies')
+          .select('id,razon_social,forma_juridica')
+          .eq('id', companyId)
+          .maybeSingle(),
+        resolveCompanyCommercialCoverage(admin, user.id, companyId),
+      ]);
       company = data ?? null;
+      coverage = resolvedCoverage;
     }
 
-    return NextResponse.json({ subscriptions: subscriptions ?? [], company });
+    return NextResponse.json({ subscriptions: subscriptions ?? [], company, coverage });
   } catch (error) {
     console.error('Subscriptions GET error:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
