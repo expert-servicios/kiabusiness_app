@@ -6,27 +6,24 @@ Fecha: 2026-09-07
 
 Un mismo usuario de EXPERT puede gestionar varias entidades fiscales o mercantiles. La identidad de acceso y la identidad de facturación no son la misma cosa.
 
-Caso de referencia confirmado:
+El caso operativo de referencia confirmó tres reglas generales:
 
-- el mismo usuario gestiona **ALVILS ESP, S.L.U.** e **Inversiones Paso Seguro**;
-- la suscripción Stripe activa `sub_1S0IA7LeYwwgvux4vE1VB7DK` corresponde a **ALVILS ESP, S.L.U.**;
-- Stripe Customer `cus_SwAQzEZGfhlP5S` aparece como `ALVILS`, con CIF de factura `B56305501`, y es el Customer de la suscripción activa;
-- Stripe Customer `cus_OQkYuIkz8n5FYB` aparece actualmente como `INVERSIONES PASO SEGURO`, pero su histórico fue reutilizado para más de una identidad fiscal;
-- ambos Stripe Customers comparten actualmente el mismo email de contacto. Ese email **no debe usarse como clave de identidad ni como criterio de fusión**.
+- una misma persona puede gestionar varias entidades jurídicas;
+- dos entidades pueden compartir un email de contacto sin compartir identidad fiscal;
+- un Stripe Customer puede haber sido reutilizado históricamente entre distintas identidades fiscales.
+
+Los identificadores reales de clientes, CIF/NIF, emails, Stripe Customer/Subscription/Invoice IDs y demás referencias financieras concretas **no deben almacenarse en documentación pública del repositorio**. La evidencia de producción debe consultarse únicamente mediante herramientas internas autorizadas.
 
 ## Hallazgo de preflight: Customer reutilizado entre entidades
 
-El preflight de producción sobre `stripe.invoices` demostró que `cus_OQkYuIkz8n5FYB` contiene facturas emitidas a dos CIF distintos:
+El preflight de producción confirmó que un mismo Stripe Customer histórico contenía facturas emitidas a más de una identidad fiscal. Por tanto, un Stripe Customer no puede considerarse por sí solo una identidad contable histórica.
 
-- facturas antiguas de **ALVILS ESP, S.L.U.**, CIF `B56305501`;
-- facturas posteriores de **Inversiones Paso Seguro**, CIF `B54920509`.
-
-Por tanto, un Stripe Customer no puede considerarse por sí solo una identidad contable histórica. El modelo debe distinguir entre:
+El modelo debe distinguir entre:
 
 1. **relación operativa actual empresa ↔ Stripe Customer**;
 2. **propietario legal de cada factura histórica**.
 
-Hasta que el histórico mixto esté resuelto, `cus_OQkYuIkz8n5FYB` no debe mapearse íntegramente a Inversiones Paso Seguro.
+Hasta resolver un histórico mixto, el Customer completo debe permanecer bloqueado para mapping global a una sola entidad.
 
 ## Modelo canónico
 
@@ -38,14 +35,9 @@ Hasta que el histórico mixto esté resuelto, `cus_OQkYuIkz8n5FYB` no debe mapea
 
 `profile_companies` representa la relación muchos-a-muchos entre una persona y las entidades que puede gestionar.
 
-Una persona puede gestionar:
+Una persona puede gestionar una sociedad, un autónomo, varias sociedades o una combinación de autónomo + una o más sociedades.
 
-- una sociedad;
-- un autónomo;
-- varias sociedades;
-- una combinación de autónomo + una o más sociedades.
-
-`profiles.active_company_id` sólo representa el contexto activo en la interfaz. No implica propiedad exclusiva ni atribución de cobros.
+`profiles.active_company_id` sólo representa el contexto activo de interfaz. No implica propiedad exclusiva ni atribución de cobros.
 
 ### Stripe Customers
 
@@ -53,10 +45,10 @@ Una persona puede gestionar:
 
 Reglas:
 
-1. Un Stripe Customer sólo puede estar asignado a una empresa dentro del mismo tenant cuando su atribución operativa sea inequívoca.
-2. Una empresa puede tener varios Stripe Customers para preservar históricos o migraciones.
+1. Un Stripe Customer sólo puede asignarse a una empresa dentro del mismo tenant cuando su atribución operativa sea inequívoca.
+2. Una empresa puede conservar varios Stripe Customers por histórico o migración.
 3. Puede existir como máximo un mapping primario activo por empresa.
-4. El campo legado `companies.stripe_customer_id` se mantiene temporalmente por compatibilidad, pero deja de ser el modelo canónico.
+4. `companies.stripe_customer_id` se mantiene temporalmente como compatibilidad, pero no es el modelo canónico.
 5. No se debe inferir la empresa por email, nombre parcial o teléfono cuando exista ambigüedad.
 6. Si un Customer contiene facturas de más de un CIF/NIF, el mapping global queda bloqueado hasta resolver el histórico.
 
@@ -70,7 +62,7 @@ Reglas:
 2. El CIF/NIF guardado en la propia factura es evidencia primaria de atribución.
 3. Si la factura no contiene CIF/NIF, sólo puede atribuirse mediante revisión manual con motivo documentado.
 4. Una factura sólo puede tener una atribución activa por tenant.
-5. Una corrección revoca la atribución anterior y crea una nueva; no se elimina la fila histórica.
+5. Una corrección revoca la atribución anterior; no elimina el histórico.
 6. `service_role` no dispone de permiso `DELETE` sobre esta tabla.
 7. Una atribución explícita prevalece sobre cualquier mapping de Customer.
 8. Si una atribución explícita apunta a otra empresa del tenant, Client 360 no puede recuperar esa factura mediante fallback.
@@ -79,7 +71,7 @@ Orden de decisión en Client 360:
 
 1. atribución explícita de factura;
 2. CIF/NIF de la factura coincidente con la empresa;
-3. mapping de Customer sólo si la factura no contiene identidad fiscal.
+3. mapping de Customer sólo cuando la factura no contiene identidad fiscal.
 
 ### Suscripciones
 
@@ -87,11 +79,7 @@ Orden de decisión en Client 360:
 
 `subscriptions.client_id` identifica al usuario gestor cuando exista, pero una suscripción no debe quedar conceptualmente vinculada sólo a la persona.
 
-Para el caso de referencia:
-
-`sub_1S0IA7LeYwwgvux4vE1VB7DK` → `cus_SwAQzEZGfhlP5S` → **ALVILS ESP, S.L.U.**
-
-No debe atribuirse a Inversiones Paso Seguro por compartir email.
+Compartir email nunca justifica atribuir una suscripción a otra empresa.
 
 ## Fases de implementación
 
@@ -99,64 +87,52 @@ No debe atribuirse a Inversiones Paso Seguro por compartir email.
 
 Estado: **completada**.
 
-- Crear `company_stripe_customers`.
-- RLS habilitado; tabla accesible sólo por backend/service role.
-- Adaptar Client 360 para leer todos los Stripe Customer IDs mapeados a cada empresa.
-- Si todavía no hay mappings explícitos, usar `companies.stripe_customer_id` sólo como fallback de compatibilidad.
-- Consultar suscripciones tanto por `client_id` como por las empresas gestionadas y deduplicar por ID.
-- No modificar datos históricos.
+- `company_stripe_customers` como relación canónica de Customer operativo.
+- RLS habilitado y acceso backend/service role.
+- Client 360 lee todos los Customers mapeados a cada empresa.
+- `companies.stripe_customer_id` sólo como fallback legacy.
+- Suscripciones consultadas por `client_id` y empresas gestionadas, con deduplicación.
+- Sin reescritura de históricos.
 
 ### Fase B — herramienta de reconciliación Admin
 
-Estado: **implementada y desplegada**.
+Estado: **completada en código**.
 
-Client 360 incorpora una herramienta explícita para:
-
-- inspeccionar un Stripe Customer exacto;
-- crear o seleccionar empresa;
-- asociar Stripe Customer a empresa;
-- asociar una suscripción existente a `company_id`;
-- enlazar la empresa al perfil mediante `profile_companies`;
-- mostrar evidencia Stripe antes de confirmar;
-- bloquear Customers con más de un CIF/NIF histórico;
-- auditar cada mutación.
+Client 360 permite inspeccionar un Customer exacto, crear/seleccionar empresa, asociar Customer y suscripción a `company_id`, enlazar mediante `profile_companies`, mostrar evidencia antes de confirmar y bloquear Customers con histórico fiscal mixto.
 
 No se permite autoasignación por email.
 
 ### Fase B2 — atribución histórica de facturas
 
-Estado: **en implementación, PR #139**.
+Estado: **completada en código y esquema**.
 
-Objetivos:
+- `stripe_invoice_company_attributions` conserva la atribución por factura.
+- Admin puede inspeccionar una factura exacta y atribuirla con evidencia fiscal.
+- Se exige motivo cuando no existe CIF/NIF.
+- Las correcciones revocan, no borran.
+- Client 360 prioriza la atribución de factura sobre el Customer.
+- Las lecturas fallan cerrado cuando no puede resolverse la capa de identidad.
+- No existe backfill automático.
 
-- crear `stripe_invoice_company_attributions`;
-- inspeccionar una factura Stripe exacta `in_...` desde Admin;
-- atribuirla a una empresa usando el CIF/NIF de la factura como evidencia;
-- exigir motivo cuando no haya CIF/NIF;
-- impedir reasignaciones automáticas;
-- revocar, no borrar, las atribuciones corregidas;
-- hacer que Client 360 priorice la atribución de factura sobre el Customer;
-- fallar cerrado si no puede resolverse la capa de identidad;
-- no hacer backfill automático.
+### Fase C — reconciliación operativa del caso pendiente
 
-### Fase C — reconciliación ALVILS / Inversiones
+Estado: **pendiente de identidad inequívoca del usuario gestor**.
 
 Preflight actual:
 
-- no existe todavía una `company` operativa para ALVILS ni para Inversiones Paso Seguro;
-- no existe `profile`/`auth.user` inequívoco para el gestor de ambas entidades;
-- las cuatro empresas legacy actualmente existentes tienen `tenant_id = NULL`; no se hará backfill automático como parte de esta reconciliación;
-- `cus_SwAQzEZGfhlP5S` tiene histórico fiscal homogéneo de ALVILS (`B56305501`) y es candidato limpio para mapping;
-- `cus_OQkYuIkz8n5FYB` tiene histórico mixto ALVILS (`B56305501`) + Inversiones (`B54920509`) y permanece bloqueado para mapping global.
+- no existe todavía una `company` canónica suficientemente verificada para cada entidad del caso operativo;
+- no existe `profile`/`auth.user` inequívoco derivado de la evidencia de facturación;
+- las empresas legacy con `tenant_id = NULL` no se corrigen automáticamente;
+- existe al menos un Customer con histórico homogéneo y otro con histórico fiscal mixto; el segundo permanece bloqueado para mapping global.
 
 Cuando el usuario gestor esté identificado:
 
-1. crear/verificar `companies` para ALVILS e Inversiones Paso Seguro con tenant explícito;
-2. crear dos `profile_companies` para el mismo perfil;
-3. mapear `cus_SwAQzEZGfhlP5S` a ALVILS;
-4. crear o reconciliar `public.subscriptions` para `sub_1S0IA7LeYwwgvux4vE1VB7DK` con `company_id = ALVILS`;
-5. atribuir las facturas históricas de `cus_OQkYuIkz8n5FYB` a ALVILS o Inversiones según el CIF/NIF guardado en cada factura;
-6. sólo después de resolver el histórico, decidir si `cus_OQkYuIkz8n5FYB` puede quedar como Customer operativo de Inversiones y bajo qué regla;
+1. crear/verificar las `companies` con tenant explícito;
+2. crear las relaciones `profile_companies` para el mismo perfil;
+3. mapear únicamente Customers con evidencia inequívoca;
+4. reconciliar cada suscripción con la empresa legal correcta;
+5. atribuir facturas históricas según la identidad fiscal guardada en cada factura;
+6. mantener bloqueado cualquier Customer con histórico mixto hasta resolver factura por factura;
 7. verificar Client 360, facturas, pedidos y permisos por entidad;
 8. no fusionar Stripe Customers ni reescribir facturas históricas.
 
@@ -164,18 +140,27 @@ Cuando el usuario gestor esté identificado:
 
 Para nuevas altas y compras:
 
-- el checkout debe recibir siempre `company_id` o crear una nueva entidad de forma explícita;
-- Stripe Checkout/Customer metadata debe incluir identificadores internos no sensibles cuando proceda;
-- webhooks deben persistir `company_id` en orders/subscriptions y escribir `company_stripe_customers`, no sólo el campo legado;
-- una segunda suscripción del mismo usuario para otra empresa debe crear una relación empresarial separada, no reemplazar la anterior;
-- reconciliación automática sólo cuando exista una clave interna inequívoca; en cualquier otro caso, revisión manual.
+- el checkout debe resolver siempre `company_id` o crear una entidad explícita;
+- Stripe metadata puede incluir identificadores internos no sensibles cuando proceda;
+- webhooks deben persistir `company_id` en orders/subscriptions y actualizar `company_stripe_customers` cuando la evidencia sea inequívoca;
+- una segunda suscripción del mismo usuario para otra empresa debe crear una relación empresarial separada;
+- la reconciliación automática sólo procede con una clave interna inequívoca; en los demás casos se exige revisión manual.
+
+## Reglas de documentación pública
+
+- No publicar nombres reales de clientes vinculados a casos operativos internos.
+- No publicar CIF/NIF, emails de facturación ni teléfonos.
+- No publicar IDs reales de Stripe (`cus_...`, `sub_...`, `in_...`, `pi_...`, `cs_...`).
+- No publicar IDs de Holded, referencias bancarias ni documentos de clientes.
+- En issues, PRs, tests y docs usar alias, fixtures sintéticos o identificadores claramente ficticios.
+- La evidencia sensible debe permanecer en Stripe, Supabase, Holded u otros conectores autorizados, no en Git.
 
 ## Criterios de aceptación
 
-- Un usuario puede ver y cambiar entre ALVILS e Inversiones sin duplicar su cuenta personal.
-- La suscripción activa `sub_1S0IA7LeYwwgvux4vE1VB7DK` aparece bajo ALVILS.
-- Las facturas históricas se muestran bajo la empresa que figura legalmente en cada factura, incluso si Stripe reutilizó el mismo Customer.
-- Inversiones Paso Seguro no hereda las facturas históricas de ALVILS por compartir Customer o email.
-- Client 360 puede mostrar varios Stripe Customer IDs por empresa cuando existan.
+- Un usuario puede gestionar varias entidades sin duplicar su cuenta personal.
+- Cada suscripción aparece bajo la entidad legal correcta.
+- Las facturas históricas se muestran bajo la empresa que figura legalmente en cada factura, incluso cuando Stripe reutilizó un Customer.
+- Una entidad no hereda históricos de otra por compartir Customer o email.
+- Client 360 admite varios Stripe Customers por empresa.
 - Ningún histórico financiero se fusiona, elimina o reasigna por heurística de email.
 - Toda corrección productiva queda basada en evidencia, confirmación explícita y trazabilidad.
