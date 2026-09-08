@@ -11,6 +11,7 @@ describe('canonical subscription onboarding state', () => {
   const cockpit = source('app/(protected)/admin/clientes/[id]/ClientOnboardingCockpit.tsx');
   const citas = source('app/api/dashboard/citas/route.ts');
   const adminComplete = source('app/api/admin/clientes/[id]/complete-onboarding/route.ts');
+  const bookingIdentity = source('lib/admin/onboarding-booking-identity.ts');
 
   it('exposes the active subscription post-purchase marker only to staff', () => {
     expect(stateRoute).toContain('isStaffRole');
@@ -28,9 +29,11 @@ describe('canonical subscription onboarding state', () => {
     expect(cockpit).toContain('/complete-onboarding');
   });
 
-  it('matches appointment email case-insensitively and requires the meeting to have occurred', () => {
+  it('matches authorized booking emails case-insensitively and requires the meeting to have occurred', () => {
     expect(citas).toContain(".ilike('email', user.email)");
-    expect(adminComplete).toContain(".ilike('email', clientEmail)");
+    expect(adminComplete).toContain('loadOnboardingAppointmentsForIdentity');
+    expect(bookingIdentity).toContain(".ilike('email', email)");
+    expect(bookingIdentity).toContain(".from('profile_companies')");
     expect(adminComplete).toContain("appointment.appointment_type ?? ''");
     expect(adminComplete).toContain("=== 'onboarding'");
     expect(adminComplete).toContain('meetingAt <= now');
