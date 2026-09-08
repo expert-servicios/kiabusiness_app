@@ -36,12 +36,10 @@ const bodySchema = z.object({
 });
 
 const DASHBOARD_SAFE_TOOLS = [
-  // User data tools (requires authenticated user context)
   'get_user_expedientes',
   'get_user_companies',
   'get_user_pending_docs',
   'get_case_status',
-  // Holded integration tools
   'get_holded_connection_status',
   'get_holded_invoices',
   'get_holded_contacts',
@@ -49,7 +47,6 @@ const DASHBOARD_SAFE_TOOLS = [
   'get_company_status_snapshot',
   'generate_company_report',
   'generate_holded_connection_link',
-  // Navigation links
   'generate_profile_link',
   'generate_checkout_gate_link',
 ] as const;
@@ -152,8 +149,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ── SSE streaming handler ─────────────────────────────────────────────────────
-
 type ParsedBody = z.infer<typeof bodySchema>;
 
 function sseEvent(data: unknown): Uint8Array {
@@ -170,7 +165,6 @@ async function streamingCopilotResponse(
       const send = (data: unknown) => controller.enqueue(sseEvent(data));
 
       try {
-        // 1. Build context with direct DB lookup for this user
         const context = await buildKiaContext({
           channel: 'dashboard',
           userId,
@@ -187,8 +181,6 @@ async function streamingCopilotResponse(
         });
 
         const locale = lang ?? context.contact.language;
-
-        // 2. Pre-flight tool execution based on message intent
         const toolsToRun = resolvePreflightTools(message, currentPage, currentTask);
         const toolResults: KiaToolResult[] = [];
         for (const toolName of toolsToRun) {
@@ -197,30 +189,22 @@ async function streamingCopilotResponse(
           if (result) toolResults.push(result);
         }
 
-        // 3. Build artifacts from tool results
         const artifacts = buildArtifactsFromToolResults(toolResults);
-
-        // 4. Build streaming system prompt with context + tool results
         const systemPrompt = buildStreamingSystemPrompt(context, toolResults, locale);
-
-        // 5. Build conversation messages
         const historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = (history ?? [])
           .slice(-6)
           .map((item) => ({ role: item.role, content: item.text }));
         const messages = [...historyMessages, { role: 'user' as const, content: message }];
 
-        // 6. Stream text response from Anthropic
         for await (const chunk of streamAnthropicText(systemPrompt, messages, { maxTokens: 500, temperature: 0.3 })) {
           send({ type: 'chunk', text: chunk });
         }
 
-        // 7. Send completion event
         send({
           type: 'done',
           artifacts,
           quickReplies: buildContextualQuickReplies(context, message),
         });
-
       } catch (err) {
         console.error('[kia/copilot/stream]', err instanceof Error ? err.message : err);
         send({ type: 'error', error: 'Error interno del copiloto' });
@@ -240,7 +224,6 @@ async function streamingCopilotResponse(
   });
 }
 
-/** Selects which tools to pre-execute based on the user's message. */
 function resolvePreflightTools(message: string, currentPage?: string, currentTask?: string): string[] {
   const text = normalizeSearchText(`${message} ${currentPage ?? ''} ${currentTask ?? ''}`);
   const tools: string[] = [];
@@ -261,7 +244,6 @@ function resolvePreflightTools(message: string, currentPage?: string, currentTas
   return tools;
 }
 
-/** Builds a concise streaming system prompt with live context. */
 function buildStreamingSystemPrompt(
   context: KiaContext,
   toolResults: KiaToolResult[],
@@ -289,6 +271,22 @@ function buildStreamingSystemPrompt(
       ? `Empresa: ${context.company.name ?? '—'}, Holded: ${context.company.holdedConnected ? 'подключён' : 'не подключён'}`
       : `Empresa: ${context.company.name ?? '—'}, Holded: ${context.company.holdedConnected ? 'conectado' : 'no conectado'}`
     );
+
+    if (context.company.coverageSource === 'included_entity') {
+      const sourceName = context.company.coveragePrimaryCompanyName ?? (isRu ? 'другой компании клиента' : 'otra entidad del cliente');
+      const planName = context.company.coveragePlanName ?? (isRu ? 'активный план' : 'plan activo');
+      lines.push(isRu
+        ? `Коммерческое покрытие: эта организация включена в ${planName} организации ${sourceName}. Вторая подписка не нужна.`
+        : `Cobertura comercial: esta entidad está incluida en ${planName} de ${sourceName}. No necesita una segunda suscripción.`
+      );
+    } else if (context.company.hasMonthlyPlan) {
+      lines.push(isRu
+        ? `Коммерческое покрытие: активное (${context.company.coveragePlanName ?? 'plan'}).`
+        : `Cobertura comercial: activa (${context.company.coveragePlanName ?? 'plan'}).`
+      );
+    } else {
+      lines.push(isRu ? 'Коммерческое покрытие: нет активного плана.' : 'Cobertura comercial: sin plan activo.');
+    }
   }
 
   if (context.documents.pendingCount > 0) {
@@ -298,7 +296,6 @@ function buildStreamingSystemPrompt(
     );
   }
 
-  // Inject tool results as readable context
   for (const tr of toolResults) {
     if (!tr.ok || !tr.result) continue;
 
@@ -344,14 +341,13 @@ function buildStreamingSystemPrompt(
 
   lines.push('');
   lines.push(isRu
-    ? '## Правила\n- Отвечай только на русском.\n- Используй данные контекста выше, не выдумывай.\n- Для формальных действий направляй на портал: https://expertconsulting.es\n- Не раскрывай ID, технические детали или внутренние данные системы.'
-    : '## Reglas\n- Responde solo en español.\n- Usa los datos del contexto de arriba; no inventes.\n- Para acciones formales (contratar, subir docs) dirige al portal: https://expertconsulting.es\n- No reveles IDs, detalles técnicos ni datos internos del sistema.'
+    ? '## Правила\n- Отвечай только на русском.\n- Используй данные контекста выше, не выдумывай.\n- Если активная организация уже включена в покрытие другой организации клиента, не предлагай ей вторую подписку.\n- Для формальных действий направляй на портал: https://expertconsulting.es\n- Не раскрывай ID, технические детали или внутренние данные системы.'
+    : '## Reglas\n- Responde solo en español.\n- Usa los datos del contexto de arriba; no inventes.\n- Si la entidad activa ya está incluida en la cobertura de otra entidad del cliente, no le propongas una segunda suscripción.\n- Para acciones formales (contratar, subir docs) dirige al portal: https://expertconsulting.es\n- No reveles IDs, detalles técnicos ni datos internos del sistema.'
   );
 
   return lines.join('\n');
 }
 
-/** Quick replies based on user context — no AI call needed. */
 function buildContextualQuickReplies(
   context: KiaContext,
   _message: string,

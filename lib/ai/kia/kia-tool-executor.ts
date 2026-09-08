@@ -138,7 +138,6 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
       case 'create_kia_decision_log':
         return ok(toolCall.name, { status: 'handled_by_backend' });
 
-      // ── Holded data tools ────────────────────────────────────────────────
       case 'get_holded_invoices':
       case 'get_holded_contacts':
       case 'get_holded_bank_balance': {
@@ -151,36 +150,36 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
         if (toolCall.name === 'get_holded_invoices') {
           const docType = String(args.docType ?? 'invoice');
-          const limit   = Number(args.limit ?? 10);
+          const limit = Number(args.limit ?? 10);
           const res = await fetch(`${auth.baseUrl}/documents/${docType}?limit=${limit}`, { headers: hdrs });
           if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
           const docs = (await res.json()) as Array<Record<string, unknown>>;
           return ok(toolCall.name, {
             count: docs.length,
-            documents: docs.slice(0, limit).map(d => ({
-              id     : d.id,
-              number : d.docNumber,
-              date   : d.date,
+            documents: docs.slice(0, limit).map((d) => ({
+              id: d.id,
+              number: d.docNumber,
+              date: d.date,
               contact: d.contactName,
-              total  : d.total,
-              status : d.status,
+              total: d.total,
+              status: d.status,
             })),
           });
         }
 
         if (toolCall.name === 'get_holded_contacts') {
           const query = typeof args.query === 'string' ? `?name=${encodeURIComponent(args.query)}` : '';
-          const res   = await fetch(`${auth.baseUrl}/contacts${query}`, { headers: hdrs });
+          const res = await fetch(`${auth.baseUrl}/contacts${query}`, { headers: hdrs });
           if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
           const contacts = (await res.json()) as Array<Record<string, unknown>>;
           const limit = Number(args.limit ?? 10);
           return ok(toolCall.name, {
-            count   : contacts.length,
-            contacts: contacts.slice(0, limit).map(c => ({
-              id     : c.id,
-              name   : c.name,
-              email  : c.email,
-              type   : c.type,
+            count: contacts.length,
+            contacts: contacts.slice(0, limit).map((c) => ({
+              id: c.id,
+              name: c.name,
+              email: c.email,
+              type: c.type,
               vatNumber: c.vatnumber,
             })),
           });
@@ -192,10 +191,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           const accounts = (await res.json()) as Array<Record<string, unknown>>;
           const limit = Number(args.limit ?? 5);
           return ok(toolCall.name, {
-            count   : accounts.length,
-            accounts: accounts.slice(0, limit).map(a => ({
-              id     : a.id,
-              name   : a.name,
+            count: accounts.length,
+            accounts: accounts.slice(0, limit).map((a) => ({
+              id: a.id,
+              name: a.name,
               balance: a.balance,
               currency: a.currency ?? 'EUR',
             })),
@@ -220,16 +219,16 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             clientId,
             companyId,
             integrationId,
-            period     : typeof args.period === 'string' ? args.period : undefined,
-            lang       : (args.lang as 'es' | 'ru') ?? 'es',
+            period: typeof args.period === 'string' ? args.period : undefined,
+            lang: (args.lang as 'es' | 'ru') ?? 'es',
             generatedBy: 'kia',
           });
           return ok(toolCall.name, {
-            reportId : result.reportId,
+            reportId: result.reportId,
             reportUrl: result.reportUrl,
-            title    : result.title,
-            period   : result.period,
-            message  : `Informe generado correctamente para el periodo ${result.period}.`,
+            title: result.title,
+            period: result.period,
+            message: `Informe generado correctamente para el periodo ${result.period}.`,
           });
         } catch (err) {
           return fail(toolCall.name, `Error generando el informe: ${safeErrorMessage(err)}`);
@@ -239,13 +238,15 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
       case 'get_user_expedientes': {
         const clientId = context.contact?.clientId;
         if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const companyId = context.company?.id ?? null;
         const statusFilter = String(args.status ?? 'activos');
         const limit = Number(args.limit ?? 10);
 
         let query = admin
           .from('cases')
-          .select('id, service, category, status, priority, due_date, opened_at')
+          .select('id, service, category, status, priority, due_date, opened_at, company_id')
           .eq('client_id', clientId);
+        if (companyId) query = query.eq('company_id', companyId);
         if (statusFilter === 'activos') {
           query = query.neq('status', 'finalizado');
         } else if (statusFilter === 'finalizados') {
@@ -254,29 +255,30 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const { data, error } = await query.order('opened_at', { ascending: false }).limit(limit);
         if (error) return fail(toolCall.name, 'Error consultando expedientes.');
 
-        type CaseRow = { id: string; service: string; category: string | null; status: string; priority: string; due_date: string | null; opened_at: string };
+        type CaseRow = { id: string; service: string; category: string | null; status: string; priority: string; due_date: string | null; opened_at: string; company_id: string | null };
         const STATUS_LABELS: Record<string, string> = {
-          nuevo:                'Nuevo',
-          pendiente_cliente:    'Pendiente tu documentación',
-          en_revision:          'En revisión',
+          nuevo: 'Nuevo',
+          pendiente_cliente: 'Pendiente tu documentación',
+          en_revision: 'En revisión',
           listo_para_presentar: 'Listo para presentar',
-          presentado:           'Presentado',
-          finalizado:           'Finalizado',
-          bloqueado:            'Bloqueado',
+          presentado: 'Presentado',
+          finalizado: 'Finalizado',
+          bloqueado: 'Bloqueado',
         };
         const rows = (data ?? []) as CaseRow[];
         return ok(toolCall.name, {
           count: rows.length,
+          company_id: companyId,
           expedientes: rows.map((c) => ({
-            id:             c.id,
-            servicio:       c.service,
-            categoria:      c.category,
-            estado:         STATUS_LABELS[c.status] ?? c.status,
-            estado_raw:     c.status,
-            prioridad:      c.priority,
-            vencimiento:    c.due_date,
+            id: c.id,
+            servicio: c.service,
+            categoria: c.category,
+            estado: STATUS_LABELS[c.status] ?? c.status,
+            estado_raw: c.status,
+            prioridad: c.priority,
+            vencimiento: c.due_date,
             fecha_apertura: c.opened_at,
-            url:            `/dashboard/expedientes/${c.id}`,
+            url: `/dashboard/expedientes/${c.id}`,
           })),
         });
       }
@@ -310,14 +312,21 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
       case 'get_user_pending_docs': {
         const clientId = context.contact?.clientId;
         if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const companyId = context.company?.id ?? null;
         const caseId = typeof args.caseId === 'string' ? args.caseId : undefined;
-        let query = admin.from('documents').select('id, original_name, state, case_id, created_at').eq('client_id', clientId).eq('state', 'pendiente');
+        let query = admin
+          .from('documents')
+          .select('id, original_name, state, case_id, created_at, company_id')
+          .eq('client_id', clientId)
+          .eq('state', 'pendiente');
+        if (companyId) query = query.eq('company_id', companyId);
         if (caseId) query = query.eq('case_id', caseId);
         const { data, error } = await query.order('created_at', { ascending: false }).limit(10);
         if (error) return fail(toolCall.name, 'Error consultando documentos.');
-        const rows = (data ?? []) as Array<{ id: string; original_name: string | null; state: string; case_id: string | null; created_at: string }>;
+        const rows = (data ?? []) as Array<{ id: string; original_name: string | null; state: string; case_id: string | null; created_at: string; company_id: string | null }>;
         return ok(toolCall.name, {
           pending_count: rows.length,
+          company_id: companyId,
           documentos: rows.map((d) => ({
             id: d.id,
             nombre: d.original_name,
@@ -346,12 +355,11 @@ function fail(toolName: string, error: string): KiaToolResult {
   return { toolName, ok: false, error };
 }
 
-/** Finds the active Holded integration ID for the current context (client or company). */
 async function findHoldedIntegrationId(
-  admin  : ReturnType<typeof getSupabaseAdmin>,
+  admin: ReturnType<typeof getSupabaseAdmin>,
   context: KiaContext,
 ): Promise<string | null> {
-  const clientId  = context.contact?.clientId  ?? null;
+  const clientId = context.contact?.clientId ?? null;
   const companyId = context.company?.id ?? null;
 
   let query = admin
