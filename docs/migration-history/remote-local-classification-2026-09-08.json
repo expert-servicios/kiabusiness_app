@@ -1,0 +1,127 @@
+{
+  "project_id": "ybtpqscmqrrjjmuoryap",
+  "captured_at": "2026-09-08",
+  "scope": "May-September 2026 migration-history exceptions and verified semantic mappings",
+  "phase": "phase_0_read_only",
+  "database_writes": false,
+  "ddl_action": "none",
+  "notes": [
+    "This file records reviewed non-trivial mappings and exceptions. Exact same-version rows are represented by the repository filenames and the remote ledger snapshot and are not rewritten here unless they are operationally significant.",
+    "Ledger compatibility and fresh-database reproducibility are separate workstreams.",
+    "No row in this manifest authorizes replaying SQL or directly editing supabase_migrations.schema_migrations."
+  ],
+  "verified_semantic_mappings": [
+    {"remote_version":"20260514150834","remote_name":"add_external_mappings","local":"20260509164929_add_external_mappings.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260522073601","remote_name":"add_fiscal_obligations","local":"20260522110000_add_fiscal_obligations.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260522073607","remote_name":"orders_catalog_support","local":"20260522120000_orders_catalog_support.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260522091031","remote_name":"leads_whatsapp_upsert","local":"20260522130000_leads_whatsapp_upsert.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260528193421","remote_name":"holded_integration_consent_columns","local":"20260528120000_holded_integration_consent_columns.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260529080052","remote_name":"holded_mcp_bridge_tables","local":"20260529090000_holded_mcp_bridge_tables.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260529105719","remote_name":"kia_financial_reports","local":"20260529100000_kia_financial_reports.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260602092112","remote_name":"admin_clients_operational_status","local":"20260602084321_admin_clients_operational_status.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260602092119","remote_name":"admin_orders_holded_traceability_repair","local":"20260602092034_admin_orders_holded_traceability_repair.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260606171944","remote_name":"document_uploaded_by_role","local":"20260606000001_document_uploaded_by_role.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260606172001","remote_name":"reviews_rls_and_service_name","local":"20260606000002_reviews_rls_and_service_name.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260606172011","remote_name":"automation_settings","local":"20260606000003_automation_settings.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260606172018","remote_name":"quote_templates","local":"20260606000004_quote_templates.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260606172823","remote_name":"tenant_integration_secrets","local":"20260606000005_tenant_integration_secrets.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260607100436","remote_name":"20260607000005_email_queue","local":"20260607000005_email_queue.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260616154907","remote_name":"20260607000006_email_queue_processing_status","local":"20260607000006_email_queue_processing_status.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260616154913","remote_name":"20260615000001_holded_mcp_events_user_read","local":"20260615000001_holded_mcp_events_user_read.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260616154924","remote_name":"20260615000002_cases_operational_columns","local":"20260615000002_cases_operational_columns.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260616154935","remote_name":"20260615000003_rls_tenant_cases_fix","local":"20260615000003_rls_tenant_cases_fix.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260616154940","remote_name":"20260616000001_appointments_cal_uid","local":"20260616000001_appointments_cal_uid.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260625194116","remote_name":"harden_security_definer_functions","local":"20260618190255_harden_security_definer_functions.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260625194140","remote_name":"pgcron_email_queue","local":"20260625000001_pgcron_email_queue.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260703100222","remote_name":"pgcron_email_queue_auth","local":"20260703000001_pgcron_email_queue_auth.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260710105118","remote_name":"profile_billing_and_holded_order_status","local":"20260523062807_profile_billing_and_holded_order_status.sql","classification":"same_semantic_different_version_applied_later"},
+    {"remote_version":"20260903091313","remote_name":"secure_stripe_processed_events","local":"20260903075500_secure_stripe_processed_events.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903092108","remote_name":"secure_aeat_credentials","local":"20260903093000_secure_aeat_credentials.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903093638","remote_name":"secure_stripe_accounts","local":"20260903100000_secure_stripe_accounts.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903094225","remote_name":"secure_settings","local":"20260903103000_secure_settings.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903102808","remote_name":"secure_invoice_documents_view","local":"20260903110000_secure_invoice_documents_view.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903103259","remote_name":"restrict_invoice_documents_view_to_server","local":"20260903111500_restrict_invoice_documents_view_to_server.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260903103711","remote_name":"limit_invoice_documents_service_role","local":"20260903113000_limit_invoice_documents_service_role.sql","classification":"same_semantic_different_version_local_collision"},
+    {"remote_version":"20260903104758","remote_name":"secure_servicios_con_pagos_view","local":"20260903113000_secure_servicios_con_pagos_view.sql","classification":"same_semantic_different_version_local_collision"},
+    {"remote_version":"20260903123508","remote_name":"allow_stripe_import_orders","local":"20260903122500_allow_stripe_import_orders.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904072906","remote_name":"entity_scoped_billing","local":"20260903190000_entity_scoped_subscriptions.sql","classification":"verified_semantic_counterpart_different_name_and_version"},
+    {"remote_version":"20260904081527","remote_name":"harden_trigger_function_acl","local":"20260904082000_harden_trigger_function_acl.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904082034","remote_name":"harden_timestamp_trigger_search_paths","local":"20260904083000_harden_timestamp_trigger_search_paths.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904082924","remote_name":"harden_rls_helper_search_paths","local":"20260904084000_harden_rls_helper_search_paths.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904083646","remote_name":"harden_misc_function_search_paths","local":"20260904085000_harden_misc_function_search_paths.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904090644","remote_name":"repair_profiles_onboarding_at","local":"20260904092000_repair_profiles_onboarding_at.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260904195416","remote_name":"admin_email_folders","local":"20260904192500_admin_email_folders.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905082637","remote_name":"subscription_onboarding_admin_followup","local":"20260905102800_subscription_onboarding_admin_followup.sql","classification":"same_semantic_different_version_remote_duplicate"},
+    {"remote_version":"20260905083616","remote_name":"subscription_onboarding_admin_followup","local":"20260905102800_subscription_onboarding_admin_followup.sql","classification":"remote_duplicate_same_payload"},
+    {"remote_version":"20260905083544","remote_name":"checkout_subscription_admin_followup","local":"20260905103600_checkout_subscription_admin_followup.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905113811","remote_name":"client360_fiscal_obligations","local":"20260905111000_client360_fiscal_obligations.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905120647","remote_name":"fiscal_template_activation","local":"20260905114500_fiscal_template_activation.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905122225","remote_name":"subscription_commercial_benefits","local":"20260905122000_subscription_commercial_benefits.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905131130","remote_name":"email_attachment_documents","local":"20260905131500_email_attachment_documents.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905140606","remote_name":"email_attachment_provenance_context","local":"20260905154500_email_attachment_provenance_context.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260905192931","remote_name":"harden_current_mutable_search_paths","local":"20260905213000_harden_current_mutable_search_paths.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260906131222","remote_name":"repair_review_feedback_schema_20260906","local":"20260906133000_repair_review_feedback_schema.sql","classification":"same_semantic_different_version"},
+    {"remote_version":"20260907180358","remote_name":"add_company_stripe_customer_mappings","local":"20260907175500_add_company_stripe_customer_mappings.sql","classification":"same_semantic_different_version"}
+  ],
+  "remote_only_live": [
+    {"version":"20260603092133","name":"email_inbox_cache_and_system_kv"},
+    {"version":"20260603164620","name":"payments_case_link_and_manual_payments"},
+    {"version":"20260603170130","name":"google_calendar_event_ids"},
+    {"version":"20260603170629","name":"marketing_campaigns"},
+    {"version":"20260625200519","name":"email_events_add_last_error"},
+    {"version":"20260710190314","name":"fix_email_queue_schema_mismatch"},
+    {"version":"20260902193301","name":"email_events_html"},
+    {"version":"20260904102705","name":"entity_scope_one_time_orders"},
+    {"version":"20260904104108","name":"subscription_checkout_atomic_claim"},
+    {"version":"20260904104416","name":"sync_subscription_checkout_claim_status"},
+    {"version":"20260904104552","name":"holded_contact_creation_claims"}
+  ],
+  "remote_duplicates": [
+    {"versions":["20260703181516","20260703182452"],"name":"fix_pgcron_http_post_schema","statements_md5":"e661a4d54ec74ee4458dd6cc698ff8ba","local":"20260703000002_fix_pgcron_http_post_schema.sql"},
+    {"versions":["20260905082637","20260905083616"],"name":"subscription_onboarding_admin_followup","statements_md5":"160cd4d26ffc2699cfbd5b1cf4864b5d","local":"20260905102800_subscription_onboarding_admin_followup.sql"}
+  ],
+  "opaque_remote_rows": [
+    {"version":"20260525162302","name":"kia_health_schema_repair","reason":"remote statements payload is an opaque Management API marker; shared hash does not prove SQL equality"},
+    {"version":"20260525172343","name":"kia_rls_repair","reason":"remote statements payload is an opaque Management API marker; shared hash does not prove SQL equality"},
+    {"version":"20260525172441","name":"kia_grants_repair","reason":"remote statements payload is an opaque Management API marker; shared hash does not prove SQL equality"}
+  ],
+  "local_only_schema_present_candidate_mark_applied": [
+    {"local":"20260721000001_academy_enrollments.sql","evidence":"production schema effect exists and September functions depend on it"},
+    {"local":"20260901000001_academy_knowledge_status.sql","evidence":"production schema effect exists while ledger row is absent"}
+  ],
+  "local_only_not_historically_applied": [
+    {"local":"20260607000002_email_queue.sql","reason":"later July migration produced the live final queue schema"},
+    {"local":"20260607000003_profiles_onboarding_at.sql","reason":"later September repair applied the live change"}
+  ],
+  "local_version_collisions": [
+    {"version":"20260607000005","files":["20260607000005_email_queue.sql","20260607000005_email_queue_processing_status.sql"]},
+    {"version":"20260903113000","files":["20260903113000_limit_invoice_documents_service_role.sql","20260903113000_secure_servicios_con_pagos_view.sql"]}
+  ],
+  "local_duplicate_files": [
+    {"files":["20260607000005_email_queue_processing_status.sql","20260607000006_email_queue_processing_status.sql"],"classification":"sql_identical_copy"}
+  ],
+  "evolved_or_non_1_to_1_local_history": [
+    {"remote_version":"20260514150818","remote_name":"p0_schema_alignment_adapted","local":"20260508174011_p0_schema_alignment.sql","reason":"adapted production variant differs from local historical file"},
+    {"remote_version":"20260522073549","remote_name":"add_viability_assessments","local":"20260522100000_add_viability_assessments.sql","reason":"CREATE IF NOT EXISTS masked an incompatible earlier production table shape"},
+    {"remote_version":"20260523110147","remote_name":"create_company_data_tables","local":"20260528100000_company_open_data_tables.sql","reason":"company open-data schema was recreated/consolidated; not safe to replay as a 1:1 historical migration"},
+    {"remote_version":"20260602165844","remote_name":"stripe_processed_events_dedup","local":"20260605000000_stripe_processed_events.sql","reason":"local file evolved with later RLS/hardening and is not a historical byte-equivalent"},
+    {"remote_version":"20260604131628","remote_name":"20260604000000_kia_memories","local":"20260604000000_kia_memories.sql","reason":"current local definition evolved after original production application"},
+    {"remote_version":"20260604131636","remote_name":"20260604000001_kia_memories_search_rpc","local":"20260604000001_kia_memories_search_rpc.sql","reason":"current local definition evolved after original production application"},
+    {"remote_version":"20260604131643","remote_name":"20260604000002_kia_feedback","local":"20260604000002_kia_feedback.sql","reason":"current local definition evolved after original production application"},
+    {"remote_version":"20260604135808","remote_name":"20260604120000_tenant_ready","local":"20260604120000_tenant_ready.sql","reason":"critical ordering/content difference; baseline verification required"},
+    {"remote_version":"20260607082818","remote_name":"rls_tenant_aware_phase2","local":"20260607000001_rls_tenant_aware_phase2.sql","reason":"local hardening differs from live production policy state; security work tracked separately"},
+    {"remote_version":"20260607095534","remote_name":"20260607000004_subscription_post_purchase_onboarding","local":"20260607000004_subscription_post_purchase_onboarding.sql","reason":"local file contains an index not present in the original production application"}
+  ],
+  "pre_ledger_local_history": {
+    "ledger_starts_at": "20260508082323",
+    "classification": "baseline_required",
+    "reason": "repository migrations before the first ledger row cannot be assumed to represent the production bootstrap; production core table shapes already diverged from those files"
+  },
+  "history_repair_policy": {
+    "direct_schema_migrations_edits": false,
+    "replay_historical_sql": false,
+    "supported_repair_only_after_baseline_validation": true,
+    "candidate_supported_actions": ["supabase migration repair --status applied", "supabase migration repair --status reverted"],
+    "requires_explicit_checkpoint_before_production_repair": true
+  }
+}

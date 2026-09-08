@@ -1,0 +1,15 @@
+{
+  "project_id": "ybtpqscmqrrjjmuoryap",
+  "captured_at": "2026-09-08",
+  "schema": "public",
+  "method": "read-only PostgreSQL catalog hashes; no table data read",
+  "warning": "This fingerprint is verification evidence only and is not a substitute for the Phase 1 schema-only pg_dump baseline.",
+  "relations": {"count": 157, "md5": "a133c8024789a269ce1fa47c168cfcd2"},
+  "columns": {"count": 1751, "md5": "5d8a409d3bf0b5b7825a185358e51b75"},
+  "constraints": {"count": 553, "md5": "b692bcec80f435614c9c3741b511a34c"},
+  "indexes": {"count": 473, "md5": "1206537298d31706a034083046ec65fa"},
+  "policies": {"count": 276, "md5": "9d81b60edc86adb0148ca87a3999f620"},
+  "functions": {"count": 58, "md5": "c25e2d9533b21926e896a798331e6c92"},
+  "views": {"count": 2, "md5": "1bb4c19e3bc9b52a46a3d8da54bd3b46"},
+  "triggers": {"count": 43, "md5": "3880f6e34ef7488aebfa6964cc3c57ee"}
+}
