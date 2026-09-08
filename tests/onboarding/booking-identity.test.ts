@@ -28,4 +28,12 @@ describe('onboarding booking identity', () => {
     expect(helper).toContain(".in('status', ['active', 'trialing'])");
     expect(helper).toContain('return clientIds.length === 1 ? clientIds[0] : null;');
   });
+
+  it('uses the same conservative identity resolver when Cal creates onboarding cases', () => {
+    const cal = source('app/api/webhooks/cal/route.ts');
+    expect(cal).toContain("import { resolveBookingClientIdByEmail } from '@/lib/admin/onboarding-booking-identity';");
+    expect(cal).toContain('const clientId = await resolveBookingClientIdByEmail(admin, attendee.email);');
+    expect(cal).toContain('findOpenOnboardingCase(clientId)');
+    expect(cal).not.toContain('async function resolveAuthUser');
+  });
 });
