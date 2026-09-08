@@ -7,11 +7,12 @@ import process from 'node:process';
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
 const migrationsDirArg = args.find((arg) => arg.startsWith('--migrations-dir='));
+const jsonOutputArg = args.find((arg) => arg.startsWith('--json-output='));
 const jsonPath = args.find((arg) => !arg.startsWith('--'));
 
 if (!jsonPath) {
   console.error(
-    'Usage: node scripts/audit-supabase-migration-ledger.mjs <remote-ledger.json> [--strict] [--migrations-dir=<path>]',
+    'Usage: node scripts/audit-supabase-migration-ledger.mjs <remote-ledger.json> [--strict] [--migrations-dir=<path>] [--json-output=<path>]',
   );
   process.exit(2);
 }
@@ -121,6 +122,53 @@ const repeatedRemoteHashes = [...byHash.entries()]
 
 const exactVersions = [...remoteVersions].filter((version) => localVersions.has(version)).sort();
 
+const driftFound = remoteOnly.length > 0
+  || localOnly.length > 0
+  || duplicateLocalVersions.length > 0
+  || duplicateRemoteVersions.length > 0
+  || invalidLocal.length > 0;
+
+const manifest = {
+  source_ledger: path.basename(jsonPath),
+  counts: {
+    remote_rows: remote.length,
+    remote_unique_versions: remoteVersions.size,
+    local_sql_files: local.length,
+    local_unique_versions: localVersions.size,
+    exact_timestamp_intersection: exactVersions.length,
+  },
+  exact_versions: exactVersions,
+  remote_only: remoteOnly.map((row) => ({
+    version: row.version,
+    name: row.name,
+    statement_count: row.statement_count,
+    statements_md5: row.statements_md5,
+  })),
+  local_only: localOnly.map((row) => ({
+    version: row.version,
+    file: row.file,
+    name: row.name,
+  })),
+  duplicate_local_versions: duplicateLocalVersions.map(([version, rows]) => ({
+    version,
+    files: rows.map((row) => row.file),
+  })),
+  duplicate_remote_versions: duplicateRemoteVersions.map(([version, rows]) => ({
+    version,
+    migrations: rows.map((row) => ({ name: row.name, statements_md5: row.statements_md5 })),
+  })),
+  repeated_remote_names: repeatedRemoteNames.map(([name, rows]) => ({
+    name,
+    versions: rows.map((row) => row.version),
+  })),
+  repeated_remote_hashes: repeatedRemoteHashes.map(([statementsMd5, rows]) => ({
+    statements_md5: statementsMd5,
+    migrations: rows.map((row) => ({ version: row.version, name: row.name })),
+  })),
+  invalid_local_filenames: invalidLocal.map((row) => row.file),
+  result: driftFound ? 'DRIFT' : 'ALIGNED',
+};
+
 console.log('Supabase migration ledger timestamp audit');
 console.log(`remote rows: ${remote.length}`);
 console.log(`remote unique versions: ${remoteVersions.size}`);
@@ -152,12 +200,13 @@ printSection(
 );
 printSection('Local SQL filenames without a 14-digit migration prefix', invalidLocal, (row) => row.file);
 
-const driftFound = remoteOnly.length > 0
-  || localOnly.length > 0
-  || duplicateLocalVersions.length > 0
-  || duplicateRemoteVersions.length > 0
-  || invalidLocal.length > 0;
+console.log(`\nresult: ${manifest.result}`);
 
-console.log(`\nresult: ${driftFound ? 'DRIFT' : 'ALIGNED'}`);
+if (jsonOutputArg) {
+  const outputPath = path.resolve(jsonOutputArg.slice('--json-output='.length));
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  console.log(`manifest: ${outputPath}`);
+}
 
 if (strict && driftFound) process.exit(1);
