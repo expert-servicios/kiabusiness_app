@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
       ? quoteItemsSubtotal(resolvedItems)
       : parsed.data.amountEur!;
 
-    // Never trust a browser-supplied total when structured items are present.
     if (resolvedItems.length && parsed.data.amountEur != null && Math.abs(parsed.data.amountEur - amountEur) > 0.001) {
       return NextResponse.json({ error: 'El importe no coincide con las líneas del catálogo.' }, { status: 400 });
     }
@@ -191,12 +190,13 @@ export async function POST(request: NextRequest) {
 
     let session;
     try {
-      const itemMetadata = resolvedItems.length
-        ? {
-            service_slugs: resolvedItems.map((item) => item.serviceSlug).join(',').slice(0, 499),
-            employee_count: String(resolvedItems.find((item) => item.serviceSlug === 'holded-migracion-laboral')?.quantity ?? ''),
-          }
-        : {};
+      const itemMetadata: Record<string, string> = {};
+      if (resolvedItems.length) {
+        itemMetadata.service_slugs = resolvedItems.map((item) => item.serviceSlug).join(',').slice(0, 499);
+        itemMetadata.employee_count = String(
+          resolvedItems.find((item) => item.serviceSlug === 'holded-migracion-laboral')?.quantity ?? ''
+        );
+      }
 
       session = await stripe.checkout.sessions.create({
         mode: 'payment',
