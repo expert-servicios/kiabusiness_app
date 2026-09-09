@@ -105,6 +105,7 @@ describe('KIA copilot avatar integration', () => {
   const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
   const api = source('app/api/ai/kia/route.ts');
   const widget = source('components/KiaCopilotWidget.tsx');
+  const avatar = source('components/kia/KiaAvatar.tsx');
 
   it('resolves avatar state server-side and persists it in session JSON', () => {
     expect(api).toContain('resolveKiaAvatarState({');
@@ -117,5 +118,11 @@ describe('KIA copilot avatar integration', () => {
     expect(widget).toContain('<KiaAvatar state={msg.avatarState ?? \'ayuda\'}');
     expect(widget).toContain('<KiaAvatar state="pensando"');
     expect(widget).toContain("avatarState: 'aviso'");
+  });
+
+  it('keeps repeated chat avatars decorative by default for screen readers', () => {
+    expect(avatar).toContain('decorative = true');
+    expect(avatar).toContain('aria-hidden={decorative || undefined}');
+    expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
   });
 });
