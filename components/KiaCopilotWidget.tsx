@@ -10,7 +10,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { X, Send, Loader2, Bot, ChevronDown } from 'lucide-react';
+import { X, Send, Loader2, ChevronDown } from 'lucide-react';
+import { KiaAvatar } from '@/components/kia/KiaAvatar';
+import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -19,6 +21,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   quickReplies?: string[];
+  avatarState?: KiaAvatarState;
 }
 
 interface KiaApiResponse {
@@ -26,6 +29,7 @@ interface KiaApiResponse {
   quickReplies?: string[];
   intent?: string;
   nextAction?: string;
+  avatarState?: KiaAvatarState;
   error?: string;
 }
 
@@ -38,6 +42,7 @@ function useKiaChat(pathname: string) {
       role: 'assistant',
       text: '¡Hola! Soy Kia, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
       quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      avatarState: 'ayuda',
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -68,6 +73,7 @@ function useKiaChat(pathname: string) {
         role        : 'assistant',
         text        : data.reply ?? 'Lo siento, no pude procesar tu consulta.',
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
+        avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
@@ -82,6 +88,7 @@ function useKiaChat(pathname: string) {
           id  : crypto.randomUUID(),
           role: 'assistant',
           text: 'Tengo un problema técnico en este momento. Inténtalo de nuevo.',
+          avatarState: 'aviso',
         },
       ]);
     } finally {
@@ -96,6 +103,7 @@ function useKiaChat(pathname: string) {
         role       : 'assistant',
         text       : '¡Hola de nuevo! ¿En qué te ayudo?',
         quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+        avatarState: 'ayuda',
       },
     ]);
     setSessionId(undefined);
@@ -113,6 +121,11 @@ export default function KiaCopilotWidget() {
   const { messages, loading, send, reset } = useKiaChat(pathname);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const lastAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
+  const currentKiaState: KiaAvatarState = loading
+    ? 'pensando'
+    : (lastAssistantMessage?.avatarState ?? 'ayuda');
 
   // Scroll al final cuando llegan mensajes nuevos
   useEffect(() => {
@@ -175,12 +188,7 @@ export default function KiaCopilotWidget() {
             style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
           >
             <div className="flex items-center gap-2">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full"
-                style={{ background: '#c88b25' }}
-              >
-                <Bot size={16} className="text-white" />
-              </div>
+              <KiaAvatar state={currentKiaState} size="sm" priority />
               <div>
                 <p className="text-sm font-semibold text-white">Kia</p>
                 <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
@@ -208,8 +216,14 @@ export default function KiaCopilotWidget() {
           {/* Mensajes */}
           <div className="flex-1 overflow-y-auto px-4 py-3" style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}>
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div style={{ maxWidth: '85%' }}>
+              <div
+                key={msg.id}
+                className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.role === 'assistant' ? (
+                  <KiaAvatar state={msg.avatarState ?? 'ayuda'} size="xs" className="mt-0.5" />
+                ) : null}
+                <div style={{ maxWidth: msg.role === 'user' ? '85%' : '78%' }}>
                   <div
                     className="rounded-2xl px-3 py-2 text-sm"
                     style={
@@ -240,7 +254,8 @@ export default function KiaCopilotWidget() {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex items-start justify-start gap-2">
+                <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
                 <div
                   className="flex items-center gap-1 rounded-2xl px-3 py-2 text-sm"
                   style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
@@ -290,15 +305,16 @@ export default function KiaCopilotWidget() {
       <button
         onClick={open ? handleClose : handleOpen}
         aria-label={open ? 'Cerrar Kia' : 'Abrir Kia copiloto'}
-        className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
         style={{
-          width     : '52px',
-          height    : '52px',
-          background: open ? '#3d3528' : '#0D1B2A',
+          width     : '56px',
+          height    : '56px',
+          background: open ? '#3d3528' : '#fff',
           color     : '#fff',
+          border    : open ? 'none' : '2px solid #0D1B2A',
         }}
       >
-        {open ? <X size={20} /> : <Bot size={22} />}
+        {open ? <X size={20} /> : <KiaAvatar state={currentKiaState} size="lg" alt="Abrir KIA copiloto" />}
       </button>
     </>
   );
