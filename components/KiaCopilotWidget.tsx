@@ -42,7 +42,7 @@ function useKiaChat(pathname: string) {
       role: 'assistant',
       text: '¡Hola! Soy KIA, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
       quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
-      avatarState: 'ayuda',
+      avatarState: 'bienvenida',
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,7 @@ function useKiaChat(pathname: string) {
         role       : 'assistant',
         text       : '¡Hola de nuevo! ¿En qué te ayudo?',
         quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
-        avatarState: 'ayuda',
+        avatarState: 'bienvenida',
       },
     ]);
     setSessionId(undefined);
@@ -125,7 +125,7 @@ export default function KiaCopilotWidget() {
   const lastAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const currentKiaState: KiaAvatarState = loading
     ? 'pensando'
-    : (lastAssistantMessage?.avatarState ?? 'ayuda');
+    : (lastAssistantMessage?.avatarState ?? 'bienvenida');
 
   // Scroll al final cuando llegan mensajes nuevos
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function KiaCopilotWidget() {
             style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
           >
             <div className="flex items-center gap-2">
-              <KiaAvatar state={currentKiaState} size="sm" priority />
+              <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
               <div>
                 <p className="text-sm font-semibold text-white">KIA</p>
                 <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
@@ -331,7 +331,11 @@ export default function KiaCopilotWidget() {
           border    : open ? 'none' : '2px solid #0D1B2A',
         }}
       >
-        {open ? <X size={20} aria-hidden="true" /> : <KiaAvatar state={currentKiaState} size="lg" />}
+        {open ? (
+          <X size={20} aria-hidden="true" />
+        ) : (
+          <KiaAvatar state={currentKiaState} size="lg" animateOnChange />
+        )}
       </button>
     </>
   );
