@@ -225,7 +225,8 @@ describe('KIA copilot avatar integration', () => {
 
   it('renders contextual assistant avatars, thinking and error states', () => {
     expect(widget).toContain("avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda')");
-    expect(widget).toContain('<KiaAvatar state={msg.avatarState ?? \'ayuda\'}');
+    expect(widget).toContain("state={msg.avatarState ?? 'ayuda'}");
+    expect(widget).toContain('animateResponse');
     expect(widget).toContain('<KiaAvatar state="pensando"');
     expect(widget).toContain("avatarState: 'aviso'");
     expect(widget).toContain("avatarState: 'bienvenida'");
@@ -237,12 +238,16 @@ describe('KIA copilot avatar integration', () => {
     expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
   });
 
-  it('limits state-aware motion to opted-in persistent surfaces', () => {
+  it('limits semantic motion to explicit persistent or response surfaces', () => {
     expect(avatar).toContain('animateOnChange = false');
-    expect(avatar).toContain('resolveKiaAvatarMotion(state, animateOnChange)');
+    expect(avatar).toContain('animateResponse = false');
+    expect(avatar).toContain('resolveKiaAvatarMotion(state, animateOnChange || animateResponse)');
+    expect(avatar).toContain('ONE_SHOT_MOTIONS.has(resolvedMotion)');
     expect(avatar).toContain('data-kia-avatar-motion={motion}');
-    expect(widget).toContain('priority animateOnChange');
-    expect(widget).toContain('size="lg" animateOnChange');
+    expect(widget).toContain('priority');
+    expect(widget).toContain('animateOnChange');
+    expect(widget).toContain('size="lg"');
+    expect(widget).toContain('animateResponse');
     expect(widget).toContain('<KiaAvatar state="pensando" size="xs" className="mt-0.5" />');
     expect(avatarStyles).toContain('@keyframes kiaAvatarThinking');
     expect(avatarStyles).toContain('@keyframes kiaAvatarConfirm');
