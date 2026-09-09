@@ -34,20 +34,24 @@ function decision(overrides: Partial<KiaDecision> = {}): KiaDecision {
 function fiscalAdmin(rows: unknown[]) {
   const calls: Array<[string, string, string]> = [];
   const query = {
-    select: (_columns: string) => query,
+    select: () => query,
     eq: (column: string, value: string) => {
       calls.push(['eq', column, value]);
+      return query;
+    },
+    not: (column: string, operator: string, value: null) => {
+      calls.push(['not', column, `${operator}:${String(value)}`]);
       return query;
     },
     lte: (column: string, value: string) => {
       calls.push(['lte', column, value]);
       return query;
     },
-    order: (_column: string, _options: { ascending: boolean }) => query,
-    limit: async (_count: number) => ({ data: rows, error: null }),
+    order: () => query,
+    limit: async () => ({ data: rows, error: null }),
   };
   return {
-    admin: { from: (_table: string) => query } as unknown as Parameters<typeof loadKiaAuthoritativeFiscalSignal>[0],
+    admin: { from: () => query } as unknown as Parameters<typeof loadKiaAuthoritativeFiscalSignal>[0],
     calls,
   };
 }
@@ -91,6 +95,10 @@ describe('KIA trusted presentation signals', () => {
       intent: 'unknown',
     })).toBe(true);
     expect(shouldLoadKiaFiscalSignal({
+      message: '¿Cuál es el plazo de mi expediente?',
+      intent: 'case_status',
+    })).toBe(false);
+    expect(shouldLoadKiaFiscalSignal({
       message: '¿Cómo conecto Holded?',
       intent: 'connect_holded',
     })).toBe(false);
@@ -111,7 +119,7 @@ describe('KIA trusted presentation signals', () => {
     await expect(loadKiaAuthoritativeFiscalSignal(admin, 'user-1', null)).resolves.toBeNull();
   });
 
-  it('creates a critical fiscal signal only from a pending overdue company-scoped obligation', async () => {
+  it('creates a critical fiscal signal only from a pending overdue company-scoped confirmed obligation', async () => {
     const { admin, calls } = fiscalAdmin([{
       id: 'ob-1',
       modelo: '303',
@@ -119,6 +127,7 @@ describe('KIA trusted presentation signals', () => {
       period_label: '2T 2026',
       deadline: '2026-09-08',
       status: 'pending',
+      template_code: '303_quarterly',
     }]);
 
     const signal = await loadKiaAuthoritativeFiscalSignal(admin, 'user-1', 'company-1');
@@ -131,10 +140,25 @@ describe('KIA trusted presentation signals', () => {
     expect(calls).toContainEqual(['eq', 'user_id', 'user-1']);
     expect(calls).toContainEqual(['eq', 'company_id', 'company-1']);
     expect(calls).toContainEqual(['eq', 'status', 'pending']);
+    expect(calls).toContainEqual(['not', 'template_code', 'is:null']);
     expect(resolveKiaAvatarState({
       decision: decision(),
       presentationContext: { fiscalRisk: signal!.risk },
     })).toBe('alerta_fiscal');
+  });
+
+  it('ignores legacy or inferred obligations without confirmed template provenance', async () => {
+    const { admin } = fiscalAdmin([{
+      id: 'legacy-1',
+      modelo: '303',
+      description: 'Legacy obligation',
+      period_label: '2T 2026',
+      deadline: '2026-09-08',
+      status: 'pending',
+      template_code: null,
+    }]);
+
+    await expect(loadKiaAuthoritativeFiscalSignal(admin, 'user-1', 'company-1')).resolves.toBeNull();
   });
 
   it('creates a high fiscal signal for a verified obligation due within seven days', async () => {
@@ -145,6 +169,7 @@ describe('KIA trusted presentation signals', () => {
       period_label: '3T 2026',
       deadline: '2026-09-12',
       status: 'pending',
+      template_code: '111_quarterly',
     }]);
 
     const signal = await loadKiaAuthoritativeFiscalSignal(admin, 'user-1', 'company-1');
@@ -164,6 +189,7 @@ describe('KIA trusted presentation signals', () => {
       period_label: '4T 2026',
       deadline: '2027-01-10',
       status: 'pending',
+      template_code: '303_quarterly',
     }]);
 
     await expect(loadKiaAuthoritativeFiscalSignal(admin, 'user-1', 'company-1')).resolves.toBeNull();
