@@ -43,18 +43,17 @@ export interface KiaAvatarProps {
    */
   decorative?: boolean;
   /**
-   * Enables the short state transition and state-aware microanimation on
-   * persistent surfaces only. Repeated message avatars keep this disabled.
-   * All motion is removed under prefers-reduced-motion.
+   * Persistent surfaces (header/launcher) may transition between states and
+   * keep the slow `pensando` activity loop. Semantic one-shot motion is
+   * deliberately suppressed here so opening/closing KIA cannot replay it.
    */
   animateOnChange?: boolean;
   /**
-   * True only when the parent observed a genuinely new visual event (for
-   * example a new assistant response or a fresh loading cycle). This prevents
-   * semantic one-shot motion from replaying just because header/launcher
-   * surfaces mount again when KIA is opened or closed.
+   * Response avatars mount exactly once per assistant message, so they are the
+   * safe place for one-shot confirm/celebrate/attention motion. They never run
+   * the continuous thinking loop.
    */
-  motionEventChanged?: boolean;
+  animateResponse?: boolean;
 }
 
 export function KiaAvatar({
@@ -65,17 +64,17 @@ export function KiaAvatar({
   alt,
   decorative = true,
   animateOnChange = false,
-  motionEventChanged = true,
+  animateResponse = false,
 }: KiaAvatarProps) {
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
   const accessibleLabel = alt ?? `KIA — ${label}`;
-  const resolvedMotion = resolveKiaAvatarMotion(state, animateOnChange);
-  const motion = ONE_SHOT_MOTIONS.has(resolvedMotion) && !motionEventChanged
-    ? 'static'
-    : resolvedMotion;
+  const resolvedMotion = resolveKiaAvatarMotion(state, animateOnChange || animateResponse);
+  const motion = animateResponse
+    ? (resolvedMotion === 'thinking' ? 'static' : resolvedMotion)
+    : (ONE_SHOT_MOTIONS.has(resolvedMotion) ? 'static' : resolvedMotion);
   const motionClass = motion === 'static' ? '' : MOTION_CLASSES[motion];
-  const transitionActive = animateOnChange && motionEventChanged;
+  const transitionActive = animateOnChange || animateResponse;
 
   return (
     <span
