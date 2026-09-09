@@ -2,11 +2,8 @@
  * IMP-022: Kia copiloto in-app — endpoint de chat para el widget flotante.
  *
  * POST /api/ai/kia
- * Body: { message, sessionId?, currentPage?, currentTask?, pageData?, companyId? }
+ * Body: { message, sessionId?, currentPage?, currentTask?, pageData?, companyId?, history? }
  * Auth: usuario autenticado (cookie de sesión Supabase SSR).
- *
- * El canal es siempre 'dashboard'. La tarea es 'waba_reply' para respuestas
- * conversacionales directas (low effort, rápido).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,6 +12,12 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
+import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
+
+const historyItemSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  text: z.string().min(1).max(1200),
+}).strict();
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -23,6 +26,7 @@ const requestSchema = z.object({
   currentTask : z.string().max(200).optional(),
   pageData    : z.record(z.string(), z.unknown()).optional(),
   companyId   : z.string().uuid().optional(),
+  history     : z.array(historyItemSchema).max(8).optional(),
 }).strict();
 
 const LEGACY_DASHBOARD_SAFE_TOOLS = [
@@ -40,6 +44,12 @@ const LEGACY_DASHBOARD_SAFE_TOOLS = [
   'generate_profile_link',
   'generate_checkout_gate_link',
 ] as const;
+
+function sessionCompanyId(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const value = (data as Record<string, unknown>).company_id;
+  return typeof value === 'string' ? value : null;
+}
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -67,7 +77,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request', details: parsed.error.flatten() }, { status: 400 });
   }
-  const { message, sessionId, currentPage, currentTask, pageData, companyId } = parsed.data;
+  const { message, sessionId, currentPage, currentTask, pageData, companyId, history = [] } = parsed.data;
 
   const admin = getSupabaseAdmin();
   const { data: profile, error: profileError } = await admin
@@ -104,11 +114,45 @@ export async function POST(request: NextRequest) {
             ? 'La entidad seleccionada no pertenece a tu cuenta.'
             : 'La entidad activa ya no está disponible. Selecciona una de tus empresas antes de usar KIA.',
           avatarState: 'aviso',
+          artifacts: [],
         },
         { status: companyId ? 403 : 409 },
       );
     }
   }
+
+  const companyScope = resolvedCompanyId ?? null;
+  let effectiveSessionId = sessionId;
+  let effectiveHistory = history;
+
+  // A client component can survive router.refresh() when the active company is
+  // switched. Bind each KIA session to the company scope server-side so stale
+  // history from another entity can never enter the new company's context.
+  if (sessionId) {
+    const { data: existingSession, error: sessionError } = await admin
+      .from('kia_sessions')
+      .select('id, data')
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (sessionError) {
+      console.error('[KiaCopilot] session scope lookup failed:', sessionError.message);
+      return NextResponse.json({ error: 'session_scope_check_failed' }, { status: 500 });
+    }
+
+    if (!existingSession || sessionCompanyId(existingSession.data) !== companyScope) {
+      effectiveSessionId = undefined;
+      effectiveHistory = [];
+    }
+  }
+
+  const historyTimestamp = new Date().toISOString();
+  const syntheticRecentMessages = effectiveHistory.map((item) => ({
+    role: item.role,
+    text: item.text,
+    createdAt: historyTimestamp,
+  }));
 
   let result;
   try {
@@ -118,6 +162,7 @@ export async function POST(request: NextRequest) {
       message,
       locale     : 'es',
       allowTools : true,
+      forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS],
       contextInput: {
         channel     : 'dashboard',
@@ -128,6 +173,7 @@ export async function POST(request: NextRequest) {
         currentTask : currentTask,
         pageData    : pageData,
         latestMessage: message,
+        syntheticRecentMessages,
       },
     });
   } catch (err) {
@@ -137,6 +183,7 @@ export async function POST(request: NextRequest) {
         error: 'kia_error',
         reply: 'Lo siento, tengo un problema técnico en este momento. Inténtalo de nuevo.',
         avatarState: 'aviso',
+        artifacts: [],
       },
       { status: 500 }
     );
@@ -146,8 +193,8 @@ export async function POST(request: NextRequest) {
     decision: result.decision,
     userMessage: message,
   });
+  const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
 
-  let effectiveSessionId = sessionId;
   try {
     const sessionData = {
       last_message: message,
@@ -155,13 +202,14 @@ export async function POST(request: NextRequest) {
       intent      : result.decision.intent,
       next_action : result.decision.nextAction,
       avatar_state: avatarState,
+      company_id  : companyScope,
     };
 
-    if (sessionId) {
+    if (effectiveSessionId) {
       await admin
         .from('kia_sessions')
         .update({ data: sessionData, updated_at: new Date().toISOString() })
-        .eq('id', sessionId)
+        .eq('id', effectiveSessionId)
         .eq('user_id', user.id);
     } else {
       const { data: createdSession } = await admin
@@ -186,6 +234,7 @@ export async function POST(request: NextRequest) {
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
     avatarState,
+    artifacts,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;

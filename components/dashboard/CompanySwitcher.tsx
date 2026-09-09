@@ -61,6 +61,11 @@ export function CompanySwitcher({ companies, activeCompanyId }: Props) {
         return;
       }
       setOpen(false);
+      // The protected-layout KIA widget survives router.refresh(). Reset its
+      // visible company-scoped conversation immediately before refreshing.
+      window.dispatchEvent(new CustomEvent('expert:active-company-changed', {
+        detail: { companyId },
+      }));
       router.refresh();
     } catch {
       setError('No se pudo cambiar la entidad activa.');
