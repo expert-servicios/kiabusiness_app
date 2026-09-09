@@ -80,10 +80,10 @@ describe('KIA trusted presentation context builder', () => {
     });
   });
 
-  it('ignores failed and unrelated tool results', () => {
+  it('ignores failed case-status and truly unrelated tool results', () => {
     expect(buildKiaPresentationContext([
       { toolName: 'get_case_status', ok: false, error: 'failed' },
-      { toolName: 'get_holded_connection_status', ok: true, result: { status: 'active' } },
+      { toolName: 'get_user_companies', ok: true, result: { count: 1, empresas: [] } },
     ])).toBeUndefined();
   });
 });
