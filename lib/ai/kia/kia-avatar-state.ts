@@ -1,4 +1,5 @@
 import type { KiaDecision } from './kia-output-schema';
+import type { KiaPresentationContext } from './kia-presentation-context';
 
 export const KIA_AVATAR_STATES = [
   'bienvenida',
@@ -41,11 +42,6 @@ export const KIA_AVATAR_LABELS: Record<KiaAvatarState, string> = {
   celebracion: 'Celebración',
 };
 
-/**
- * Sprint 2 ships one approved asset for every stable visual state. Critical
- * states can exist in the visual contract without being auto-selected until a
- * sufficiently strong structured signal exists in KiaDecision.
- */
 export const KIA_AVATAR_ASSET_PATHS: Record<KiaAvatarState, string> = {
   bienvenida: '/avatars/kia/kia-bienvenida.webp',
   ayuda: '/avatars/kia/kia-ayuda.webp',
@@ -84,28 +80,51 @@ const EMPATHY_PATTERNS = [
 export interface KiaAvatarResolutionInput {
   decision: KiaDecision;
   userMessage?: string | null;
+  /**
+   * Optional trusted server context. The resolver never derives these signals
+   * from browser input, user wording or model prose.
+   */
+  presentationContext?: KiaPresentationContext | null;
 }
 
 /**
  * Presentation-only resolver. Critical structured signals always beat softer
  * emotional/contextual cues. It must not mutate KiaDecision or execute tools.
  *
- * `alerta_fiscal` and `celebracion` deliberately remain reserved in Sprint 2:
- * the current KiaDecision contract does not expose a dedicated, authoritative
- * fiscal-risk or exceptional-milestone signal. They must never be inferred
- * from arbitrary wording alone.
+ * Reserved states (`alerta_fiscal`, `confianza`, `celebracion`) are reachable
+ * only through trusted KiaPresentationContext signals. Arbitrary wording and
+ * model confidence are never enough to select them.
  */
 export function resolveKiaAvatarState({
   decision,
   userMessage,
+  presentationContext,
 }: KiaAvatarResolutionInput): KiaAvatarState {
   if (
     decision.requiresManualReview ||
     decision.nextAction === 'needs_review' ||
-    decision.warnings.length > 0 ||
     decision.intent === 'anomaly_review'
   ) {
     return 'aviso';
+  }
+
+  if (presentationContext?.fiscalRisk) {
+    return 'alerta_fiscal';
+  }
+
+  if (decision.warnings.length > 0) {
+    return 'aviso';
+  }
+
+  const needsClarification =
+    decision.nextAction === 'ask_one_question' ||
+    decision.missingData.length > 0;
+
+  // Positive structured presentation is suppressed while KIA is explicitly
+  // asking for missing information, avoiding a celebratory/confident face next
+  // to a clarification request.
+  if (!needsClarification && presentationContext?.milestone) {
+    return 'celebracion';
   }
 
   if (
@@ -115,10 +134,11 @@ export function resolveKiaAvatarState({
     return 'exito';
   }
 
-  if (
-    decision.nextAction === 'ask_one_question' ||
-    decision.missingData.length > 0
-  ) {
+  if (!needsClarification && presentationContext?.assurance) {
+    return 'confianza';
+  }
+
+  if (needsClarification) {
     return 'duda';
   }
 
