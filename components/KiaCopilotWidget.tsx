@@ -65,9 +65,6 @@ function useKiaChat(pathname: string) {
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
 
-    // The dashboard has no phone-backed WhatsApp history. Send only the last
-    // few visible turns as bounded conversational context; server auth/company
-    // scope remains authoritative for every data/tool operation.
     const history = messages
       .slice(-8)
       .filter((message) => message.text.trim())
@@ -207,6 +204,15 @@ export default function KiaCopilotWidget() {
   const currentKiaState: KiaAvatarState = loading
     ? 'pensando'
     : (lastAssistantMessage?.avatarState ?? 'bienvenida');
+  const currentKiaVisualEventKey = loading
+    ? `loading:${messages.length}`
+    : (lastAssistantMessage?.id ?? 'welcome');
+  const previousKiaVisualEventRef = useRef(currentKiaVisualEventKey);
+  const kiaVisualEventChanged = previousKiaVisualEventRef.current !== currentKiaVisualEventKey;
+
+  useEffect(() => {
+    previousKiaVisualEventRef.current = currentKiaVisualEventKey;
+  }, [currentKiaVisualEventKey]);
 
   useEffect(() => {
     if (open) {
@@ -269,7 +275,13 @@ export default function KiaCopilotWidget() {
             style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
           >
             <div className="flex items-center gap-2">
-              <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
+              <KiaAvatar
+                state={currentKiaState}
+                size="sm"
+                priority
+                animateOnChange
+                motionEventChanged={kiaVisualEventChanged}
+              />
               <div>
                 <p className="text-sm font-semibold text-white">KIA</p>
                 <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
@@ -410,7 +422,12 @@ export default function KiaCopilotWidget() {
         {open ? (
           <X size={20} aria-hidden="true" />
         ) : (
-          <KiaAvatar state={currentKiaState} size="lg" animateOnChange />
+          <KiaAvatar
+            state={currentKiaState}
+            size="lg"
+            animateOnChange
+            motionEventChanged={kiaVisualEventChanged}
+          />
         )}
       </button>
     </>
