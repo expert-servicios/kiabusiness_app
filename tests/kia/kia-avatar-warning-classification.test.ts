@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaDecision } from '@/lib/ai/kia/kia-output-schema';
 
-function decision(overrides: Partial<KiaDecision> = {}): KiaDecision {
+function decision(warnings: string[]): KiaDecision {
   return {
     version: '1.0',
     taskType: 'waba_reply',
@@ -19,57 +19,21 @@ function decision(overrides: Partial<KiaDecision> = {}): KiaDecision {
     decisionSummary: 'test',
     rulesApplied: ['test'],
     missingData: [],
-    warnings: [],
-    ...overrides,
+    warnings,
   };
 }
 
 describe('KIA presentation warning classification', () => {
-  it('keeps real case-status responses in seguimiento despite backend trace marker', () => {
-    expect(resolveKiaAvatarState({
-      decision: decision({
-        intent: 'case_status',
-        nextAction: 'get_case_status',
-        warnings: ['backend_policy_override_case_status'],
-      }),
-    })).toBe('seguimiento');
-  });
-
-  it('keeps readiness/viability backend routing markers presentation-neutral', () => {
-    expect(resolveKiaAvatarState({
-      decision: decision({
-        intent: 'readiness',
-        nextAction: 'run_readiness',
-        warnings: ['backend_policy_override_holded_readiness'],
-      }),
-    })).toBe('explicacion');
-
-    expect(resolveKiaAvatarState({
-      decision: decision({
-        intent: 'viability',
-        nextAction: 'run_viability',
-        warnings: ['backend_policy_override_viability'],
-      }),
-    })).toBe('explicacion');
-  });
-
-  it('does not turn harmless response repairs into visual alarms', () => {
-    expect(resolveKiaAvatarState({
-      decision: decision({
-        intent: 'greeting',
-        warnings: [
-          'user_message_language_repaired_by_backend',
-          'extra_question_marks_repaired_by_backend',
-          'taskType corrected by backend',
-          'contactStatus corrected by backend',
-          'Possible repeated phrasing detected (92%)',
-        ],
-      }),
-    })).toBe('bienvenida');
-  });
-
-  it('keeps unknown, security, tax-review and execution warnings as aviso', () => {
+  it('treats every unprovenanced KiaDecision warning as aviso', () => {
     const warningCodes = [
+      'backend_policy_override_case_status',
+      'backend_policy_override_holded_readiness',
+      'backend_policy_override_viability',
+      'user_message_language_repaired_by_backend',
+      'extra_question_marks_repaired_by_backend',
+      'taskType corrected by backend',
+      'contactStatus corrected by backend',
+      'Possible repeated phrasing detected (92%)',
       'unexpected backend warning',
       'backend_policy_override_api_key_channel',
       'backend_policy_override_tax_summary',
@@ -79,8 +43,17 @@ describe('KIA presentation warning classification', () => {
 
     for (const warning of warningCodes) {
       expect(resolveKiaAvatarState({
-        decision: decision({ warnings: [warning] }),
+        decision: decision([warning]),
       })).toBe('aviso');
     }
+  });
+
+  it('allows a verified fiscal-risk signal to be more specific than a generic warning', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision(['generic warning']),
+      presentationContext: {
+        fiscalRisk: { severity: 'critical', code: 'material_tax_anomaly', source: 'accounting' },
+      },
+    })).toBe('alerta_fiscal');
   });
 });
