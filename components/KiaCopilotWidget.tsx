@@ -34,18 +34,33 @@ interface KiaApiResponse {
   error?: string;
 }
 
+function welcomeMessage(returning = false): ChatMessage {
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    text: returning
+      ? '¡Hola de nuevo! ¿En qué te ayudo?'
+      : '¡Hola! Soy KIA, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
+    quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+    avatarState: 'bienvenida',
+  };
+}
+
 function useKiaChat(pathname: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: '¡Hola! Soy KIA, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
-      quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
-      avatarState: 'bienvenida',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const handleCompanyChanged = () => {
+      setMessages([welcomeMessage(true)]);
+      setSessionId(undefined);
+      setLoading(false);
+    };
+
+    window.addEventListener('expert:active-company-changed', handleCompanyChanged);
+    return () => window.removeEventListener('expert:active-company-changed', handleCompanyChanged);
+  }, []);
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
@@ -108,15 +123,7 @@ function useKiaChat(pathname: string) {
   }, [loading, messages, pathname, sessionId]);
 
   const reset = useCallback(() => {
-    setMessages([
-      {
-        id         : 'welcome',
-        role       : 'assistant',
-        text       : '¡Hola de nuevo! ¿En qué te ayudo?',
-        quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
-        avatarState: 'bienvenida',
-      },
-    ]);
+    setMessages([welcomeMessage(true)]);
     setSessionId(undefined);
   }, []);
 
