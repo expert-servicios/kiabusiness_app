@@ -13,6 +13,7 @@ import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { buildKiaPresentationContext } from '@/lib/ai/kia/kia-presentation-context-builder';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -189,9 +190,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const presentationContext = buildKiaPresentationContext(result.toolResults);
   const avatarState = resolveKiaAvatarState({
     decision: result.decision,
     userMessage: message,
+    presentationContext,
   });
   const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
 
