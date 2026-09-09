@@ -10,11 +10,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { X, Send, Loader2, ChevronDown } from 'lucide-react';
+import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
-
-// ── Tipos ─────────────────────────────────────────────────────────────────────
+import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
 
 interface ChatMessage {
   id: string;
@@ -22,6 +21,7 @@ interface ChatMessage {
   text: string;
   quickReplies?: string[];
   avatarState?: KiaAvatarState;
+  artifacts?: KiaCopilotArtifact[];
 }
 
 interface KiaApiResponse {
@@ -30,10 +30,9 @@ interface KiaApiResponse {
   intent?: string;
   nextAction?: string;
   avatarState?: KiaAvatarState;
+  artifacts?: KiaCopilotArtifact[];
   error?: string;
 }
-
-// ── Hook de chat ──────────────────────────────────────────────────────────────
 
 function useKiaChat(pathname: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -74,10 +73,10 @@ function useKiaChat(pathname: string) {
         text        : data.reply ?? 'Lo siento, no pude procesar tu consulta.',
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
+        artifacts   : data.artifacts?.length ? data.artifacts : undefined,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Guardar sessionId para las siguientes llamadas
       if (!sessionId && res.headers.get('x-kia-session-id')) {
         setSessionId(res.headers.get('x-kia-session-id') ?? undefined);
       }
@@ -112,7 +111,70 @@ function useKiaChat(pathname: string) {
   return { messages, loading, send, reset };
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
+function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
+  return (
+    <div className="mt-2 space-y-2">
+      {artifacts.map((artifact, index) => {
+        if (artifact.type === 'table') {
+          return (
+            <div
+              key={`${artifact.type}-${index}`}
+              className="overflow-hidden rounded-xl border border-[#e8e0d4] bg-white"
+            >
+              <p className="border-b border-[#e8e0d4] px-2.5 py-2 text-xs font-semibold text-[#3d3528]">
+                {artifact.title}
+              </p>
+              <div className="max-w-full overflow-x-auto">
+                <table className="min-w-full text-left text-[11px] text-[#3d3528]">
+                  <thead className="bg-[#faf8f4] text-[#7a6e5f]">
+                    <tr>
+                      {artifact.columns.map((column) => (
+                        <th key={column} className="whitespace-nowrap px-2.5 py-1.5 font-medium">{column}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {artifact.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex} className="border-t border-[#f0ebe3]">
+                        {artifact.columns.map((column) => (
+                          <td key={column} className="max-w-[160px] px-2.5 py-1.5 align-top">
+                            <span className="line-clamp-2">{String(row[column] ?? '—')}</span>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <a
+            key={`${artifact.type}-${index}`}
+            href={artifact.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`block rounded-xl border bg-white px-3 py-2 text-xs shadow-sm transition-colors hover:border-[#0D1B2A] ${
+              artifact.type === 'link' && artifact.tone === 'warning'
+                ? 'border-amber-300'
+                : 'border-[#e8e0d4]'
+            }`}
+          >
+            <span className="font-semibold text-[#3d3528]">{artifact.title}</span>
+            {artifact.type === 'report' && artifact.period ? (
+              <span className="ml-1 text-[#7a6e5f]">· {artifact.period}</span>
+            ) : null}
+            <span className="mt-1 flex items-center gap-1 font-medium text-[#0D1B2A]">
+              {artifact.cta} <ExternalLink size={11} aria-hidden="true" />
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function KiaCopilotWidget() {
   const [open, setOpen] = useState(false);
@@ -127,14 +189,12 @@ export default function KiaCopilotWidget() {
     ? 'pensando'
     : (lastAssistantMessage?.avatarState ?? 'bienvenida');
 
-  // Scroll al final cuando llegan mensajes nuevos
   useEffect(() => {
     if (open) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, open]);
 
-  // Focus al input cuando se abre
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -169,7 +229,6 @@ export default function KiaCopilotWidget() {
 
   return (
     <>
-      {/* ── Panel de chat ──────────────────────────────────────────────────── */}
       {open && (
         <div
           id="kia-copilot-panel"
@@ -186,7 +245,6 @@ export default function KiaCopilotWidget() {
             border        : '1px solid #e8e0d4',
           }}
         >
-          {/* Header */}
           <div
             className="flex items-center justify-between px-4 py-3"
             style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
@@ -217,7 +275,6 @@ export default function KiaCopilotWidget() {
             </div>
           </div>
 
-          {/* Mensajes */}
           <div
             role="log"
             aria-live="polite"
@@ -244,7 +301,9 @@ export default function KiaCopilotWidget() {
                   >
                     {msg.text}
                   </div>
-                  {/* Quick replies */}
+                  {msg.role === 'assistant' && msg.artifacts?.length ? (
+                    <KiaMessageArtifacts artifacts={msg.artifacts} />
+                  ) : null}
                   {msg.role === 'assistant' && msg.quickReplies?.length ? (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {msg.quickReplies.map((qr) => (
@@ -282,7 +341,6 @@ export default function KiaCopilotWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div
             className="flex items-end gap-2 px-3 py-3"
             style={{ borderTop: '1px solid #e8e0d4' }}
@@ -316,7 +374,6 @@ export default function KiaCopilotWidget() {
         </div>
       )}
 
-      {/* ── Botón flotante ─────────────────────────────────────────────────── */}
       <button
         onClick={open ? handleClose : handleOpen}
         aria-label={open ? 'Cerrar KIA' : 'Abrir KIA copiloto'}
