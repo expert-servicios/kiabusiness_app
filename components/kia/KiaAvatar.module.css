@@ -1,0 +1,21 @@
+@keyframes kiaAvatarStateIn {
+  from {
+    opacity: 0.72;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.stateTransition {
+  animation: kiaAvatarStateIn 160ms ease-out;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stateTransition {
+    animation: none;
+  }
+}

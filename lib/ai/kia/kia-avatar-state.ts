@@ -42,30 +42,29 @@ export const KIA_AVATAR_LABELS: Record<KiaAvatarState, string> = {
 };
 
 /**
- * Sprint 1 ships six production assets. Future states intentionally alias to
- * the closest approved MVP asset so API/UI contracts can stay stable while the
- * full visual set is prepared.
+ * Sprint 2 ships one approved asset for every stable visual state. Critical
+ * states can exist in the visual contract without being auto-selected until a
+ * sufficiently strong structured signal exists in KiaDecision.
  */
 export const KIA_AVATAR_ASSET_PATHS: Record<KiaAvatarState, string> = {
-  bienvenida: '/avatars/kia/kia-ayuda.webp',
+  bienvenida: '/avatars/kia/kia-bienvenida.webp',
   ayuda: '/avatars/kia/kia-ayuda.webp',
   explicacion: '/avatars/kia/kia-explicacion.webp',
-  confianza: '/avatars/kia/kia-explicacion.webp',
+  confianza: '/avatars/kia/kia-confianza.webp',
   pensando: '/avatars/kia/kia-pensando.webp',
   aviso: '/avatars/kia/kia-aviso.webp',
-  alerta_fiscal: '/avatars/kia/kia-aviso.webp',
+  alerta_fiscal: '/avatars/kia/kia-alerta-fiscal.webp',
   empatia: '/avatars/kia/kia-empatia.webp',
   exito: '/avatars/kia/kia-exito.webp',
-  seguimiento: '/avatars/kia/kia-explicacion.webp',
-  duda: '/avatars/kia/kia-ayuda.webp',
-  celebracion: '/avatars/kia/kia-exito.webp',
+  seguimiento: '/avatars/kia/kia-seguimiento.webp',
+  duda: '/avatars/kia/kia-duda.webp',
+  celebracion: '/avatars/kia/kia-celebracion.webp',
 };
 
 const EXPLANATION_INTENTS = new Set<KiaDecision['intent']>([
   'service_selection',
   'viability',
   'readiness',
-  'case_status',
   'accounting_summary',
   'document_classification',
   'company_data_resolve',
@@ -90,6 +89,11 @@ export interface KiaAvatarResolutionInput {
 /**
  * Presentation-only resolver. Critical structured signals always beat softer
  * emotional/contextual cues. It must not mutate KiaDecision or execute tools.
+ *
+ * `alerta_fiscal` and `celebracion` deliberately remain reserved in Sprint 2:
+ * the current KiaDecision contract does not expose a dedicated, authoritative
+ * fiscal-risk or exceptional-milestone signal. They must never be inferred
+ * from arbitrary wording alone.
  */
 export function resolveKiaAvatarState({
   decision,
@@ -115,11 +119,19 @@ export function resolveKiaAvatarState({
     decision.nextAction === 'ask_one_question' ||
     decision.missingData.length > 0
   ) {
-    return 'ayuda';
+    return 'duda';
   }
 
   if (userMessage && EMPATHY_PATTERNS.some((pattern) => pattern.test(userMessage))) {
     return 'empatia';
+  }
+
+  if (decision.intent === 'greeting') {
+    return 'bienvenida';
+  }
+
+  if (decision.intent === 'case_status') {
+    return 'seguimiento';
   }
 
   if (EXPLANATION_INTENTS.has(decision.intent)) {
