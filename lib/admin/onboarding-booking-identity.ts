@@ -13,6 +13,12 @@ type AppointmentRow = {
   email?: string | null;
 };
 
+export type BookingIdentity = {
+  clientId: string;
+  companyId: string | null;
+  source: 'auth_email' | 'company_email';
+};
+
 function normalizeEmail(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase();
 }
@@ -80,21 +86,47 @@ export async function loadOnboardingAppointmentsForIdentity(
   });
 }
 
+async function resolveSingleOpenOnboardingCompanyId(admin: AdminClient, clientId: string): Promise<string | null> {
+  const { data, error } = await admin
+    .from('subscriptions')
+    .select('company_id')
+    .eq('client_id', clientId)
+    .in('status', ['active', 'trialing'])
+    .is('post_purchase_onboarding_at', null)
+    .limit(3);
+  if (error) throw error;
+
+  const companyIds = [...new Set((data ?? []).map((row) => row.company_id).filter(Boolean))] as string[];
+  return companyIds.length === 1 ? companyIds[0] : null;
+}
+
 /**
- * Resolve a Cal.com attendee email to a customer only when the identity is
- * unambiguous: either it is the auth email, or it is the email of exactly one
- * company with exactly one active/trialing subscription owner.
+ * Resolve a Cal.com attendee to a customer and, when it can be proven
+ * unambiguously, to the fiscal entity that owns the booking.
+ *
+ * Rules:
+ * - exact auth email -> client; company only when exactly one active/trialing
+ *   subscription still needs post-purchase onboarding;
+ * - exact companies.email -> company; client only when that company has exactly
+ *   one active/trialing subscription owner;
+ * - never infer from domains, names or fuzzy matches.
  */
-export async function resolveBookingClientIdByEmail(
+export async function resolveBookingIdentityByEmail(
   admin: AdminClient,
   email: string,
-): Promise<string | null> {
+): Promise<BookingIdentity | null> {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
 
   const authUsers = await listAllAuthUsers();
   const direct = authUsers.find((user) => normalizeEmail(user.email) === normalized);
-  if (direct) return direct.id;
+  if (direct) {
+    return {
+      clientId: direct.id,
+      companyId: await resolveSingleOpenOnboardingCompanyId(admin, direct.id),
+      source: 'auth_email',
+    };
+  }
 
   const { data: companies, error: companyError } = await admin
     .from('companies')
@@ -104,14 +136,26 @@ export async function resolveBookingClientIdByEmail(
   if (companyError) throw companyError;
   if (!companies || companies.length !== 1) return null;
 
+  const companyId = companies[0].id as string;
   const { data: subscriptions, error: subscriptionError } = await admin
     .from('subscriptions')
     .select('client_id')
-    .eq('company_id', companies[0].id)
+    .eq('company_id', companyId)
     .in('status', ['active', 'trialing'])
-    .limit(2);
+    .limit(3);
   if (subscriptionError) throw subscriptionError;
 
-  const clientIds = [...new Set((subscriptions ?? []).map((row) => row.client_id).filter(Boolean))];
-  return clientIds.length === 1 ? clientIds[0] : null;
+  const clientIds = [...new Set((subscriptions ?? []).map((row) => row.client_id).filter(Boolean))] as string[];
+  if (clientIds.length !== 1) return null;
+
+  return { clientId: clientIds[0], companyId, source: 'company_email' };
+}
+
+/** Backwards-compatible client-only resolver for existing consumers/tests. */
+export async function resolveBookingClientIdByEmail(
+  admin: AdminClient,
+  email: string,
+): Promise<string | null> {
+  const identity = await resolveBookingIdentityByEmail(admin, email);
+  return identity?.clientId ?? null;
 }

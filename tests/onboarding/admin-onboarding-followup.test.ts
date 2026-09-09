@@ -45,9 +45,10 @@ describe('Admin onboarding follow-up', () => {
     expect(completeRoute).toContain('meetingAt <= now');
   });
 
-  it('reuses an open onboarding case and never writes the invalid cases.state nuevo value', () => {
-    expect(calWebhook).toContain('findOpenOnboardingCase(authUser.id)');
+  it('reuses an open onboarding case for the exact client company and never writes the invalid cases.state nuevo value', () => {
+    expect(calWebhook).toContain('findOpenOnboardingCase(identity.clientId, identity.companyId)');
     expect(helper).toContain(".in('service', ['Alta de usuario', 'Sesión de onboarding'])");
+    expect(helper).toContain("query.eq('company_id', companyId)");
     expect(calWebhook).toContain("state: 'en_proceso'");
     expect(calWebhook).not.toContain("state: 'nuevo'");
   });
