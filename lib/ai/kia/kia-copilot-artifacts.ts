@@ -1,3 +1,4 @@
+import type { KiaDecision } from './kia-output-schema';
 import type { KiaToolResult } from './kia-tool-definitions';
 
 export type KiaCopilotArtifact =
@@ -27,18 +28,27 @@ function safeArtifactUrl(value: unknown): string | null {
 
 /**
  * Convert already-authorized KIA tool results into deliberately small UI
- * artifacts. This function never queries data, executes tools or accepts raw
- * browser identifiers; it only selects presentation-safe fields from results
- * produced by the authenticated server-side tool loop.
+ * artifacts. Action artifacts are additionally gated by the FINAL validated
+ * decision so an earlier tool result cannot bypass a later policy/judge change.
  */
-export function buildKiaCopilotArtifacts(toolResults: KiaToolResult[]): KiaCopilotArtifact[] {
+export function buildKiaCopilotArtifacts(
+  toolResults: KiaToolResult[],
+  decision: KiaDecision,
+): KiaCopilotArtifact[] {
+  if (decision.requiresManualReview || decision.nextAction === 'needs_review') {
+    return [];
+  }
+
   const artifacts: KiaCopilotArtifact[] = [];
 
   for (const toolResult of toolResults) {
     if (!toolResult.ok || !toolResult.result) continue;
     const result = toolResult.result;
 
-    if (toolResult.toolName === 'generate_company_report') {
+    if (
+      toolResult.toolName === 'generate_company_report' &&
+      (decision.nextAction === 'generate_report' || decision.nextAction === 'show_report_link')
+    ) {
       const url = safeArtifactUrl(result.reportUrl);
       if (url) {
         artifacts.push({
@@ -88,7 +98,7 @@ export function buildKiaCopilotArtifacts(toolResults: KiaToolResult[]): KiaCopil
       const rows = result.expedientes.slice(0, MAX_TABLE_ROWS) as Array<Record<string, unknown>>;
       artifacts.push({
         type: 'table',
-        title: `Expedientes activos (${result.expedientes.length})`,
+        title: `Expedientes (${result.expedientes.length})`,
         columns: ['Servicio', 'Estado'],
         rows: rows.map((row) => ({
           Servicio: safeText(row.servicio),
@@ -111,17 +121,39 @@ export function buildKiaCopilotArtifacts(toolResults: KiaToolResult[]): KiaCopil
       });
     }
 
-    if (toolResult.toolName === 'generate_holded_connection_link') {
-      const url = safeArtifactUrl(result.url);
-      if (url) artifacts.push({ type: 'link', title: 'Conectar con Holded', url, cta: 'Ir a integraciones', tone: 'info' });
+    if (
+      toolResult.toolName === 'generate_holded_connection_link' &&
+      decision.nextAction === 'send_holded_connect_link'
+    ) {
+      // This builder is used by the authenticated dashboard surface. Avoid the
+      // legacy /auth/login?next=... wrapper, which redirects logged-in users to
+      // dashboard home and loses the requested destination.
+      artifacts.push({
+        type: 'link',
+        title: 'Conectar con Holded',
+        url: '/dashboard/integraciones/holded',
+        cta: 'Ir a integraciones',
+        tone: 'info',
+      });
     }
 
-    if (toolResult.toolName === 'generate_profile_link') {
-      const url = safeArtifactUrl(result.url);
-      if (url) artifacts.push({ type: 'link', title: 'Completar perfil', url, cta: 'Ir a mi perfil', tone: 'info' });
+    if (
+      toolResult.toolName === 'generate_profile_link' &&
+      decision.nextAction === 'send_profile_link'
+    ) {
+      artifacts.push({
+        type: 'link',
+        title: 'Completar perfil',
+        url: '/dashboard/perfil',
+        cta: 'Ir a mi perfil',
+        tone: 'info',
+      });
     }
 
-    if (toolResult.toolName === 'generate_checkout_gate_link') {
+    if (
+      toolResult.toolName === 'generate_checkout_gate_link' &&
+      decision.nextAction === 'send_checkout_link'
+    ) {
       const url = safeArtifactUrl(result.url);
       if (url) artifacts.push({ type: 'link', title: 'Contratar servicio', url, cta: 'Ver opciones', tone: 'info' });
     }
