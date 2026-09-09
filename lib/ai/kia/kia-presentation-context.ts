@@ -14,7 +14,7 @@ export const KIA_FISCAL_RISK_CODES = [
 ] as const;
 export type KiaFiscalRiskCode = (typeof KIA_FISCAL_RISK_CODES)[number];
 
-export const KIA_FISCAL_RISK_SOURCES = ['readiness', 'viability', 'accounting', 'case'] as const;
+export const KIA_FISCAL_RISK_SOURCES = ['readiness', 'viability', 'accounting', 'case', 'fiscal_calendar'] as const;
 export type KiaFiscalRiskSource = (typeof KIA_FISCAL_RISK_SOURCES)[number];
 
 export const KIA_ASSURANCE_KINDS = [
