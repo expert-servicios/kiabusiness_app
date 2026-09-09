@@ -125,4 +125,14 @@ describe('KIA copilot avatar integration', () => {
     expect(avatar).toContain('aria-hidden={decorative || undefined}');
     expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
   });
+
+  it('exposes the chat as an accessible non-modal dialog and live message log', () => {
+    expect(widget).toContain('role="dialog"');
+    expect(widget).toContain('aria-label="KIA copiloto"');
+    expect(widget).toContain('role="log"');
+    expect(widget).toContain('aria-live="polite"');
+    expect(widget).toContain('aria-expanded={open}');
+    expect(widget).toContain('aria-controls="kia-copilot-panel"');
+    expect(widget).toContain('aria-label="Escribe tu consulta a KIA"');
+  });
 });
