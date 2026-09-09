@@ -26,6 +26,33 @@ describe('onboarding booking identity', () => {
   it('resolves company booking email only when subscription ownership is unambiguous', () => {
     const helper = source('lib/admin/onboarding-booking-identity.ts');
     expect(helper).toContain(".in('status', ['active', 'trialing'])");
-    expect(helper).toContain('return clientIds.length === 1 ? clientIds[0] : null;');
+    expect(helper).toContain('if (clientIds.length !== 1) return null;');
+    expect(helper).toContain("source: 'company_email'");
+    expect(helper).not.toContain('endsWith');
+  });
+
+  it('only scopes an auth email to a company when one unfinished onboarding company is unambiguous', () => {
+    const helper = source('lib/admin/onboarding-booking-identity.ts');
+    expect(helper).toContain(".is('post_purchase_onboarding_at', null)");
+    expect(helper).toContain('return companyIds.length === 1 ? companyIds[0] : null;');
+    expect(helper).toContain("source: 'auth_email'");
+  });
+
+  it('binds Cal onboarding cases and tasks to the resolved fiscal entity', () => {
+    const route = source('app/api/webhooks/cal/route.ts');
+    const followup = source('lib/admin/onboarding-followup.ts');
+    expect(route).toContain('resolveBookingIdentityByEmail(admin, attendee.email)');
+    expect(route).toContain('company_id: identity.companyId');
+    expect(route).toContain('companyId: activeSubscription.company_id');
+    expect(followup).toContain("lookup.eq('company_id', input.companyId)");
+    expect(followup).toContain('company_id: input.companyId ?? null');
+  });
+
+  it('logs signature diagnostics without exposing the webhook secret', () => {
+    const route = source('app/api/webhooks/cal/route.ts');
+    expect(route).toContain("warning: 'invalid_signature'");
+    expect(route).toContain('hasHeader: Boolean(signature)');
+    expect(route).toContain('hasSecret: Boolean(process.env.CAL_WEBHOOK_SECRET)');
+    expect(route).not.toContain('secretValue');
   });
 });
