@@ -86,6 +86,16 @@ describe('canonical KIA widget artifact integration', () => {
     expect(widget).toContain('rel="noopener noreferrer"');
   });
 
+  it('sends only bounded visible conversation history and keeps server scope authoritative', () => {
+    expect(widget).toContain('.slice(-8)');
+    expect(widget).toContain('text: message.text.slice(0, 1200)');
+    expect(widget).toContain('history,');
+    expect(api).toContain("history     : z.array(historyItemSchema).max(8).optional()");
+    expect(api).toContain('syntheticRecentMessages,');
+    expect(api).toContain(".eq('profile_id', user.id)");
+    expect(api).toContain(".eq('company_id', resolvedCompanyId)");
+  });
+
   it('documents the existing duplicate copilot surface until parity cutover', () => {
     expect(protectedLayout).toContain('<KiaCopilotWidget />');
     expect(dashboardLayout).toContain('<KiaCopilotPanel />');
