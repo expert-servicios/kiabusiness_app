@@ -5,6 +5,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { sendEmailOnce } from '@/lib/email/send';
 import { onboardingReviewRequestEmail, responsibleClientWelcomeEmail } from '@/lib/email/onboarding-templates';
 import { loadOnboardingAppointmentsForIdentity } from '@/lib/admin/onboarding-booking-identity';
+import { completeOnboardingTask } from '@/lib/admin/onboarding-followup';
 
 const bodySchema = z.object({ subscriptionId: z.string().uuid() });
 
@@ -91,12 +92,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'La conexión de Holded debe estar validada antes de cerrar el alta.', code: 'holded_required' }, { status: 409 });
   }
 
-  const { data: onboardingCase } = await admin
+  let onboardingCaseQuery = admin
     .from('cases')
     .select('id')
     .eq('client_id', clientId)
     .in('service', ['Alta de usuario', 'Sesión de onboarding'])
-    .neq('state', 'finalizado')
+    .neq('state', 'finalizado');
+  onboardingCaseQuery = subscription.company_id
+    ? onboardingCaseQuery.eq('company_id', subscription.company_id)
+    : onboardingCaseQuery.is('company_id', null);
+  const { data: onboardingCase } = await onboardingCaseQuery
     .order('opened_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -113,6 +118,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .maybeSingle();
     if (updateError) return NextResponse.json({ error: 'No se pudo guardar la finalización del onboarding' }, { status: 500 });
     if (!updated) return NextResponse.json({ error: 'El estado del onboarding cambió durante la operación. Actualiza la ficha.' }, { status: 409 });
+  }
+
+  try {
+    await completeOnboardingTask(clientId, subscription.company_id);
+  } catch (taskError) {
+    console.error('[admin complete onboarding] task completion:', taskError instanceof Error ? taskError.message : taskError);
   }
 
   const clientName = profile?.full_name ?? clientEmail.split('@')[0];
