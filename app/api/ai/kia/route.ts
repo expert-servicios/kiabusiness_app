@@ -2,11 +2,8 @@
  * IMP-022: Kia copiloto in-app — endpoint de chat para el widget flotante.
  *
  * POST /api/ai/kia
- * Body: { message, sessionId?, currentPage?, currentTask?, pageData?, companyId? }
+ * Body: { message, sessionId?, currentPage?, currentTask?, pageData?, companyId?, history? }
  * Auth: usuario autenticado (cookie de sesión Supabase SSR).
- *
- * El canal es siempre 'dashboard'. La tarea es 'waba_reply' para respuestas
- * conversacionales directas (low effort, rápido).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,6 +14,11 @@ import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
 
+const historyItemSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  text: z.string().min(1).max(1200),
+}).strict();
+
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
   sessionId   : z.string().uuid().optional(),
@@ -24,6 +26,7 @@ const requestSchema = z.object({
   currentTask : z.string().max(200).optional(),
   pageData    : z.record(z.string(), z.unknown()).optional(),
   companyId   : z.string().uuid().optional(),
+  history     : z.array(historyItemSchema).max(8).optional(),
 }).strict();
 
 const LEGACY_DASHBOARD_SAFE_TOOLS = [
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request', details: parsed.error.flatten() }, { status: 400 });
   }
-  const { message, sessionId, currentPage, currentTask, pageData, companyId } = parsed.data;
+  const { message, sessionId, currentPage, currentTask, pageData, companyId, history = [] } = parsed.data;
 
   const admin = getSupabaseAdmin();
   const { data: profile, error: profileError } = await admin
@@ -112,6 +115,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const historyTimestamp = new Date().toISOString();
+  const syntheticRecentMessages = history.map((item) => ({
+    role: item.role,
+    text: item.text,
+    createdAt: historyTimestamp,
+  }));
+
   let result;
   try {
     result = await runKiaDecision({
@@ -130,6 +140,7 @@ export async function POST(request: NextRequest) {
         currentTask : currentTask,
         pageData    : pageData,
         latestMessage: message,
+        syntheticRecentMessages,
       },
     });
   } catch (err) {
