@@ -9,13 +9,29 @@
   }
 }
 
+@keyframes kiaAvatarThinking {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.015);
+  }
+}
+
 .stateTransition {
   animation: kiaAvatarStateIn 160ms ease-out;
   transform-origin: center;
 }
 
+.thinkingMotion {
+  animation: kiaAvatarThinking 1800ms ease-in-out infinite;
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .stateTransition {
+  .stateTransition,
+  .thinkingMotion {
     animation: none;
   }
 }

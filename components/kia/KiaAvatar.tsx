@@ -33,6 +33,10 @@ export interface KiaAvatarProps {
    * Applies a short entrance transition when the state image changes. Keep it
    * off for repeated message avatars; header/launcher can opt in. The CSS
    * module disables the animation under prefers-reduced-motion.
+   *
+   * When the opted-in surface is in `pensando`, the outer avatar gets a very
+   * small, slow vertical movement to indicate activity. Message avatars remain
+   * static and the loading row already provides a spinner/text status.
    */
   animateOnChange?: boolean;
 }
@@ -49,12 +53,14 @@ export function KiaAvatar({
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
   const accessibleLabel = alt ?? `KIA — ${label}`;
+  const thinkingMotion = animateOnChange && state === 'pensando';
 
   return (
     <span
-      className={`relative inline-flex shrink-0 overflow-hidden rounded-full border border-[#e8e0d4] bg-[#f5f1eb] ${className}`}
+      className={`relative inline-flex shrink-0 overflow-hidden rounded-full border border-[#e8e0d4] bg-[#f5f1eb] ${thinkingMotion ? styles.thinkingMotion : ''} ${className}`}
       style={{ width: pixels, height: pixels }}
       data-kia-avatar-state={state}
+      data-kia-avatar-motion={thinkingMotion ? 'thinking' : 'static'}
       aria-hidden={decorative || undefined}
       title={decorative ? undefined : accessibleLabel}
     >
