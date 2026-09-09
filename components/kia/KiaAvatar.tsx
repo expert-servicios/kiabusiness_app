@@ -6,6 +6,7 @@ import {
   KIA_AVATAR_LABELS,
   type KiaAvatarState,
 } from '@/lib/ai/kia/kia-avatar-state';
+import styles from './KiaAvatar.module.css';
 
 const SIZE_MAP = {
   xs: 28,
@@ -28,6 +29,12 @@ export interface KiaAvatarProps {
    * reader announcements such as "KIA — Ayuda" before every message.
    */
   decorative?: boolean;
+  /**
+   * Applies a short entrance transition when the state image changes. Keep it
+   * off for repeated message avatars; header/launcher can opt in. The CSS
+   * module disables the animation under prefers-reduced-motion.
+   */
+  animateOnChange?: boolean;
 }
 
 export function KiaAvatar({
@@ -37,6 +44,7 @@ export function KiaAvatar({
   priority = false,
   alt,
   decorative = true,
+  animateOnChange = false,
 }: KiaAvatarProps) {
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
@@ -51,12 +59,13 @@ export function KiaAvatar({
       title={decorative ? undefined : accessibleLabel}
     >
       <Image
+        key={animateOnChange ? state : 'static'}
         src={KIA_AVATAR_ASSET_PATHS[state]}
         alt={decorative ? '' : accessibleLabel}
         width={pixels}
         height={pixels}
         priority={priority}
-        className="h-full w-full object-cover"
+        className={`h-full w-full object-cover ${animateOnChange ? styles.stateTransition : ''}`}
       />
     </span>
   );
