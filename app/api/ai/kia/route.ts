@@ -15,6 +15,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
+import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
             ? 'La entidad seleccionada no pertenece a tu cuenta.'
             : 'La entidad activa ya no está disponible. Selecciona una de tus empresas antes de usar KIA.',
           avatarState: 'aviso',
+          artifacts: [],
         },
         { status: companyId ? 403 : 409 },
       );
@@ -137,6 +139,7 @@ export async function POST(request: NextRequest) {
         error: 'kia_error',
         reply: 'Lo siento, tengo un problema técnico en este momento. Inténtalo de nuevo.',
         avatarState: 'aviso',
+        artifacts: [],
       },
       { status: 500 }
     );
@@ -146,6 +149,7 @@ export async function POST(request: NextRequest) {
     decision: result.decision,
     userMessage: message,
   });
+  const artifacts = buildKiaCopilotArtifacts(result.toolResults);
 
   let effectiveSessionId = sessionId;
   try {
@@ -186,6 +190,7 @@ export async function POST(request: NextRequest) {
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
     avatarState,
+    artifacts,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;
