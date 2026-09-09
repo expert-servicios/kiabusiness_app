@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { deleteCalendarEventSA, hasCalendarSA, upsertCalendarEventSA } from '@/lib/integrations/google-calendar';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
+import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 
 function verifySignature(body: string, header: string | null): boolean {
@@ -72,41 +73,52 @@ async function sendOnboardingPreparation(attendee: CalAttendee, payload: CalPayl
   });
 }
 
-async function resolveAuthUser(email: string) {
-  const normalized = email.trim().toLowerCase();
-  const authUsers = await listAllAuthUsers();
-  return authUsers.find((user) => (user.email ?? '').trim().toLowerCase() === normalized) ?? null;
-}
-
-async function ensureCaseForBooking(admin: ReturnType<typeof getSupabaseAdmin>, attendee: CalAttendee, payload: CalPayload): Promise<{ clientId: string; caseId: string } | null> {
+async function ensureCaseForBooking(admin: ReturnType<typeof getSupabaseAdmin>, attendee: CalAttendee, payload: CalPayload): Promise<{ clientId: string; companyId: string | null; caseId: string } | null> {
   try {
-    const authUser = await resolveAuthUser(attendee.email);
-    if (!authUser) return null;
+    const identity = await resolveBookingIdentityByEmail(admin, attendee.email);
+    if (!identity) {
+      console.warn(JSON.stringify({ webhook: 'cal', warning: 'booking_identity_unresolved', attendeeEmail: attendee.email, uid: payload.uid }));
+      return null;
+    }
+
     const slug = payload.eventType?.slug ?? '';
     const meta = SLUG_SERVICE[slug] ?? { category: 'general', service: payload.eventType?.title ?? payload.title };
 
     if (slug === 'onboarding') {
-      const existingOnboarding = await findOpenOnboardingCase(authUser.id);
+      const existingOnboarding = await findOpenOnboardingCase(identity.clientId, identity.companyId);
       if (existingOnboarding) {
         await admin.from('cases').update({ next_action: `Onboarding reservado para ${payload.startTime}. Verificar Holded y finalizar el alta.`, updated_at: new Date().toISOString() }).eq('id', existingOnboarding.id);
-        return { clientId: authUser.id, caseId: existingOnboarding.id };
+        return { clientId: identity.clientId, companyId: identity.companyId, caseId: existingOnboarding.id };
       }
     }
 
-    const { data: existing } = await admin.from('cases').select('id').eq('client_id', authUser.id).eq('service', meta.service).neq('state', 'finalizado').order('opened_at', { ascending: false }).limit(1).maybeSingle();
-    if (existing) return { clientId: authUser.id, caseId: existing.id };
+    let existingQuery = admin
+      .from('cases')
+      .select('id')
+      .eq('client_id', identity.clientId)
+      .eq('service', meta.service)
+      .neq('state', 'finalizado');
+    existingQuery = identity.companyId ? existingQuery.eq('company_id', identity.companyId) : existingQuery.is('company_id', null);
+    const { data: existing } = await existingQuery.order('opened_at', { ascending: false }).limit(1).maybeSingle();
+    if (existing) return { clientId: identity.clientId, companyId: identity.companyId, caseId: existing.id };
 
     const { data: newCase, error } = await admin.from('cases').insert({
-      client_id: authUser.id, category: meta.category, service: meta.service, state: 'en_proceso', status: 'nuevo',
+      client_id: identity.clientId,
+      company_id: identity.companyId,
+      category: meta.category,
+      service: meta.service,
+      state: 'en_proceso',
+      status: 'nuevo',
       next_action: slug === 'onboarding' ? 'Verificar Holded y finalizar el alta' : null,
-      admin_note: `Expediente creado automáticamente desde reserva Cal.com (${payload.uid})`, opened_at: new Date().toISOString(),
+      admin_note: `Expediente creado automáticamente desde reserva Cal.com (${payload.uid})`,
+      opened_at: new Date().toISOString(),
     }).select('id').single();
     if (error || !newCase) { console.error('[cal/webhook] ensureCaseForBooking insert:', error?.message); return null; }
 
-    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', authUser.id).single();
+    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', identity.clientId).single();
     const name = profile?.full_name ?? attendee.name;
-    sendEmail({ to: attendee.email, eventType: 'case.opened', ...caseOpened(name, meta.service, null, ''), metadata: { case_id: newCase.id, source: 'cal_booking', cal_uid: payload.uid }, idempotencyKey: `cal/case-opened/${payload.uid}` }).catch((e: unknown) => console.error('[cal/webhook] case.opened email:', e));
-    return { clientId: authUser.id, caseId: newCase.id };
+    sendEmail({ to: attendee.email, eventType: 'case.opened', ...caseOpened(name, meta.service, null, ''), metadata: { case_id: newCase.id, company_id: identity.companyId, source: 'cal_booking', cal_uid: payload.uid }, idempotencyKey: `cal/case-opened/${payload.uid}` }).catch((e: unknown) => console.error('[cal/webhook] case.opened email:', e));
+    return { clientId: identity.clientId, companyId: identity.companyId, caseId: newCase.id };
   } catch (err) {
     console.error('[cal/webhook] ensureCaseForBooking:', err instanceof Error ? err.message : err);
     return null;
@@ -123,7 +135,11 @@ async function notifyAdminBooking(attendee: CalAttendee, payload: CalPayload, sl
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
-  if (!verifySignature(rawBody, request.headers.get('x-cal-signature-256'))) return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  const signature = request.headers.get('x-cal-signature-256');
+  if (!verifySignature(rawBody, signature)) {
+    console.warn(JSON.stringify({ webhook: 'cal', warning: 'invalid_signature', hasHeader: Boolean(signature), hasSecret: Boolean(process.env.CAL_WEBHOOK_SECRET) }));
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
 
   let event: { triggerEvent: string; payload: CalPayload };
   try { event = JSON.parse(rawBody); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
@@ -145,12 +161,19 @@ export async function POST(request: NextRequest) {
       }, { onConflict: 'cal_uid' }).select('id,google_event_id').single();
       if (upsertError || !appointment) console.error('[cal/webhook] BOOKING_CREATED appointments upsert failed:', upsertError?.message, 'uid:', payload.uid);
 
-      let caseContext: { clientId: string; caseId: string } | null = null;
+      let caseContext: { clientId: string; companyId: string | null; caseId: string } | null = null;
       if ((slug === 'onboarding' || slug === 'formacion') && attendee?.email) caseContext = await ensureCaseForBooking(admin, attendee, payload);
 
       if (slug === 'onboarding' && caseContext) {
-        const { data: activeSubscription } = await admin.from('subscriptions').select('id').eq('client_id', caseContext.clientId).in('status', ['active', 'trialing']).is('post_purchase_onboarding_at', null).limit(1).maybeSingle();
-        if (activeSubscription) await ensureOnboardingTask({ clientId: caseContext.clientId, caseId: caseContext.caseId, dueDate: confirmedDate, priority: 'alta', description: `Onboarding reservado para ${confirmedDate} ${confirmedTime}. Verificar conexión Holded y finalizar el alta después de la sesión.` });
+        let subscriptionQuery = admin
+          .from('subscriptions')
+          .select('id,company_id')
+          .eq('client_id', caseContext.clientId)
+          .in('status', ['active', 'trialing'])
+          .is('post_purchase_onboarding_at', null);
+        subscriptionQuery = caseContext.companyId ? subscriptionQuery.eq('company_id', caseContext.companyId) : subscriptionQuery.is('company_id', null);
+        const { data: activeSubscription } = await subscriptionQuery.limit(1).maybeSingle();
+        if (activeSubscription) await ensureOnboardingTask({ clientId: caseContext.clientId, companyId: activeSubscription.company_id, caseId: caseContext.caseId, dueDate: confirmedDate, priority: 'alta', description: `Onboarding reservado para ${confirmedDate} ${confirmedTime}. Verificar conexión Holded y finalizar el alta después de la sesión.` });
       }
 
       if ((slug === 'onboarding' || slug === 'formacion') && appointment && hasCalendarSA()) {
@@ -164,7 +187,7 @@ export async function POST(request: NextRequest) {
       }
       if (slug === 'onboarding' && attendee?.email) sendOnboardingPreparation(attendee, payload).catch((e) => console.error('[cal/webhook] preparation email:', e));
       if ((slug === 'onboarding' || slug === 'formacion') && attendee) notifyAdminBooking(attendee, payload, slug).catch((e) => console.error('[cal/webhook] admin booking email:', e));
-      console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug, hasMeetingUrl: !!meetingUrl }));
+      console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CREATED', uid: payload.uid, slug, hasMeetingUrl: !!meetingUrl, linkedClient: Boolean(caseContext), linkedCompany: Boolean(caseContext?.companyId) }));
     }
 
     if (triggerEvent === 'BOOKING_CANCELLED') {
