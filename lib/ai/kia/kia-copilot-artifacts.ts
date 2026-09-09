@@ -20,7 +20,7 @@ function safeArtifactUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const url = value.trim();
   if (!url) return null;
-  if (url.startsWith('/')) return url;
+  if (url.startsWith('/') && !url.startsWith('//')) return url;
   if (/^https:\/\//i.test(url)) return url;
   return null;
 }
