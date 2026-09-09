@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * IMP-022: Kia copiloto flotante in-app.
+ * IMP-022: KIA copiloto flotante in-app.
  *
  * Botón fijo en esquina inferior derecha del portal (admin y dashboard cliente).
  * Al hacer clic abre un panel de chat sin salir de la página actual.
@@ -40,7 +40,7 @@ function useKiaChat(pathname: string) {
     {
       id: 'welcome',
       role: 'assistant',
-      text: '¡Hola! Soy Kia, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
+      text: '¡Hola! Soy KIA, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
       quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
       avatarState: 'ayuda',
     },
@@ -172,6 +172,10 @@ export default function KiaCopilotWidget() {
       {/* ── Panel de chat ──────────────────────────────────────────────────── */}
       {open && (
         <div
+          id="kia-copilot-panel"
+          role="dialog"
+          aria-label="KIA copiloto"
+          aria-modal="false"
           className="fixed bottom-[132px] right-4 z-[200] lg:bottom-20 flex flex-col"
           style={{
             width         : 'min(380px, calc(100vw - 32px))',
@@ -190,7 +194,7 @@ export default function KiaCopilotWidget() {
             <div className="flex items-center gap-2">
               <KiaAvatar state={currentKiaState} size="sm" priority />
               <div>
-                <p className="text-sm font-semibold text-white">Kia</p>
+                <p className="text-sm font-semibold text-white">KIA</p>
                 <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
               </div>
             </div>
@@ -201,20 +205,26 @@ export default function KiaCopilotWidget() {
                 className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
                 aria-label="Nueva conversación"
               >
-                <ChevronDown size={16} />
+                <ChevronDown size={16} aria-hidden="true" />
               </button>
               <button
                 onClick={handleClose}
                 className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
-                aria-label="Cerrar"
+                aria-label="Cerrar KIA copiloto"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             </div>
           </div>
 
           {/* Mensajes */}
-          <div className="flex-1 overflow-y-auto px-4 py-3" style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}>
+          <div
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            className="flex-1 overflow-y-auto px-4 py-3"
+            style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
+          >
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -254,13 +264,17 @@ export default function KiaCopilotWidget() {
               </div>
             ))}
             {loading && (
-              <div className="flex items-start justify-start gap-2">
+              <div
+                role="status"
+                aria-label="KIA está revisando tu consulta"
+                className="flex items-start justify-start gap-2"
+              >
                 <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
                 <div
                   className="flex items-center gap-1 rounded-2xl px-3 py-2 text-sm"
                   style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
                 >
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                   <span>Pensando…</span>
                 </div>
               </div>
@@ -279,6 +293,7 @@ export default function KiaCopilotWidget() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu consulta…"
+              aria-label="Escribe tu consulta a KIA"
               rows={1}
               disabled={loading}
               className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
@@ -295,7 +310,7 @@ export default function KiaCopilotWidget() {
               style={{ background: '#0D1B2A', color: '#fff' }}
               aria-label="Enviar"
             >
-              <Send size={15} />
+              <Send size={15} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -304,7 +319,9 @@ export default function KiaCopilotWidget() {
       {/* ── Botón flotante ─────────────────────────────────────────────────── */}
       <button
         onClick={open ? handleClose : handleOpen}
-        aria-label={open ? 'Cerrar Kia' : 'Abrir Kia copiloto'}
+        aria-label={open ? 'Cerrar KIA' : 'Abrir KIA copiloto'}
+        aria-expanded={open}
+        aria-controls="kia-copilot-panel"
         className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
         style={{
           width     : '56px',
@@ -314,7 +331,7 @@ export default function KiaCopilotWidget() {
           border    : open ? 'none' : '2px solid #0D1B2A',
         }}
       >
-        {open ? <X size={20} /> : <KiaAvatar state={currentKiaState} size="lg" alt="Abrir KIA copiloto" />}
+        {open ? <X size={20} aria-hidden="true" /> : <KiaAvatar state={currentKiaState} size="lg" />}
       </button>
     </>
   );
