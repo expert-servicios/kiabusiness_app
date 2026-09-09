@@ -31,9 +31,10 @@ describe('KIA copilot artifact builder', () => {
     expect(artifacts[1]).toMatchObject({ type: 'link', url: '/dashboard/perfil' });
   });
 
-  it('rejects unsafe link schemes and ignores failed tool results', () => {
+  it('rejects unsafe and protocol-relative link schemes and ignores failed tool results', () => {
     const artifacts = buildKiaCopilotArtifacts([
       result('generate_profile_link', { url: 'javascript:alert(1)' }),
+      result('generate_profile_link', { url: '//evil.example/phish' }),
       { toolName: 'generate_checkout_gate_link', ok: false, error: 'failed' },
       result('generate_holded_connection_link', { url: 'https://expertconsulting.es/dashboard/integraciones/holded' }),
     ]);
