@@ -28,6 +28,8 @@ const MOTION_CLASSES: Record<Exclude<KiaAvatarMotion, 'static'>, string> = {
   attention: styles.attentionMotion,
 };
 
+const ONE_SHOT_MOTIONS = new Set<KiaAvatarMotion>(['confirm', 'celebrate', 'attention']);
+
 export interface KiaAvatarProps {
   state?: KiaAvatarState;
   size?: KiaAvatarSize;
@@ -46,6 +48,13 @@ export interface KiaAvatarProps {
    * All motion is removed under prefers-reduced-motion.
    */
   animateOnChange?: boolean;
+  /**
+   * True only when the parent observed a genuinely new visual event (for
+   * example a new assistant response or a fresh loading cycle). This prevents
+   * semantic one-shot motion from replaying just because header/launcher
+   * surfaces mount again when KIA is opened or closed.
+   */
+  motionEventChanged?: boolean;
 }
 
 export function KiaAvatar({
@@ -56,12 +65,17 @@ export function KiaAvatar({
   alt,
   decorative = true,
   animateOnChange = false,
+  motionEventChanged = true,
 }: KiaAvatarProps) {
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
   const accessibleLabel = alt ?? `KIA — ${label}`;
-  const motion = resolveKiaAvatarMotion(state, animateOnChange);
+  const resolvedMotion = resolveKiaAvatarMotion(state, animateOnChange);
+  const motion = ONE_SHOT_MOTIONS.has(resolvedMotion) && !motionEventChanged
+    ? 'static'
+    : resolvedMotion;
   const motionClass = motion === 'static' ? '' : MOTION_CLASSES[motion];
+  const transitionActive = animateOnChange && motionEventChanged;
 
   return (
     <span
@@ -73,13 +87,13 @@ export function KiaAvatar({
       title={decorative ? undefined : accessibleLabel}
     >
       <Image
-        key={animateOnChange ? state : 'static'}
+        key={transitionActive ? state : 'static'}
         src={KIA_AVATAR_ASSET_PATHS[state]}
         alt={decorative ? '' : accessibleLabel}
         width={pixels}
         height={pixels}
         priority={priority}
-        className={`h-full w-full object-cover ${animateOnChange ? styles.stateTransition : ''}`}
+        className={`h-full w-full object-cover ${transitionActive ? styles.stateTransition : ''}`}
       />
     </span>
   );
