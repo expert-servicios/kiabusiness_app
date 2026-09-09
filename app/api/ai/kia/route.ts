@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
+import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
           reply: companyId
             ? 'La entidad seleccionada no pertenece a tu cuenta.'
             : 'La entidad activa ya no está disponible. Selecciona una de tus empresas antes de usar KIA.',
+          avatarState: 'aviso',
         },
         { status: companyId ? 403 : 409 },
       );
@@ -131,10 +133,19 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[KiaCopilot] runKiaDecision failed:', err);
     return NextResponse.json(
-      { error: 'kia_error', reply: 'Lo siento, tengo un problema técnico en este momento. Inténtalo de nuevo.' },
+      {
+        error: 'kia_error',
+        reply: 'Lo siento, tengo un problema técnico en este momento. Inténtalo de nuevo.',
+        avatarState: 'aviso',
+      },
       { status: 500 }
     );
   }
+
+  const avatarState = resolveKiaAvatarState({
+    decision: result.decision,
+    userMessage: message,
+  });
 
   let effectiveSessionId = sessionId;
   try {
@@ -143,6 +154,7 @@ export async function POST(request: NextRequest) {
       last_reply  : result.userMessage,
       intent      : result.decision.intent,
       next_action : result.decision.nextAction,
+      avatar_state: avatarState,
     };
 
     if (sessionId) {
@@ -173,6 +185,7 @@ export async function POST(request: NextRequest) {
     quickReplies: (result.decision.quickReplies ?? []).map((reply) => reply.title),
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
+    avatarState,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;
