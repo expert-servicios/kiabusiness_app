@@ -32,16 +32,38 @@ function decision(overrides: Partial<KiaDecision> = {}): KiaDecision {
 }
 
 describe('KIA contextual avatar state resolver', () => {
-  it('prioritizes manual review over positive presentation', () => {
+  it('prioritizes manual review over positive and fiscal presentation', () => {
     expect(resolveKiaAvatarState({
       decision: decision({
         intent: 'company_data_confirm',
         requiresManualReview: true,
       }),
+      presentationContext: {
+        fiscalRisk: { severity: 'critical', code: 'filing_overdue', source: 'case' },
+        milestone: { kind: 'case_completed', source: 'case' },
+      },
     })).toBe('aviso');
   });
 
-  it('uses aviso for structured warnings and anomaly review', () => {
+  it('uses alerta_fiscal only for an authoritative fiscal-risk signal', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision(),
+      presentationContext: {
+        fiscalRisk: { severity: 'high', code: 'deadline_risk', source: 'readiness' },
+      },
+    })).toBe('alerta_fiscal');
+
+    // A specific verified fiscal alert is more informative than a generic
+    // warning, while manual review still has the highest precedence.
+    expect(resolveKiaAvatarState({
+      decision: decision({ warnings: ['generic warning'] }),
+      presentationContext: {
+        fiscalRisk: { severity: 'critical', code: 'material_tax_anomaly', source: 'accounting' },
+      },
+    })).toBe('alerta_fiscal');
+  });
+
+  it('uses aviso for generic structured warnings and anomaly review', () => {
     expect(resolveKiaAvatarState({
       decision: decision({ warnings: ['needs attention'] }),
     })).toBe('aviso');
@@ -51,7 +73,26 @@ describe('KIA contextual avatar state resolver', () => {
     })).toBe('aviso');
   });
 
-  it('uses exito only for explicit successful operational signals', () => {
+  it('uses celebracion for an authoritative exceptional milestone', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision(),
+      presentationContext: {
+        milestone: { kind: 'payment_confirmed', source: 'payment' },
+      },
+    })).toBe('celebracion');
+  });
+
+  it('suppresses positive presentation while asking for missing data', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision({ missingData: ['tax_id'] }),
+      presentationContext: {
+        milestone: { kind: 'service_completed', source: 'service' },
+        assurance: { kind: 'verified_data', source: 'company' },
+      },
+    })).toBe('duda');
+  });
+
+  it('uses exito for explicit successful operational signals', () => {
     expect(resolveKiaAvatarState({
       decision: decision({ intent: 'company_data_confirm' }),
     })).toBe('exito');
@@ -59,6 +100,26 @@ describe('KIA contextual avatar state resolver', () => {
     expect(resolveKiaAvatarState({
       decision: decision({ nextAction: 'show_report_link' }),
     })).toBe('exito');
+  });
+
+  it('uses confianza only for authoritative assurance, never model confidence alone', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision({ confidence: 1 }),
+    })).toBe('ayuda');
+
+    expect(resolveKiaAvatarState({
+      decision: decision(),
+      presentationContext: {
+        assurance: { kind: 'authoritative_source', source: 'official_source' },
+      },
+    })).toBe('confianza');
+
+    expect(resolveKiaAvatarState({
+      decision: decision({ warnings: ['needs attention'] }),
+      presentationContext: {
+        assurance: { kind: 'validated_status', source: 'case' },
+      },
+    })).toBe('aviso');
   });
 
   it('uses duda when KIA must ask for missing data', () => {
@@ -94,7 +155,7 @@ describe('KIA contextual avatar state resolver', () => {
     })).toBe('explicacion');
   });
 
-  it('does not infer alerta_fiscal from arbitrary fiscal wording', () => {
+  it('does not infer reserved states from arbitrary wording', () => {
     expect(resolveKiaAvatarState({
       decision: decision(),
       userMessage: 'Tengo un plazo fiscal y me preocupa una posible sanción.',
@@ -104,6 +165,11 @@ describe('KIA contextual avatar state resolver', () => {
       decision: decision({ warnings: ['fiscal deadline requires review'] }),
       userMessage: 'Tengo un plazo fiscal.',
     })).toBe('aviso');
+
+    expect(resolveKiaAvatarState({
+      decision: decision(),
+      userMessage: 'Todo está perfecto, confirmado y terminado. ¡Celebremos!',
+    })).toBe('ayuda');
   });
 
   it('falls back to ayuda and uses pensando only for loading UI', () => {
@@ -126,11 +192,18 @@ describe('KIA copilot avatar integration', () => {
   const widget = source('components/KiaCopilotWidget.tsx');
   const avatar = source('components/kia/KiaAvatar.tsx');
   const avatarStyles = source('components/kia/KiaAvatar.module.css');
+  const presentationContract = source('lib/ai/kia/kia-presentation-context.ts');
 
   it('resolves avatar state server-side and persists it in session JSON', () => {
     expect(api).toContain('resolveKiaAvatarState({');
     expect(api).toContain('avatar_state: avatarState');
     expect(api).toContain('avatarState,');
+  });
+
+  it('keeps structured presentation signals separate from the LLM KiaDecision schema', () => {
+    expect(presentationContract).toContain('export interface KiaPresentationContext');
+    expect(presentationContract).toContain('Browser input and arbitrary response text must never');
+    expect(api).not.toContain('presentationContext: parsed.data');
   });
 
   it('renders contextual assistant avatars, thinking and error states', () => {
