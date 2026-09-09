@@ -121,6 +121,10 @@ Este Sprint no requiere DDL ni cambios de esquema. No modifica Stripe, Holded, p
 - typecheck, lint y tests en verde;
 - previews Vercel verificadas antes de merge.
 
+## Validación CI de PR apilado
+
+El workflow de calidad del repositorio se ejecuta únicamente en PRs cuya base es `main`. Por eso, mientras #172 siga abierto, #174 puede retargetearse temporalmente a `main` para disparar la validación completa sobre el head de Sprint 2. Una vez obtenido el resultado, la base vuelve a `feat/kia-avatar-response-sprint1` para mantener el diff revisable. Tras fusionar #172, #174 se retargetea definitivamente a `main` y se valida de nuevo antes de merge.
+
 ## Rollout
 
 Este trabajo está apilado sobre Sprint 1. El PR de Sprint 2 debe tener como base temporal `feat/kia-avatar-response-sprint1` y no debe fusionarse antes de #172. Tras fusionar #172, se retargetea a `main`, se revalida CI y se hace un smoke test visual final de los seis estados nuevos.
