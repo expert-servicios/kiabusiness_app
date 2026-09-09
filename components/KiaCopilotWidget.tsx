@@ -204,15 +204,6 @@ export default function KiaCopilotWidget() {
   const currentKiaState: KiaAvatarState = loading
     ? 'pensando'
     : (lastAssistantMessage?.avatarState ?? 'bienvenida');
-  const currentKiaVisualEventKey = loading
-    ? `loading:${messages.length}`
-    : (lastAssistantMessage?.id ?? 'welcome');
-  const previousKiaVisualEventRef = useRef(currentKiaVisualEventKey);
-  const kiaVisualEventChanged = previousKiaVisualEventRef.current !== currentKiaVisualEventKey;
-
-  useEffect(() => {
-    previousKiaVisualEventRef.current = currentKiaVisualEventKey;
-  }, [currentKiaVisualEventKey]);
 
   useEffect(() => {
     if (open) {
@@ -275,13 +266,7 @@ export default function KiaCopilotWidget() {
             style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
           >
             <div className="flex items-center gap-2">
-              <KiaAvatar
-                state={currentKiaState}
-                size="sm"
-                priority
-                animateOnChange
-                motionEventChanged={kiaVisualEventChanged}
-              />
+              <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
               <div>
                 <p className="text-sm font-semibold text-white">KIA</p>
                 <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
@@ -319,7 +304,12 @@ export default function KiaCopilotWidget() {
                 className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role === 'assistant' ? (
-                  <KiaAvatar state={msg.avatarState ?? 'ayuda'} size="xs" className="mt-0.5" />
+                  <KiaAvatar
+                    state={msg.avatarState ?? 'ayuda'}
+                    size="xs"
+                    className="mt-0.5"
+                    animateResponse
+                  />
                 ) : null}
                 <div style={{ maxWidth: msg.role === 'user' ? '85%' : '78%' }}>
                   <div
@@ -422,12 +412,7 @@ export default function KiaCopilotWidget() {
         {open ? (
           <X size={20} aria-hidden="true" />
         ) : (
-          <KiaAvatar
-            state={currentKiaState}
-            size="lg"
-            animateOnChange
-            motionEventChanged={kiaVisualEventChanged}
-          />
+          <KiaAvatar state={currentKiaState} size="lg" animateOnChange />
         )}
       </button>
     </>
