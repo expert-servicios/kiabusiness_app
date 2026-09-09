@@ -25,17 +25,17 @@ export async function loadKiaAuthoritativeCaseStatuses(
   clientId: string | null,
   companyId: string | null,
 ): Promise<KiaAuthoritativeCaseStatus[] | null> {
-  if (!clientId) return null;
+  // Positive presentation signals must never cross entity boundaries. If KIA
+  // has no validated company scope, fail closed instead of aggregating cases
+  // from every company attached to the same user.
+  if (!clientId || !companyId) return null;
 
   try {
-    let query = admin
+    const { data, error } = await admin
       .from('cases')
       .select('id, service, state, status, opened_at')
-      .eq('client_id', clientId);
-
-    if (companyId) query = query.eq('company_id', companyId);
-
-    const { data, error } = await query
+      .eq('client_id', clientId)
+      .eq('company_id', companyId)
       .order('opened_at', { ascending: false })
       .limit(10);
 
