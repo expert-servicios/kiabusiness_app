@@ -50,6 +50,17 @@ function useKiaChat(pathname: string) {
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
 
+    // The dashboard has no phone-backed WhatsApp history. Send only the last
+    // few visible turns as bounded conversational context; server auth/company
+    // scope remains authoritative for every data/tool operation.
+    const history = messages
+      .slice(-8)
+      .filter((message) => message.text.trim())
+      .map((message) => ({
+        role: message.role,
+        text: message.text.slice(0, 1200),
+      }));
+
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', text };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
@@ -62,6 +73,7 @@ function useKiaChat(pathname: string) {
           message    : text,
           sessionId,
           currentPage: pathname,
+          history,
         }),
       });
 
@@ -93,7 +105,7 @@ function useKiaChat(pathname: string) {
     } finally {
       setLoading(false);
     }
-  }, [loading, pathname, sessionId]);
+  }, [loading, messages, pathname, sessionId]);
 
   const reset = useCallback(() => {
     setMessages([
