@@ -147,12 +147,19 @@ describe('KIA copilot avatar integration', () => {
     expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
   });
 
-  it('limits avatar transition to opted-in surfaces and respects reduced motion', () => {
+  it('limits state transitions and thinking motion to opted-in persistent surfaces', () => {
     expect(avatar).toContain('animateOnChange = false');
-    expect(avatar).toContain("key={animateOnChange ? state : 'static'}");
+    expect(avatar).toContain("const thinkingMotion = animateOnChange && state === 'pensando'");
+    expect(avatar).toContain("data-kia-avatar-motion={thinkingMotion ? 'thinking' : 'static'}");
     expect(widget).toContain('priority animateOnChange');
     expect(widget).toContain('size="lg" animateOnChange');
+    expect(widget).toContain('<KiaAvatar state="pensando" size="xs" className="mt-0.5" />');
+    expect(avatarStyles).toContain('@keyframes kiaAvatarThinking');
+    expect(avatarStyles).toContain('.thinkingMotion');
+    expect(avatarStyles).toContain('1800ms ease-in-out infinite');
     expect(avatarStyles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(avatarStyles).toContain('.stateTransition,');
+    expect(avatarStyles).toContain('.thinkingMotion');
     expect(avatarStyles).toContain('animation: none');
   });
 
