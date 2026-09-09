@@ -24,9 +24,8 @@ const FISCAL_CONTEXT_PATTERNS = [
   /\birpf\b/i,
   /\bmodelo\s*(?:303|111|115|130|202|200|390|347|190|180)\b/i,
   /\b(?:303|111|115|130|202|200|390|347|190|180)\b/i,
-  /\bvenc(?:e|er|imiento|imientos)\b/i,
-  /\bplazo(?:s)?\b/i,
-  /\bdeclaraci[oó]n(?:es)?\b/i,
+  /\b(?:plazo|vencimiento)(?:s)?\s+(?:fiscal|tributario|tributaria|de\s+(?:impuesto|impuestos|declaraci[oó]n|declaraciones))\b/i,
+  /\bdeclaraci[oó]n(?:es)?\s+(?:fiscal|tributaria|tributarias)\b/i,
 ];
 
 const FISCAL_CONTEXT_INTENTS = new Set<KiaDecision['intent']>([
@@ -63,10 +62,11 @@ export async function loadKiaAuthoritativeFiscalSignal(
   try {
     const { data, error } = await admin
       .from('fiscal_obligations')
-      .select('id,modelo,description,period_label,deadline,status')
+      .select('id,modelo,description,period_label,deadline,status,template_code')
       .eq('user_id', userId)
       .eq('company_id', companyId)
       .eq('status', 'pending')
+      .not('template_code', 'is', null)
       .lte('deadline', horizon)
       .order('deadline', { ascending: true })
       .limit(20);
@@ -83,9 +83,14 @@ export async function loadKiaAuthoritativeFiscalSignal(
       period_label: string | null;
       deadline: string;
       status: string;
+      template_code: string | null;
     }>;
 
+    // `template_code` is populated by the Admin-confirmed fiscal-template
+    // activation flow. Requiring it prevents legacy/inferred calendar rows from
+    // becoming authoritative KIA alerts.
     const eligible = rows.filter((row) => {
+      if (!row.template_code) return false;
       const deadlineYear = Number(row.deadline.slice(0, 4));
       return Number.isFinite(deadlineYear) && deadlineYear <= AEAT_VERIFIED_CALENDAR_YEAR;
     });
