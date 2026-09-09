@@ -45,6 +45,12 @@ const LEGACY_DASHBOARD_SAFE_TOOLS = [
   'generate_checkout_gate_link',
 ] as const;
 
+function sessionCompanyId(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const value = (data as Record<string, unknown>).company_id;
+  return typeof value === 'string' ? value : null;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -115,8 +121,34 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const companyScope = resolvedCompanyId ?? null;
+  let effectiveSessionId = sessionId;
+  let effectiveHistory = history;
+
+  // A client component can survive router.refresh() when the active company is
+  // switched. Bind each KIA session to the company scope server-side so stale
+  // history from another entity can never enter the new company's context.
+  if (sessionId) {
+    const { data: existingSession, error: sessionError } = await admin
+      .from('kia_sessions')
+      .select('id, data')
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (sessionError) {
+      console.error('[KiaCopilot] session scope lookup failed:', sessionError.message);
+      return NextResponse.json({ error: 'session_scope_check_failed' }, { status: 500 });
+    }
+
+    if (!existingSession || sessionCompanyId(existingSession.data) !== companyScope) {
+      effectiveSessionId = undefined;
+      effectiveHistory = [];
+    }
+  }
+
   const historyTimestamp = new Date().toISOString();
-  const syntheticRecentMessages = history.map((item) => ({
+  const syntheticRecentMessages = effectiveHistory.map((item) => ({
     role: item.role,
     text: item.text,
     createdAt: historyTimestamp,
@@ -130,6 +162,7 @@ export async function POST(request: NextRequest) {
       message,
       locale     : 'es',
       allowTools : true,
+      forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS],
       contextInput: {
         channel     : 'dashboard',
@@ -160,9 +193,8 @@ export async function POST(request: NextRequest) {
     decision: result.decision,
     userMessage: message,
   });
-  const artifacts = buildKiaCopilotArtifacts(result.toolResults);
+  const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
 
-  let effectiveSessionId = sessionId;
   try {
     const sessionData = {
       last_message: message,
@@ -170,13 +202,14 @@ export async function POST(request: NextRequest) {
       intent      : result.decision.intent,
       next_action : result.decision.nextAction,
       avatar_state: avatarState,
+      company_id  : companyScope,
     };
 
-    if (sessionId) {
+    if (effectiveSessionId) {
       await admin
         .from('kia_sessions')
         .update({ data: sessionData, updated_at: new Date().toISOString() })
-        .eq('id', sessionId)
+        .eq('id', effectiveSessionId)
         .eq('user_id', user.id);
     } else {
       const { data: createdSession } = await admin
