@@ -19,9 +19,12 @@ Motion is derived exclusively from the already-resolved visual state. It never c
 
 ## Scope
 
-Only surfaces that explicitly pass `animateOnChange` receive motion. The persistent copilot header and launcher already opt in. Avatars attached to individual chat messages remain static.
+There are two explicit motion surfaces:
 
-This keeps a long conversation visually quiet while still making the live KIA presence responsive.
+- persistent header / launcher surfaces use `animateOnChange`; they may transition between avatar images and keep the slow `pensando` loop, but semantic one-shot motions (`confirm`, `celebrate`, `attention`) are suppressed there;
+- the avatar attached to a newly visible assistant response uses `animateResponse`; that is the only live chat surface where semantic one-shot motion is allowed.
+
+The copilot panel stays mounted while hidden, so closing and reopening it does not remount historical message avatars or replay an old one-shot. A new response is first scrolled into view and then enabled for response motion on the next animation frame. Historical responses therefore remain visually quiet and a short one-shot is not consumed off-screen during automatic scrolling.
 
 ## Accessibility
 
@@ -56,6 +59,10 @@ Use `data-kia-avatar-motion` to verify the live profile in browser tools:
 - `celebrate`
 - `attention`
 
-Smoke-test desktop and mobile with normal motion and OS/browser reduced-motion enabled.
+Smoke-test desktop and mobile with normal motion and OS/browser reduced-motion enabled. Also verify that:
+
+- opening/closing KIA does not replay previous response motion;
+- a fresh `exito`, `celebracion`, `aviso` or `alerta_fiscal` response animates once after it is visible;
+- long conversations scroll to the new response before the one-shot starts.
 
 Refs #171, #174, #176, #178, #188.
