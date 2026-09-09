@@ -47,7 +47,7 @@ function fiscalAdmin(rows: unknown[]) {
     limit: async (_count: number) => ({ data: rows, error: null }),
   };
   return {
-    admin: { from: (_table: string) => query } as Parameters<typeof loadKiaAuthoritativeFiscalSignal>[0],
+    admin: { from: (_table: string) => query } as unknown as Parameters<typeof loadKiaAuthoritativeFiscalSignal>[0],
     calls,
   };
 }
