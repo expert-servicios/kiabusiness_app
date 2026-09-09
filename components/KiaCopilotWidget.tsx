@@ -65,9 +65,6 @@ function useKiaChat(pathname: string) {
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
 
-    // The dashboard has no phone-backed WhatsApp history. Send only the last
-    // few visible turns as bounded conversational context; server auth/company
-    // scope remains authoritative for every data/tool operation.
     const history = messages
       .slice(-8)
       .filter((message) => message.text.trim())
@@ -198,6 +195,7 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
 export default function KiaCopilotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const { messages, loading, send, reset } = useKiaChat(pathname);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -210,9 +208,29 @@ export default function KiaCopilotWidget() {
 
   useEffect(() => {
     if (open) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // Keep the latest row visible before enabling any response-scoped one-shot.
+      // `auto` is deliberate: the animation begins on the next frame, after the
+      // scroll position is already settled, so a short 320–560 ms motion is not
+      // consumed off-screen during a smooth scroll.
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
-  }, [messages, open]);
+  }, [messages, loading, open]);
+
+  useEffect(() => {
+    if (!open || !lastAssistantMessage || animatedMessageIds.has(lastAssistantMessage.id)) return;
+
+    const messageId = lastAssistantMessage.id;
+    const frame = window.requestAnimationFrame(() => {
+      setAnimatedMessageIds((previous) => {
+        if (previous.has(messageId)) return previous;
+        const next = new Set(previous);
+        next.add(messageId);
+        return next;
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [animatedMessageIds, lastAssistantMessage, open]);
 
   useEffect(() => {
     if (open) {
@@ -248,150 +266,154 @@ export default function KiaCopilotWidget() {
 
   return (
     <>
-      {open && (
+      <div
+        id="kia-copilot-panel"
+        role="dialog"
+        aria-label="KIA copiloto"
+        aria-modal="false"
+        aria-hidden={!open}
+        className={`fixed bottom-[132px] right-4 z-[200] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
+        style={{
+          width         : 'min(380px, calc(100vw - 32px))',
+          height        : 'min(560px, calc(100vh - 148px))',
+          background    : '#fff',
+          borderRadius  : '16px',
+          boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
+          border        : '1px solid #e8e0d4',
+        }}
+      >
         <div
-          id="kia-copilot-panel"
-          role="dialog"
-          aria-label="KIA copiloto"
-          aria-modal="false"
-          className="fixed bottom-[132px] right-4 z-[200] lg:bottom-20 flex flex-col"
-          style={{
-            width         : 'min(380px, calc(100vw - 32px))',
-            height        : 'min(560px, calc(100vh - 148px))',
-            background    : '#fff',
-            borderRadius  : '16px',
-            boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
-            border        : '1px solid #e8e0d4',
-          }}
+          className="flex items-center justify-between px-4 py-3"
+          style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
         >
-          <div
-            className="flex items-center justify-between px-4 py-3"
-            style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
-          >
-            <div className="flex items-center gap-2">
-              <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
-              <div>
-                <p className="text-sm font-semibold text-white">KIA</p>
-                <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={reset}
-                title="Nueva conversación"
-                className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
-                aria-label="Nueva conversación"
-              >
-                <ChevronDown size={16} aria-hidden="true" />
-              </button>
-              <button
-                onClick={handleClose}
-                className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
-                aria-label="Cerrar KIA copiloto"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
+          <div className="flex items-center gap-2">
+            <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
+            <div>
+              <p className="text-sm font-semibold text-white">KIA</p>
+              <p className="text-xs" style={{ color: '#9ba8b4' }}>Copiloto EXPERT</p>
             </div>
           </div>
-
-          <div
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions text"
-            className="flex-1 overflow-y-auto px-4 py-3"
-            style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
-          >
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role === 'assistant' ? (
-                  <KiaAvatar state={msg.avatarState ?? 'ayuda'} size="xs" className="mt-0.5" />
-                ) : null}
-                <div style={{ maxWidth: msg.role === 'user' ? '85%' : '78%' }}>
-                  <div
-                    className="rounded-2xl px-3 py-2 text-sm"
-                    style={
-                      msg.role === 'user'
-                        ? { background: '#0D1B2A', color: '#fff', borderBottomRightRadius: '4px' }
-                        : { background: '#f5f1eb', color: '#07111d', borderBottomLeftRadius: '4px' }
-                    }
-                  >
-                    {msg.text}
-                  </div>
-                  {msg.role === 'assistant' && msg.artifacts?.length ? (
-                    <KiaMessageArtifacts artifacts={msg.artifacts} />
-                  ) : null}
-                  {msg.role === 'assistant' && msg.quickReplies?.length ? (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {msg.quickReplies.map((qr) => (
-                        <button
-                          key={qr}
-                          onClick={() => handleQuickReply(qr)}
-                          className="rounded-full border px-3 py-1 text-xs transition-colors hover:bg-[#f5f1eb]"
-                          style={{ borderColor: '#c8b89a', color: '#3d3528' }}
-                          disabled={loading}
-                        >
-                          {qr}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div
-                role="status"
-                aria-label="KIA está revisando tu consulta"
-                className="flex items-start justify-start gap-2"
-              >
-                <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
-                <div
-                  className="flex items-center gap-1 rounded-2xl px-3 py-2 text-sm"
-                  style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
-                >
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  <span>Pensando…</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div
-            className="flex items-end gap-2 px-3 py-3"
-            style={{ borderTop: '1px solid #e8e0d4' }}
-          >
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribe tu consulta…"
-              aria-label="Escribe tu consulta a KIA"
-              rows={1}
-              disabled={loading}
-              className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
-              style={{
-                borderColor: '#e8e0d4',
-                maxHeight  : '96px',
-                lineHeight : '1.4',
-              }}
-            />
+          <div className="flex items-center gap-1">
             <button
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-40"
-              style={{ background: '#0D1B2A', color: '#fff' }}
-              aria-label="Enviar"
+              onClick={reset}
+              title="Nueva conversación"
+              className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
+              aria-label="Nueva conversación"
             >
-              <Send size={15} aria-hidden="true" />
+              <ChevronDown size={16} aria-hidden="true" />
+            </button>
+            <button
+              onClick={handleClose}
+              className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
+              aria-label="Cerrar KIA copiloto"
+            >
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
-      )}
+
+        <div
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+          className="flex-1 overflow-y-auto px-4 py-3"
+          style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
+        >
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {msg.role === 'assistant' ? (
+                <KiaAvatar
+                  state={msg.avatarState ?? 'ayuda'}
+                  size="xs"
+                  className="mt-0.5"
+                  animateResponse={animatedMessageIds.has(msg.id)}
+                />
+              ) : null}
+              <div style={{ maxWidth: msg.role === 'user' ? '85%' : '78%' }}>
+                <div
+                  className="rounded-2xl px-3 py-2 text-sm"
+                  style={
+                    msg.role === 'user'
+                      ? { background: '#0D1B2A', color: '#fff', borderBottomRightRadius: '4px' }
+                      : { background: '#f5f1eb', color: '#07111d', borderBottomLeftRadius: '4px' }
+                  }
+                >
+                  {msg.text}
+                </div>
+                {msg.role === 'assistant' && msg.artifacts?.length ? (
+                  <KiaMessageArtifacts artifacts={msg.artifacts} />
+                ) : null}
+                {msg.role === 'assistant' && msg.quickReplies?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {msg.quickReplies.map((qr) => (
+                      <button
+                        key={qr}
+                        onClick={() => handleQuickReply(qr)}
+                        className="rounded-full border px-3 py-1 text-xs transition-colors hover:bg-[#f5f1eb]"
+                        style={{ borderColor: '#c8b89a', color: '#3d3528' }}
+                        disabled={loading}
+                      >
+                        {qr}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div
+              role="status"
+              aria-label="KIA está revisando tu consulta"
+              className="flex items-start justify-start gap-2"
+            >
+              <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
+              <div
+                className="flex items-center gap-1 rounded-2xl px-3 py-2 text-sm"
+                style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
+              >
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                <span>Pensando…</span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div
+          className="flex items-end gap-2 px-3 py-3"
+          style={{ borderTop: '1px solid #e8e0d4' }}
+        >
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Escribe tu consulta…"
+            aria-label="Escribe tu consulta a KIA"
+            rows={1}
+            disabled={loading}
+            className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
+            style={{
+              borderColor: '#e8e0d4',
+              maxHeight  : '96px',
+              lineHeight : '1.4',
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-40"
+            style={{ background: '#0D1B2A', color: '#fff' }}
+            aria-label="Enviar"
+          >
+            <Send size={15} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
 
       <button
         onClick={open ? handleClose : handleOpen}

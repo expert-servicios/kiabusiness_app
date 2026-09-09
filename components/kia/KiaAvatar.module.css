@@ -19,6 +19,39 @@
   }
 }
 
+@keyframes kiaAvatarConfirm {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+@keyframes kiaAvatarCelebrate {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-1px) scale(1.025);
+  }
+  70% {
+    transform: translateY(0) scale(1.01);
+  }
+}
+
+@keyframes kiaAvatarAttention {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.015);
+  }
+}
+
 .stateTransition {
   animation: kiaAvatarStateIn 160ms ease-out;
   transform-origin: center;
@@ -29,9 +62,27 @@
   transform-origin: center;
 }
 
+.confirmMotion {
+  animation: kiaAvatarConfirm 420ms ease-out 1;
+  transform-origin: center;
+}
+
+.celebrateMotion {
+  animation: kiaAvatarCelebrate 560ms cubic-bezier(0.2, 0.75, 0.3, 1) 1;
+  transform-origin: center;
+}
+
+.attentionMotion {
+  animation: kiaAvatarAttention 320ms ease-out 1;
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stateTransition,
-  .thinkingMotion {
+  .thinkingMotion,
+  .confirmMotion,
+  .celebrateMotion,
+  .attentionMotion {
     animation: none;
   }
 }

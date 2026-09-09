@@ -7,6 +7,7 @@ import {
   KIA_AVATAR_STATES,
   resolveKiaAvatarState,
 } from '@/lib/ai/kia/kia-avatar-state';
+import { resolveKiaAvatarMotion } from '@/lib/ai/kia/kia-avatar-motion';
 import type { KiaDecision } from '@/lib/ai/kia/kia-output-schema';
 
 function decision(overrides: Partial<KiaDecision> = {}): KiaDecision {
@@ -53,8 +54,6 @@ describe('KIA contextual avatar state resolver', () => {
       },
     })).toBe('alerta_fiscal');
 
-    // A specific verified fiscal alert is more informative than a generic
-    // warning, while manual review still has the highest precedence.
     expect(resolveKiaAvatarState({
       decision: decision({ warnings: ['generic warning'] }),
       presentationContext: {
@@ -186,6 +185,24 @@ describe('KIA contextual avatar state resolver', () => {
   });
 });
 
+describe('KIA avatar motion resolver', () => {
+  it('keeps all message avatars static unless the surface explicitly opts in', () => {
+    expect(resolveKiaAvatarMotion('pensando', false)).toBe('static');
+    expect(resolveKiaAvatarMotion('celebracion', false)).toBe('static');
+    expect(resolveKiaAvatarMotion('alerta_fiscal', false)).toBe('static');
+  });
+
+  it('maps only approved states to restrained motion profiles', () => {
+    expect(resolveKiaAvatarMotion('pensando', true)).toBe('thinking');
+    expect(resolveKiaAvatarMotion('exito', true)).toBe('confirm');
+    expect(resolveKiaAvatarMotion('celebracion', true)).toBe('celebrate');
+    expect(resolveKiaAvatarMotion('aviso', true)).toBe('attention');
+    expect(resolveKiaAvatarMotion('alerta_fiscal', true)).toBe('attention');
+    expect(resolveKiaAvatarMotion('ayuda', true)).toBe('static');
+    expect(resolveKiaAvatarMotion('empatia', true)).toBe('static');
+  });
+});
+
 describe('KIA copilot avatar integration', () => {
   const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
   const api = source('app/api/ai/kia/route.ts');
@@ -208,7 +225,8 @@ describe('KIA copilot avatar integration', () => {
 
   it('renders contextual assistant avatars, thinking and error states', () => {
     expect(widget).toContain("avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda')");
-    expect(widget).toContain('<KiaAvatar state={msg.avatarState ?? \'ayuda\'}');
+    expect(widget).toContain("state={msg.avatarState ?? 'ayuda'}");
+    expect(widget).toContain('animateResponse');
     expect(widget).toContain('<KiaAvatar state="pensando"');
     expect(widget).toContain("avatarState: 'aviso'");
     expect(widget).toContain("avatarState: 'bienvenida'");
@@ -220,19 +238,29 @@ describe('KIA copilot avatar integration', () => {
     expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
   });
 
-  it('limits state transitions and thinking motion to opted-in persistent surfaces', () => {
+  it('limits semantic motion to explicit persistent or response surfaces', () => {
     expect(avatar).toContain('animateOnChange = false');
-    expect(avatar).toContain("const thinkingMotion = animateOnChange && state === 'pensando'");
-    expect(avatar).toContain("data-kia-avatar-motion={thinkingMotion ? 'thinking' : 'static'}");
-    expect(widget).toContain('priority animateOnChange');
-    expect(widget).toContain('size="lg" animateOnChange');
+    expect(avatar).toContain('animateResponse = false');
+    expect(avatar).toContain('resolveKiaAvatarMotion(state, animateOnChange || animateResponse)');
+    expect(avatar).toContain('ONE_SHOT_MOTIONS.has(resolvedMotion)');
+    expect(avatar).toContain('data-kia-avatar-motion={motion}');
+    expect(widget).toContain('priority');
+    expect(widget).toContain('animateOnChange');
+    expect(widget).toContain('size="lg"');
+    expect(widget).toContain('animateResponse');
     expect(widget).toContain('<KiaAvatar state="pensando" size="xs" className="mt-0.5" />');
     expect(avatarStyles).toContain('@keyframes kiaAvatarThinking');
-    expect(avatarStyles).toContain('.thinkingMotion');
+    expect(avatarStyles).toContain('@keyframes kiaAvatarConfirm');
+    expect(avatarStyles).toContain('@keyframes kiaAvatarCelebrate');
+    expect(avatarStyles).toContain('@keyframes kiaAvatarAttention');
     expect(avatarStyles).toContain('1800ms ease-in-out infinite');
+    expect(avatarStyles).toContain('420ms ease-out 1');
+    expect(avatarStyles).toContain('560ms cubic-bezier(0.2, 0.75, 0.3, 1) 1');
+    expect(avatarStyles).toContain('320ms ease-out 1');
     expect(avatarStyles).toContain('@media (prefers-reduced-motion: reduce)');
-    expect(avatarStyles).toContain('.stateTransition,');
-    expect(avatarStyles).toContain('.thinkingMotion');
+    expect(avatarStyles).toContain('.confirmMotion,');
+    expect(avatarStyles).toContain('.celebrateMotion,');
+    expect(avatarStyles).toContain('.attentionMotion');
     expect(avatarStyles).toContain('animation: none');
   });
 
