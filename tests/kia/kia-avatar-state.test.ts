@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getKiaLoadingAvatarState,
   KIA_AVATAR_ASSET_PATHS,
+  KIA_AVATAR_STATES,
   resolveKiaAvatarState,
 } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaDecision } from '@/lib/ai/kia/kia-output-schema';
@@ -60,14 +61,14 @@ describe('KIA contextual avatar state resolver', () => {
     })).toBe('exito');
   });
 
-  it('uses ayuda when Kia must ask for missing data', () => {
+  it('uses duda when KIA must ask for missing data', () => {
     expect(resolveKiaAvatarState({
       decision: decision({ nextAction: 'ask_one_question' }),
-    })).toBe('ayuda');
+    })).toBe('duda');
 
     expect(resolveKiaAvatarState({
       decision: decision({ missingData: ['tax_id'] }),
-    })).toBe('ayuda');
+    })).toBe('duda');
   });
 
   it('uses empatia for a narrow set of user distress signals', () => {
@@ -77,14 +78,32 @@ describe('KIA contextual avatar state resolver', () => {
     })).toBe('empatia');
   });
 
-  it('uses explicacion for reasoning and status intents', () => {
+  it('uses bienvenida and seguimiento only from structured intents', () => {
     expect(resolveKiaAvatarState({
-      decision: decision({ intent: 'readiness' }),
-    })).toBe('explicacion');
+      decision: decision({ intent: 'greeting' }),
+    })).toBe('bienvenida');
 
     expect(resolveKiaAvatarState({
       decision: decision({ intent: 'case_status' }),
+    })).toBe('seguimiento');
+  });
+
+  it('uses explicacion for reasoning intents', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision({ intent: 'readiness' }),
     })).toBe('explicacion');
+  });
+
+  it('does not infer alerta_fiscal from arbitrary fiscal wording', () => {
+    expect(resolveKiaAvatarState({
+      decision: decision(),
+      userMessage: 'Tengo un plazo fiscal y me preocupa una posible sanción.',
+    })).toBe('empatia');
+
+    expect(resolveKiaAvatarState({
+      decision: decision({ warnings: ['fiscal deadline requires review'] }),
+      userMessage: 'Tengo un plazo fiscal.',
+    })).toBe('aviso');
   });
 
   it('falls back to ayuda and uses pensando only for loading UI', () => {
@@ -92,12 +111,12 @@ describe('KIA contextual avatar state resolver', () => {
     expect(getKiaLoadingAvatarState()).toBe('pensando');
   });
 
-  it('aliases all future states to an available Sprint 1 asset path', () => {
-    expect(KIA_AVATAR_ASSET_PATHS.bienvenida).toBe(KIA_AVATAR_ASSET_PATHS.ayuda);
-    expect(KIA_AVATAR_ASSET_PATHS.alerta_fiscal).toBe(KIA_AVATAR_ASSET_PATHS.aviso);
-    expect(KIA_AVATAR_ASSET_PATHS.seguimiento).toBe(KIA_AVATAR_ASSET_PATHS.explicacion);
-    expect(KIA_AVATAR_ASSET_PATHS.duda).toBe(KIA_AVATAR_ASSET_PATHS.ayuda);
-    expect(KIA_AVATAR_ASSET_PATHS.celebracion).toBe(KIA_AVATAR_ASSET_PATHS.exito);
+  it('maps all 12 stable states to distinct production assets', () => {
+    const paths = KIA_AVATAR_STATES.map((state) => KIA_AVATAR_ASSET_PATHS[state]);
+    expect(new Set(paths).size).toBe(KIA_AVATAR_STATES.length);
+    expect(KIA_AVATAR_ASSET_PATHS.alerta_fiscal).toBe('/avatars/kia/kia-alerta-fiscal.webp');
+    expect(KIA_AVATAR_ASSET_PATHS.seguimiento).toBe('/avatars/kia/kia-seguimiento.webp');
+    expect(KIA_AVATAR_ASSET_PATHS.celebracion).toBe('/avatars/kia/kia-celebracion.webp');
   });
 });
 
@@ -106,6 +125,7 @@ describe('KIA copilot avatar integration', () => {
   const api = source('app/api/ai/kia/route.ts');
   const widget = source('components/KiaCopilotWidget.tsx');
   const avatar = source('components/kia/KiaAvatar.tsx');
+  const avatarStyles = source('components/kia/KiaAvatar.module.css');
 
   it('resolves avatar state server-side and persists it in session JSON', () => {
     expect(api).toContain('resolveKiaAvatarState({');
@@ -118,12 +138,22 @@ describe('KIA copilot avatar integration', () => {
     expect(widget).toContain('<KiaAvatar state={msg.avatarState ?? \'ayuda\'}');
     expect(widget).toContain('<KiaAvatar state="pensando"');
     expect(widget).toContain("avatarState: 'aviso'");
+    expect(widget).toContain("avatarState: 'bienvenida'");
   });
 
   it('keeps repeated chat avatars decorative by default for screen readers', () => {
     expect(avatar).toContain('decorative = true');
     expect(avatar).toContain('aria-hidden={decorative || undefined}');
     expect(avatar).toContain("alt={decorative ? '' : accessibleLabel}");
+  });
+
+  it('limits avatar transition to opted-in surfaces and respects reduced motion', () => {
+    expect(avatar).toContain('animateOnChange = false');
+    expect(avatar).toContain("key={animateOnChange ? state : 'static'}");
+    expect(widget).toContain('priority animateOnChange');
+    expect(widget).toContain('size="lg" animateOnChange');
+    expect(avatarStyles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(avatarStyles).toContain('animation: none');
   });
 
   it('exposes the chat as an accessible non-modal dialog and live message log', () => {
