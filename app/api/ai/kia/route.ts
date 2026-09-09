@@ -15,6 +15,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
+import { buildKiaPresentationContext } from '@/lib/ai/kia/kia-presentation-context-builder';
 
 const requestSchema = z.object({
   message     : z.string().min(1).max(4000),
@@ -142,9 +143,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const presentationContext = buildKiaPresentationContext(result.toolResults);
   const avatarState = resolveKiaAvatarState({
     decision: result.decision,
     userMessage: message,
+    presentationContext,
   });
 
   let effectiveSessionId = sessionId;
