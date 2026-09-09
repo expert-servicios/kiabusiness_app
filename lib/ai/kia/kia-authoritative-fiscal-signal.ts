@@ -2,8 +2,21 @@ import { AEAT_VERIFIED_CALENDAR_YEAR, urgencyLevel } from '@/lib/utils/fiscal-ca
 import type { KiaDecision } from './kia-output-schema';
 import type { KiaPresentationContext } from './kia-presentation-context';
 
+interface FiscalQueryResult {
+  data: unknown[] | null;
+  error: { message: string } | null;
+}
+
+interface FiscalQueryBuilder {
+  select(columns: string): FiscalQueryBuilder;
+  eq(column: string, value: string): FiscalQueryBuilder;
+  lte(column: string, value: string): FiscalQueryBuilder;
+  order(column: string, options: { ascending: boolean }): FiscalQueryBuilder;
+  limit(count: number): Promise<FiscalQueryResult>;
+}
+
 type SupabaseAdminLike = {
-  from: (table: string) => any;
+  from: (table: string) => FiscalQueryBuilder;
 };
 
 export interface KiaAuthoritativeFiscalSignal {
