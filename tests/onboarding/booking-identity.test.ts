@@ -48,6 +48,13 @@ describe('onboarding booking identity', () => {
     expect(followup).toContain('company_id: input.companyId ?? null');
   });
 
+  it('finishes only the selected subscription company onboarding', () => {
+    const complete = source('app/api/admin/clientes/[id]/complete-onboarding/route.ts');
+    expect(complete).toContain("onboardingCaseQuery.eq('company_id', subscription.company_id)");
+    expect(complete).toContain('completeOnboardingTask(clientId, subscription.company_id)');
+    expect(complete).toContain(".eq('id', subscription.id)");
+  });
+
   it('logs signature diagnostics without exposing the webhook secret', () => {
     const route = source('app/api/webhooks/cal/route.ts');
     expect(route).toContain("warning: 'invalid_signature'");
