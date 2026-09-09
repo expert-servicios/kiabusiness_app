@@ -13,7 +13,11 @@ import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
-import { buildKiaPresentationContext } from '@/lib/ai/kia/kia-presentation-context-builder';
+import {
+  buildKiaAvatarDecision,
+  buildKiaPresentationContext,
+} from '@/lib/ai/kia/kia-presentation-context-builder';
+import { loadKiaAuthoritativeCaseStatuses } from '@/lib/ai/kia/kia-authoritative-case-status';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -186,13 +190,24 @@ export async function POST(request: NextRequest) {
         avatarState: 'aviso',
         artifacts: [],
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
-  const presentationContext = buildKiaPresentationContext(result.toolResults);
+  const authoritativeCaseStatuses = result.decision.intent === 'case_status'
+    ? await loadKiaAuthoritativeCaseStatuses(admin, user.id, companyScope)
+    : null;
+  const presentationContext = buildKiaPresentationContext(
+    result.toolResults,
+    authoritativeCaseStatuses,
+  );
+  const avatarDecision = buildKiaAvatarDecision(
+    result.decision,
+    result.toolResults,
+    authoritativeCaseStatuses,
+  );
   const avatarState = resolveKiaAvatarState({
-    decision: result.decision,
+    decision: avatarDecision,
     userMessage: message,
     presentationContext,
   });
