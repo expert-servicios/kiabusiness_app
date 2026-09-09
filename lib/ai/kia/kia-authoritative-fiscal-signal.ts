@@ -1,23 +1,9 @@
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { AEAT_VERIFIED_CALENDAR_YEAR, urgencyLevel } from '@/lib/utils/fiscal-calendar';
 import type { KiaDecision } from './kia-output-schema';
 import type { KiaPresentationContext } from './kia-presentation-context';
 
-interface FiscalQueryResult {
-  data: unknown[] | null;
-  error: { message: string } | null;
-}
-
-interface FiscalQueryBuilder {
-  select(columns: string): FiscalQueryBuilder;
-  eq(column: string, value: string): FiscalQueryBuilder;
-  lte(column: string, value: string): FiscalQueryBuilder;
-  order(column: string, options: { ascending: boolean }): FiscalQueryBuilder;
-  limit(count: number): Promise<FiscalQueryResult>;
-}
-
-type SupabaseAdminLike = {
-  from: (table: string) => FiscalQueryBuilder;
-};
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
 export interface KiaAuthoritativeFiscalSignal {
   risk: NonNullable<KiaPresentationContext['fiscalRisk']>;
@@ -64,7 +50,7 @@ export function shouldLoadKiaFiscalSignal(input: {
 }
 
 export async function loadKiaAuthoritativeFiscalSignal(
-  admin: SupabaseAdminLike,
+  admin: AdminClient,
   userId: string,
   companyId: string | null,
 ): Promise<KiaAuthoritativeFiscalSignal | null> {
@@ -74,54 +60,59 @@ export async function loadKiaAuthoritativeFiscalSignal(
   today.setHours(0, 0, 0, 0);
   const horizon = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
 
-  const { data, error } = await admin
-    .from('fiscal_obligations')
-    .select('id,modelo,description,period_label,deadline,status')
-    .eq('user_id', userId)
-    .eq('company_id', companyId)
-    .eq('status', 'pending')
-    .lte('deadline', horizon)
-    .order('deadline', { ascending: true })
-    .limit(20);
+  try {
+    const { data, error } = await admin
+      .from('fiscal_obligations')
+      .select('id,modelo,description,period_label,deadline,status')
+      .eq('user_id', userId)
+      .eq('company_id', companyId)
+      .eq('status', 'pending')
+      .lte('deadline', horizon)
+      .order('deadline', { ascending: true })
+      .limit(20);
 
-  if (error) {
-    console.error('[KiaCopilot] fiscal signal lookup failed:', error.message);
+    if (error) {
+      console.error('[KiaCopilot] fiscal signal lookup failed:', error.message);
+      return null;
+    }
+
+    const rows = (data ?? []) as Array<{
+      id: string;
+      modelo: string;
+      description: string;
+      period_label: string | null;
+      deadline: string;
+      status: string;
+    }>;
+
+    const eligible = rows.filter((row) => {
+      const deadlineYear = Number(row.deadline.slice(0, 4));
+      return Number.isFinite(deadlineYear) && deadlineYear <= AEAT_VERIFIED_CALENDAR_YEAR;
+    });
+
+    const row = eligible.find((item) => urgencyLevel(item.deadline) === 'overdue')
+      ?? eligible.find((item) => urgencyLevel(item.deadline) === 'critical');
+    if (!row) return null;
+
+    const urgency = urgencyLevel(row.deadline);
+    return {
+      risk: {
+        severity: urgency === 'overdue' ? 'critical' : 'high',
+        code: urgency === 'overdue' ? 'filing_overdue' : 'deadline_risk',
+        source: 'fiscal_calendar',
+      },
+      obligation: {
+        id: row.id,
+        modelo: row.modelo,
+        description: row.description,
+        periodLabel: row.period_label,
+        deadline: row.deadline,
+      },
+    };
+  } catch (error) {
+    console.error('[KiaCopilot] fiscal signal lookup exception:', error);
     return null;
   }
-
-  const rows = (data ?? []) as Array<{
-    id: string;
-    modelo: string;
-    description: string;
-    period_label: string | null;
-    deadline: string;
-    status: string;
-  }>;
-
-  const eligible = rows.filter((row) => {
-    const deadlineYear = Number(row.deadline.slice(0, 4));
-    return Number.isFinite(deadlineYear) && deadlineYear <= AEAT_VERIFIED_CALENDAR_YEAR;
-  });
-
-  const row = eligible.find((item) => urgencyLevel(item.deadline) === 'overdue')
-    ?? eligible.find((item) => urgencyLevel(item.deadline) === 'critical');
-  if (!row) return null;
-
-  const urgency = urgencyLevel(row.deadline);
-  return {
-    risk: {
-      severity: urgency === 'overdue' ? 'critical' : 'high',
-      code: urgency === 'overdue' ? 'filing_overdue' : 'deadline_risk',
-      source: 'fiscal_calendar',
-    },
-    obligation: {
-      id: row.id,
-      modelo: row.modelo,
-      description: row.description,
-      periodLabel: row.period_label,
-      deadline: row.deadline,
-    },
-  };
 }
 
 export function appendKiaFiscalNotice(
