@@ -77,6 +77,31 @@ const EMPATHY_PATTERNS = [
   /\bme siento bloquead[oa]\b/i,
 ];
 
+/**
+ * Some KiaDecision warnings are backend trace/repair markers rather than a
+ * user-facing risk. Treating every one as `aviso` made real case-status and
+ * readiness responses look alarming even when nothing was wrong.
+ *
+ * This allowlist is deliberately narrow. Unknown warnings remain visible as
+ * `aviso`; security, tax-review, tool-loop and judge warnings are not ignored.
+ */
+const PRESENTATION_NEUTRAL_WARNING_PATTERNS = [
+  /^backend_policy_override_case_status$/,
+  /^backend_policy_override_viability$/,
+  /^backend_policy_override_holded_readiness$/,
+  /^user_message_language_repaired_by_backend$/,
+  /^extra_question_marks_repaired_by_backend$/,
+  /^taskType corrected by backend$/,
+  /^contactStatus corrected by backend$/,
+  /^Possible repeated phrasing detected\b/,
+];
+
+function hasPresentationWarning(warnings: string[]): boolean {
+  return warnings.some((warning) =>
+    !PRESENTATION_NEUTRAL_WARNING_PATTERNS.some((pattern) => pattern.test(warning)),
+  );
+}
+
 export interface KiaAvatarResolutionInput {
   decision: KiaDecision;
   userMessage?: string | null;
@@ -112,7 +137,7 @@ export function resolveKiaAvatarState({
     return 'alerta_fiscal';
   }
 
-  if (decision.warnings.length > 0) {
+  if (hasPresentationWarning(decision.warnings)) {
     return 'aviso';
   }
 
