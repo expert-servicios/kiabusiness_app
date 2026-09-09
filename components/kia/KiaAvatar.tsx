@@ -22,6 +22,12 @@ export interface KiaAvatarProps {
   className?: string;
   priority?: boolean;
   alt?: string;
+  /**
+   * Avatars inside chat messages are presentation-only because the adjacent
+   * response text carries the full meaning. This avoids repetitive screen
+   * reader announcements such as "KIA — Ayuda" before every message.
+   */
+  decorative?: boolean;
 }
 
 export function KiaAvatar({
@@ -30,20 +36,23 @@ export function KiaAvatar({
   className = '',
   priority = false,
   alt,
+  decorative = true,
 }: KiaAvatarProps) {
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
+  const accessibleLabel = alt ?? `KIA — ${label}`;
 
   return (
     <span
       className={`relative inline-flex shrink-0 overflow-hidden rounded-full border border-[#e8e0d4] bg-[#f5f1eb] ${className}`}
       style={{ width: pixels, height: pixels }}
       data-kia-avatar-state={state}
-      title={`KIA — ${label}`}
+      aria-hidden={decorative || undefined}
+      title={decorative ? undefined : accessibleLabel}
     >
       <Image
         src={KIA_AVATAR_ASSET_PATHS[state]}
-        alt={alt ?? `KIA — ${label}`}
+        alt={decorative ? '' : accessibleLabel}
         width={pixels}
         height={pixels}
         priority={priority}
