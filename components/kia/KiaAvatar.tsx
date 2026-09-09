@@ -6,6 +6,10 @@ import {
   KIA_AVATAR_LABELS,
   type KiaAvatarState,
 } from '@/lib/ai/kia/kia-avatar-state';
+import {
+  resolveKiaAvatarMotion,
+  type KiaAvatarMotion,
+} from '@/lib/ai/kia/kia-avatar-motion';
 import styles from './KiaAvatar.module.css';
 
 const SIZE_MAP = {
@@ -16,6 +20,13 @@ const SIZE_MAP = {
 } as const;
 
 type KiaAvatarSize = keyof typeof SIZE_MAP;
+
+const MOTION_CLASSES: Record<Exclude<KiaAvatarMotion, 'static'>, string> = {
+  thinking: styles.thinkingMotion,
+  confirm: styles.confirmMotion,
+  celebrate: styles.celebrateMotion,
+  attention: styles.attentionMotion,
+};
 
 export interface KiaAvatarProps {
   state?: KiaAvatarState;
@@ -30,13 +41,9 @@ export interface KiaAvatarProps {
    */
   decorative?: boolean;
   /**
-   * Applies a short entrance transition when the state image changes. Keep it
-   * off for repeated message avatars; header/launcher can opt in. The CSS
-   * module disables the animation under prefers-reduced-motion.
-   *
-   * When the opted-in surface is in `pensando`, the outer avatar gets a very
-   * small, slow vertical movement to indicate activity. Message avatars remain
-   * static and the loading row already provides a spinner/text status.
+   * Enables the short state transition and state-aware microanimation on
+   * persistent surfaces only. Repeated message avatars keep this disabled.
+   * All motion is removed under prefers-reduced-motion.
    */
   animateOnChange?: boolean;
 }
@@ -53,14 +60,15 @@ export function KiaAvatar({
   const pixels = SIZE_MAP[size];
   const label = KIA_AVATAR_LABELS[state];
   const accessibleLabel = alt ?? `KIA — ${label}`;
-  const thinkingMotion = animateOnChange && state === 'pensando';
+  const motion = resolveKiaAvatarMotion(state, animateOnChange);
+  const motionClass = motion === 'static' ? '' : MOTION_CLASSES[motion];
 
   return (
     <span
-      className={`relative inline-flex shrink-0 overflow-hidden rounded-full border border-[#e8e0d4] bg-[#f5f1eb] ${thinkingMotion ? styles.thinkingMotion : ''} ${className}`}
+      className={`relative inline-flex shrink-0 overflow-hidden rounded-full border border-[#e8e0d4] bg-[#f5f1eb] ${motionClass} ${className}`}
       style={{ width: pixels, height: pixels }}
       data-kia-avatar-state={state}
-      data-kia-avatar-motion={thinkingMotion ? 'thinking' : 'static'}
+      data-kia-avatar-motion={motion}
       aria-hidden={decorative || undefined}
       title={decorative ? undefined : accessibleLabel}
     >
