@@ -70,26 +70,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'La reunión de onboarding debe haberse celebrado antes de cerrar el alta.', code: 'onboarding_meeting_not_completed' }, { status: 409 });
   }
 
-  let directHoldedConnected = false;
+  let holdedReady = false;
   if (subscription.company_id) {
     const { data: directIntegration, error: directError } = await admin
       .from('client_integrations')
       .select('id')
       .eq('provider', 'holded')
+      .eq('client_id', clientId)
       .eq('company_id', subscription.company_id)
       .eq('status', 'active')
       .limit(1)
       .maybeSingle();
     if (directError) return NextResponse.json({ error: 'No se pudo validar Holded' }, { status: 500 });
-    directHoldedConnected = Boolean(directIntegration);
+    holdedReady = Boolean(directIntegration);
+  } else {
+    const [{ data: authorizedConnection }, { data: authorizedEvent }] = await Promise.all([
+      admin.from('holded_mcp_connections').select('id').eq('supabase_user_id', clientId).eq('channel', 'claude').eq('status', 'connected').limit(1).maybeSingle(),
+      admin.from('holded_mcp_events').select('id').eq('user_email', clientEmail).in('event_type', ['user_connected', 'first_activity']).eq('channel', 'claude').order('detected_at', { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    holdedReady = Boolean(authorizedConnection || authorizedEvent);
   }
-
-  const [{ data: authorizedConnection }, { data: authorizedEvent }] = await Promise.all([
-    admin.from('holded_mcp_connections').select('id').eq('supabase_user_id', clientId).eq('channel', 'claude').eq('status', 'connected').limit(1).maybeSingle(),
-    admin.from('holded_mcp_events').select('id').eq('user_email', clientEmail).in('event_type', ['user_connected', 'first_activity']).eq('channel', 'claude').order('detected_at', { ascending: false }).limit(1).maybeSingle(),
-  ]);
-  if (!directHoldedConnected && !authorizedConnection && !authorizedEvent) {
-    return NextResponse.json({ error: 'La conexión de Holded debe estar validada antes de cerrar el alta.', code: 'holded_required' }, { status: 409 });
+  if (!holdedReady) {
+    return NextResponse.json({ error: 'La conexión de Holded de esta entidad debe estar validada antes de cerrar el alta.', code: 'holded_required' }, { status: 409 });
   }
 
   let onboardingCaseQuery = admin
