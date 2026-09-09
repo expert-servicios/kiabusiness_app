@@ -30,11 +30,12 @@ Initial authoritative source:
 - `fiscal_obligations` rows created from an Admin-confirmed fiscal template;
 - query scoped by both authenticated `user_id` and validated `company_id`;
 - only `status=pending` rows;
+- `template_code` must be present, which is the provenance marker written by the confirmed fiscal-template activation flow; legacy/inferred rows without that marker are ignored;
 - only deadlines inside the calendar year range explicitly verified by the application;
 - overdue obligation => `critical / filing_overdue`;
 - deadline within 7 days => `high / deadline_risk`.
 
-A user phrase such as “IVA”, “sanción” or “plazo fiscal” does **not** create the risk. Message wording is used only as a retrieval gate so KIA does not run a fiscal-calendar lookup during unrelated conversations. The risk itself must exist in the backend.
+A user phrase such as “IVA”, “sanción” or “plazo fiscal” does **not** create the risk. Message wording is used only as a retrieval gate so KIA does not run a fiscal-calendar lookup during unrelated conversations. Broad non-fiscal phrases such as “plazo de mi expediente” do not open the fiscal lookup. The risk itself must exist in the backend.
 
 The lookup is also enabled while the user is on `/calendario-fiscal` and for accounting/anomaly intents.
 
@@ -69,6 +70,7 @@ No trusted state is emitted when:
 - there is no company scope;
 - the database lookup fails;
 - the obligation is not pending;
+- `template_code` is absent;
 - the deadline is outside the explicitly verified calendar-year range;
 - the Holded status tool fails or returns `missing`;
 - the only positive signal is model confidence or user wording.
@@ -79,7 +81,8 @@ Required before merge:
 
 - unit tests for Holded assurance;
 - fiscal retrieval gate tests;
-- user/company/status scoping assertions;
+- user/company/status/provenance scoping assertions;
+- legacy/inferred fiscal row suppression;
 - overdue and <=7-day classification;
 - future unverified date suppression;
 - manual-review precedence;
