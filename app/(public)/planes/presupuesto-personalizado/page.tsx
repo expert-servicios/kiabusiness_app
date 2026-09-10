@@ -290,7 +290,7 @@ export default function PresupuestoPersonalizadoPage() {
                   <input
                     type="tel"
                     inputMode="tel"
-                    pattern="[+]?[0-9\s().-]{7,20}"
+                    pattern="(?=.*[0-9])[+]?[0-9\s().-]{7,20}"
                     title="Introduce un teléfono válido (7-20 dígitos, puede incluir +, espacios o guiones)"
                     value={form.phone}
                     onChange={(e) => handleField('phone', e.target.value)}

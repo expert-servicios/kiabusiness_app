@@ -22,6 +22,11 @@ interface ViabilityResponse {
   emailSent: boolean;
 }
 
+// Mirrors the input's `pattern` attribute below — kept in sync manually since
+// this multi-step wizard advances via a plain button, not a form submit, so
+// the browser's native pattern validation never runs here.
+const PHONE_RE = /^(?=.*[0-9])[+]?[0-9\s().-]{7,20}$/;
+
 type Step = 'personal' | 'questions' | 'docs' | 'result';
 
 interface PersonalData {
@@ -371,6 +376,7 @@ export function ViabilityModal({ check, serviceSlug, onClose }: ViabilityModalPr
   const canAdvancePersonal =
     personal.name.trim().length > 0 &&
     personal.email.includes('@') &&
+    (personal.phone.trim().length === 0 || PHONE_RE.test(personal.phone.trim())) &&
     personal.gdprConsent;
 
   const canAdvanceQuestion = useCallback(() => {
@@ -523,7 +529,7 @@ export function ViabilityModal({ check, serviceSlug, onClose }: ViabilityModalPr
                   <input
                     type="tel"
                     inputMode="tel"
-                    pattern="[+]?[0-9\s().-]{7,20}"
+                    pattern="(?=.*[0-9])[+]?[0-9\s().-]{7,20}"
                     title="Introduce un teléfono válido (7-20 dígitos, puede incluir +, espacios o guiones)"
                     value={personal.phone}
                     onChange={e => setPersonal(p => ({ ...p, phone: e.target.value }))}

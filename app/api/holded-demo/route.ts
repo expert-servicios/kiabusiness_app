@@ -10,7 +10,7 @@ const schema = z.object({
   hp_url: z.string().optional(),
   name: z.string().min(2).max(100),
   email: z.string().email(),
-  phone: z.string().min(6).max(20),
+  phone: z.string().min(6).max(20).regex(/[0-9]/, 'El teléfono debe incluir al menos un dígito'),
   company_name: z.string().min(2).max(150),
   company_type: z.string().optional(),
   employees_count: z.string().optional(),

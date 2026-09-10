@@ -185,7 +185,7 @@ export function AcademyLeadForm({
             <input
               type="tel"
               inputMode="tel"
-              pattern="[0-9\s().-]{5,15}"
+              pattern="(?=.*[0-9])[0-9\s().-]{5,15}"
               title="Introduce un número de teléfono válido"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
