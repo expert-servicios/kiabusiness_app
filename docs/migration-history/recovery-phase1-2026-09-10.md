@@ -73,27 +73,55 @@ After that correction, the following local migrations were also replayed success
 - `20260525172343_kia_rls_repair.sql`
 - `20260525172441_kia_grants_repair.sql`
 - `20260528100000_company_open_data_tables.sql`
+- `20260528120000_holded_integration_consent_columns.sql`
+- `20260529090000_holded_mcp_bridge_tables.sql`
+- `20260529100000_kia_financial_reports.sql`
+- `20260602084321_admin_clients_operational_status.sql`
+- `20260602092034_admin_orders_holded_traceability_repair.sql`
+
+The replay probe for `20260529100000_kia_financial_reports.sql` was initially executed with a reconstructed statement rather than the exact Git file. This happened only on the disposable Development Branch. The probe object was removed from that branch and the exact Git migration was then applied successfully. Production was not touched.
 
 ## Second reproducibility defect: silent schema divergence
 
-`20260528100000_company_open_data_tables.sql` does not fail, but it is not sufficient to reconstruct the current schema because it uses `CREATE TABLE IF NOT EXISTS public.profile_companies` while an earlier local migration already created that table with a different shape.
+`20260528100000_company_open_data_tables.sql` originally did not fail, but it was not sufficient to reconstruct the current schema because it used `CREATE TABLE IF NOT EXISTS public.profile_companies` while an earlier local migration already created that table with a different shape.
 
-After replay, the disposable branch still has the earlier structure:
+The earlier clean-replay structure was:
 
 - primary key `(profile_id, company_id)`;
 - `profile_id` references `public.profiles(id)`;
 - role check allows only `owner` and `member`.
 
-Current production has a different canonical structure:
+Current production has the canonical structure:
 
 - UUID `id` primary key;
 - unique `(profile_id, company_id)`;
 - `profile_id` references `auth.users(id)`;
-- role check currently allows `owner`, `admin`, `member`.
+- role default `member`;
+- role check allows `owner`, `admin`, `member`;
+- indexes `profile_companies_profile_idx` and `profile_companies_company_idx`;
+- policies `admin all profile_companies` and `member view own companies`.
 
-Production migration history explains the gap: remote migration `20260514170610 create_audit_logs_profile_companies_reviews` contains the newer `profile_companies` definition, but that remote-only/adapted history is not represented by an equivalent replayable local transition at the same point in the Git migration chain.
+Production migration history explains the gap: remote migration `20260514170610 create_audit_logs_profile_companies_reviews` contains the canonical `profile_companies` definition, but that remote-only/adapted history is not represented by an equivalent replayable local transition at the same point in the Git migration chain.
 
-This is a key #143 root cause: **some local migrations can report success while still producing a schema different from production**.
+Simply copying `20260514170610` into Git would not fix a clean replay: its own `CREATE TABLE IF NOT EXISTS public.profile_companies` would no-op because the older local table already exists.
+
+### Guarded clean-replay bridge prepared and tested
+
+On the recovery branch, `20260528100000_company_open_data_tables.sql` now detects the legacy local shape by the absence of the `id` column and, only in that case, converges it to the canonical production contract:
+
+- adds UUID `id` and makes it the primary key;
+- replaces the `profile_id` foreign key with `auth.users(id)`;
+- sets role default/check to `member` / `owner|admin|member`;
+- adds the unique `(profile_id, company_id)` constraint;
+- normalizes index names;
+- removes obsolete local-only policies;
+- installs the canonical admin/member policies if absent.
+
+The bridge was applied successfully on the disposable branch. A read-only comparison with production confirms logical parity for constraints, foreign keys, indexes and RLS policies.
+
+The remaining physical difference is column ordinal order: on a converted legacy table the new `id` column is appended, while production created `id` first. This does not change SQL semantics or the application contract and must not be treated as a schema-parity failure by the future fingerprint comparator.
+
+This is a key #143 root cause and acceptance rule: **migration success alone is not enough; clean replay must also be semantically equivalent to production.**
 
 ## Remote-only SQL recovered read-only
 
@@ -123,26 +151,27 @@ Read-only production verification confirms that the schema effects represented b
 
 already exist in production. They are candidates for a future **history-only** mark-applied operation, not for DDL replay. `orders_source_check` has evolved since the Academy migration, so replaying the old DDL would be specifically unsafe.
 
-## Known local version defects
+## Local version normalization in PR #194
 
-The local directory still contains version collisions that must be normalized before a clean Supabase migration run can be trusted:
+The recovery branch normalizes the known local tooling collisions without mutating the production ledger:
 
-- two files with version `20260607000005`;
-- two files with version `20260903113000`;
-- a byte-equivalent duplicate of `email_queue_processing_status` under `20260607000005` and `20260607000006`.
+- the two files that previously shared `20260607000005` are separated onto verified remote versions;
+- the byte-equivalent duplicate `20260607000006_email_queue_processing_status.sql` is removed in favor of the normalized history entry;
+- the two files that previously shared `20260903113000` are normalized to their verified remote versions.
 
-These are Git-history/tooling defects; no production ledger mutation is authorized by this document.
+These are Git-history/tooling repairs only. They do not authorize any production migration-history mutation.
 
 ## Recovery strategy from this checkpoint
 
 1. Keep production frozen.
-2. Use the disposable branch to continue identifying replay errors and silent divergences.
+2. Continue exact-file replay on the disposable branch, stopping at the first deterministic SQL failure.
 3. Build an explicit normalized migration manifest: exact-match, semantic-equivalent/different-version, remote-only structural, remote-only operational, local-only already-present, local-only not-applied, duplicate/collision.
-4. Prefer a current-schema baseline for clean environments rather than forcing every historical deployment artifact to replay forever.
-5. Validate the baseline on a fresh disposable Development Branch and compare schema fingerprints with production.
-6. Only after the fresh build matches, prepare an exact production migration-history repair manifest with before/after rows and rollback.
-7. Obtain explicit approval before the first production ledger mutation.
+4. Define a semantic schema fingerprint that ignores irrelevant physical details such as column ordinal order but compares tables, columns/types/defaults/nullability, PK/FK/unique/check constraints, indexes, functions and RLS policies.
+5. Prefer a current-schema baseline for clean environments where historical adapted artifacts cannot safely be replayed verbatim.
+6. Validate the normalized chain/baseline on a fresh disposable Development Branch and compare the semantic fingerprint with production.
+7. Only after the fresh build matches, prepare an exact production migration-history repair manifest with before/after rows and rollback.
+8. Obtain explicit approval before the first production ledger mutation.
 
 ## Current conclusion
 
-Supabase Pro/Branching has converted #143 from a production-risk problem into a reproducible test problem. The first SQL defect is fixed on the recovery branch, and the next root issue is now proven: remote adapted schema changes are missing from the local replay path, so migration success alone cannot be used as the acceptance criterion. Schema equivalence/fingerprint validation is mandatory.
+Supabase Pro/Branching has converted #143 from a production-risk problem into a reproducible test problem. The first SQL defect is fixed on the recovery branch; known version collisions are being normalized; and the first proven silent divergence (`profile_companies`) now has a tested Git-only convergence path. Production remains unchanged. The next task is to continue exact replay through the remaining local migrations and discover the next deterministic or semantic divergence before designing any production ledger repair.
