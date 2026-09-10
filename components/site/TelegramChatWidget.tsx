@@ -8,9 +8,11 @@ import { createBrowserClient } from '@supabase/ssr';
 import { getCalDemoUrl } from '@/lib/utils/cal';
 
 // Configured via NEXT_PUBLIC_TELEGRAM_BOT_USERNAME (Vercel env var), e.g. "expertconsulting_bot".
-// If unset, the widget falls back to the WhatsApp number rather than shipping a dead Telegram link.
+// Telegram-only: WhatsApp is handled personally and is offered elsewhere
+// (e.g. /contacto, or as a human-escalation path from Kia), never from this
+// floating widget. If the bot username isn't configured yet, the widget
+// simply doesn't render rather than falling back to WhatsApp.
 const TELEGRAM_BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim() || null;
-const WA_NUMBER = '34669045528';
 const SESSION_KEY = 'kia_bubble_dismissed';
 // Proactive open is deliberately delayed (vs. the previous 5 s) so the bubble
 // doesn't feel like it's ambushing a visitor who just landed on the page.
@@ -57,17 +59,8 @@ function getFiscalChip(): FiscalChip | null {
 }
 
 /** Telegram deep link — opens a chat with the bot and pre-fills the compose box. */
-function buildTelegramUrl(msg: string) {
-  return `https://t.me/${TELEGRAM_BOT}?text=${encodeURIComponent(msg)}`;
-}
-
-function buildWaUrl(msg: string) {
-  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-}
-
-/** Builds the deep link for the active channel (Telegram if configured, WhatsApp as fallback). */
 function buildChannelUrl(msg: string) {
-  return TELEGRAM_BOT ? buildTelegramUrl(msg) : buildWaUrl(msg);
+  return `https://t.me/${TELEGRAM_BOT}?text=${encodeURIComponent(msg)}`;
 }
 
 // ── Quick-reply action types ──────────────────────────────────────────────────
@@ -164,7 +157,12 @@ export function TelegramChatWidget() {
   }, []);
   const toggleBubble = useCallback(() => setBubbleOpen(v => !v), []);
 
-  const channelName = TELEGRAM_BOT ? 'Telegram' : 'WhatsApp';
+  // Telegram-only widget: with no bot configured yet there's nothing to link
+  // to, so render nothing rather than falling back to WhatsApp. All hooks
+  // above still run on every render, so this stays rules-of-hooks safe.
+  if (!TELEGRAM_BOT) return null;
+
+  const channelName = 'Telegram';
 
   const greetingBody = isLoggedIn
     ? userName
@@ -330,14 +328,6 @@ export function TelegramChatWidget() {
 }
 
 function ChannelIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
-  if (!TELEGRAM_BOT) {
-    // WhatsApp glyph — fallback channel while no Telegram bot is configured.
-    return (
-      <svg viewBox="0 0 24 24" className={`${className} fill-white`} aria-hidden="true">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-      </svg>
-    );
-  }
   // Telegram paper-plane glyph.
   return (
     <svg viewBox="0 0 24 24" className={`${className} fill-white`} aria-hidden="true">
