@@ -12,7 +12,7 @@ const bodySchema = z.object({
   serviceSlug: z.string().min(1),
   clientName: z.string().min(1).max(120),
   clientEmail: z.string().email(),
-  clientPhone: z.string().optional(),
+  clientPhone: z.string().regex(/[0-9]/, 'El teléfono debe incluir al menos un dígito').optional(),
   gdprConsent: z.boolean(),
   answers: z.record(z.string(), z.union([z.string(), z.boolean()])),
   docStatus: z.record(z.string(), z.enum(['have', 'missing', 'need_help'])),
