@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, FolderOpen, ChevronRight, MessageCircle } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
-import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
+import { resolveCaseListGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 
 interface Case {
   id: string;
@@ -39,20 +39,7 @@ export default async function ClientCasesPage() {
   const cases = await getCases();
   const active = cases.filter((c) => c.state !== 'finalizado');
   const closed = cases.filter((c) => c.state === 'finalizado');
-
-  let guidanceState: KiaAvatarState = 'ayuda';
-  let guidanceTitle = 'Estoy aquí para ayudarte con tus expedientes';
-  let guidanceMessage = 'Cuando contrates un servicio, podrás seguir aquí su estado, documentación y mensajes.';
-
-  if (active.length > 0) {
-    guidanceState = 'seguimiento';
-    guidanceTitle = active.length === 1 ? 'Tienes 1 expediente activo' : `Tienes ${active.length} expedientes activos`;
-    guidanceMessage = 'Puedes abrir cada expediente para revisar su estado, documentación pendiente y nuevas comunicaciones.';
-  } else if (closed.length > 0) {
-    guidanceState = 'exito';
-    guidanceTitle = 'Tus expedientes visibles están finalizados';
-    guidanceMessage = 'Puedes consultar el histórico cuando lo necesites o contratar un nuevo servicio desde tu panel.';
-  }
+  const guidance = resolveCaseListGuidance(active.length, closed.length);
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
@@ -72,9 +59,9 @@ export default async function ClientCasesPage() {
           </div>
 
           <KiaGuidanceCard
-            state={guidanceState}
-            title={guidanceTitle}
-            message={guidanceMessage}
+            state={guidance.state}
+            title={guidance.title}
+            message={guidance.message}
             className="mb-8"
           />
 
