@@ -13,6 +13,7 @@ function source(relativePath: string): string {
 describe('KIA contextual guidance surfaces', () => {
   const card = source('components/kia/KiaGuidanceCard.tsx');
   const casesPage = source('app/(protected)/dashboard/expedientes/page.tsx');
+  const onboardingPage = source('app/(protected)/dashboard/onboarding/page.tsx');
 
   it('keeps the guidance card presentation-only', () => {
     expect(card).toContain('data-kia-guidance-state={state}');
@@ -28,11 +29,12 @@ describe('KIA contextual guidance surfaces', () => {
     expect(resolveCaseListGuidance(0, 0).state).toBe('ayuda');
   });
 
-  it('keeps onboarding precedence safe for the next surface', () => {
+  it('keeps onboarding precedence safe', () => {
     expect(resolveOnboardingGuidance({ step: 'done', loading: false, hasError: true, companySkipped: false }).state).toBe('aviso');
     expect(resolveOnboardingGuidance({ step: 'done', loading: true, hasError: false, companySkipped: false }).state).toBe('pensando');
     expect(resolveOnboardingGuidance({ step: 'done', loading: false, hasError: false, companySkipped: false }).state).toBe('exito');
     expect(resolveOnboardingGuidance({ step: 'company', loading: false, hasError: false, companySkipped: true }).state).toBe('duda');
+    expect(resolveOnboardingGuidance({ step: 'company', loading: false, hasError: false, companySkipped: false }).state).toBe('explicacion');
     expect(resolveOnboardingGuidance({ step: 'profile', loading: false, hasError: false, companySkipped: false }).state).toBe('bienvenida');
   });
 
@@ -41,5 +43,14 @@ describe('KIA contextual guidance surfaces', () => {
     expect(casesPage).toContain('<KiaGuidanceCard');
     expect(casesPage).not.toContain('/api/ai/kia');
     expect(casesPage).not.toContain('runKiaDecision');
+  });
+
+  it('wires onboarding guidance to local UI state only', () => {
+    expect(onboardingPage).toContain('resolveOnboardingGuidance({');
+    expect(onboardingPage).toContain('hasError: Boolean(error)');
+    expect(onboardingPage).toContain('companySkipped: companyData.skip');
+    expect(onboardingPage).toContain('animateOnChange');
+    expect(onboardingPage).not.toContain('/api/ai/kia');
+    expect(onboardingPage).not.toContain('runKiaDecision');
   });
 });
