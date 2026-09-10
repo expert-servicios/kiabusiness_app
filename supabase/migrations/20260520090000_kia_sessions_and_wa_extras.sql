@@ -40,8 +40,21 @@ CREATE TRIGGER kia_sessions_updated_at
 
 ALTER TABLE public.kia_sessions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admin manage kia_sessions" ON public.kia_sessions
-  FOR ALL USING (is_admin());
+-- PostgreSQL does not support CREATE POLICY IF NOT EXISTS. Guard the policy
+-- explicitly so this historical migration is replayable on a clean database.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'kia_sessions'
+      AND policyname = 'Admin manage kia_sessions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Admin manage kia_sessions" ON public.kia_sessions
+      FOR ALL USING (is_admin())';
+  END IF;
+END $$;
 
 -- WhatsApp conversations: extra columns added after initial migration
 ALTER TABLE public.whatsapp_conversations
