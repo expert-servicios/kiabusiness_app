@@ -13,7 +13,7 @@ This phase does **not** change production schema, production rows or the product
 Allowed in this phase:
 
 - read-only inspection of production schema and `supabase_migrations.schema_migrations`;
-- replay probes on the disposable Development Branch;
+- replay and parity probes on the disposable Development Branch;
 - Git-only normalization on `infra/supabase-ledger-recovery-phase1`;
 - documentation of exact before/after proposals.
 
@@ -25,153 +25,319 @@ Still blocked until a separate reviewed checkpoint:
 - merging a Development Branch into production;
 - any data rewrite or financial-history mutation.
 
+Production remained untouched throughout this checkpoint.
+
 ## Development Branch bootstrap result
 
-Creating/resetting the disposable Development Branch from the current project state produced an empty `public` schema and no replayed migration ledger. This reproduces the core #143 failure: the current Git/remote migration history cannot bootstrap a clean environment.
+Creating/resetting the disposable Development Branch from the current project state produced an incomplete environment and did not reproduce the production schema from migration history. This reproduces the core #143 failure: the current Git/remote migration history is not a reliable clean-environment bootstrap.
 
-## Controlled local replay
+The branch is therefore used only as a disposable diagnostic target. Its `probe_*` migration rows are test artifacts and must **not** be interpreted as candidate production migration-history rows.
 
-A controlled replay was started from the oldest local migration, applying SQL only to the disposable Development Branch and stopping at the first error.
+## Controlled historical replay
 
-The first eleven local migrations through `20260509164929_add_external_mappings.sql` replayed successfully.
+A controlled replay was executed in local migration order on the disposable branch, always using the literal Git migration before applying it and stopping at deterministic failures or silent semantic divergence.
 
-The first deterministic failure is:
+The first deterministic SQL defect was:
 
 `20260520090000_kia_sessions_and_wa_extras.sql`
 
-PostgreSQL error:
+PostgreSQL 15 rejected unsupported `CREATE POLICY IF NOT EXISTS` syntax. The recovery branch replaces it with an explicit `pg_policies` existence check inside a `DO` block. Intended policy semantics are unchanged.
 
-```text
-ERROR 42601: syntax error at or near "NOT"
-CREATE POLICY IF NOT EXISTS "Admin manage kia_sessions" ...
-```
+The corrected migration replayed successfully.
 
-PostgreSQL 15 does not support `CREATE POLICY IF NOT EXISTS`. The failed migration was transactional: `public.kia_sessions` was not left behind after the failure.
+Replay then advanced through the complete active May–September local chain. Important checkpoints included:
 
-### Git-only fix prepared
+- KIA sessions / WhatsApp additions;
+- leads, billing and Holded status changes;
+- client integrations and sync jobs;
+- KIA decision logs, health checks, auditor and memory features;
+- company open-data structures;
+- Holded MCP bridge;
+- KIA financial reports;
+- admin operational status and Holded order traceability;
+- Stripe/marketing hardening and commercial-benefit changes;
+- server-only table hardening;
+- helper/view security hardening;
+- company↔Stripe Customer mapping;
+- legal Stripe invoice attribution;
+- legacy views in their verified production order.
 
-On this recovery branch only, the unsupported statement is replaced with an explicit `pg_policies` existence check inside a `DO` block. The intended policy semantics are unchanged.
+### Corrected disposable-branch probe incident
 
-The corrected migration replayed successfully on the disposable Development Branch.
+The first probe for `20260529100000_kia_financial_reports.sql` was accidentally executed from a reconstructed statement rather than the literal Git file. This occurred only on the disposable branch.
 
-After that correction, the following local migrations were also replayed successfully in order:
+The diagnostic object was removed there, the literal Git migration was fetched, and the exact migration then replayed successfully. Production was never touched. This incident established an explicit rule for the rest of #143: **fetch the exact Git file before every historical replay probe**.
 
-- `20260520091000_leads_whatsapp_fields.sql`
-- `20260520092000_profiles_add_email.sql`
-- `20260522100000_add_viability_assessments.sql`
-- `20260522110000_add_fiscal_obligations.sql`
-- `20260522120000_orders_catalog_support.sql`
-- `20260522130000_leads_whatsapp_upsert.sql`
-- `20260522184242_whatsapp_thread_replies.sql`
-- `20260523062807_profile_billing_and_holded_order_status.sql`
-- `20260523160000_client_integrations_and_sync_jobs.sql`
-- `20260523171440_kia_decision_logs.sql`
-- `20260523182625_kia_health_check.sql`
-- `20260524060850_kia_auditor_reviews.sql`
-- `20260524120000_client_integration_secrets.sql`
-- `20260525162302_kia_health_schema_repair.sql`
-- `20260525172343_kia_rls_repair.sql`
-- `20260525172441_kia_grants_repair.sql`
-- `20260528100000_company_open_data_tables.sql`
-- `20260528120000_holded_integration_consent_columns.sql`
-- `20260529090000_holded_mcp_bridge_tables.sql`
-- `20260529100000_kia_financial_reports.sql`
-- `20260602084321_admin_clients_operational_status.sql`
-- `20260602092034_admin_orders_holded_traceability_repair.sql`
+## Silent divergence: `profile_companies`
 
-The replay probe for `20260529100000_kia_financial_reports.sql` was initially executed with a reconstructed statement rather than the exact Git file. This happened only on the disposable Development Branch. The probe object was removed from that branch and the exact Git migration was then applied successfully. Production was not touched.
+A second defect was more important than a syntax error: a migration could report success while producing the wrong schema.
 
-## Second reproducibility defect: silent schema divergence
+`20260528100000_company_open_data_tables.sql` used `CREATE TABLE IF NOT EXISTS public.profile_companies`, but an older local migration had already created `profile_companies` with a different contract. The later migration therefore no-op'd silently.
 
-`20260528100000_company_open_data_tables.sql` originally did not fail, but it was not sufficient to reconstruct the current schema because it used `CREATE TABLE IF NOT EXISTS public.profile_companies` while an earlier local migration already created that table with a different shape.
+The older replayed structure had:
 
-The earlier clean-replay structure was:
+- composite primary key `(profile_id, company_id)`;
+- `profile_id -> public.profiles(id)`;
+- role limited to `owner|member`.
 
-- primary key `(profile_id, company_id)`;
-- `profile_id` references `public.profiles(id)`;
-- role check allows only `owner` and `member`.
-
-Current production has the canonical structure:
+Current production has:
 
 - UUID `id` primary key;
 - unique `(profile_id, company_id)`;
-- `profile_id` references `auth.users(id)`;
+- `profile_id -> auth.users(id) ON DELETE CASCADE`;
 - role default `member`;
-- role check allows `owner`, `admin`, `member`;
-- indexes `profile_companies_profile_idx` and `profile_companies_company_idx`;
+- role check `owner|admin|member`;
+- canonical indexes;
 - policies `admin all profile_companies` and `member view own companies`.
 
-Production migration history explains the gap: remote migration `20260514170610 create_audit_logs_profile_companies_reviews` contains the canonical `profile_companies` definition, but that remote-only/adapted history is not represented by an equivalent replayable local transition at the same point in the Git migration chain.
+Remote migration `20260514170610 create_audit_logs_profile_companies_reviews` explains the production state but cannot simply be copied into Git because its own `CREATE TABLE IF NOT EXISTS` would still no-op against the older local table.
 
-Simply copying `20260514170610` into Git would not fix a clean replay: its own `CREATE TABLE IF NOT EXISTS public.profile_companies` would no-op because the older local table already exists.
+### Guarded bridge prepared in Git
 
-### Guarded clean-replay bridge prepared and tested
+The recovery branch now makes `20260528100000_company_open_data_tables.sql` detect the legacy shape by absence of the `id` column and converge only that legacy shape to the production contract.
 
-On the recovery branch, `20260528100000_company_open_data_tables.sql` now detects the legacy local shape by the absence of the `id` column and, only in that case, converges it to the canonical production contract:
+The bridge was tested successfully on the disposable branch. Constraint, FK, index and policy semantics matched production afterward.
 
-- adds UUID `id` and makes it the primary key;
-- replaces the `profile_id` foreign key with `auth.users(id)`;
-- sets role default/check to `member` / `owner|admin|member`;
-- adds the unique `(profile_id, company_id)` constraint;
-- normalizes index names;
-- removes obsolete local-only policies;
-- installs the canonical admin/member policies if absent.
+Column ordinal order may differ after conversion because PostgreSQL appends a newly added `id` column. Ordinal order is intentionally excluded from the semantic fingerprint because it does not change the application contract.
 
-The bridge was applied successfully on the disposable branch. A read-only comparison with production confirms logical parity for constraints, foreign keys, indexes and RLS policies.
+## Legacy/bootstrap boundary discovered
 
-The remaining physical difference is column ordinal order: on a converted legacy table the new `id` column is appended, while production created `id` first. This does not change SQL semantics or the application contract and must not be treated as a schema-parity failure by the future fingerprint comparator.
+After the replayable historical chain was exhausted, production still contained a substantial group of `public.*` objects never created by the May–September Git migration chain.
 
-This is a key #143 root cause and acceptance rule: **migration success alone is not enough; clean replay must also be semantically equivalent to production.**
+Rather than invent false historical migrations, the diagnostic branch reconstructed these objects empty from the **production catalog only**. No production rows were copied.
 
-## Remote-only SQL recovered read-only
+This establishes the architecture for the final repair:
 
-Exact `statements` have been recovered from production for the previously identified remote-only operational migrations, including:
+- historical migrations remain historical transitions;
+- objects that predate or escaped the tracked history belong in a current-schema declarative baseline;
+- ledger reconciliation must not pretend that missing legacy/bootstrap DDL was applied under invented historical timestamps.
 
-- email inbox cache/system KV;
-- manual payments/case linkage;
-- Google Calendar IDs;
-- campaigns;
-- email event error/HTML columns;
-- email queue repair;
-- one-time order entity scoping;
-- atomic subscription checkout claims;
-- subscription checkout claim status sync;
-- Holded contact creation claims.
+## Public-schema parity checkpoint
 
-No recovered statement has been replayed against production.
+The disposable diagnostic branch now matches production exactly for the following `public` schema layers.
 
-A May 2026 inspection also confirms that production contains adapted/remote structural migrations that are material to a clean bootstrap, including `20260514170610 create_audit_logs_profile_companies_reviews`.
+### Relations
 
-## Candidate local-only historical rows
+- 155 tables
+- 2 views
+- 157 relations total
+- exact same relation-name set
 
-Read-only production verification confirms that the schema effects represented by:
+### Columns
+
+- production: 1,732 table columns
+- diagnostic branch: 1,732
+- semantic hash: `aae132d5f560e35c27d3a231f053f165`
+
+The column fingerprint compares relation, column name, type, nullability and default while intentionally ignoring physical ordinal position.
+
+### Constraints
+
+- production: 553
+- diagnostic branch: 553
+- semantic hash: `902ddcf2e4700b1a1367192ea1fde8b1`
+
+This includes PK, FK, UNIQUE and CHECK definitions.
+
+### Indexes
+
+- production: 473
+- diagnostic branch: 473
+- semantic hash: `209ce89f6b5e68d81afa529ea0e292d2`
+
+Secondary, unique, expression and partial-index definitions were included.
+
+### Row-level security flags
+
+- RLS-enabled public tables: 155 / 155
+- `FORCE ROW LEVEL SECURITY`: 0
+- flags hash: `56b21fbfeb485de0bc90c65cd286316d`
+
+### RLS policies
+
+- production: 276
+- diagnostic branch: 276
+- semantic hash: `6de814c76c15d6be031c369c67e48c22`
+
+For this diagnostic gate, the branch's previous public policies were removed and the current production policy catalog was recreated exactly. This operation occurred only on the disposable branch.
+
+### Triggers
+
+- production non-internal public triggers: 43
+- diagnostic branch: 43
+- semantic hash: `c4f8db6f9697f773915a374d42a83906`
+
+Only user-defined/public triggers were compared. PostgreSQL internal FK triggers were not rewritten.
+
+### Views
+
+Both production views are present with `security_invoker=true`:
+
+- `public.v_invoice_documents`
+- `public.v_servicios_con_pagos`
+
+A cosmetic lateral-subquery alias difference was normalized on the disposable branch. View logic and options now match production.
+
+### ACL / grants
+
+Effective ACL comparison uses role names rather than role OIDs so independently created Supabase projects can be compared safely.
+
+Relations/tables/views/sequences:
+
+- effective ACL entries: 3,948
+- hash: `a1be6d00206af720dba8d0a07c4ffd3d`
+
+Public functions:
+
+- effective ACL entries: 216
+- hash: `1cd94fda7041ca6d3d5481243af2da67`
+
+`public` schema ACL:
+
+- entries: 7
+- hash: `fdf18ac11d259b68b8787d5163484d6a`
+
+All three ACL fingerprints now match production exactly.
+
+## Public functions and fingerprint rules
+
+Production and the diagnostic branch each contain 58 public function signatures.
+
+During comparison, an important fingerprint bug was found: using `pg_proc.prolang` directly compares an internal language OID, and OIDs are not portable across PostgreSQL projects. The comparator must join `pg_language` and compare `lanname` (`sql`, `plpgsql`, etc.) instead.
+
+A second false-positive source is stored source formatting. PostgreSQL preserves comments, CRLF/LF and some textual formatting in function source. These do not by themselves represent a behavior difference.
+
+After removing internal-OID false positives, the meaningful function differences were reduced to a small set of actual legacy/current body differences. Current production definitions were reproduced on the disposable branch for the affected Academy, checkout, auth/profile, admin-follow-up and helper functions.
+
+Acceptance rule for the future comparator:
+
+- compare function schema/name/signature;
+- language **name**, never language OID;
+- return type;
+- volatility/strict/leakproof/parallel/security-definer attributes;
+- configured `search_path` and other executable settings;
+- normalized executable logic;
+- ignore comments, CRLF/LF and irrelevant source whitespace.
+
+A literal `pg_get_functiondef()` hash is not a valid cross-environment semantic gate by itself.
+
+## Environment-bound legacy function
+
+`app.assign_master_admin()` contains an environment-specific fixed identity and has no active production trigger dependency in the inspected state.
+
+It must not be copied blindly into a portable baseline just to obtain byte-level catalog parity. It requires an explicit design decision: parameterize/remove the environment binding, or classify the function as environment-specific bootstrap state.
+
+No such production change is part of #143 at this stage.
+
+## Security Advisor checkpoint
+
+Security Advisor was rerun after branch DDL/RLS work.
+
+### Production
+
+Production currently reports 30 `INFO` findings of `rls_enabled_no_policy` in `public.*`. These are existing production characteristics and were not introduced by this recovery work.
+
+Production also reports unrelated existing warnings including mutable search paths under `stripe.*`, leaked-password protection disabled, and an available PostgreSQL security upgrade. These are not being remediated inside #143 because doing so would mix migration-history recovery with security-policy changes.
+
+### Diagnostic branch
+
+The branch reports the same 30 public `rls_enabled_no_policy` findings plus 3 additional INFO findings:
+
+- `app.plans`
+- `app.subscriptions`
+- `app.user_companies`
+
+The three extras are explained by an incomplete `app` schema bootstrap, not by the reconstructed public RLS policies.
+
+Reference for the Advisor lint: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
+
+## Remaining non-public `app` schema gap
+
+The public-schema parity gate is now strong, but #143 is not ready for closure because the diagnostic branch does not yet reproduce the current `app` schema.
+
+Production currently has 13 `app` relations:
+
+Tables:
+
+- `contacts`
+- `plans`
+- `purchase_invoice_items`
+- `purchase_invoices`
+- `sales_invoice_items`
+- `sales_invoices`
+- `subscription_overrides`
+- `subscriptions`
+- `user_companies`
+- `user_integrations`
+- `user_profile`
+
+Views:
+
+- `v_purchases_totals`
+- `v_sales_totals`
+
+The current diagnostic branch has only four `app` tables:
+
+- `plans`
+- `subscription_overrides`
+- `subscriptions`
+- `user_companies`
+
+It also lacks the current production policies on `app.plans`, `app.subscriptions` and `app.user_companies`.
+
+This gap must be reconstructed and fingerprinted separately before the fresh-build validation. It must not be conflated with separate security-hardening tickets such as #147/#149.
+
+## Remote-only and local-only history
+
+Read-only production inspection recovered exact statements for previously identified remote-only operational migrations, including email cache/system KV, manual-payment/case linkage, Calendar IDs, campaigns, email repairs, order entity scoping, subscription checkout claims/status synchronization and Holded contact claims.
+
+No recovered remote statement has been replayed against production.
+
+Known local-only migrations whose effects already exist in production remain candidates for future **history-only** mark-applied treatment, not DDL replay. In particular:
 
 - `20260721000001_academy_enrollments.sql`
 - `20260901000001_academy_knowledge_status.sql`
 
-already exist in production. They are candidates for a future **history-only** mark-applied operation, not for DDL replay. `orders_source_check` has evolved since the Academy migration, so replaying the old DDL would be specifically unsafe.
+The old Academy order constraint has evolved since then, which is additional evidence that replaying historical DDL against production would be unsafe.
 
-## Local version normalization in PR #194
+## Local version normalization already in PR #194
 
-The recovery branch normalizes the known local tooling collisions without mutating the production ledger:
+The recovery branch normalizes known tooling collisions without touching the production ledger:
 
-- the two files that previously shared `20260607000005` are separated onto verified remote versions;
-- the byte-equivalent duplicate `20260607000006_email_queue_processing_status.sql` is removed in favor of the normalized history entry;
-- the two files that previously shared `20260903113000` are normalized to their verified remote versions.
+- duplicate `20260607000005` versions are separated onto verified remote versions;
+- byte-equivalent duplicate `20260607000006_email_queue_processing_status.sql` is removed in favor of the normalized history entry;
+- duplicate `20260903113000` versions are normalized to verified remote versions.
 
-These are Git-history/tooling repairs only. They do not authorize any production migration-history mutation.
+These are Git-history/tooling repairs only. They do not authorize production migration-history mutation.
 
-## Recovery strategy from this checkpoint
+## What this checkpoint proves — and what it does not
+
+It proves that the current production `public` contract can be reconstructed from a combination of:
+
+1. replayable historical transitions;
+2. guarded compatibility bridges for silent drift;
+3. a catalog-derived current-schema baseline for legacy/bootstrap state.
+
+It does **not** yet prove that Git can bootstrap a fresh environment without diagnostic probes. The current Development Branch contains test-only `probe_*` migrations and manual convergence operations.
+
+Therefore this branch must never be merged to production.
+
+## Next recovery phase
 
 1. Keep production frozen.
-2. Continue exact-file replay on the disposable branch, stopping at the first deterministic SQL failure.
-3. Build an explicit normalized migration manifest: exact-match, semantic-equivalent/different-version, remote-only structural, remote-only operational, local-only already-present, local-only not-applied, duplicate/collision.
-4. Define a semantic schema fingerprint that ignores irrelevant physical details such as column ordinal order but compares tables, columns/types/defaults/nullability, PK/FK/unique/check constraints, indexes, functions and RLS policies.
-5. Prefer a current-schema baseline for clean environments where historical adapted artifacts cannot safely be replayed verbatim.
-6. Validate the normalized chain/baseline on a fresh disposable Development Branch and compare the semantic fingerprint with production.
-7. Only after the fresh build matches, prepare an exact production migration-history repair manifest with before/after rows and rollback.
-8. Obtain explicit approval before the first production ledger mutation.
+2. Reconstruct and fingerprint the missing `app` schema separately.
+3. Convert the verified current production contract into portable declarative baseline artifacts under `supabase/schemas/`, excluding or explicitly handling environment-bound objects.
+4. Finish the normalized migration manifest: exact match, semantic match/different version, remote-only structural, remote-only operational, local-only already-present, local-only not-applied, duplicate/collision.
+5. Add a reusable semantic fingerprint query/tool that ignores column ordinal order, internal OIDs and source-format noise.
+6. Create a **new** disposable Development Branch from the updated Git state. The present diagnostic branch is not eligible for final validation.
+7. Run the clean bootstrap with no manual probes and compare public + app fingerprints, RLS, triggers, views and ACLs with production.
+8. Only after clean-build parity, prepare the exact production migration-history repair manifest with before/after ledger rows and rollback procedure.
+9. Obtain explicit approval before the first production ledger mutation.
 
 ## Current conclusion
 
-Supabase Pro/Branching has converted #143 from a production-risk problem into a reproducible test problem. The first SQL defect is fixed on the recovery branch; known version collisions are being normalized; and the first proven silent divergence (`profile_companies`) now has a tested Git-only convergence path. Production remains unchanged. The next task is to continue exact replay through the remaining local migrations and discover the next deterministic or semantic divergence before designing any production ledger repair.
+The largest unknown in #143 has been removed: production `public` is no longer an opaque target. Its current contract has been reconstructed and independently fingerprinted on a disposable branch with exact parity for relations, columns, constraints, indexes, RLS policies, triggers and ACLs.
+
+The remaining engineering problem is now bounded: encode that verified state as a portable Git baseline, recover the missing `app` bootstrap, validate from a genuinely fresh branch, and only then design the production ledger repair.
+
+Production remains unchanged.
