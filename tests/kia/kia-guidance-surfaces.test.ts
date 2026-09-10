@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  resolveCaseListGuidance,
+  resolveOnboardingGuidance,
+} from '@/lib/ai/kia/kia-surface-guidance';
 
 function source(relativePath: string): string {
   return fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
@@ -18,16 +22,23 @@ describe('KIA contextual guidance surfaces', () => {
     expect(card).not.toContain('getSupabaseAdmin');
   });
 
-  it('derives expediente guidance from authoritative case counts', () => {
-    expect(casesPage).toContain("guidanceState = 'seguimiento'");
-    expect(casesPage).toContain("guidanceState = 'exito'");
-    expect(casesPage).toContain("let guidanceState: KiaAvatarState = 'ayuda'");
-    expect(casesPage).toContain('active.length > 0');
-    expect(casesPage).toContain('closed.length > 0');
-    expect(casesPage).toContain('<KiaGuidanceCard');
+  it('maps expediente counts deterministically', () => {
+    expect(resolveCaseListGuidance(2, 1).state).toBe('seguimiento');
+    expect(resolveCaseListGuidance(0, 3).state).toBe('exito');
+    expect(resolveCaseListGuidance(0, 0).state).toBe('ayuda');
   });
 
-  it('does not add an LLM call to the expediente page', () => {
+  it('keeps onboarding precedence safe for the next surface', () => {
+    expect(resolveOnboardingGuidance({ step: 'done', loading: false, hasError: true, companySkipped: false }).state).toBe('aviso');
+    expect(resolveOnboardingGuidance({ step: 'done', loading: true, hasError: false, companySkipped: false }).state).toBe('pensando');
+    expect(resolveOnboardingGuidance({ step: 'done', loading: false, hasError: false, companySkipped: false }).state).toBe('exito');
+    expect(resolveOnboardingGuidance({ step: 'company', loading: false, hasError: false, companySkipped: true }).state).toBe('duda');
+    expect(resolveOnboardingGuidance({ step: 'profile', loading: false, hasError: false, companySkipped: false }).state).toBe('bienvenida');
+  });
+
+  it('wires expediente guidance without adding an LLM call', () => {
+    expect(casesPage).toContain('resolveCaseListGuidance(active.length, closed.length)');
+    expect(casesPage).toContain('<KiaGuidanceCard');
     expect(casesPage).not.toContain('/api/ai/kia');
     expect(casesPage).not.toContain('runKiaDecision');
   });
