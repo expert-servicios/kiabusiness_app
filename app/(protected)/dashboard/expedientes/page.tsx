@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ArrowLeft, FolderOpen, ChevronRight, MessageCircle } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 
 interface Case {
   id: string;
@@ -38,6 +40,20 @@ export default async function ClientCasesPage() {
   const active = cases.filter((c) => c.state !== 'finalizado');
   const closed = cases.filter((c) => c.state === 'finalizado');
 
+  let guidanceState: KiaAvatarState = 'ayuda';
+  let guidanceTitle = 'Estoy aquí para ayudarte con tus expedientes';
+  let guidanceMessage = 'Cuando contrates un servicio, podrás seguir aquí su estado, documentación y mensajes.';
+
+  if (active.length > 0) {
+    guidanceState = 'seguimiento';
+    guidanceTitle = active.length === 1 ? 'Tienes 1 expediente activo' : `Tienes ${active.length} expedientes activos`;
+    guidanceMessage = 'Puedes abrir cada expediente para revisar su estado, documentación pendiente y nuevas comunicaciones.';
+  } else if (closed.length > 0) {
+    guidanceState = 'exito';
+    guidanceTitle = 'Tus expedientes visibles están finalizados';
+    guidanceMessage = 'Puedes consultar el histórico cuando lo necesites o contratar un nuevo servicio desde tu panel.';
+  }
+
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
       <div className="mx-auto max-w-4xl px-6">
@@ -47,13 +63,20 @@ export default async function ClientCasesPage() {
         </div>
 
         <div className="rounded-3xl border border-[#d8cbb5] bg-white p-8 shadow-lg">
-          <div className="mb-8">
+          <div className="mb-6">
             <p className="text-sm uppercase tracking-[0.28em] text-[#c88b25]">Expedientes</p>
             <h1 className="mt-3 font-serif text-3xl font-bold text-[#07111d]">Mis expedientes</h1>
             <p className="mt-2 text-sm text-[#29384a]">
               {active.length} activo{active.length !== 1 ? 's' : ''} · {closed.length} finalizado{closed.length !== 1 ? 's' : ''}
             </p>
           </div>
+
+          <KiaGuidanceCard
+            state={guidanceState}
+            title={guidanceTitle}
+            message={guidanceMessage}
+            className="mb-8"
+          />
 
           {cases.length === 0 ? (
             <div className="rounded-3xl border border-[#d8cbb5] bg-[#f8f4eb] p-10 text-center text-[#29384a]">
