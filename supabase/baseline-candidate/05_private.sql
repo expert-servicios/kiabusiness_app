@@ -45,3 +45,12 @@ AS $function$
       and tenant_id is not null
   )
 $function$;
+
+-- Production does not expose the private schema or these helpers to PUBLIC/anon.
+-- Normalize defaults explicitly so a fresh project cannot inherit PostgreSQL's
+-- default PUBLIC EXECUTE privilege on newly created functions.
+revoke all on schema private from PUBLIC, anon, authenticated, service_role;
+grant usage on schema private to authenticated, service_role;
+
+revoke execute on all functions in schema private from PUBLIC, anon, authenticated, service_role;
+grant execute on all functions in schema private to authenticated, service_role;
