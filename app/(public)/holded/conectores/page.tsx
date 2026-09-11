@@ -44,7 +44,7 @@ const levels = [
     title: 'Modo solo lectura',
     desc: 'Pregunta por facturas, cobros, clientes, contabilidad, proyectos y vencimientos sin exportar hojas de cálculo. La IA consulta tus datos y te responde en lenguaje claro.',
     badge: 'No modifica tu cuenta',
-    badgeColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    badgeColor: 'text-[#D4A017] bg-[#D4A017]/10 border-[#D4A017]/30',
   },
   {
     Icon: ClipboardCheck,
@@ -52,7 +52,7 @@ const levels = [
     title: 'Borradores con confirmación',
     desc: 'Genera propuestas y borradores revisables: facturas, presupuestos, asientos contables. Nada se publica ni se envía sin tu confirmación explícita.',
     badge: 'Revisión obligatoria antes de ejecutar',
-    badgeColor: 'text-blue-700 bg-blue-50 border-blue-200',
+    badgeColor: 'text-[#23364D] bg-[#23364D]/10 border-[#23364D]/30',
   },
   {
     Icon: Layers,
@@ -111,7 +111,7 @@ const connectors = [
   {
     name: 'Conector para Claude',
     status: 'En producción',
-    statusColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    statusColor: 'text-[#D4A017] bg-[#D4A017]/10 border-[#D4A017]/30',
     desc: 'Integración con Claude (Anthropic) para consultar y operar sobre Holded en lenguaje claro. Disponible ahora.',
     primaryLabel: 'Ver Conector Claude',
     primaryHref: '/holded/conectores/claude',
@@ -121,7 +121,7 @@ const connectors = [
   {
     name: 'Conector para ChatGPT',
     status: 'En lanzamiento',
-    statusColor: 'text-amber-700 bg-amber-50 border-amber-200',
+    statusColor: 'text-[#23364D] bg-[#23364D]/10 border-[#23364D]/30',
     desc: 'Integración con ChatGPT (OpenAI) para las mismas capacidades de consulta y operación sobre Holded.',
     primaryLabel: 'Preguntar a Kia',
     primaryHref: '/ayuda/kia?topic=holded-conector-chatgpt',
@@ -352,7 +352,7 @@ export default function HoldedConectoresPage() {
               Ver implantación Holded
             </Link>
           </div>
-          <p className="mt-8 text-xs text-[#6b7a8d]">
+          <p className="mt-8 text-xs text-[#9CA3AF]">
             Integración independiente sobre la API oficial de Holded. No somos Holded S.L. ni actuamos en su nombre.
           </p>
         </div>
