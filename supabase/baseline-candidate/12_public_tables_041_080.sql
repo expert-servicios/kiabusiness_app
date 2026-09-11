@@ -461,7 +461,7 @@ create table public.invoice_lines (
   qty numeric default 1 not null,
   unit_price numeric not null,
   tax_rate numeric default 21 not null,
-  total_line numeric generated always as (((qty * unit_price) * ((1)::numeric + (tax_rate / (100)::numeric))) stored
+  total_line numeric generated always as (((qty * unit_price) * ((1)::numeric + (tax_rate / (100)::numeric)))) stored
 );
 
 -- 072 invoices
