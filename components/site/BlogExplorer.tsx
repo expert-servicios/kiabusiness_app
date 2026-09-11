@@ -13,15 +13,6 @@ type Props = {
   tags: string[];
 };
 
-const categoryColors: Record<string, string> = {
-  Fiscalidad: 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10',
-  Extranjería: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
-  Empresas: 'text-emerald-400 border-emerald-400/40 bg-emerald-400/10',
-  Holded: 'text-rose-400 border-rose-400/40 bg-rose-400/10',
-  Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10',
-  Formación: 'text-indigo-400 border-indigo-400/40 bg-indigo-400/10'
-};
-
 export function BlogExplorer({ articles, categories, tags }: Props) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'all' | string>('all');
@@ -154,14 +145,13 @@ export function BlogExplorer({ articles, categories, tags }: Props) {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {filteredArticles.map((article) => {
-              const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10';
               return (
                 <article
                   key={article.slug}
                   className="flex flex-col border border-[#D4A017]/20 bg-white shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017]/50 hover:shadow-[0_10px_28px_rgba(13,27,42,0.10)]"
                 >
                   <div className="flex flex-1 flex-col p-5">
-                    <span className={`inline-block self-start border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
+                    <span className="inline-block self-start border border-[#D4A017]/40 bg-[#D4A017]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
                       {article.category}
                     </span>
                     <h2 className="mt-3 font-serif text-lg font-bold leading-snug text-[#0D1B2A]">{article.title}</h2>

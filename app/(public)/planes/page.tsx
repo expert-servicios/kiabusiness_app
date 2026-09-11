@@ -574,7 +574,7 @@ export default async function PlanesPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <section className="bg-[#07111d] px-6 py-14 text-center text-[#F8F6F1] md:py-16">
+      <section className="bg-[#0D1B2A] px-6 py-14 text-center text-[#F8F6F1] md:py-16">
         <div className="mx-auto max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">¿Sigues con dudas?</p>
           <h2 className="mt-3 font-serif text-2xl font-bold md:text-3xl">¿Dudas sobre qué plan encaja contigo?</h2>

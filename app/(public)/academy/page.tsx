@@ -131,7 +131,7 @@ export default function AcademyPage() {
               Reservar entrevista de admisión
             </CalendlyButton>
             <TrackedAnchor
-              href={`/api/academy/programa-pdf?slug=${program.slug}`}
+              href="/academy/programacion-academy-expert.pdf"
               event="course_program_download"
               eventProps={{ program_slug: program.slug }}
               className="inline-flex items-center gap-2 border border-white/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/85 transition hover:border-[#D4A017] hover:text-[#D4A017]"

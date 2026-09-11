@@ -417,7 +417,7 @@ function Services() {
 
           <Link
             href="/servicios"
-            className="group flex flex-col justify-center border border-[#D4A017]/40 bg-[#07111d] p-6 text-[#F8F6F1] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
+            className="group flex flex-col justify-center border border-[#D4A017]/40 bg-[#0D1B2A] p-6 text-[#F8F6F1] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-[#D4A017]/40 bg-[#D4A017]/10 text-[#D4A017]">
               <ArrowRight className="h-6 w-6" />
@@ -717,14 +717,6 @@ function Operations() {
   );
 }
 
-const categoryColors: Record<string, string> = {
-  Fiscalidad: 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10',
-  Extranjería: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
-  Empresas: 'text-emerald-400 border-emerald-400/40 bg-emerald-400/10',
-  Holded: 'text-rose-400 border-rose-400/40 bg-rose-400/10',
-  Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
-};
-
 function BlogPreview() {
   const preview = getPublishedBlogArticles().slice(0, 3);
 
@@ -748,13 +740,12 @@ function BlogPreview() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {preview.map((article) => {
-            const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
             return (
               <article
                 key={article.slug}
                 className="flex flex-col border border-[#D4A017]/20 bg-white p-6 shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017]/60"
               >
-                <span className={`inline-block self-start border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
+                <span className="inline-block self-start border border-[#D4A017]/40 bg-[#D4A017]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
                   {article.category}
                 </span>
                 <h3 className="mt-3 font-serif text-lg font-bold leading-snug text-[#0D1B2A]">
