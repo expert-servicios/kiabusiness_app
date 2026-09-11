@@ -1,18 +1,27 @@
--- #143 semantic schema fingerprint
+-- #143 portable semantic schema fingerprint
 --
 -- Hard-gate intent:
 --   * compare logical/current schema state across independently-created Supabase projects;
+--   * compare public + app + private application-owned schemas;
 --   * never compare internal PostgreSQL OIDs;
---   * ignore column ordinal order;
+--   * ignore physical column ordinal order;
 --   * ignore extension-owned functions/types (extension presence is checked separately);
---   * exclude app.assign_master_admin() from portable function parity because the current
---     production body embeds an environment-specific identity and has no active trigger.
+--   * exclude explicitly environment-bound objects from portable parity:
+--       - app.assign_master_admin()
+--       - public.handle_new_contact_request()
+--       - public.notify_admin_on_client_upload()
+--       - public.notify_admin_on_new_user()
+--       - public.notify_admin_on_service_request()
+--       - public triggers on_new_contact_request and on_new_service_request_notify
 --
--- function_source_hash_advisory is intentionally NOT a hard gate: PostgreSQL preserves
+-- The excluded objects are documented under baseline-candidate/environment-bound/.
+-- They must be parameterized or consciously provisioned per environment before activation.
+--
+-- function_source_hash_advisory is intentionally NOT a hard gate. PostgreSQL preserves
 -- comments/formatting in prosrc and semantically equivalent bodies may hash differently.
 
 with target_schemas(schema_name) as (
-  values ('public'::text), ('app'::text)
+  values ('public'::text), ('app'::text), ('private'::text)
 ),
 rels as (
   select n.nspname as schema_name,
@@ -64,7 +73,7 @@ cons as (
 idx as (
   select schemaname as schema_name, tablename, indexname, indexdef
   from pg_indexes
-  where schemaname in ('public', 'app')
+  where schemaname in ('public', 'app', 'private')
 ),
 pol as (
   select schemaname as schema_name,
@@ -76,7 +85,7 @@ pol as (
          coalesce(qual, '') as qual,
          coalesce(with_check, '') as with_check
   from pg_policies
-  where schemaname in ('public', 'app')
+  where schemaname in ('public', 'app', 'private')
 ),
 tr as (
   select n.nspname as schema_name,
@@ -89,6 +98,13 @@ tr as (
   join pg_namespace n on n.oid = c.relnamespace
   join target_schemas s on s.schema_name = n.nspname
   where not t.tgisinternal
+    and not (
+      n.nspname = 'public'
+      and (
+        (c.relname = 'client_service_requests' and t.tgname = 'on_new_service_request_notify')
+        or (c.relname = 'contact_requests' and t.tgname = 'on_new_contact_request')
+      )
+    )
 ),
 views as (
   select n.nspname as schema_name,
@@ -161,7 +177,7 @@ funcs0 as (
          p.prorows,
          coalesce(array_to_string(p.proconfig, ','), '') as proconfig,
          regexp_replace(
-           regexp_replace(p.prosrc, '--[^\n\r]*', '', 'g'),
+           regexp_replace(replace(p.prosrc, E'\r', ''), E'--[^\n]*', '', 'g'),
            '[[:space:]]+', ' ', 'g'
          ) as normalized_source,
          pg_get_userbyid(p.proowner) as owner_name
@@ -181,11 +197,16 @@ funcs0 as (
 funcs as (
   select *
   from funcs0
-  where not (
-    schema_name = 'app'
-    and proname = 'assign_master_admin'
-    and args = ''
-  )
+  where not (schema_name = 'app' and proname = 'assign_master_admin' and args = '')
+    and not (
+      schema_name = 'public'
+      and proname in (
+        'handle_new_contact_request',
+        'notify_admin_on_client_upload',
+        'notify_admin_on_new_user',
+        'notify_admin_on_service_request'
+      )
+    )
 ),
 rel_acl as (
   select r.schema_name,
@@ -251,9 +272,9 @@ select
   (select md5(string_agg(tablename || '|' || policyname || '|' || permissive || '|' || cmd || '|' || roles_s || '|' || qual || '|' || with_check, E'\n' order by tablename, policyname))
      from pol p where p.schema_name = s.schema_name) as policy_hash,
 
-  (select count(*) from tr t where t.schema_name = s.schema_name) as trigger_count,
+  (select count(*) from tr t where t.schema_name = s.schema_name) as portable_trigger_count,
   (select md5(string_agg(table_name || '|' || tgname || '|' || enabled || '|' || definition, E'\n' order by table_name, tgname))
-     from tr t where t.schema_name = s.schema_name) as trigger_hash,
+     from tr t where t.schema_name = s.schema_name) as portable_trigger_hash,
 
   (select count(*) from views v where v.schema_name = s.schema_name) as view_count,
   (select md5(string_agg(relname || '|' || options || '|' || definition, E'\n' order by relname))
@@ -293,8 +314,8 @@ from target_schemas s
 order by s.schema_name;
 
 -- Required application-level extension presence.
--- Versions are reported but intentionally not used as hard equality gates because
--- Supabase Development Branches may receive newer managed extension patch/minor versions.
+-- Versions are reported but are not hard equality gates because managed Development
+-- Branches can receive newer extension patch/minor versions.
 select required.extname,
        required.expected_schema,
        e.extversion as installed_version,
@@ -308,3 +329,44 @@ from (values
 left join pg_extension e on e.extname = required.extname
 left join pg_namespace n on n.oid = e.extnamespace
 order by required.extname;
+
+-- Application-owned hooks attached to Supabase-managed auth.users are checked
+-- separately because auth itself is not an application-owned schema.
+with auth_hooks as (
+  select t.tgname,
+         pn.nspname as function_schema,
+         p.proname as function_name,
+         regexp_replace(pg_get_triggerdef(t.oid, true), '[[:space:]]+', ' ', 'g') as definition
+  from pg_trigger t
+  join pg_class c on c.oid = t.tgrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  join pg_proc p on p.oid = t.tgfoid
+  join pg_namespace pn on pn.oid = p.pronamespace
+  where n.nspname = 'auth'
+    and c.relname = 'users'
+    and not t.tgisinternal
+    and pn.nspname = 'public'
+)
+select count(*) as auth_hook_count,
+       md5(string_agg(tgname || '|' || function_schema || '|' || function_name || '|' || definition, E'\n' order by tgname)) as auth_hook_hash
+from auth_hooks;
+
+-- Environment-bound evidence only. Hashes are safe to compare without copying
+-- embedded production identities/URLs into portable baseline files.
+select n.nspname as schema_name,
+       p.proname,
+       pg_get_function_identity_arguments(p.oid) as args,
+       md5(p.prosrc) as source_hash,
+       p.prosecdef,
+       coalesce(array_to_string(p.proconfig, ','), '') as proconfig,
+       (select count(*) from pg_trigger t where t.tgfoid = p.oid and not t.tgisinternal) as active_trigger_dependencies
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where (n.nspname = 'app' and p.proname = 'assign_master_admin')
+   or (n.nspname = 'public' and p.proname in (
+        'handle_new_contact_request',
+        'notify_admin_on_client_upload',
+        'notify_admin_on_new_user',
+        'notify_admin_on_service_request'
+      ))
+order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid);
