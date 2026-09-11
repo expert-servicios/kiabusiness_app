@@ -75,11 +75,11 @@ export default async function ContratarPage({ searchParams }: Props) {
 
         <div className="mx-auto max-w-lg px-6 py-10">
           {items.length === 0 ? (
-            <div className="rounded-2xl border border-[#e0d9c8] bg-white p-8 text-center">
+            <div className="border border-[#e0d9c8] bg-white p-8 text-center">
               <p className="text-[#23364D]/60">Tu cesta está vacía o los servicios han caducado.</p>
               <Link
                 href="/servicios"
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
+                className="mt-4 inline-flex items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
               >
                 Ver servicios
               </Link>
@@ -94,7 +94,7 @@ export default async function ContratarPage({ searchParams }: Props) {
                   ? `/contratar?service=${item.service_id}&source=cart`
                   : null;
                 return (
-                  <div key={item.id} className="rounded-2xl border border-[#e0d9c8] bg-white p-5">
+                  <div key={item.id} className="border border-[#e0d9c8] bg-white p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-[#0D1B2A]">{item.service_label}</p>
@@ -105,14 +105,14 @@ export default async function ContratarPage({ searchParams }: Props) {
                       {checkoutUrl ? (
                         <Link
                           href={checkoutUrl}
-                          className="shrink-0 rounded-xl bg-[#D4A017] px-4 py-2 text-xs font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
+                          className="shrink-0 bg-[#D4A017] px-4 py-2 text-xs font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
                         >
                           Contratar
                         </Link>
                       ) : (
                         <Link
                           href={`/servicios`}
-                          className="shrink-0 rounded-xl border border-[#e0d9c8] px-4 py-2 text-xs font-medium text-[#23364D] hover:border-[#D4A017]"
+                          className="shrink-0 border border-[#e0d9c8] px-4 py-2 text-xs font-medium text-[#23364D] hover:border-[#D4A017]"
                         >
                           Ver servicio
                         </Link>
@@ -146,7 +146,7 @@ export default async function ContratarPage({ searchParams }: Props) {
           </p>
           <Link
             href="/servicios"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#D4A017] px-6 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+            className="mt-6 inline-flex items-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
             <ArrowLeft className="h-4 w-4" />
             Ver todos los servicios

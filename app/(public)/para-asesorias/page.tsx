@@ -70,22 +70,22 @@ export default function ParaAsesoriasPage() {
               Sistema digital para asesorías que quieren automatizar su operativa
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[#9CA3AF] md:text-lg">
-              Estamos desarrollando una plataforma pensada para asesorías, gestorías y despachos profesionales que necesitan centralizar clientes, expedientes, documentos, pagos y comunicaciones en un único entorno.
+              Construimos la plataforma que centraliza clientes, expedientes, documentos, pagos y comunicaciones de una asesoría en un único entorno — sin depender de hilos de email ni carpetas dispersas.
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[#9CA3AF]">
-              Diseñada inicialmente para uso interno en EXPERT, la plataforma está evolucionando hacia una solución SaaS para profesionales que quieren reducir trabajo manual y operar con más control.
+              Nace del uso diario dentro de EXPERT y avanza ahora hacia una versión piloto para otros despachos que quieren reducir trabajo manual y ganar visibilidad operativa real.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#b2b-form"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
               >
                 Solicitar información
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#b2b-form"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
+                className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
               >
                 Quiero participar en el piloto
                 <CheckCircle2 className="h-4 w-4" />
@@ -93,22 +93,22 @@ export default function ParaAsesoriasPage() {
             </div>
           </div>
 
-          <div className="rounded-md border border-[#D4A017]/25 bg-[#23364D]/45 p-5 shadow-2xl shadow-black/20">
+          <div className="border border-[#D4A017]/25 bg-[#23364D]/45 p-5 shadow-2xl shadow-black/20">
             <div className="border-b border-white/10 pb-4">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Operación diaria</p>
               <h2 className="mt-2 font-serif text-2xl font-bold">Todo lo que pide acción, en un solo lugar</h2>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {operatingModules.map(({ label, Icon }) => (
-                <div key={label} className="rounded-md border border-white/10 bg-[#0D1B2A]/55 p-4">
+                <div key={label} className="border border-white/10 bg-[#0D1B2A]/55 p-4">
                   <Icon className="h-5 w-5 text-[#D4A017]" />
                   <p className="mt-3 text-sm font-semibold text-[#F8F6F1]">{label}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-5 rounded-md border border-emerald-400/25 bg-emerald-400/10 p-4">
-              <p className="text-sm font-semibold text-emerald-100">Prioridad sugerida</p>
-              <p className="mt-1 text-sm leading-6 text-[#DDE7F0]">
+            <div className="mt-5 border border-[#D4A017]/25 bg-[#D4A017]/10 p-4">
+              <p className="text-sm font-semibold text-[#F8F6F1]">Prioridad sugerida</p>
+              <p className="mt-1 text-sm leading-6 text-[#F8F6F1]/80">
                 4 expedientes bloqueados por documentación, 2 presupuestos abiertos y 1 pago fallido pendiente de revisar.
               </p>
             </div>
@@ -121,16 +121,16 @@ export default function ParaAsesoriasPage() {
           <div className="max-w-3xl">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Visión SaaS</p>
             <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Primero probado en una asesoría real. Después preparado para otros despachos.
+              Probado primero en una asesoría real. Ahora, listo para otros despachos.
             </h2>
             <p className="mt-4 text-sm leading-7 text-[#23364D] md:text-base">
-              EXPERT se está construyendo para resolver captación, workflow, documentación, comunicación, pagos e integraciones de una operativa profesional real. Esa misma base es la que queremos validar con asesorías externas.
+              EXPERT resuelve captación, workflow, documentación, comunicación, pagos e integraciones de una operativa profesional real cada día. Es esa misma base la que llevamos a otras asesorías.
             </p>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit) => (
-              <article key={benefit.title} className="rounded-md border border-[#D8CBB5] bg-white p-6">
+              <article key={benefit.title} className="border border-[#D8CBB5] bg-white p-6">
                 <ShieldCheck className="h-6 w-6 text-[#D4A017]" />
                 <h3 className="mt-5 font-serif text-xl font-bold">{benefit.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{benefit.text}</p>
@@ -150,7 +150,7 @@ export default function ParaAsesoriasPage() {
             <p className="mt-4 text-sm leading-7 text-[#23364D] md:text-base">
               Buscamos entender volumen, herramientas actuales y principal bloqueo operativo. Con eso podremos priorizar pilotos y validar si EXPERT encaja en tu forma de trabajar.
             </p>
-            <div className="mt-7 rounded-md border border-[#D4A017]/25 bg-[#D4A017]/10 p-5">
+            <div className="mt-7 border border-[#D4A017]/25 bg-[#D4A017]/10 p-5">
               <p className="text-sm font-semibold text-[#0D1B2A]">No sustituye Holded, email ni WhatsApp.</p>
               <p className="mt-2 text-sm leading-7 text-[#23364D]">
                 La idea es conectar esos canales a un flujo trazable: clientes, expedientes, documentos, pagos, comunicaciones y automatizaciones.
@@ -158,7 +158,7 @@ export default function ParaAsesoriasPage() {
             </div>
           </div>
 
-          <div className="rounded-md border border-[#D8CBB5] bg-white p-6 shadow-sm md:p-8">
+          <div className="border border-[#D8CBB5] bg-white p-6 shadow-sm md:p-8">
             <ParaAsesoriasForm />
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function ParaAsesoriasPage() {
           </p>
           <Link
             href="/servicios"
-            className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
+            className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
           >
             Ver servicios actuales
             <ArrowRight className="h-4 w-4" />

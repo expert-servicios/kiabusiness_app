@@ -55,14 +55,6 @@ export async function generateMetadata({
   };
 }
 
-const categoryColors: Record<string, string> = {
-  Fiscalidad: 'text-[#D4A017] border-[#D4A017]/40 bg-[#D4A017]/10',
-  Extranjería: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
-  Empresas: 'text-emerald-400 border-emerald-400/40 bg-emerald-400/10',
-  Holded: 'text-rose-400 border-rose-400/40 bg-rose-400/10',
-  Trámites: 'text-purple-400 border-purple-400/40 bg-purple-400/10'
-};
-
 const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: string }> = {
   Fiscalidad: {
     text: 'En EXPERT revisamos situaciones fiscales como esta a diario. Reserva una cita gratuita y te decimos exactamente qué necesitas.',
@@ -115,7 +107,6 @@ export default async function BlogArticlePage({
   if (!article) return notFound();
 
   const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
-  const colorClass = categoryColors[article.category] ?? 'text-[#D4A017] border-[#D4A017]/40';
   const cta = categoryCta[article.category] ?? defaultCta;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
 
@@ -178,7 +169,7 @@ export default async function BlogArticlePage({
             Blog
           </Link>
           <div className="mt-4 flex items-center gap-3">
-            <span className={`inline-block border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>
+            <span className="inline-block border border-[#D4A017]/40 bg-[#D4A017]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
               {article.category}
             </span>
             <span className="flex items-center gap-1 text-xs text-[#9CA3AF]">
@@ -324,22 +315,30 @@ function Section({ heading, content }: { heading: string; content: string }) {
         tableLines.push(lines[i]);
       }
       const rows = tableLines.filter((l) => !l.match(/^\|[-| ]+\|$/));
+      const [headerRow, ...bodyRows] = rows;
       elements.push(
         <div key={i} className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
-            {rows.map((row, ri) => {
-              const cells = row.split('|').filter((c) => c.trim());
-              const Tag = ri === 0 ? 'th' : 'td';
-              return (
-                <tr key={ri} className={ri === 0 ? 'bg-[#0D1B2A] text-[#F8F6F1]' : ri % 2 === 0 ? 'bg-[#F8F6F1]' : 'bg-white'}>
-                  {cells.map((cell, ci) => (
-                    <Tag key={ci} className={`border border-[#D4A017]/20 px-3 py-2 text-left ${ri === 0 ? 'font-bold text-xs uppercase tracking-wide' : 'text-[#23364D]'}`}>
+            <thead>
+              <tr className="bg-[#0D1B2A] text-[#F8F6F1]">
+                {headerRow.split('|').filter((c) => c.trim()).map((cell, ci) => (
+                  <th key={ci} className="border border-[#D4A017]/20 px-3 py-2 text-left font-bold text-xs uppercase tracking-wide">
+                    {cell.trim()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? 'bg-[#F8F6F1]' : 'bg-white'}>
+                  {row.split('|').filter((c) => c.trim()).map((cell, ci) => (
+                    <td key={ci} className="border border-[#D4A017]/20 px-3 py-2 text-left text-[#23364D]">
                       {cell.trim()}
-                    </Tag>
+                    </td>
                   ))}
                 </tr>
-              );
-            })}
+              ))}
+            </tbody>
           </table>
         </div>
       );

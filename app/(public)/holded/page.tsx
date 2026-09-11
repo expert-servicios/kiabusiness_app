@@ -469,12 +469,12 @@ export default async function HoldedPage() {
             <div className="grid gap-5 md:grid-cols-3">
               {holdedArticles.map((a) => (
                 <article key={a.slug} className="flex flex-col border border-[#D4A017]/25 bg-[#23364D]/40 p-6">
-                  <span className="inline-block self-start border border-rose-400/40 bg-rose-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-rose-400">
+                  <span className="inline-block self-start border border-[#D4A017]/40 bg-[#D4A017]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">
                     {a.category}
                   </span>
                   <h3 className="mt-4 font-serif text-lg font-bold leading-snug text-[#F8F6F1]">{a.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-[#9CA3AF]">{a.excerpt}</p>
-                  <div className="mt-5 flex items-center justify-between text-xs text-[#6b7a8d]">
+                  <div className="mt-5 flex items-center justify-between text-xs text-[#9CA3AF]">
                     <span>{a.date}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />

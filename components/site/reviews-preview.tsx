@@ -34,13 +34,13 @@ export async function ReviewsPreview() {
   const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
 
   return (
-    <section className="bg-[#06111f] py-16 text-white">
+    <section className="bg-[#0D1B2A] py-16 text-white">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-2 flex items-center justify-center gap-2">
           {[1,2,3,4,5].map((s) => (
-            <Star key={s} className="h-5 w-5 fill-[#d7a33a] stroke-[#d7a33a]" />
+            <Star key={s} className="h-5 w-5 fill-[#D4A017] stroke-[#D4A017]" />
           ))}
-          <span className="ml-1 text-lg font-bold text-[#d7a33a]">{avg}</span>
+          <span className="ml-1 text-lg font-bold text-[#D4A017]">{avg}</span>
         </div>
         <h2 className="text-center font-serif text-3xl font-bold uppercase tracking-wide">
           Opiniones reales de clientes
@@ -53,13 +53,13 @@ export async function ReviewsPreview() {
           {reviews.map((r) => (
             <div
               key={r.id}
-              className="flex flex-col rounded-2xl border border-[#c88b25]/35 bg-[#0D1B2A] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
+              className="flex flex-col border border-[#D4A017]/35 bg-[#23364D] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
             >
               <div className="flex">
                 {[1,2,3,4,5].map((s) => (
                   <Star
                     key={s}
-                    className={`h-4 w-4 ${s <= r.rating ? 'fill-[#d7a33a] stroke-[#d7a33a]' : 'fill-transparent stroke-white/20'}`}
+                    className={`h-4 w-4 ${s <= r.rating ? 'fill-[#D4A017] stroke-[#D4A017]' : 'fill-transparent stroke-white/20'}`}
                   />
                 ))}
               </div>
@@ -67,7 +67,7 @@ export async function ReviewsPreview() {
                 {r.comment ? `"${r.comment}"` : 'Servicio excelente.'}
               </p>
               <div className="mt-5 border-t border-white/10 pt-4 text-xs text-white/50">
-                {r.service_name && <span className="font-semibold text-[#d7a33a]/80">{r.service_name} · </span>}
+                {r.service_name && <span className="font-semibold text-[#D4A017]/80">{r.service_name} · </span>}
                 {new Date(r.created_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
               </div>
             </div>

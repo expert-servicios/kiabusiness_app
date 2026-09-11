@@ -43,12 +43,12 @@ const INCLUDES = [
 ];
 
 const NOT_INCLUDES = [
-  { item: 'Integración en tiempo real con tienda online', alt: 'Requiere módulo de integración específico' },
-  { item: 'Automatización de pedidos ni sincronización continua', alt: null },
-  { item: 'Desarrollo de integraciones API personalizadas', alt: null },
-  { item: 'Gestión mensual recurrente', alt: 'Ver planes mensuales EXPERT' },
-  { item: 'Presentación de impuestos', alt: 'Ver nuestros planes' },
-  { item: 'Formación en el módulo de inventario de Holded', alt: 'Ver Formación Holded' },
+  { item: 'Integración en tiempo real con tienda online', alt: 'Requiere módulo de integración específico', href: null },
+  { item: 'Automatización de pedidos ni sincronización continua', alt: null, href: null },
+  { item: 'Desarrollo de integraciones API personalizadas', alt: null, href: null },
+  { item: 'Gestión mensual recurrente', alt: 'Ver planes mensuales EXPERT', href: '/planes' },
+  { item: 'Presentación de impuestos', alt: 'Ver nuestros planes', href: '/planes' },
+  { item: 'Formación en el módulo de inventario de Holded', alt: 'Ver Formación Holded', href: '/holded#formacion' },
 ];
 
 const FOR_WHOM = [
@@ -191,14 +191,12 @@ export default function MigracionConInventarioPage() {
                 <ArrowRight className="h-4 w-4" />
                 Preparar contratación — 1.199 € + IVA
               </Link>
-              <a
-                href="https://www.holded.com/es/precios"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/planes/gratuito"
                 className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017]/60 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
               >
                 Solicitar prueba Holded 14 días
-              </a>
+              </Link>
               <HoldedCalendlyButton className="inline-flex min-h-12 items-center gap-2 border border-white/20 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/80 transition hover:bg-white/5">
                 <Phone className="h-4 w-4" />
                 Llamada 15 min
@@ -314,12 +312,17 @@ export default function MigracionConInventarioPage() {
             <div>
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">No incluye</p>
               <div className="space-y-2">
-                {NOT_INCLUDES.map(({ item, alt }) => (
+                {NOT_INCLUDES.map(({ item, alt, href }) => (
                   <div key={item} className="flex gap-3 bg-[#0D1B2A]/60 p-4">
                     <X className="mt-0.5 h-4 w-4 shrink-0 text-[#9CA3AF]" />
                     <div>
                       <p className="text-sm leading-6 text-[#F8F6F1]/75">{item}</p>
-                      {alt && (
+                      {alt && href && (
+                        <Link href={href} className="mt-0.5 block text-xs font-semibold text-[#D4A017] hover:text-[#F2C14E] hover:underline">
+                          {alt} →
+                        </Link>
+                      )}
+                      {alt && !href && (
                         <p className="mt-0.5 text-xs text-[#D4A017]/80">{alt}</p>
                       )}
                     </div>
@@ -343,7 +346,7 @@ export default function MigracionConInventarioPage() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {HOW_WE_WORK.map(({ step, title, text }) => (
               <div key={step} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-6">
-                <p className="font-mono text-3xl font-bold text-[#D4A017]/40">{step}</p>
+                <p className="font-serif text-3xl font-bold text-[#D4A017]/40">{step}</p>
                 <h3 className="mt-3 font-serif text-lg font-bold text-[#0D1B2A]">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[#23364D]">{text}</p>
               </div>
@@ -395,7 +398,7 @@ export default function MigracionConInventarioPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-5 rounded border border-[#D4A017]/25 bg-[#D4A017]/5 p-4 text-sm leading-6 text-[#23364D]">
+              <p className="mt-5 border border-[#D4A017]/25 bg-[#D4A017]/5 p-4 text-sm leading-6 text-[#23364D]">
                 Si el catálogo supera 2.000 referencias, tiene variantes complejas o
                 múltiples almacenes, recomendamos una llamada previa para valorar el
                 alcance exacto.

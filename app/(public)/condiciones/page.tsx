@@ -40,7 +40,7 @@ export default function CondicionesPage() {
             <p>
               En cumplimiento del <strong>Real Decreto Legislativo 1/2007, de 16 de noviembre</strong>, por el que se aprueba el texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios (TRLGDCU), y de la <strong>Ley 34/2002 (LSSI-CE)</strong>, las presentes Condiciones Generales de Contratación regulan la relación contractual entre:
             </p>
-            <div className="overflow-hidden rounded-xl border border-[#d8cbb5] bg-white">
+            <div className="overflow-hidden border border-[#d8cbb5] bg-white">
               {[
                 ['Prestador', 'EXPERT ESTUDIOS PROFESIONALES, SLU'],
                 ['CIF', 'B44991776'],

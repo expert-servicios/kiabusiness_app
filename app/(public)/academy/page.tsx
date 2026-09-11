@@ -97,15 +97,15 @@ export default function AcademyPage() {
           <p className="mt-4 max-w-3xl text-base leading-7 text-[#9CA3AF] sm:text-lg">{program.tagline}</p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 rounded-md border border-white/15 px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 border border-white/15 px-4 py-2 text-sm">
               <Clock className="h-4 w-4 text-[#D4A017]" />
               {program.hoursTraining}h formación + {program.hoursInternship}h prácticas
             </div>
-            <div className="flex items-center gap-2 rounded-md border border-white/15 px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 border border-white/15 px-4 py-2 text-sm">
               <Globe className="h-4 w-4 text-[#D4A017]" />
               Online · Español o ruso
             </div>
-            <div className="flex items-center gap-2 rounded-md border border-white/15 px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 border border-white/15 px-4 py-2 text-sm">
               <Award className="h-4 w-4 text-[#D4A017]" />
               Diploma EXPERT + certificación oficial opcional
             </div>
@@ -131,7 +131,7 @@ export default function AcademyPage() {
               Reservar entrevista de admisión
             </CalendlyButton>
             <TrackedAnchor
-              href={`/api/academy/programa-pdf?slug=${program.slug}`}
+              href="/academy/programacion-academy-expert.pdf"
               event="course_program_download"
               eventProps={{ program_slug: program.slug }}
               className="inline-flex items-center gap-2 border border-white/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/85 transition hover:border-[#D4A017] hover:text-[#D4A017]"
@@ -215,7 +215,7 @@ export default function AcademyPage() {
             <h3 className="text-sm font-bold uppercase tracking-wide text-[#D4A017]">Metodología EXPERT</h3>
             <ul className="mt-3 flex flex-wrap gap-2">
               {program.methodology.map((item) => (
-                <li key={item} className="rounded-md border border-[#D4A017]/30 px-3 py-1.5 text-xs font-semibold text-[#23364D]">
+                <li key={item} className="border border-[#D4A017]/30 px-3 py-1.5 text-xs font-semibold text-[#23364D]">
                   {item}
                 </li>
               ))}
@@ -235,7 +235,7 @@ export default function AcademyPage() {
             </p>
             <p className="mt-2 text-sm leading-6 text-[#23364D]">{program.officialCertification.requirementsNote}</p>
             <p className="mt-4 text-lg font-bold text-[#0D1B2A]">{program.officialCertification.price}</p>
-            <p className="mt-1 text-xs text-[#8899aa]">
+            <p className="mt-1 text-xs text-[#9CA3AF]">
               Importe independiente del precio del programa, se abona únicamente cuando se confirma la incorporación al itinerario oficial.
             </p>
           </div>
@@ -284,7 +284,7 @@ export default function AcademyPage() {
       {program.targetProfiles && (
       <section className="px-6 py-14">
         <div className="mx-auto max-w-5xl">
-          <h2 className="font-serif text-2xl font-bold sm:text-3xl">Una formación. Diferentes objetivos profesionales.</h2>
+          <h2 className="font-serif text-2xl font-bold sm:text-3xl">Un mismo programa, distintos puntos de partida.</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
             {program.targetProfiles.map((profile) => (
               <div key={profile.title} className="border border-[#D4A017]/25 bg-white p-5">

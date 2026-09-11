@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Check, X, ShieldCheck } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
 import { PlanCtaButton } from '@/components/planes/PlanCtaButton';
+import { PlanComparison } from '@/components/planes/PlanComparison';
 
 export const metadata: Metadata = {
   title: 'Plan Supervisión — 49 €/mes + IVA | EXPERT',
@@ -60,8 +61,16 @@ export default function PlanSupervisionPage() {
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#9CA3AF]">
             Tú llevas Holded. Kia y EXPERT supervisan lo esencial, detectan alertas y te ayudan a no perder el control mensual.
           </p>
-          <div className="mx-auto mt-8 max-w-sm">
-            <PlanCtaButton planSlug="supervision" ctaLabel="Configurar plan — 49 €/mes" />
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="w-full max-w-xs">
+              <PlanCtaButton planSlug="supervision" ctaLabel="Configurar plan — 49 €/mes" />
+            </div>
+            <Link
+              href="/ayuda/kia?topic=plan-supervision"
+              className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+            >
+              Tengo dudas, consultar
+            </Link>
           </div>
         </div>
       </section>
@@ -96,6 +105,42 @@ export default function PlanSupervisionPage() {
               </Link>.
             </p>
           </div>
+        </div>
+
+        <div className="mt-14 border-t border-[#D4A017]/25 pt-10">
+          <h2 className="font-serif text-2xl font-bold">Cómo funciona</h2>
+          <div className="mt-6 grid gap-5 sm:grid-cols-3">
+            {[
+              { n: '01', title: 'Te registras', text: 'Creas tu cuenta en el portal EXPERT y seleccionas el Plan Supervisión.' },
+              { n: '02', title: 'Conectas Holded', text: 'Nos das acceso a tu cuenta de Holded para la supervisión mensual.' },
+              { n: '03', title: 'Supervisamos contigo', text: 'Kia y tu asesora revisan cada mes, detectan errores y te avisan de lo que requiere tu atención — la gestión y la presentación de impuestos siguen siendo tuyas.' }
+            ].map(({ n, title, text }) => (
+              <div key={n} className="border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_20px_rgba(13,27,42,0.07)]">
+                <span className="font-serif text-3xl font-bold text-[#D4A017]">{n}</span>
+                <h3 className="mt-4 font-serif text-lg font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#23364D]">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Plan comparison */}
+      <PlanComparison current="supervision" />
+
+      {/* CTA */}
+      <section className="brand-blue-bg px-6 py-12 text-center text-[#F8F6F1]">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="font-serif text-2xl font-bold md:text-3xl">¿Listo para empezar?</h2>
+          <p className="mt-3 text-sm leading-7 text-[#9CA3AF]">
+            Sin permanencia. Cancela cuando quieras con 30 días de preaviso.
+          </p>
+          <Link
+            href="/planes#planes"
+            className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Configurar desde planes
+          </Link>
         </div>
       </section>
     </main>
