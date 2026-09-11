@@ -6,7 +6,7 @@ import { getCalMeetingUrl } from '@/lib/utils/cal';
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
   description:
-    'Consulta inicial gratuita de 15 minutos con un asesor especializado. Elige tu hueco y recibe confirmación inmediata. Lunes a viernes, 9:00–16:00.',
+    'Consulta inicial gratuita de 15 minutos con un asesor especializado. Elige tu hueco y recibe confirmación inmediata. Lunes a viernes, 9:00–18:00.',
   openGraph: {
     type     : 'website',
     url      : 'https://expertconsulting.es/cita',
@@ -24,7 +24,7 @@ const CAL_URL = getCalMeetingUrl();
 
 const PILLS = [
   { icon: CheckCircle2, label: 'Gratuita, sin compromiso' },
-  { icon: Clock,        label: '15 min · L–V 9:00–16:00' },
+  { icon: Clock,        label: '15 min · L–V 9:00–18:00' },
   { icon: Phone,        label: 'Teléfono o videollamada' },
 ];
 
@@ -54,7 +54,7 @@ export default function CitaPage() {
             {PILLS.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-1.5 rounded-full border border-[#D4A017]/30 bg-[#D4A017]/10 px-3 py-1.5"
+                className="flex items-center gap-1.5 border border-[#D4A017]/30 bg-[#D4A017]/10 px-3 py-1.5"
               >
                 <Icon className="h-3.5 w-3.5 shrink-0 text-[#D4A017]" />
                 <span className="text-xs font-semibold text-[#F8F6F1]/85">{label}</span>
@@ -70,7 +70,7 @@ export default function CitaPage() {
 
           {/* ── Cal.com inline embed ── */}
           {CAL_URL ? (
-            <div className="overflow-hidden rounded-xl border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
+            <div className="overflow-hidden border border-[#D4A017]/20 bg-white shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
               <iframe
                 src={`${CAL_URL}?embed=true&layout=month_view&theme=light`}
                 width="100%"
@@ -83,16 +83,16 @@ export default function CitaPage() {
               />
             </div>
           ) : (
-            <div className="rounded-xl border border-[#D4A017]/20 bg-white p-8 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
+            <div className="border border-[#D4A017]/20 bg-white p-8 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
               <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Agenda temporalmente no disponible</h2>
               <p className="mt-3 text-sm leading-6 text-[#374151]">
                 Puedes pedir tu cita por email o teléfono y te responderemos con el primer hueco disponible.
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <Link href="/contacto" className="inline-flex items-center justify-center rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">
+                <Link href="/contacto" className="inline-flex items-center justify-center bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">
                   Contactar
                 </Link>
-                <a href="tel:+34669045528" className="inline-flex items-center justify-center rounded-xl border border-[#D4A017]/30 px-5 py-3 text-sm font-bold text-[#0D1B2A]">
+                <a href="tel:+34669045528" className="inline-flex items-center justify-center border border-[#D4A017]/30 px-5 py-3 text-sm font-bold text-[#0D1B2A]">
                   Llamar
                 </a>
               </div>
@@ -119,7 +119,7 @@ export default function CitaPage() {
               <div className="mt-3 space-y-1.5 text-sm">
                 <div className="flex justify-between text-[#374151]">
                   <span>Lunes – Viernes</span>
-                  <span className="font-semibold text-[#0D1B2A]">9:00 – 16:00</span>
+                  <span className="font-semibold text-[#0D1B2A]">9:00 – 18:00</span>
                 </div>
                 <div className="flex justify-between text-[#9CA3AF]">
                   <span>Sábado – Domingo</span>

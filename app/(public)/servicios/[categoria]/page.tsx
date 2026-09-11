@@ -1,10 +1,12 @@
 import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ArrowRight, Clock, MessageCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, MessageCircle, Newspaper } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { categories, getCategory, getServicesByCategory } from '@/lib/utils/catalog';
 import type { CategorySlug } from '@/lib/utils/catalog';
+import { getDocsForCategory } from '@/lib/utils/docs';
+import { getArticlesForService } from '@/lib/utils/blog';
 
 export function generateStaticParams() {
   return categories.map((c) => ({ categoria: c.slug }));
@@ -58,6 +60,13 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
 
   const servicios = getServicesByCategory(categoria as CategorySlug);
   const categoryUrl = `https://expertconsulting.es/servicios/${categoria}`;
+
+  const relatedDocs = getDocsForCategory(categoria as CategorySlug).slice(0, 4);
+  const relatedArticles = Array.from(
+    new Map(
+      servicios.flatMap((s) => getArticlesForService(s.slug)).map((article) => [article.slug, article])
+    ).values()
+  ).slice(0, 4);
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
@@ -137,7 +146,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
               return (
                 <article
                   key={servicio.slug}
-                  className="flex min-h-full flex-col rounded-2xl border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_24px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_16px_40px_rgba(13,27,42,0.11)]"
+                  className="flex min-h-full flex-col border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_24px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_16px_40px_rgba(13,27,42,0.11)]"
                 >
                   <div className="flex-1">
                     <Link href={`/servicios/${categoria}/${servicio.slug}`} className="group">
@@ -149,12 +158,12 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {servicio.price && (
-                        <span className="rounded-full border border-[#D4A017]/30 bg-[#D4A017]/8 px-3 py-1 text-xs font-bold text-[#0D1B2A]">
+                        <span className="border border-[#D4A017]/30 bg-[#D4A017]/8 px-3 py-1 text-xs font-bold text-[#0D1B2A]">
                           {servicio.price}
                         </span>
                       )}
                       {servicio.duration && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4A017]/20 px-3 py-1 text-xs font-semibold text-[#23364D]">
+                        <span className="inline-flex items-center gap-1.5 border border-[#D4A017]/20 px-3 py-1 text-xs font-semibold text-[#23364D]">
                           <Clock className="h-3.5 w-3.5 text-[#D4A017]" />
                           {servicio.duration}
                         </span>
@@ -167,12 +176,12 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
                       <AddToCartButton
                         item={cartItem}
                         label={servicio.checkoutLabel ?? 'Añadir a la cesta'}
-                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     ) : (
                       <Link
                         href="/solicitar-presupuesto"
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+                        className="inline-flex min-h-11 w-full items-center justify-center bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
                       >
                         Solicitar presupuesto
                       </Link>
@@ -180,14 +189,14 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Link
                         href={`/servicios/${categoria}/${servicio.slug}`}
-                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                        className="inline-flex min-h-10 items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
                       >
                         Ver detalles
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                       <a
                         href="https://wa.me/34669045528"
-                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
+                        className="inline-flex min-h-10 items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:text-[#0D1B2A]"
                       >
                         <MessageCircle className="h-4 w-4 text-[#D4A017]" />
                         WhatsApp
@@ -212,6 +221,69 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
           )}
         </div>
       </section>
+
+      {/* Related docs & articles */}
+      {(relatedDocs.length > 0 || relatedArticles.length > 0) && (
+        <section className="border-t border-[#D4A017]/15 px-6 py-14 md:py-18">
+          <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
+            {relatedDocs.length > 0 && (
+              <div>
+                <div className="mb-4 flex items-center gap-2.5">
+                  <BookOpen className="h-4 w-4 text-[#D4A017]" />
+                  <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Guías de esta área</h2>
+                </div>
+                <div className="grid gap-3">
+                  {relatedDocs.map((doc) => (
+                    <Link
+                      key={doc.slug}
+                      href={`/docs/${doc.slug}`}
+                      className="border border-[#D4A017]/15 bg-white p-4 transition hover:border-[#D4A017]"
+                    >
+                      <p className="font-semibold text-[#0D1B2A]">{doc.title}</p>
+                      <p className="mt-1 text-sm text-[#23364D]">{doc.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href="/docs"
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
+                >
+                  Ver toda la base de conocimientos
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+
+            {relatedArticles.length > 0 && (
+              <div>
+                <div className="mb-4 flex items-center gap-2.5">
+                  <Newspaper className="h-4 w-4 text-[#D4A017]" />
+                  <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Artículos relacionados</h2>
+                </div>
+                <div className="grid gap-3">
+                  {relatedArticles.map((article) => (
+                    <Link
+                      key={article.slug}
+                      href={`/blog/${article.slug}`}
+                      className="border border-[#D4A017]/15 bg-white p-4 transition hover:border-[#D4A017]"
+                    >
+                      <p className="font-semibold text-[#0D1B2A]">{article.title}</p>
+                      <p className="mt-1 text-sm text-[#23364D]">{article.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href="/blog"
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
+                >
+                  Ver todos los artículos
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="brand-blue-bg px-6 py-12 text-center text-[#F8F6F1]">

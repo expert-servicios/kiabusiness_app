@@ -1228,3 +1228,7 @@ export function getAllDocTags(): string[] {
 export function getDocsForService(serviceSlug: string): KnowledgeDoc[] {
   return docs.filter((doc) => doc.relatedServiceSlugs?.includes(serviceSlug));
 }
+
+export function getDocsForCategory(categorySlug: CategorySlug): KnowledgeDoc[] {
+  return docs.filter((doc) => doc.relatedServiceCategories?.includes(categorySlug));
+}
