@@ -19,7 +19,7 @@ import {
   Zap,
   UsersRound,
 } from 'lucide-react';
-import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
+import { HoldedCalButton } from '@/components/holded/HoldedCalButton';
 import { HoldedPricingSection } from '@/components/holded/HoldedPricingSection';
 import { articles } from '@/lib/utils/blog';
 import { FaqSection } from '@/components/site/FaqSection';
@@ -222,10 +222,10 @@ export default async function HoldedPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-[#23364D]">
                 Te mostramos Holded adaptado a tu sector por videollamada. Sin compromiso y sin tarjeta de crédito.
               </p>
-              <HoldedCalendlyButton className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+              <HoldedCalButton className="mt-6 inline-flex w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]">
                 <Calendar className="h-4 w-4" />
                 Reservar demostración
-              </HoldedCalendlyButton>
+              </HoldedCalButton>
             </div>
 
             {/* Licencia con asistencia */}
@@ -323,10 +323,10 @@ export default async function HoldedPage() {
               >
                 Ver migración laboral <ArrowRight className="h-4 w-4" />
               </Link>
-              <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]">
+              <HoldedCalButton className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]">
                 <Calendar className="h-4 w-4" />
                 Revisión previa — 15 min
-              </HoldedCalendlyButton>
+              </HoldedCalButton>
             </div>
           </div>
           <div className="border border-[#D4A017]/35 bg-white/5 p-7">
@@ -419,9 +419,9 @@ export default async function HoldedPage() {
               <p className="mt-3 flex-1 text-sm leading-7 text-[#9CA3AF]">
                 30 minutos por videollamada. Te mostramos Holded en vivo adaptado a tu sector y resolvemos todas tus dudas antes de tomar ninguna decisión.
               </p>
-              <HoldedCalendlyButton className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]">
+              <HoldedCalButton className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]">
                 Reservar demo <ArrowRight className="h-4 w-4" />
-              </HoldedCalendlyButton>
+              </HoldedCalButton>
             </div>
           </div>
         </div>
@@ -505,10 +505,10 @@ export default async function HoldedPage() {
             Si ya usas Holded o quieres migrar, empezamos con una revisión inicial para definir alcance, prioridades y formación. Sin compromiso.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
+            <HoldedCalButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
               <Calendar className="h-4 w-4" />
               Reservar demo gratuita
-            </HoldedCalendlyButton>
+            </HoldedCalButton>
             <Link
               href="/holded/conectores"
               className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#0D1B2A]/25 px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]"
