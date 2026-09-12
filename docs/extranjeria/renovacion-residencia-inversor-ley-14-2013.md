@@ -53,7 +53,28 @@ Debe presentarse un expediente por cada solicitante:
 
 En menores, la solicitud debe presentarse por padre, madre o representante legal.
 
-## 6. Tasa de solicitud
+## 6. Honorarios EXPERT y costes externos
+
+Honorarios profesionales:
+
+- titular inversor: 250 € + IVA;
+- cada familiar adicional: 90 € + IVA por persona.
+
+Estos honorarios cubren la revisión del expediente, preparación documental, formularios y presentación telemática cuando el caso es viable y la documentación está completa.
+
+No están incluidos:
+
+- tasas administrativas;
+- notas simples del Registro de la Propiedad;
+- certificaciones mercantiles;
+- certificados bancarios, registrales o administrativos;
+- certificados de antecedentes penales;
+- traducciones juradas;
+- apostillas o legalizaciones;
+- informes oficiales externos;
+- recursos, requerimientos complejos o subsanaciones no previsibles.
+
+## 7. Tasa de solicitud
 
 Debe abonarse la tasa 790 código 038, punto 7, relativa a autorizaciones de movilidad internacional Ley 14/2013.
 
@@ -61,7 +82,7 @@ Debe comprobarse siempre el importe actualizado en el formulario oficial de tasa
 
 No debe confundirse con la tasa 790 código 012, que corresponde a la expedición posterior de la TIE una vez concedida la renovación.
 
-## 7. Documentación del titular inversor
+## 8. Documentación del titular inversor
 
 Checklist recomendado:
 
@@ -76,7 +97,7 @@ Checklist recomendado:
 9. Certificado de antecedentes penales si procede por estancias superiores a seis meses fuera de España durante la vigencia de la autorización.
 10. Autorización de representación si presenta un tercero.
 
-## 8. Documentación de familiares
+## 9. Documentación de familiares
 
 Para cada familiar:
 
@@ -91,7 +112,7 @@ Para cada familiar:
 9. Certificado escolar para menores en edad obligatoria, si procede.
 10. Autorización de representación si presenta un tercero.
 
-## 9. Seguro médico
+## 10. Seguro médico
 
 Debe acreditarse seguro público o privado con cobertura en España.
 
@@ -101,7 +122,7 @@ Recomendación práctica:
 - evitar aportar solo tarjeta sanitaria o recibo si puede obtenerse certificado;
 - comprobar que todos los miembros de la familia aparecen cubiertos.
 
-## 10. Medios económicos
+## 11. Medios económicos
 
 Documentos útiles:
 
@@ -116,7 +137,7 @@ Documentos útiles:
 
 En expedientes familiares conviene combinar varias pruebas económicas y no depender de un único extracto.
 
-## 11. Mantenimiento de inversión inmobiliaria
+## 12. Mantenimiento de inversión inmobiliaria
 
 Para inversión inmobiliaria, el expediente debe demostrar que se mantiene la inversión mínima exigida conforme a la autorización inicial.
 
@@ -130,7 +151,7 @@ Documentación recomendada:
 
 En inversión inmobiliaria, las notas simples o certificaciones deben ser recientes. La documentación orientativa de inversores exige certificados de dominio fechados dentro de los 90 días anteriores a la solicitud.
 
-## 12. Inversión mediante persona jurídica
+## 13. Inversión mediante persona jurídica
 
 Si la inversión se hizo a través de una sociedad, por ejemplo una SL, no basta con acreditar que la sociedad conserva los inmuebles.
 
@@ -144,13 +165,13 @@ En estos casos debe prepararse el informe de la Dirección General competente en
 
 - `docs/extranjeria/renovacion-inversor-inmuebles-persona-juridica.md`
 
-## 13. Antecedentes penales
+## 14. Antecedentes penales
 
 En renovación, el certificado de antecedentes penales puede ser necesario si el solicitante ha permanecido más de seis meses fuera de España durante la vigencia de la autorización.
 
 Si procede, el certificado extranjero debe estar legalizado/apostillado y traducido, cuando sea necesario.
 
-## 14. Después de la concesión
+## 15. Después de la concesión
 
 Si la renovación se concede por más de seis meses, debe solicitarse nueva TIE ante Policía Nacional.
 
@@ -164,7 +185,7 @@ Documentación habitual para la TIE:
 6. Cita previa impresa.
 7. Empadronamiento actualizado si hay cambio de domicilio.
 
-## 15. Errores frecuentes
+## 16. Errores frecuentes
 
 1. Presentar una nueva solicitud cuando procede renovación.
 2. No comprobar el régimen transitorio.
@@ -178,7 +199,7 @@ Documentación habitual para la TIE:
 10. No separar expediente del titular y expedientes de familiares.
 11. Intentar cambiar ahora la estructura de inversión original sin analizar el impacto del régimen transitorio.
 
-## 16. Recomendación operativa
+## 17. Recomendación operativa
 
 Antes de presentar, revisar en este orden:
 
