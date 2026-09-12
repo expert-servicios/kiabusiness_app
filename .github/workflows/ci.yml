@@ -40,5 +40,90 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Supabase migration baseline check
+        run: npm run check:supabase-migrations
+
       - name: Tests
         run: npm test
+
+  migration-repair-contract:
+    name: Supabase migration repair contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify migration repair and rollback semantics
+        shell: bash
+        env:
+          DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+        run: |
+          set -euo pipefail
+          supabase --version
+          workdir="$RUNNER_TEMP/repair-probe"
+          mkdir -p "$workdir/supabase/migrations"
+          printf 'project_id = "repair-probe"\n' > "$workdir/supabase/config.toml"
+          cat > "$workdir/supabase/migrations/20990101000000_repair_probe_contract.sql" <<'SQL'
+          create table public.repair_probe_contract (
+            id bigint primary key
+          );
+          SQL
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status applied
+
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+          statement_count="$(psql "$DB_URL" -Atc "select coalesce(array_length(statements,1),0) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          statement_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          echo "repair-applied statement_count=$statement_count"
+          test "$statement_count" -gt 0
+          test -n "$statement_hash"
+
+          backup="$workdir/schema_migrations_before.sql"
+          restore="$workdir/schema_migrations_before_pg15.sql"
+          supabase db dump \
+            --db-url "$DB_URL" \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy \
+            --file "$backup"
+          test -s "$backup"
+          sha256sum "$backup" > "$backup.sha256"
+
+          # Supabase CLI 2.117.0 currently dumps with PostgreSQL 17 tools, which emit
+          # SET transaction_timeout = 0;. Production is PostgreSQL 15.8, where that
+          # GUC does not exist. Preserve the raw dump unchanged, and derive a PG15
+          # restore copy by removing only that compatibility SET line.
+          grep -q '^SET transaction_timeout = 0;$' "$backup"
+          sed '/^SET transaction_timeout = 0;$/d' "$backup" > "$restore"
+          test -s "$restore"
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status reverted
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "0"
+
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$restore" >/dev/null
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          test "$restored_hash" = "$statement_hash"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"

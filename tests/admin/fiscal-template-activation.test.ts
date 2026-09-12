@@ -4,12 +4,13 @@ import path from 'node:path';
 
 const root = process.cwd();
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
+const historical = (file: string) => read(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 const templateApi = read('app/api/admin/clientes/[id]/fiscal-templates/route.ts');
 const fiscalApi = read('app/api/admin/fiscal-calendar/route.ts');
 const obligationsApi = read('app/api/admin/clientes/[id]/obligations/route.ts');
 const page = read('app/(protected)/admin/clientes/[id]/obligaciones/page.tsx');
-const migration = read('supabase/migrations/20260905114500_fiscal_template_activation.sql');
+const migration = historical('20260905114500_fiscal_template_activation.sql');
 
 
 describe('confirmed fiscal template activation', () => {

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260905213000_harden_current_mutable_search_paths.sql'),
+  resolve(process.cwd(), 'supabase/migration-history-archive/pre-baseline-20260912/20260905213000_harden_current_mutable_search_paths.sql'),
   'utf8',
 );
 const sqlWithoutComments = migration.replace(/^\s*--.*$/gm, '');

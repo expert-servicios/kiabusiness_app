@@ -6,8 +6,10 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('Stripe invoice legal-entity attribution', () => {
-  const migration = source('supabase/migrations/20260907184513_add_stripe_invoice_company_attributions.sql');
+  const migration = historical('20260907184513_add_stripe_invoice_company_attributions.sql');
   const route = source('app/api/admin/clientes/[id]/stripe-invoice-attributions/route.ts');
   const revokeRoute = source('app/api/admin/clientes/[id]/stripe-invoice-attributions/[attributionId]/route.ts');
   const operations = source('app/api/admin/clientes/[id]/operations/route.ts');

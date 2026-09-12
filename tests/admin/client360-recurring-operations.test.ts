@@ -6,6 +6,8 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('Client 360 recurring operations', () => {
   const operationsApi = source('app/api/admin/clientes/[id]/operations/route.ts');
   const operationsPage = source('app/(protected)/admin/clientes/[id]/operaciones/page.tsx');
@@ -13,7 +15,7 @@ describe('Client 360 recurring operations', () => {
   const clientLayout = source('app/(protected)/admin/clientes/[id]/layout.tsx');
   const tasksPage = source('app/(protected)/admin/tareas/page.tsx');
   const documentsRoute = source('app/api/cases/[id]/documents/route.ts');
-  const companyStripeMigration = source('supabase/migrations/20260907175500_add_company_stripe_customer_mappings.sql');
+  const companyStripeMigration = historical('20260907175500_add_company_stripe_customer_mappings.sql');
 
   it('aggregates recurring operations from canonical sources without mutating them', () => {
     expect(operationsApi).toContain(".from('internal_tasks')");
