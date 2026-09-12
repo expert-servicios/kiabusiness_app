@@ -69,12 +69,13 @@ jobs:
         with:
           version: latest
 
-      - name: Verify migration repair tracking-only semantics
+      - name: Verify migration repair and rollback semantics
         shell: bash
         env:
           DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
         run: |
           set -euo pipefail
+          supabase --version
           workdir="$RUNNER_TEMP/repair-probe"
           mkdir -p "$workdir/supabase/migrations"
           printf 'project_id = "repair-probe"\n' > "$workdir/supabase/config.toml"
@@ -92,10 +93,27 @@ jobs:
           test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
 
           statement_count="$(psql "$DB_URL" -Atc "select coalesce(array_length(statements,1),0) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          statement_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
           echo "repair-applied statement_count=$statement_count"
           test "$statement_count" -gt 0
+          test -n "$statement_hash"
+
+          backup="$workdir/schema_migrations_before.sql"
+          supabase db dump \
+            --db-url "$DB_URL" \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy \
+            --file "$backup"
+          test -s "$backup"
 
           supabase --workdir "$workdir" migration repair 20990101000000 \
             --db-url "$DB_URL" \
             --status reverted
           test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "0"
+
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$backup" >/dev/null
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          test "$restored_hash" = "$statement_hash"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
