@@ -1,0 +1,1 @@
+drop index if exists public.orders_stripe_payment_id_unique;
