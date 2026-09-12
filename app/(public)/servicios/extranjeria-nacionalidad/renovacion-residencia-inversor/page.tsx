@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AlertTriangle, BookOpen, Building2, CalendarCheck, CheckCircle2, ExternalLink, FileText, Landmark, Newspaper, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, BookOpen, Building2, CalendarCheck, CheckCircle2, ExternalLink, FileText, GraduationCap, Landmark, Newspaper, ShieldCheck, Users } from 'lucide-react';
 import { CalButton } from '@/components/site/CalButton';
 import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 const canonicalUrl = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/renovacion-residencia-inversor';
 const CAL_REUNION_URL = getCalMeetingUrl();
+const ONE_TO_ONE_TRAINING_HREF = '/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=renovacion-residencia-inversor';
 
 export const metadata: Metadata = {
   title: 'Renovación residencia inversor Ley 14/2013 · EXPERT Asesoría',
@@ -214,6 +215,9 @@ export default function RenovacionResidenciaInversorPage() {
                 <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-7 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]">
                   Presupuesto para caso complejo
                 </Link>
+                <Link href={ONE_TO_ONE_TRAINING_HREF} className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]">
+                  Hazlo por tu cuenta
+                </Link>
                 <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
                   Reunión gratuita 15 min
                 </FreeMeetingButton>
@@ -307,8 +311,8 @@ export default function RenovacionResidenciaInversorPage() {
       <section className="bg-[#0D1B2A] px-6 py-14 text-white md:py-18">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
-          <h2 className="mt-3 font-serif text-3xl font-bold">Solicitud, presupuesto complejo o reunión gratuita</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <h2 className="mt-3 font-serif text-3xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             <div className="border border-white/10 bg-white/5 p-6">
               <CheckCircle2 className="h-6 w-6 text-[#D4A017]" />
               <h3 className="mt-4 text-lg font-bold">Caso estándar</h3>
@@ -323,6 +327,14 @@ export default function RenovacionResidenciaInversorPage() {
               <p className="mt-3 text-sm leading-6 text-white/60">SL, varios inmuebles, sociedades extranjeras, cambios de titularidad, ausencias largas, informes PRIE o antecedentes penales.</p>
               <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="mt-5 inline-flex min-h-11 items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]">
                 Solicitar presupuesto
+              </Link>
+            </div>
+            <div className="border border-white/10 bg-white/5 p-6">
+              <GraduationCap className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 text-lg font-bold uppercase">Hazlo por tu cuenta</h3>
+              <p className="mt-3 text-sm leading-6 text-white/60">Formación one to one de 2 horas para entender el trámite, preparar el checklist y presentar con acompañamiento guiado.</p>
+              <Link href={ONE_TO_ONE_TRAINING_HREF} className="mt-5 inline-flex min-h-11 items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+                Formación 2 horas
               </Link>
             </div>
             <div className="border border-white/10 bg-white/5 p-6">
@@ -411,6 +423,9 @@ export default function RenovacionResidenciaInversorPage() {
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="inline-flex min-h-12 items-center justify-center bg-[#0D1B2A] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#23364D]">
                 Solicitar presupuesto
+              </Link>
+              <Link href={ONE_TO_ONE_TRAINING_HREF} className="inline-flex min-h-12 items-center justify-center border border-[#0D1B2A] px-7 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                Hazlo por tu cuenta
               </Link>
               <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-[#0D1B2A] px-7 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
                 Reunión gratuita 15 min
