@@ -13,7 +13,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
+import { HoldedCalButton } from '@/components/holded/HoldedCalButton';
 import { RequestProposalModal } from '@/components/holded/RequestProposalModal';
 import { FaqSection } from '@/components/site/FaqSection';
 
@@ -171,10 +171,10 @@ export default function MigracionLaboralPage() {
               Configuramos y validamos cada expediente laboral para que puedas empezar a trabajar con nóminas desde una base ordenada y comprobada.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
+              <HoldedCalButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
                 <Calendar className="h-4 w-4" />
                 Pedir revisión previa — 15 min
-              </HoldedCalendlyButton>
+              </HoldedCalButton>
               <Link
                 href="/solicitar-presupuesto?servicio=holded-migracion-laboral"
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10"
@@ -316,10 +316,10 @@ export default function MigracionLaboralPage() {
           En 15 minutos revisamos la plantilla, los documentos disponibles y si el precio unitario se puede aplicar sin trabajos adicionales.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <HoldedCalendlyButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
+          <HoldedCalButton className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
             <Calendar className="h-4 w-4" />
             Reservar revisión previa
-          </HoldedCalendlyButton>
+          </HoldedCalButton>
           <Link
             href="/contacto?asunto=Migracion%20laboral%20a%20Holded"
             className="inline-flex min-h-12 items-center justify-center border border-white/25 px-7 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]"
