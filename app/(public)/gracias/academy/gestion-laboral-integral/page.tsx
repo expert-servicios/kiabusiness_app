@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CalendarCheck, CheckCircle2 } from 'lucide-react';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
 import { EventTracker } from '@/components/site/EventTracker';
 
@@ -35,14 +35,14 @@ export default function GraciasGestionLaboralPage() {
                 page — there is no dedicated post-purchase training-session
                 calendar yet, so the label stays consistent with what the link
                 actually books instead of implying a course session. */}
-            <CalendlyButton
+            <CalButton
               url={calAcademyUrl}
               fallbackHref="/cita"
               className="inline-flex items-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <CalendarCheck className="h-4 w-4" />
               Reservar reunión informativa
-            </CalendlyButton>
+            </CalButton>
           </div>
         )}
 
