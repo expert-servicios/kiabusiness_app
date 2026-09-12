@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AlertTriangle, Building2, CheckCircle2, ExternalLink, FileText, Landmark, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, BookOpen, Building2, CheckCircle2, ExternalLink, FileText, Landmark, Newspaper, ShieldCheck, Users } from 'lucide-react';
 
 const canonicalUrl = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/renovacion-residencia-inversor';
 
@@ -87,6 +87,42 @@ const documents = [
   }
 ];
 
+const relatedArticles = [
+  {
+    title: 'Permiso de residencia para inversores en España: Golden Visa y alternativas',
+    href: '/blog/permiso-residencia-inversores',
+    excerpt: 'Contexto general sobre residencia por inversión, alternativas y puntos que deben revisarse tras la eliminación de nuevas solicitudes inmobiliarias.'
+  },
+  {
+    title: 'Renovación del permiso de residencia en España: cuándo, cómo y qué necesitas',
+    href: '/blog/renovacion-permiso-residencia-espana',
+    excerpt: 'Plazos de renovación, documentación, consecuencias de renovar tarde y relación con la continuidad de la residencia legal.'
+  },
+  {
+    title: 'Lista completa de documentos para el permiso de residencia en España',
+    href: '/blog/documentos-permiso-residencia-espana',
+    excerpt: 'Guía práctica sobre documentos, traducciones, apostillas y errores frecuentes en expedientes de extranjería.'
+  }
+];
+
+const knowledgeLinks = [
+  {
+    title: 'Guía de residencia de larga duración nacional',
+    href: '/docs/residencia-larga-duracion-nacional',
+    excerpt: 'Requisitos de cinco años, ausencias, tasa, documentación y cambio desde autorizaciones temporales.'
+  },
+  {
+    title: 'Nacionalidad española para menor nacido en España',
+    href: '/docs/nacionalidad-espanola-menor-nacido-en-espana',
+    excerpt: 'Útil cuando el expediente familiar incluye menores y hay que revisar continuidad de residencia legal.'
+  },
+  {
+    title: 'Base de conocimientos EXPERT',
+    href: '/docs',
+    excerpt: 'Acceso al índice general de guías documentales y trámites relacionados.'
+  }
+];
+
 const faq = [
   {
     q: '¿Cuánto cuesta el servicio?',
@@ -142,10 +178,7 @@ export default function RenovacionResidenciaInversorPage() {
 
       <section className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1] md:py-20">
         <div className="mx-auto max-w-6xl">
-          <Link
-            href="/servicios/extranjeria-nacionalidad"
-            className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017] hover:text-[#F2C14E]"
-          >
+          <Link href="/servicios/extranjeria-nacionalidad" className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017] hover:text-[#F2C14E]">
             ← Extranjería y Nacionalidad
           </Link>
 
@@ -154,24 +187,16 @@ export default function RenovacionResidenciaInversorPage() {
               <p className="mb-4 inline-flex rounded-md border border-[#D4A017]/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">
                 Régimen transitorio Ley 14/2013
               </p>
-              <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">
-                Renovación de residencia de inversor
-              </h1>
+              <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">Renovación de residencia de inversor</h1>
               <p className="mt-5 max-w-3xl text-base leading-8 text-white/70">
                 Preparamos la renovación de autorizaciones de residencia de inversor ya concedidas al amparo de la Ley 14/2013, revisando inversión, seguro médico, medios económicos, familiares y, cuando proceda, estructura societaria.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor"
-                  className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
-                >
+                <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor" className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]">
                   Solicitar revisión
                 </Link>
-                <a
-                  href="https://wa.me/34669045528?text=Hola%2C%20quiero%20consultar%20la%20renovaci%C3%B3n%20de%20residencia%20de%20inversor"
-                  className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white"
-                >
+                <a href="https://wa.me/34669045528?text=Hola%2C%20quiero%20consultar%20la%20renovaci%C3%B3n%20de%20residencia%20de%20inversor" className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
                   Consultar por WhatsApp
                 </a>
               </div>
@@ -202,23 +227,17 @@ export default function RenovacionResidenciaInversorPage() {
           <div className="border border-[#e4d8c1] bg-white p-6">
             <ShieldCheck className="h-7 w-7 text-[#D4A017]" />
             <h2 className="mt-4 text-xl font-bold">Renovación, no nueva golden visa</h2>
-            <p className="mt-3 text-sm leading-7 text-[#29384A]">
-              El servicio se dirige a autorizaciones de inversor ya concedidas y vigentes dentro del régimen transitorio. No se plantea como nueva solicitud inmobiliaria ordinaria.
-            </p>
+            <p className="mt-3 text-sm leading-7 text-[#29384A]">El servicio se dirige a autorizaciones de inversor ya concedidas y vigentes dentro del régimen transitorio. No se plantea como nueva solicitud inmobiliaria ordinaria.</p>
           </div>
           <div className="border border-[#e4d8c1] bg-white p-6">
             <Landmark className="h-7 w-7 text-[#D4A017]" />
             <h2 className="mt-4 text-xl font-bold">Inversión mantenida</h2>
-            <p className="mt-3 text-sm leading-7 text-[#29384A]">
-              Revisamos notas simples, cargas, valores y documentación que permite acreditar que se mantiene la inversión que justificó la autorización inicial.
-            </p>
+            <p className="mt-3 text-sm leading-7 text-[#29384A]">Revisamos notas simples, cargas, valores y documentación que permite acreditar que se mantiene la inversión que justificó la autorización inicial.</p>
           </div>
           <div className="border border-[#e4d8c1] bg-white p-6">
             <Building2 className="h-7 w-7 text-[#D4A017]" />
             <h2 className="mt-4 text-xl font-bold">Inmuebles en SL</h2>
-            <p className="mt-3 text-sm leading-7 text-[#29384A]">
-              Si la inversión está canalizada mediante sociedad, revisamos control societario, derechos de voto, administración e informe oficial de persona jurídica.
-            </p>
+            <p className="mt-3 text-sm leading-7 text-[#29384A]">Si la inversión está canalizada mediante sociedad, revisamos control societario, derechos de voto, administración e informe oficial de persona jurídica.</p>
           </div>
         </div>
       </section>
@@ -267,6 +286,38 @@ export default function RenovacionResidenciaInversorPage() {
         </div>
       </section>
 
+      <section className="bg-white px-6 py-14 md:py-18">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Lecturas relacionadas</p>
+          <h2 className="mt-3 font-serif text-3xl font-bold">Artículos útiles del blog</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {relatedArticles.map((article) => (
+              <Link key={article.href} href={article.href} className="group border border-[#e4d8c1] bg-[#F8F6F1] p-6 transition hover:border-[#D4A017] hover:bg-white">
+                <Newspaper className="h-6 w-6 text-[#D4A017]" />
+                <h3 className="mt-4 text-lg font-bold leading-snug group-hover:text-[#B97A13]">{article.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#29384A]">{article.excerpt}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-14 md:py-18">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Base de conocimientos</p>
+          <h2 className="mt-3 font-serif text-3xl font-bold">Guías de ayuda relacionadas</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {knowledgeLinks.map((doc) => (
+              <Link key={doc.href} href={doc.href} className="group border border-[#e4d8c1] bg-white p-6 transition hover:border-[#D4A017]">
+                <BookOpen className="h-6 w-6 text-[#D4A017]" />
+                <h3 className="mt-4 text-lg font-bold leading-snug group-hover:text-[#B97A13]">{doc.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#29384A]">{doc.excerpt}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-[#0D1B2A] px-6 py-14 text-white md:py-18">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Fuentes oficiales</p>
@@ -305,13 +356,8 @@ export default function RenovacionResidenciaInversorPage() {
           </div>
           <div className="mt-10 border border-[#e4d8c1] bg-white p-6 text-center">
             <h2 className="font-serif text-2xl font-bold">¿Necesitas renovar una residencia de inversor?</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384A]">
-              Revisamos la autorización inicial, la inversión mantenida, familiares, tasas y documentación antes de presentar ante UGE.
-            </p>
-            <Link
-              href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor"
-              className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#0D1B2A] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#23364D]"
-            >
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384A]">Revisamos la autorización inicial, la inversión mantenida, familiares, tasas y documentación antes de presentar ante UGE.</p>
+            <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor" className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#0D1B2A] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#23364D]">
               Solicitar revisión del expediente
             </Link>
           </div>
