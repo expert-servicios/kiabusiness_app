@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AlertTriangle, BookOpen, Building2, CheckCircle2, ExternalLink, FileText, Landmark, Newspaper, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, BookOpen, Building2, CalendarCheck, CheckCircle2, ExternalLink, FileText, Landmark, Newspaper, ShieldCheck, Users } from 'lucide-react';
+import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 const canonicalUrl = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/renovacion-residencia-inversor';
+const CAL_REUNION_URL = getCalMeetingUrl();
 
 export const metadata: Metadata = {
   title: 'Renovación residencia inversor Ley 14/2013 · EXPERT Asesoría',
@@ -196,9 +199,16 @@ export default function RenovacionResidenciaInversorPage() {
                 <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor" className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]">
                   Solicitar revisión
                 </Link>
-                <a href="https://wa.me/34669045528?text=Hola%2C%20quiero%20consultar%20la%20renovaci%C3%B3n%20de%20residencia%20de%20inversor" className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
-                  Consultar por WhatsApp
-                </a>
+                <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-7 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+                  Presupuesto para caso complejo
+                </Link>
+                <CalendlyButton
+                  url={CAL_REUNION_URL}
+                  fallbackHref="/contacto"
+                  className="inline-flex min-h-12 items-center justify-center border border-white/20 px-7 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white"
+                >
+                  Reunión gratuita 15 min
+                </CalendlyButton>
               </div>
             </div>
 
@@ -286,6 +296,43 @@ export default function RenovacionResidenciaInversorPage() {
         </div>
       </section>
 
+      <section className="bg-[#0D1B2A] px-6 py-14 text-white md:py-18">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
+          <h2 className="mt-3 font-serif text-3xl font-bold">Solicitud, presupuesto complejo o reunión gratuita</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            <div className="border border-white/10 bg-white/5 p-6">
+              <CheckCircle2 className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 text-lg font-bold">Caso estándar</h3>
+              <p className="mt-3 text-sm leading-6 text-white/60">Titular inversor y familiares con documentación clara, inversión mantenida y sin incidencias relevantes.</p>
+              <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor" className="mt-5 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
+                Solicitar revisión
+              </Link>
+            </div>
+            <div className="border border-white/10 bg-white/5 p-6">
+              <Building2 className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 text-lg font-bold">Caso complejo</h3>
+              <p className="mt-3 text-sm leading-6 text-white/60">SL, varios inmuebles, sociedades extranjeras, cambios de titularidad, ausencias largas, informes PRIE o antecedentes penales.</p>
+              <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="mt-5 inline-flex min-h-11 items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+                Solicitar presupuesto
+              </Link>
+            </div>
+            <div className="border border-white/10 bg-white/5 p-6">
+              <CalendarCheck className="h-6 w-6 text-[#D4A017]" />
+              <h3 className="mt-4 text-lg font-bold">Reunión gratuita</h3>
+              <p className="mt-3 text-sm leading-6 text-white/60">Primera reunión orientativa de 15 minutos para ubicar el caso y decidir si conviene presupuesto cerrado o revisión previa.</p>
+              <CalendlyButton
+                url={CAL_REUNION_URL}
+                fallbackHref="/contacto"
+                className="mt-5 inline-flex min-h-11 items-center justify-center border border-white/25 px-5 py-2.5 text-sm font-bold text-white/85 hover:border-white/60 hover:text-white"
+              >
+                Reservar 15 minutos
+              </CalendlyButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white px-6 py-14 md:py-18">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Lecturas relacionadas</p>
@@ -357,9 +404,18 @@ export default function RenovacionResidenciaInversorPage() {
           <div className="mt-10 border border-[#e4d8c1] bg-white p-6 text-center">
             <h2 className="font-serif text-2xl font-bold">¿Necesitas renovar una residencia de inversor?</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#29384A]">Revisamos la autorización inicial, la inversión mantenida, familiares, tasas y documentación antes de presentar ante UGE.</p>
-            <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor" className="mt-6 inline-flex min-h-12 items-center justify-center bg-[#0D1B2A] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#23364D]">
-              Solicitar revisión del expediente
-            </Link>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link href="/solicitar-presupuesto?servicio=renovacion-residencia-inversor&tipo=caso-complejo" className="inline-flex min-h-12 items-center justify-center bg-[#0D1B2A] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#23364D]">
+                Solicitar presupuesto
+              </Link>
+              <CalendlyButton
+                url={CAL_REUNION_URL}
+                fallbackHref="/contacto"
+                className="inline-flex min-h-12 items-center justify-center border border-[#0D1B2A] px-7 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white"
+              >
+                Reunión gratuita 15 min
+              </CalendlyButton>
+            </div>
           </div>
         </div>
       </section>
