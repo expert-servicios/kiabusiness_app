@@ -12,19 +12,49 @@ Crear una ficha pública específica para la renovación de residencia de invers
 - guía específica de inmuebles a través de persona jurídica;
 - artículo blog actualizado sobre renovación tras eliminación de golden visa.
 
-## Problema actual detectado
+## Precio comercial confirmado
 
-Existe artículo de blog antiguo relacionado con inversores y golden visa:
+Honorarios profesionales:
 
-- `permiso-residencia-inversores`
-- `relatedServiceSlugs: ['inversores']`
+- Titular inversor: 250 € + IVA.
+- Cada familiar adicional: 90 € + IVA.
 
-Debe revisarse porque, tras la eliminación de nuevas solicitudes inmobiliarias, el contenido comercial principal debe girar hacia:
+Costes externos no incluidos:
 
-- renovaciones de autorizaciones vigentes;
-- régimen transitorio;
-- casos de inversión inmobiliaria;
-- inversiones canalizadas por persona jurídica.
+- Tasa administrativa 790 código 038.
+- Tasa posterior 790 código 012 para TIE.
+- Notas simples del Registro de la Propiedad.
+- Certificaciones mercantiles.
+- Certificados bancarios, registrales o administrativos.
+- Informe PRIE / persona jurídica, si requiere gestión específica o costes externos.
+- Traducciones juradas.
+- Apostillas o legalizaciones.
+- Antecedentes penales extranjeros.
+- Recursos, subsanaciones complejas o requerimientos no previsibles.
+
+## Estado actual detectado
+
+### Catálogo público
+
+No se ha detectado todavía una ficha activa específica con slug:
+
+```ts
+renovacion-residencia-inversor
+```
+
+Existe una ficha genérica de renovación de residencia (`renovacion-residencia`) y contenido antiguo de blog sobre inversores/golden visa, pero no una landing específica para renovación de inversor Ley 14/2013 en régimen transitorio.
+
+### Stripe
+
+Revisión realizada en cuenta live `Expert Consulting`:
+
+- No hay price activo con `metadata.service_slug = renovacion-residencia-inversor`.
+- No hay price activo con `metadata.service_slug = inversores`.
+- No hay price activo con `metadata.slug = renovacion-residencia-inversor`.
+- No hay product activo encontrado por nombre `inversor`.
+- No hay lookup key activo `renovacion_residencia_inversor_titular`.
+
+Conclusión: los precios de Stripe para este nuevo servicio están pendientes de crear si se quiere checkout directo.
 
 ## Servicio propuesto en catálogo
 
@@ -42,23 +72,42 @@ Categoría:
 extranjeria-nacionalidad
 ```
 
-Precio recomendado:
+Precio visible recomendado:
 
 ```ts
-Consultar
+Desde 250 € + IVA
 ```
 
-Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mucho según:
+Detalle de precio:
 
-- titular persona física;
-- familiares;
-- inmuebles múltiples;
-- SL española;
-- sociedad extranjera;
-- control indirecto;
-- necesidad de informe PRIE;
-- antecedentes penales por ausencias;
-- cambios de titularidad.
+```ts
+Titular inversor: 250 € + IVA. Familiar adicional: 90 € + IVA por persona. Tasas, certificados, notas simples, traducciones, apostillas, informes oficiales y otros costes externos no incluidos.
+```
+
+## Stripe pendiente
+
+Si se publica con checkout directo, crear dos prices de pago único:
+
+1. `renovacion_residencia_inversor_titular`
+   - Importe: 250,00 € + IVA.
+   - Tipo: one-time service.
+   - Metadata recomendada:
+     - `service_slug=renovacion-residencia-inversor`
+     - `role=titular`
+
+2. `renovacion_residencia_inversor_familiar`
+   - Importe: 90,00 € + IVA.
+   - Tipo: one-time service.
+   - Metadata recomendada:
+     - `service_slug=renovacion-residencia-inversor`
+     - `role=familiar`
+
+Riesgo funcional: el checkout actual de catálogo está pensado para un precio principal por servicio. Si se quiere cobrar titular + N familiares desde una sola landing, hay que decidir si:
+
+- se crea checkout manual desde admin;
+- se usa carrito con unidades;
+- se crea producto separado para familiar;
+- se deja la landing con CTA de presupuesto/consulta y se cobra manualmente.
 
 ## Objeto Service propuesto
 
@@ -71,16 +120,17 @@ Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mu
     'Renovación de autorizaciones de residencia de inversor Ley 14/2013 en régimen transitorio, con revisión de inversión, medios económicos, seguro y familiares.',
   metaTitle: 'Renovación residencia inversor Ley 14/2013 · EXPERT Asesoría',
   metaDescription:
-    'Preparamos y presentamos la renovación de residencia de inversor Ley 14/2013. Revisión de inversión inmobiliaria, SL, familiares, medios económicos, seguro y tasas UGE.',
+    'Preparamos y presentamos la renovación de residencia de inversor Ley 14/2013. Titular desde 250 € + IVA y familiares desde 90 € + IVA por persona. Tasas y certificados no incluidos.',
   description:
     'Gestionamos la renovación de autorizaciones de residencia de inversor concedidas al amparo de la Ley 14/2013 cuando siguen siendo renovables por régimen transitorio. Revisamos la autorización inicial, el mantenimiento de la inversión, los medios económicos, el seguro médico, las ausencias y la documentación de familiares. En inversiones inmobiliarias canalizadas a través de sociedad mercantil, revisamos también la estructura societaria y la necesidad de informe de persona jurídica ante el PRIE.',
-  price: 'Consultar',
+  price: 'Desde 250 € + IVA',
   duration: '10–20 días hábiles de preparación, según documentación',
   officialFee: 'Tasa 790 código 038 no incluida. Tasa 790 código 012 posterior para TIE no incluida.',
   servicePriceDetail:
-    'Honorarios según complejidad del expediente: titular individual, familiares, inversión directa o inversión mediante sociedad mercantil.',
+    'Titular inversor: 250 € + IVA. Familiar adicional: 90 € + IVA por persona. Tasas, notas simples, certificados, traducciones, apostillas e informes oficiales no incluidos.',
+  checkoutLabel: 'Solicitar revisión del expediente',
   checkoutLegal:
-    'Servicio sujeto a revisión previa de viabilidad. Las tasas administrativas, notas simples, traducciones, apostillas e informes externos no están incluidos salvo pacto expreso.',
+    'El precio cubre honorarios profesionales. Tasas administrativas, notas simples, certificaciones, traducciones, apostillas, informes oficiales y otros costes externos se pagan aparte.',
   keyPoints: [
     {
       title: 'Régimen transitorio',
@@ -113,7 +163,7 @@ Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mu
   includes: [
     'Revisión de viabilidad del régimen transitorio.',
     'Checklist documental individual del titular y familiares.',
-    'Revisión de inversión inmobiliaria y notas simples.',
+    'Revisión de inversión inmobiliaria y notas simples aportadas.',
     'Revisión básica de medios económicos y seguro médico.',
     'Preparación de solicitud de renovación ante UGE.',
     'Instrucciones para tasas 790 código 038.',
@@ -132,6 +182,17 @@ Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mu
         'Medios económicos suficientes.',
         'Documentación de mantenimiento de la inversión.',
         'Antecedentes penales si procede por ausencias superiores a seis meses.'
+      ]
+    },
+    {
+      title: 'Familiares',
+      items: [
+        'Solicitud individual de cada familiar.',
+        'Pasaporte completo y TIE actual.',
+        'Tasa 790 código 038 por cada familiar.',
+        'Seguro médico.',
+        'Vínculo familiar y dependencia cuando proceda.',
+        'Certificado escolar para menores si corresponde.'
       ]
     },
     {
@@ -167,9 +228,12 @@ Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mu
     'Tasa 790 código 012 para TIE posterior.',
     'Notas simples del Registro de la Propiedad.',
     'Certificaciones mercantiles.',
+    'Certificados bancarios, registrales o administrativos.',
     'Informe externo PRIE o certificados de inversiones, si tienen coste o gestión específica.',
     'Traducciones juradas, apostillas o legalizaciones.',
-    'Recursos administrativos o judiciales en caso de denegación.'
+    'Certificados de antecedentes penales extranjeros.',
+    'Recursos administrativos o judiciales en caso de denegación.',
+    'Subsanaciones complejas o requerimientos no previsibles.'
   ],
   reviewBeforeHiring: [
     'Si la autorización ya está caducada fuera de plazo.',
@@ -183,6 +247,10 @@ Motivo: no fijar precio cerrado todavía porque los expedientes pueden variar mu
     text: 'Revisamos si tu autorización entra en el régimen transitorio y preparamos el expediente de renovación con la documentación correcta.'
   },
   faqs: [
+    {
+      q: '¿Cuánto cuesta el servicio?',
+      a: 'Los honorarios son 250 € + IVA para el titular inversor y 90 € + IVA por cada familiar adicional. Tasas, certificados, notas simples, traducciones, apostillas e informes oficiales se pagan aparte.'
+    },
     {
       q: '¿Se puede solicitar una nueva golden visa inmobiliaria?',
       a: 'No como solicitud ordinaria nueva tras la eliminación del régimen. Este servicio está orientado a renovaciones de autorizaciones ya concedidas y vigentes dentro del régimen transitorio.'
@@ -214,9 +282,8 @@ Para `relatedServiceSlugs`, actualizar cuando se publique el servicio:
 
 ## Criterios antes de tocar código activo
 
-1. Confirmar precio comercial.
-2. Confirmar si habrá checkout o solo solicitar presupuesto.
-3. Crear `stripePriceId` solo si se decide precio cerrado.
-4. Si el precio queda como `Consultar`, no añadir `stripePriceId`.
-5. Revisar y actualizar el artículo antiguo `permiso-residencia-inversores` para no mantener copy obsoleto sobre nuevas golden visa inmobiliarias.
-6. Añadir relación en `lib/utils/docs.ts` y `lib/utils/blog.ts` cuando se haga el cambio activo.
+1. Confirmar si habrá checkout directo o contratación manual.
+2. Si hay checkout directo, crear prices Stripe para titular y familiar.
+3. Definir cómo se añadirá el número de familiares al carrito.
+4. Revisar y actualizar el artículo antiguo `permiso-residencia-inversores` para no mantener copy obsoleto sobre nuevas golden visa inmobiliarias.
+5. Añadir relación en `lib/utils/docs.ts` y `lib/utils/blog.ts` cuando se haga el cambio activo.
