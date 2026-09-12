@@ -99,6 +99,7 @@ jobs:
           test -n "$statement_hash"
 
           backup="$workdir/schema_migrations_before.sql"
+          restore="$workdir/schema_migrations_before_pg15.sql"
           supabase db dump \
             --db-url "$DB_URL" \
             --schema supabase_migrations \
@@ -106,13 +107,22 @@ jobs:
             --use-copy \
             --file "$backup"
           test -s "$backup"
+          sha256sum "$backup" > "$backup.sha256"
+
+          # Supabase CLI 2.117.0 currently dumps with PostgreSQL 17 tools, which emit
+          # SET transaction_timeout = 0;. Production is PostgreSQL 15.8, where that
+          # GUC does not exist. Preserve the raw dump unchanged, and derive a PG15
+          # restore copy by removing only that compatibility SET line.
+          grep -q '^SET transaction_timeout = 0;$' "$backup"
+          sed '/^SET transaction_timeout = 0;$/d' "$backup" > "$restore"
+          test -s "$restore"
 
           supabase --workdir "$workdir" migration repair 20990101000000 \
             --db-url "$DB_URL" \
             --status reverted
           test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "0"
 
-          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$backup" >/dev/null
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$restore" >/dev/null
           test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
           restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
           test "$restored_hash" = "$statement_hash"
