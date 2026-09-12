@@ -4,7 +4,7 @@ import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
 import { WhatsAppChatWidget } from '@/components/site/WhatsAppChatWidget';
-import { CalendlyBadge } from '@/components/site/CalendlyBadge';
+import { CalBadge } from '@/components/site/CalBadge';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
 
@@ -25,15 +25,12 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <Footer />
       <InstallPwaPrompt variant="banner" />
-      {/* Floating action buttons — bottom-right */}
       <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-[70] flex flex-col items-center gap-3 sm:bottom-5 sm:right-5">
         <WhatsAppChatWidget />
       </div>
-      {/* Cal.com badge — bottom-left */}
       <div className="fixed bottom-5 left-5 z-[70] hidden sm:block">
-        <CalendlyBadge />
+        <CalBadge />
       </div>
-      {/* Cart sidebar — rendered above floating buttons */}
       <CartSidebar />
     </CartProvider>
   );
