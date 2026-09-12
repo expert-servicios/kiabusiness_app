@@ -6,9 +6,11 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const HISTORICAL_MIGRATIONS = 'supabase/migration-history-archive/pre-baseline-20260912';
+
 describe('Admin correo folders', () => {
   it('keeps system folders protected and custom folders mutable', () => {
-    const migration = source('supabase/migrations/20260904192500_admin_email_folders.sql');
+    const migration = source(`${HISTORICAL_MIGRATIONS}/20260904192500_admin_email_folders.sql`);
     expect(migration).toContain("('Entrantes', 'entrantes', 'inbox', true, 10)");
     expect(migration).toContain("('Enviados', 'enviados', 'sent', true, 20)");
     expect(migration).toContain('admin staff update custom email folders');
@@ -17,7 +19,7 @@ describe('Admin correo folders', () => {
   });
 
   it('organizes mail without mutating original source tables', () => {
-    const migration = source('supabase/migrations/20260904192500_admin_email_folders.sql');
+    const migration = source(`${HISTORICAL_MIGRATIONS}/20260904192500_admin_email_folders.sql`);
     expect(migration).toContain('admin_email_item_state');
     expect(migration).not.toContain('alter table public.email_events add');
     expect(migration).not.toContain('alter table public.email_inbox_cache add');
