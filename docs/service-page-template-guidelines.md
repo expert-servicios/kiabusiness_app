@@ -24,7 +24,7 @@ El patrón evita crear páginas aisladas con CTAs distintos, precios poco claros
 - Para casos variables, usar solicitud/revisión y cotización admin personalizada.
 - Mantener tono profesional, concreto y orientado a decisión.
 - Mantener enlaces a fuentes oficiales, blog y base de conocimientos cuando existan.
-- Usar Cal.com para reuniones. No usar ni mencionar Calendly.
+- Usar Cal.com para reuniones. No usar naming anterior en páginas nuevas.
 
 ## Estructura obligatoria de página
 
@@ -55,6 +55,14 @@ Formato de enlaces:
 /solicitar-presupuesto?servicio=<slug>&tipo=caso-complejo
 /solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=<slug>
 ```
+
+El formulario de presupuesto debe conservar el contexto recibido por query string:
+
+- `servicio`: servicio principal solicitado;
+- `tipo`: variante comercial, por ejemplo `caso-complejo`;
+- `origen`: servicio desde el que se ofrece la formación one to one.
+
+Ese contexto debe verse en pantalla y enviarse dentro de la descripción de la solicitud para que administración pueda identificar correctamente el origen de cada lead.
 
 La reunión gratuita debe usar:
 
@@ -256,6 +264,7 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Hay CTA de caso complejo.
 - [ ] Hay CTA de formación one to one.
 - [ ] Hay CTA de reunión gratuita con Cal.com.
+- [ ] El formulario de presupuesto conserva `servicio`, `tipo` y `origen` cuando el CTA usa query string.
 - [ ] Hay fuentes oficiales cuando procede.
 - [ ] Hay artículos/docs relacionados o queda documentado como pendiente.
 - [ ] Se revisa build de Vercel antes de marcar PR como listo.
