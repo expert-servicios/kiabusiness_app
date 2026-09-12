@@ -72,7 +72,7 @@ jobs:
       - name: Verify migration repair tracking-only semantics
         shell: bash
         env:
-          DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
         run: |
           set -euo pipefail
           workdir="$RUNNER_TEMP/repair-probe"
