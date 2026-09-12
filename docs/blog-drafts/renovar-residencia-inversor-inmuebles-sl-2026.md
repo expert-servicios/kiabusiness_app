@@ -73,6 +73,15 @@ Para el titular inversor se prepara normalmente:
 
 Para familiares se prepara un expediente individual con pasaporte, TIE, tasa, seguro, vínculo familiar y medios económicos del titular o de la unidad familiar.
 
+## Precio del servicio
+
+En EXPERT los honorarios por renovación de residencia de inversor son:
+
+- titular inversor: 250 € + IVA;
+- cada familiar adicional: 90 € + IVA por persona.
+
+Las tasas administrativas, notas simples, certificados, traducciones, apostillas, antecedentes penales, informes oficiales y demás costes externos se pagan aparte.
+
 ## Errores frecuentes
 
 Los errores más habituales son presentar fuera de plazo, aportar notas simples antiguas, no documentar la inversión libre de cargas, confundir tasa 038 con tasa 012, no revisar ausencias y, en sociedades, no acreditar el control real del solicitante.
