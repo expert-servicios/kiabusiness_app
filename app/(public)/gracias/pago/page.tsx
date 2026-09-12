@@ -4,7 +4,7 @@ import { Calendar, GraduationCap } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { PostPurchaseProfileStep } from '@/components/profile/PostPurchaseProfileStep';
 import { EventTracker } from '@/components/site/EventTracker';
 
@@ -38,27 +38,27 @@ function HoldedBookingSection() {
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         {onboardingUrl && (
           <div className="flex-1">
-            <CalendlyButton
+            <CalButton
               url={onboardingUrl}
               fallbackHref={onboardingUrl}
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <Calendar className="h-4 w-4" />
               Reservar onboarding (1h)
-            </CalendlyButton>
+            </CalButton>
             <p className="mt-1.5 text-center text-xs text-[#23364D]/60">60 min · Europe/Madrid</p>
           </div>
         )}
         {formacionUrl && (
           <div className="flex-1">
-            <CalendlyButton
+            <CalButton
               url={formacionUrl}
               fallbackHref={formacionUrl}
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10"
             >
               <GraduationCap className="h-4 w-4" />
               Reservar formación (2h)
-            </CalendlyButton>
+            </CalButton>
             <p className="mt-1.5 text-center text-xs text-[#23364D]/60">120 min · Europe/Madrid</p>
           </div>
         )}

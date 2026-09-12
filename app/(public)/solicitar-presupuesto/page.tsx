@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { SolicitudPresupuestoForm } from '@/components/site/SolicitudPresupuestoForm';
 
@@ -15,5 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default function SolicitarPresupuestoPage() {
-  return <SolicitudPresupuestoForm />;
+  return (
+    <Suspense fallback={null}>
+      <SolicitudPresupuestoForm />
+    </Suspense>
+  );
 }

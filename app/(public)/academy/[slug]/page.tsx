@@ -4,7 +4,7 @@ import { Check, Clock, Globe, Download, CalendarCheck, CreditCard, BookOpen } fr
 import { academyPrograms, getAcademyProgram } from '@/lib/data/academy-catalog';
 import { AcademyLeadForm } from '@/components/site/AcademyLeadForm';
 import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { FaqSection } from '@/components/site/FaqSection';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
 import { EventTracker } from '@/components/site/EventTracker';
@@ -165,7 +165,7 @@ export default async function AcademyProgramPage({ params }: Props) {
             >
               Solicitar información
             </TrackedAnchor>
-            <CalendlyButton
+            <CalButton
               url={calAcademyUrl}
               fallbackHref="/cita"
               analyticsEvent="course_meeting_click"
@@ -174,7 +174,7 @@ export default async function AcademyProgramPage({ params }: Props) {
             >
               <CalendarCheck className="h-4 w-4" />
               Reservar reunión informativa
-            </CalendlyButton>
+            </CalButton>
             {program.downloadHref && (
               <TrackedAnchor
                 href={program.downloadHref}

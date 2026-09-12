@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Check, ArrowLeft } from 'lucide-react';
 import { Breadcrumb } from '@/components/site/Breadcrumb';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
@@ -22,7 +23,8 @@ const serviceCategories = [
     services: [
       { id: 'nacionalidad', name: 'Nacionalidad española', description: 'Proceso de nacionalización completo' },
       { id: 'residencias', name: 'Permisos de residencia', description: 'Residencia, arraigo, reagrupación familiar' },
-      { id: 'renovaciones', name: 'Renovaciones y modificaciones', description: 'Renovación de TIE y otros documentos' }
+      { id: 'renovaciones', name: 'Renovaciones y modificaciones', description: 'Renovación de TIE y otros documentos' },
+      { id: 'renovacion-residencia-inversor', name: 'Renovación residencia inversor', description: 'Renovación Ley 14/2013 en régimen transitorio' }
     ]
   },
   {
@@ -33,15 +35,44 @@ const serviceCategories = [
       { id: 'constitucion', name: 'Constitución de empresa', description: 'Creación de SL, SA u otras formas societarias' },
       { id: 'contabilidad', name: 'Asesoría contable y fiscal', description: 'Contabilidad, impuestos y gestión empresarial' }
     ]
+  },
+  {
+    id: 'formacion',
+    title: 'Formación y acompañamiento',
+    services: [
+      { id: 'formacion-one-to-one-2h', name: 'Formación one to one 2 horas', description: 'Sesión guiada para preparar un trámite por tu cuenta' }
+    ]
   }
 ];
 
+function getServiceName(serviceId: string): string {
+  for (const category of serviceCategories) {
+    const service = category.services.find((item) => item.id === serviceId);
+    if (service) return service.name;
+  }
+  return serviceId.replace(/-/g, ' ');
+}
+
+function buildContextNote(params: { serviceFromUrl: string | null; originFromUrl: string | null; typeFromUrl: string | null }): string {
+  const parts: string[] = [];
+  if (params.serviceFromUrl) parts.push(`Servicio solicitado: ${getServiceName(params.serviceFromUrl)} (${params.serviceFromUrl}).`);
+  if (params.typeFromUrl === 'caso-complejo') parts.push('Tipo de solicitud: caso complejo.');
+  if (params.originFromUrl) parts.push(`Origen de la solicitud: ${getServiceName(params.originFromUrl)} (${params.originFromUrl}).`);
+  return parts.join('\n');
+}
+
 export function SolicitudPresupuestoForm() {
+  const searchParams = useSearchParams();
+  const serviceFromUrl = searchParams.get('servicio');
+  const originFromUrl = searchParams.get('origen');
+  const typeFromUrl = searchParams.get('tipo');
+  const contextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl });
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [description, setDescription] = useState('');
+  const [selectedServices, setSelectedServices] = useState<string[]>(() => serviceFromUrl ? [serviceFromUrl] : []);
+  const [description, setDescription] = useState(() => contextNote ? `${contextNote}\n\n` : '');
   const [hp, setHp] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -118,6 +149,13 @@ export function SolicitudPresupuestoForm() {
 
       <section className="px-6 py-12">
         <div className="mx-auto max-w-3xl">
+          {contextNote && (
+            <div className="mb-6 border border-[#D4A017]/30 bg-[#D4A017]/8 p-4 text-sm leading-6 text-[#23364D]">
+              <p className="font-bold text-[#0D1B2A]">Solicitud contextualizada</p>
+              <p className="mt-1 whitespace-pre-line">{contextNote}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-8">
             <input
               type="text"
@@ -226,7 +264,7 @@ export function SolicitudPresupuestoForm() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={4}
+                rows={5}
                 placeholder="Describe tu situación, plazos o cualquier detalle relevante..."
                 className="mt-4 w-full border border-[#D4A017]/30 bg-white px-4 py-3 text-sm text-[#0D1B2A] placeholder-[#9CA3AF] focus:border-[#D4A017] focus:outline-none"
               />

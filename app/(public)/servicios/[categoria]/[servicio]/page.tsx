@@ -1,16 +1,29 @@
-﻿import { notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { AlertCircle, BookOpen, Check, CheckCircle2, Clock, FileText, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertCircle, BookOpen, CalendarCheck, Check, CheckCircle2, Clock, FileText, GraduationCap, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { ViabilityButton } from '@/components/services/ViabilityButton';
+import { CalButton } from '@/components/site/CalButton';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
 import { getViabilityCheck, hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
+import { getCalMeetingUrl } from '@/lib/utils/cal';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+
+const CAL_REUNION_URL = getCalMeetingUrl();
+
+function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
+  return (
+    <CalButton url={CAL_REUNION_URL} fallbackHref="/contacto" className={className}>
+      {children}
+    </CalButton>
+  );
+}
 
 export function generateStaticParams() {
   const params: { categoria: string; servicio: string }[] = [];
@@ -91,6 +104,10 @@ export default async function ServicioDetallePage({
   const relatedDocs = getDocsForService(service.slug);
   const relatedArticles = getArticlesForService(service.slug);
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
+  const encodedServiceSlug = encodeURIComponent(service.slug);
+  const budgetHref = `/solicitar-presupuesto?servicio=${encodedServiceSlug}`;
+  const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
+  const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}`;
   const offerPrice = service.stripePriceId
     ? service.price?.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(',', '.')
     : undefined;
@@ -157,7 +174,6 @@ export default async function ServicioDetallePage({
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
       {categoria === 'certificado-digital' && <JulyCampaignBanner focus="certificado" />}
 
-      {/* ── Hero — sin imagen, fondo oscuro limpio ── */}
       <div className="bg-[#0D1B2A] px-6 pb-10 pt-12 text-[#F8F6F1] md:pb-12 md:pt-16">
         <div className="mx-auto max-w-5xl">
           <Link
@@ -171,7 +187,6 @@ export default async function ServicioDetallePage({
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-white/60">{service.shortDescription}</p>
 
-          {/* Duration chip only — price lives exclusively in sidebar */}
           {service.duration && (
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 rounded-2xl border border-white/12 px-4 py-2.5">
@@ -181,7 +196,6 @@ export default async function ServicioDetallePage({
             </div>
           )}
 
-          {/* CTA buttons */}
           <div className="mt-8 flex flex-wrap gap-3">
             {cartItem ? (
               <AddToCartButton
@@ -191,22 +205,29 @@ export default async function ServicioDetallePage({
               />
             ) : (
               <Link
-                href="/solicitar-presupuesto"
+                href={budgetHref}
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
               >
                 Solicitar presupuesto
               </Link>
             )}
-            <a
-              href="https://wa.me/34669045528"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white"
+            <Link
+              href={complexBudgetHref}
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#D4A017] px-8 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
+              Caso complejo
+            </Link>
+            <Link
+              href={selfGuidedHref}
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+            >
+              Hazlo por tu cuenta
+            </Link>
+            <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
+              Reunión gratuita 15 min
+            </FreeMeetingButton>
           </div>
 
-          {/* Viability check button — only for services with specific checks */}
           {showViability && viabilityCheck && (
             <div className="mt-4">
               <ViabilityButton
@@ -217,13 +238,11 @@ export default async function ServicioDetallePage({
           )}
         </div>
 
-        {/* Gold accent line */}
         <div className="mx-auto mt-10 max-w-5xl">
           <div className="h-px bg-gradient-to-r from-[#D4A017]/60 via-[#D4A017]/20 to-transparent" />
         </div>
       </div>
 
-      {/* Breadcrumb */}
       <nav className="border-b border-[#D4A017]/12 bg-white/60 px-6 py-3 text-xs text-[#6B7280]" aria-label="Breadcrumb">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-1.5">
           <Link href="/" className="hover:text-[#D4A017]">Inicio</Link>
@@ -236,20 +255,16 @@ export default async function ServicioDetallePage({
         </div>
       </nav>
 
-      {/* ── Content grid ── */}
       <div className="mx-auto max-w-5xl px-6 py-12 md:py-16">
         <div className="grid gap-10 lg:grid-cols-[1fr_320px] lg:items-start">
 
-          {/* ── Main column ── */}
           <div className="space-y-10">
 
-            {/* Description */}
             <div>
               <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">¿En qué consiste?</h2>
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
 
-            {/* Price breakdown */}
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
                 {service.servicePriceDetail && (
@@ -267,7 +282,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Key points */}
             {service.keyPoints && service.keyPoints.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Puntos clave</h2>
@@ -287,7 +301,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Audience */}
             {service.audience && service.audience.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">¿Para quién es?</h2>
@@ -302,7 +315,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Includes */}
             {service.includes.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">¿Qué incluye?</h2>
@@ -317,7 +329,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Documents (grouped format) */}
             {service.documents && service.documents.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Documentación necesaria</h2>
@@ -342,7 +353,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Process */}
             {service.process && service.process.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Cómo funciona el proceso</h2>
@@ -362,7 +372,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Not included / Review before hiring */}
             {(service.notIncluded?.length || service.reviewBeforeHiring?.length) ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {service.notIncluded && service.notIncluded.length > 0 && (
@@ -394,7 +403,55 @@ export default async function ServicioDetallePage({
               </div>
             ) : null}
 
-            {/* Related articles */}
+            <section className="rounded-2xl bg-[#0D1B2A] p-6 text-white md:p-7">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
+              <h2 className="mt-3 font-serif text-2xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="border border-white/10 bg-white/5 p-5">
+                  <CheckCircle2 className="h-6 w-6 text-[#D4A017]" />
+                  <h3 className="mt-4 font-bold">Servicio completo</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/60">Contrata el trámite o solicita revisión del expediente con acompañamiento profesional.</p>
+                  {cartItem ? (
+                    <div className="mt-4">
+                      <AddToCartButton
+                        item={cartItem}
+                        label={service.checkoutLabel ?? 'Añadir a la cesta'}
+                        className="inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E] disabled:opacity-60"
+                      />
+                    </div>
+                  ) : (
+                    <Link href={budgetHref} className="mt-4 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
+                      Solicitar revisión
+                    </Link>
+                  )}
+                </div>
+                <div className="border border-white/10 bg-white/5 p-5">
+                  <AlertCircle className="h-6 w-6 text-[#D4A017]" />
+                  <h3 className="mt-4 font-bold">Caso complejo</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/60">Úsalo si hay incidencias, documentación incompleta, urgencia, requerimientos o una estructura no estándar.</p>
+                  <Link href={complexBudgetHref} className="mt-4 inline-flex min-h-11 items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+                    Solicitar presupuesto
+                  </Link>
+                </div>
+                <div className="border border-white/10 bg-white/5 p-5">
+                  <GraduationCap className="h-6 w-6 text-[#D4A017]" />
+                  <h3 className="mt-4 font-bold uppercase">Hazlo por tu cuenta</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/60">Formación one to one de 2 horas para preparar el trámite con checklist, revisión guiada y soporte humano.</p>
+                  <Link href={selfGuidedHref} className="mt-4 inline-flex min-h-11 items-center justify-center border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]">
+                    Formación 2 horas
+                  </Link>
+                </div>
+                <div className="border border-white/10 bg-white/5 p-5">
+                  <CalendarCheck className="h-6 w-6 text-[#D4A017]" />
+                  <h3 className="mt-4 font-bold">Reunión gratuita</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/60">Primera reunión informativa de 15 minutos para ubicar el caso antes de decidir la vía.</p>
+                  <FreeMeetingButton className="mt-4 inline-flex min-h-11 items-center justify-center border border-white/25 px-5 py-2.5 text-sm font-bold text-white/85 hover:border-white/60 hover:text-white">
+                    Reservar 15 minutos
+                  </FreeMeetingButton>
+                </div>
+              </div>
+            </section>
+
             {relatedArticles.length > 0 && (
               <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-6">
                 <div className="mb-4 flex items-center gap-2.5">
@@ -417,24 +474,32 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Final CTA */}
             {service.finalCta && (
               <div className="rounded-2xl border border-[#D4A017]/30 bg-[#D4A017]/8 p-7">
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">{service.finalCta.title}</h2>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{service.finalCta.text}</p>
-                {cartItem && (
-                  <div className="mt-6">
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {cartItem ? (
                     <AddToCartButton
                       item={cartItem}
                       label="Añadir a la cesta"
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <Link href={budgetHref} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]">
+                      Solicitar presupuesto
+                    </Link>
+                  )}
+                  <Link href={selfGuidedHref} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                    Hazlo por tu cuenta
+                  </Link>
+                  <FreeMeetingButton className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                    Reunión gratuita 15 min
+                  </FreeMeetingButton>
+                </div>
               </div>
             )}
 
-            {/* FAQs */}
             {service.faqs.length > 0 && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Preguntas frecuentes</h2>
@@ -450,10 +515,8 @@ export default async function ServicioDetallePage({
             )}
           </div>
 
-          {/* ── Sidebar ── */}
           <aside className="space-y-5 lg:sticky lg:top-6">
 
-            {/* CTA card */}
             <div className="overflow-hidden rounded-2xl border border-[#D4A017]/30 bg-white">
               {service.price && (
                 <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
@@ -473,12 +536,28 @@ export default async function ServicioDetallePage({
                   />
                 ) : (
                   <Link
-                    href="/solicitar-presupuesto"
+                    href={budgetHref}
                     className="block w-full rounded-xl bg-[#D4A017] px-4 py-2.5 text-center text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
                   >
                     Solicitar presupuesto
                   </Link>
                 )}
+                <Link
+                  href={complexBudgetHref}
+                  className="block w-full rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                >
+                  Caso complejo
+                </Link>
+                <Link
+                  href={selfGuidedHref}
+                  className="block w-full rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                >
+                  Hazlo por tu cuenta
+                </Link>
+                <FreeMeetingButton className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5">
+                  <CalendarCheck className="h-4 w-4 text-[#D4A017]" />
+                  Reunión gratuita 15 min
+                </FreeMeetingButton>
                 <a
                   href="https://wa.me/34669045528"
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
@@ -492,7 +571,6 @@ export default async function ServicioDetallePage({
               </div>
             </div>
 
-            {/* Requirements */}
             {service.requirements && service.requirements.length > 0 && (
               <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
@@ -510,7 +588,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Required docs (flat list) */}
             {service.requiredDocs && service.requiredDocs.length > 0 && (
               <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
@@ -528,7 +605,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Related guides */}
             {relatedDocs.length > 0 && (
               <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
@@ -550,7 +626,6 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {/* Related services */}
             {relatedServices.length > 0 && (
               <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
                 <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Otros servicios del área</p>

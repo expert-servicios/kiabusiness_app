@@ -1,5 +1,5 @@
-// Cal.com utility — returns https://cal.com/{link} URLs for use as hrefs or iframe src.
-// CalendlyButton (popup) extracts the path internally via URL.pathname.
+// Cal.com utility — returns https://cal.com/{link} URLs for use as hrefs, modal links, or iframe src.
+// CalButton extracts the event path internally via URL.pathname.
 
 function calUrl(envVar: string | undefined): string | null {
   const link = envVar?.trim();

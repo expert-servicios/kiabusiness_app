@@ -30,7 +30,7 @@ function toCalLink(url: string): string {
   try { return new URL(url).pathname.slice(1); } catch { return url; }
 }
 
-export function CalendlyButton({ url, className, fallbackHref = '/cita', children, analyticsEvent, analyticsProps }: Props) {
+export function CalButton({ url, className, fallbackHref = '/cita', children, analyticsEvent, analyticsProps }: Props) {
   return (
     <button
       type="button"

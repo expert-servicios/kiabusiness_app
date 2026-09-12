@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { CalendarClock } from 'lucide-react';
-import { CalendlyModal } from './CalendlyModal';
+import { CalModal } from './CalModal';
 
 interface Props {
   url: string;
 }
 
-export function CalendlyFloatingButton({ url }: Props) {
+export function CalFloatingButton({ url }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,7 +22,7 @@ export function CalendlyFloatingButton({ url }: Props) {
       >
         <CalendarClock className="h-6 w-6" aria-hidden="true" />
       </button>
-      <CalendlyModal
+      <CalModal
         url={url}
         title="Reunión informativa gratuita"
         subtitle="15 minutos · Sin compromiso"

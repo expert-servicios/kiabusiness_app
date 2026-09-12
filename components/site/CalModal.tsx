@@ -11,7 +11,7 @@ interface Props {
   onClose  : () => void;
 }
 
-export function CalendlyModal({ url, title, subtitle, isOpen, onClose }: Props) {
+export function CalModal({ url, title, subtitle, isOpen, onClose }: Props) {
   useEffect(() => {
     const handle = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     if (isOpen) {

@@ -10,7 +10,7 @@ function toCalLink(url: string): string {
   try { return new URL(url).pathname.slice(1); } catch { return url; }
 }
 
-export function CalendlyBadge() {
+export function CalBadge() {
   const pathname = usePathname();
   if (pathname === '/cita') return null;
 

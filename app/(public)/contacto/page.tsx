@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Mail, MapPin, MessageCircle, Clock } from 'lucide-react';
 import { ContactForm } from './ContactForm';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { getCalMeetingUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
@@ -57,7 +57,6 @@ const contactItems = [
 export default function ContactoPage() {
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
-      {/* Hero */}
       <div className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
         <div className="mx-auto max-w-5xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Contacto</p>
@@ -68,11 +67,8 @@ export default function ContactoPage() {
         </div>
       </div>
 
-      {/* Content */}
       <section className="mx-auto max-w-5xl px-6 py-12 md:py-16">
         <div className="grid gap-12 lg:grid-cols-[1fr_380px] lg:items-start">
-
-          {/* Form */}
           <div>
             <h2 className="font-serif text-2xl font-bold">Formulario de contacto</h2>
             <p className="mt-2 text-sm text-[#23364D]">
@@ -81,7 +77,6 @@ export default function ContactoPage() {
             <ContactForm />
           </div>
 
-          {/* Contact info sidebar */}
           <div className="space-y-5">
             <div className="bg-[#0D1B2A] p-6 text-[#F8F6F1]">
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Datos de contacto</p>
@@ -122,7 +117,7 @@ export default function ContactoPage() {
               Escribir por WhatsApp
             </a>
 
-            <CalendlyButton
+            <CalButton
               url={CAL_REUNION_URL}
               className="flex flex-col border border-[#D4A017] bg-white p-5 text-left transition hover:bg-[#D4A017]/5"
             >
@@ -134,7 +129,7 @@ export default function ContactoPage() {
               <span className="mt-3 text-sm font-bold text-[#D4A017]">
                 Reservar llamada →
               </span>
-            </CalendlyButton>
+            </CalButton>
           </div>
         </div>
       </section>
