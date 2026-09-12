@@ -30,7 +30,7 @@ import { Hero } from '@/components/site/Hero';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { getPublishedBlogArticles } from '@/lib/utils/blog';
 import { academyPrograms } from '@/lib/data/academy-catalog';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
@@ -678,13 +678,13 @@ function Formacion() {
         </div>
 
         <div className="mt-8">
-          <CalendlyButton
+          <CalButton
             url={calAcademyUrl}
             fallbackHref="/cita"
             className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
           >
             Reservar entrevista de admisión
-          </CalendlyButton>
+          </CalButton>
         </div>
       </div>
     </section>
