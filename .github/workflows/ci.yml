@@ -45,3 +45,57 @@ jobs:
 
       - name: Tests
         run: npm test
+
+  migration-repair-contract:
+    name: Supabase migration repair contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify migration repair tracking-only semantics
+        shell: bash
+        env:
+          DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          set -euo pipefail
+          workdir="$RUNNER_TEMP/repair-probe"
+          mkdir -p "$workdir/supabase/migrations"
+          printf 'project_id = "repair-probe"\n' > "$workdir/supabase/config.toml"
+          cat > "$workdir/supabase/migrations/20990101000000_repair_probe_contract.sql" <<'SQL'
+          create table public.repair_probe_contract (
+            id bigint primary key
+          );
+          SQL
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status applied
+
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+          statement_count="$(psql "$DB_URL" -Atc "select coalesce(array_length(statements,1),0) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          echo "repair-applied statement_count=$statement_count"
+          test "$statement_count" -gt 0
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status reverted
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "0"
