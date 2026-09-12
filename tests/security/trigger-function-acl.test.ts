@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260904082000_harden_trigger_function_acl.sql'),
+  resolve(process.cwd(), 'supabase/migration-history-archive/pre-baseline-20260912/20260904082000_harden_trigger_function_acl.sql'),
   'utf8',
 );
 
