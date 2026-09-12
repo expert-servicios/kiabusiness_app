@@ -3,7 +3,7 @@ import { Check, Clock, Globe, Award, Download, CalendarCheck } from 'lucide-reac
 import { academyPrograms } from '@/lib/data/academy-catalog';
 import { AcademyLeadForm } from '@/components/site/AcademyLeadForm';
 import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
-import { CalendlyButton } from '@/components/site/CalendlyButton';
+import { CalButton } from '@/components/site/CalButton';
 import { FaqSection } from '@/components/site/FaqSection';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
 import { EventTracker } from '@/components/site/EventTracker';
@@ -120,7 +120,7 @@ export default function AcademyPage() {
             >
               Solicitar información
             </TrackedAnchor>
-            <CalendlyButton
+            <CalButton
               url={calAcademyUrl}
               fallbackHref="/cita"
               analyticsEvent="course_meeting_click"
@@ -129,7 +129,7 @@ export default function AcademyPage() {
             >
               <CalendarCheck className="h-4 w-4" />
               Reservar entrevista de admisión
-            </CalendlyButton>
+            </CalButton>
             <TrackedAnchor
               href={`/api/academy/programa-pdf?slug=${program.slug}`}
               event="course_program_download"
