@@ -16,31 +16,53 @@ function hasSuccessfulCaseStatusResult(toolResults: KiaToolResult[]): boolean {
   return toolResults.some((toolResult) => toolResult.toolName === 'get_case_status' && toolResult.ok);
 }
 
+function assuranceFromToolResults(toolResults: KiaToolResult[]): KiaPresentationContext['assurance'] | undefined {
+  const holdedStatus = toolResults.find((toolResult) => (
+    toolResult.toolName === 'get_holded_connection_status' && toolResult.ok && toolResult.result
+  ));
+  if (holdedStatus?.result?.status === 'active') {
+    return {
+      kind: 'validated_status',
+      source: 'holded',
+    };
+  }
+  return undefined;
+}
+
 /**
  * Build presentation-only signals from server-authorized sources.
  *
  * The optional authoritative case snapshot is preferred because the normal KIA
  * conversational context intentionally excludes completed cases. Tool results
  * remain a conservative fallback for channels that already return a complete
- * case-status result.
+ * case-status result. Fiscal risk is accepted only as an already-authorized
+ * server signal; this builder never derives it from message text or model prose.
  */
 export function buildKiaPresentationContext(
   toolResults: KiaToolResult[],
   authoritativeCases: readonly KiaAuthoritativeCaseStatus[] | null = null,
+  authoritativeFiscalRisk: KiaPresentationContext['fiscalRisk'] | null = null,
 ): KiaPresentationContext | undefined {
+  const context: KiaPresentationContext = {};
+
+  if (authoritativeFiscalRisk) {
+    context.fiscalRisk = authoritativeFiscalRisk;
+  }
+
+  const assurance = assuranceFromToolResults(toolResults);
+  if (assurance) {
+    context.assurance = assurance;
+  }
+
   const cases: ReadonlyArray<Record<string, unknown> | KiaAuthoritativeCaseStatus> | null = authoritativeCases ?? caseRowsFromToolResults(toolResults);
-  if (!cases || cases.length !== 1) return undefined;
-
-  const caseRow = cases[0];
-  const status = caseRow.status;
-  if (status !== 'finalizado') return undefined;
-
-  return {
-    milestone: {
+  if (cases?.length === 1 && cases[0].status === 'finalizado') {
+    context.milestone = {
       kind: 'case_completed',
       source: 'case',
-    },
-  };
+    };
+  }
+
+  return context.fiscalRisk || context.assurance || context.milestone ? context : undefined;
 }
 
 /**
