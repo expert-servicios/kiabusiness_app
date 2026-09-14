@@ -7,6 +7,8 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('Email attachments to Documents 360', () => {
   it('exposes real attachment metadata and provider download helpers for Gmail and Microsoft 365', () => {
     const gmail = source('lib/integrations/gmail.ts');
@@ -58,7 +60,7 @@ describe('Email attachments to Documents 360', () => {
 
   it('uses the canonical private document bucket and an idempotent source mapping', () => {
     const route = source('app/api/admin/correo/attachments/route.ts');
-    const migration = source('supabase/migrations/20260905131500_email_attachment_documents.sql');
+    const migration = historical('20260905131500_email_attachment_documents.sql');
 
     expect(route).toContain(".from('client-documents')");
     expect(route).toContain('upsert: false');
@@ -70,7 +72,7 @@ describe('Email attachments to Documents 360', () => {
 
   it('persists deterministic email provenance for Documents 360', () => {
     const route = source('app/api/admin/correo/attachments/route.ts');
-    const migration = source('supabase/migrations/20260905154500_email_attachment_provenance_context.sql');
+    const migration = historical('20260905154500_email_attachment_provenance_context.sql');
 
     expect(route).toContain('conversation_id: conversationId');
     expect(route).toContain('subject: messageContext.message.subject');

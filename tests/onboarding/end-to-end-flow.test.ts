@@ -3,10 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 describe('end-to-end onboarding safeguards', () => {
   it('repairs the missing onboarding completion column without historical DML', () => {
-    const migration = source('supabase/migrations/20260904092000_repair_profiles_onboarding_at.sql');
+    const migration = historical('20260904092000_repair_profiles_onboarding_at.sql');
     const sql = migration.replace(/^\s*--.*$/gm, '');
     expect(migration).toContain('add column if not exists onboarding_completed_at timestamptz');
     expect(migration).toContain('create index if not exists profiles_onboarding_pending_idx');

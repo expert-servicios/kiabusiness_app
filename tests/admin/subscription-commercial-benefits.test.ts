@@ -4,11 +4,12 @@ import path from 'node:path';
 
 const root = process.cwd();
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
+const historical = (file: string) => read(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 const api = read('app/api/admin/clientes/[id]/subscription-benefits/route.ts');
 const page = read('app/(protected)/admin/clientes/[id]/beneficios/page.tsx');
 const nav = read('app/(protected)/admin/clientes/[id]/ClientOperationsNav.tsx');
-const migration = read('supabase/migrations/20260905122000_subscription_commercial_benefits.sql');
+const migration = historical('20260905122000_subscription_commercial_benefits.sql');
 
 describe('subscription commercial benefits', () => {
   it('reuses subscription_entitlements and never creates a zero-value Stripe subscription', () => {

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 describe('onboarding completion experience', () => {
   it('stores the rendered body of every EXPERT email in the audit timeline', () => {
@@ -36,7 +37,7 @@ describe('onboarding completion experience', () => {
   });
 
   it('repairs review compatibility additively without deleting history', () => {
-    const migration = source('supabase/migrations/20260906133000_repair_review_feedback_schema.sql');
+    const migration = historical('20260906133000_repair_review_feedback_schema.sql');
     const sql = migration.replace(/^\s*--.*$/gm, '');
     expect(migration).toContain('add column if not exists token text');
     expect(migration).toContain('add column if not exists expires_at timestamptz');

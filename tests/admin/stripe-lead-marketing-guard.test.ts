@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const source = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 describe('Stripe lead marketing safeguards', () => {
   it('requires explicit consent when resolving lead campaign recipients', () => {
@@ -14,9 +15,7 @@ describe('Stripe lead marketing safeguards', () => {
   });
 
   it('guards campaign_sends at database level', () => {
-    const migration = source(
-      'supabase/migrations/20260906193117_guard_lead_campaign_marketing_consent.sql',
-    );
+    const migration = historical('20260906193117_guard_lead_campaign_marketing_consent.sql');
 
     expect(migration).toContain("l.marketing_status = 'consented'");
     expect(migration).toContain('campaign_sends_guard_lead_marketing');
@@ -24,9 +23,7 @@ describe('Stripe lead marketing safeguards', () => {
   });
 
   it('preserves multiple Stripe customers per canonical lead', () => {
-    const migration = source(
-      'supabase/migrations/20260906193102_add_stripe_lead_marketing_model.sql',
-    );
+    const migration = historical('20260906193102_add_stripe_lead_marketing_model.sql');
 
     expect(migration).toContain('create table public.lead_stripe_customers');
     expect(migration).toContain('unique (tenant_id, stripe_customer_id)');

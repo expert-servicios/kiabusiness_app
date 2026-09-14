@@ -90,30 +90,107 @@ CREATE POLICY "sources_log_deny_user_select"
   USING (false);
 
 -- ── profile_companies link table ─────────────────────────────────────────────
--- Links auth users to companies with a role (owner, admin, member, viewer).
+-- Historical clean replays may already have the older May schema from
+-- 20260505110000_add_companies.sql. Converge it to the canonical production
+-- structure instead of relying on CREATE TABLE IF NOT EXISTS to silently no-op.
 
 CREATE TABLE IF NOT EXISTS public.profile_companies (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   profile_id  UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   company_id  UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  role        TEXT NOT NULL DEFAULT 'owner' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
+  role        TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(profile_id, company_id)
+  CONSTRAINT profile_companies_unique UNIQUE(profile_id, company_id)
 );
 
-CREATE INDEX idx_profile_companies_profile ON public.profile_companies(profile_id);
-CREATE INDEX idx_profile_companies_company ON public.profile_companies(company_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profile_companies'
+      AND column_name = 'id'
+  ) THEN
+    ALTER TABLE public.profile_companies
+      ADD COLUMN id UUID DEFAULT gen_random_uuid();
+
+    ALTER TABLE public.profile_companies
+      ALTER COLUMN id SET NOT NULL;
+
+    ALTER TABLE public.profile_companies
+      DROP CONSTRAINT IF EXISTS profile_companies_pkey;
+
+    ALTER TABLE public.profile_companies
+      ADD CONSTRAINT profile_companies_pkey PRIMARY KEY (id);
+
+    ALTER TABLE public.profile_companies
+      DROP CONSTRAINT IF EXISTS profile_companies_profile_id_fkey;
+
+    ALTER TABLE public.profile_companies
+      ADD CONSTRAINT profile_companies_profile_id_fkey
+      FOREIGN KEY (profile_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+    ALTER TABLE public.profile_companies
+      ALTER COLUMN role SET DEFAULT 'member';
+
+    ALTER TABLE public.profile_companies
+      DROP CONSTRAINT IF EXISTS profile_companies_role_check;
+
+    ALTER TABLE public.profile_companies
+      ADD CONSTRAINT profile_companies_role_check
+      CHECK (role IN ('owner', 'admin', 'member'));
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_constraint
+      WHERE conrelid = 'public.profile_companies'::regclass
+        AND conname = 'profile_companies_unique'
+    ) THEN
+      ALTER TABLE public.profile_companies
+        ADD CONSTRAINT profile_companies_unique UNIQUE(profile_id, company_id);
+    END IF;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS profile_companies_profile_idx
+  ON public.profile_companies(profile_id);
+CREATE INDEX IF NOT EXISTS profile_companies_company_idx
+  ON public.profile_companies(company_id);
+
+DROP INDEX IF EXISTS public.idx_profile_companies_profile;
+DROP INDEX IF EXISTS public.idx_profile_companies_company;
 
 ALTER TABLE public.profile_companies ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_companies_select_own"
-  ON public.profile_companies FOR SELECT
-  USING (auth.uid() = profile_id);
+-- Remove policies introduced by the older local-only bootstrap shape.
+DROP POLICY IF EXISTS "user own profile_companies" ON public.profile_companies;
+DROP POLICY IF EXISTS "profile_companies_select_own" ON public.profile_companies;
+DROP POLICY IF EXISTS "profile_companies_insert_own" ON public.profile_companies;
+DROP POLICY IF EXISTS "profile_companies_delete_own" ON public.profile_companies;
 
-CREATE POLICY "profile_companies_insert_own"
-  ON public.profile_companies FOR INSERT
-  WITH CHECK (auth.uid() = profile_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'profile_companies'
+      AND policyname = 'admin all profile_companies'
+  ) THEN
+    CREATE POLICY "admin all profile_companies"
+      ON public.profile_companies FOR ALL
+      USING (public.is_admin())
+      WITH CHECK (public.is_admin());
+  END IF;
 
-CREATE POLICY "profile_companies_delete_own"
-  ON public.profile_companies FOR DELETE
-  USING (auth.uid() = profile_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'profile_companies'
+      AND policyname = 'member view own companies'
+  ) THEN
+    CREATE POLICY "member view own companies"
+      ON public.profile_companies FOR SELECT
+      USING (profile_id = auth.uid());
+  END IF;
+END $$;

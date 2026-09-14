@@ -22,6 +22,13 @@ function collectSqlReferences(value: unknown): string[] {
   return [];
 }
 
+const FORENSIC_MIGRATIONS = resolve(
+  process.cwd(),
+  'supabase',
+  'migration-history-archive',
+  'pre-baseline-20260912',
+);
+
 describe('Supabase migration ledger Phase 0 evidence', () => {
   it('freezes the complete read-only production ledger metadata snapshot', () => {
     const snapshot = json<{
@@ -81,7 +88,7 @@ describe('Supabase migration ledger Phase 0 evidence', () => {
     const referencedSql = [...new Set(collectSqlReferences(manifest))];
     expect(referencedSql.length).toBeGreaterThan(0);
     for (const filename of referencedSql) {
-      expect(existsSync(resolve(process.cwd(), 'supabase', 'migrations', filename)), filename).toBe(true);
+      expect(existsSync(resolve(FORENSIC_MIGRATIONS, filename)), filename).toBe(true);
     }
   });
 

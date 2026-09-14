@@ -6,8 +6,10 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('Admin onboarding follow-up', () => {
-  const migration = source('supabase/migrations/20260905102800_subscription_onboarding_admin_followup.sql');
+  const migration = historical('20260905102800_subscription_onboarding_admin_followup.sql');
   const helper = source('lib/admin/onboarding-followup.ts');
   const calWebhook = source('app/api/webhooks/cal/route.ts');
   const completeRoute = source('app/api/admin/clientes/[id]/complete-onboarding/route.ts');

@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
 const source = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
-const migration = source('supabase/migrations/20260905111000_client360_fiscal_obligations.sql');
+const migration = historical('20260905111000_client360_fiscal_obligations.sql');
 const api = source('app/api/admin/clientes/[id]/obligations/route.ts');
 const page = source('app/(protected)/admin/clientes/[id]/obligaciones/page.tsx');
 const nav = source('app/(protected)/admin/clientes/[id]/ClientOperationsNav.tsx');

@@ -6,8 +6,10 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('Checkout Admin follow-up', () => {
-  const migration = source('supabase/migrations/20260905103600_checkout_subscription_admin_followup.sql');
+  const migration = historical('20260905103600_checkout_subscription_admin_followup.sql');
 
   it('creates one open contracting task per client for subscription checkouts', () => {
     expect(migration).toContain('internal_tasks_one_open_checkout_followup_per_client');

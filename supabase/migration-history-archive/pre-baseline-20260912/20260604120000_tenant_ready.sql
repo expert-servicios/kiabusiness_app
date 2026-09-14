@@ -27,6 +27,11 @@ alter table public.tenants enable row level security;
 grant select, insert, update on public.tenants to service_role;
 grant select on public.tenants to authenticated;
 
+-- profiles.tenant_id must exist before the tenant RLS policy references it.
+-- Keeping this immediately after tenants creation makes a fresh replay valid.
+alter table public.profiles
+  add column if not exists tenant_id uuid references public.tenants(id) on delete set null;
+
 create policy "authenticated read own tenant" on public.tenants
   for select using (
     id in (
@@ -37,9 +42,6 @@ create policy "authenticated read own tenant" on public.tenants
   );
 
 -- ── tenant_id en entidades críticas (nullable = backward compat) ──────────────
-
-alter table public.profiles
-  add column if not exists tenant_id uuid references public.tenants(id) on delete set null;
 
 alter table public.cases
   add column if not exists tenant_id uuid references public.tenants(id) on delete set null;

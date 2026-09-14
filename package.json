@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:supabase-migrations": "vitest run tests/infra/supabase-migration-baseline-layout.test.ts tests/infra/supabase-migration-ledger-phase0-snapshot.test.ts",
     "holded-mcp:build": "npm --prefix apps/holded-mcp run build",
     "holded-mcp:test": "npm --prefix apps/holded-mcp test",
     "holded-mcp:dev": "npm --prefix apps/holded-mcp run dev",

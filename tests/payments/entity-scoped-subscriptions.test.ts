@@ -6,16 +6,18 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
+
 describe('entity-scoped billing', () => {
   it('rewires checkout_sessions.user_id to canonical profiles', () => {
-    const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
+    const migration = historical('20260903190000_entity_scoped_subscriptions.sql');
     expect(migration).toContain('drop constraint if exists checkout_sessions_user_id_fkey');
     expect(migration).toMatch(/foreign key \(user_id\)[\s\S]*references public\.profiles\(id\)/);
     expect(migration).not.toMatch(/checkout_sessions_user_id_fkey[\s\S]*references public\.users\(id\)/);
   });
 
   it('protects Stripe subscription ownership from silent reassignment', () => {
-    const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
+    const migration = historical('20260903190000_entity_scoped_subscriptions.sql');
     expect(migration).toContain('guard_stripe_subscription_ownership');
     expect(migration).toContain('new.client_id is distinct from old.client_id');
     expect(migration).toContain('new.company_id is distinct from old.company_id');
@@ -74,7 +76,7 @@ describe('entity-scoped billing', () => {
   });
 
   it('one-off quotes carry company context and derived records inherit it', () => {
-    const migration = source('supabase/migrations/20260903190000_entity_scoped_subscriptions.sql');
+    const migration = historical('20260903190000_entity_scoped_subscriptions.sql');
     const quotes = source('app/api/admin/quotes/route.ts');
     expect(migration).toContain('alter table public.quotes');
     expect(migration).toContain('add column if not exists company_id uuid');
