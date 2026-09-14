@@ -6,6 +6,8 @@ import {
   ArrowRight, Building2, CheckCircle2, User,
   Loader2, ChevronRight, ChevronLeft,
 } from 'lucide-react';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import { resolveOnboardingGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 
 interface ProfileStep {
   full_name: string;
@@ -243,6 +245,12 @@ export default function OnboardingPage() {
   });
 
   const step = STEPS[currentStep] ?? 'profile';
+  const guidance = resolveOnboardingGuidance({
+    step,
+    loading,
+    hasError: Boolean(error),
+    companySkipped: companyData.skip,
+  });
 
   async function saveProfile(): Promise<boolean> {
     if (!profileData.full_name.trim()) {
@@ -354,6 +362,15 @@ export default function OnboardingPage() {
         </div>
 
         <StepBar currentStep={currentStep} />
+
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          className="mb-4"
+          compact
+          animateOnChange
+        />
 
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           {error && (
